@@ -1,87 +1,42 @@
-# Welcome to React Router!
+# Online Booking NextJs Template: Chisfis
 
-A modern, production-ready template for building full-stack React applications using React Router.
+Welcome to **Chisfis**, a responsive Nextjs template theme tailored for Online booking, Listing, Real Estate, and booking systems. Whether you're running an accommodation service, travel experience, cruise, car rental, real estate, or a travel agency, Chisfis has got you covered.
 
-[![Open in StackBlitz](https://developer.stackblitz.com/img/open_in_stackblitz.svg)](https://stackblitz.com/github/remix-run/react-router-templates/tree/main/default)
+![Chisfis Banner](https://i.ibb.co/JqPfydC/b-landing.png) 
 
-## Features
+## 🌟 Features
 
-- 🚀 Server-side rendering
-- ⚡️ Hot Module Replacement (HMR)
-- 📦 Asset bundling and optimization
-- 🔄 Data loading and mutations
-- 🔒 TypeScript by default
-- 🎉 TailwindCSS for styling
-- 📖 [React Router docs](https://reactrouter.com/)
+- **Responsive Design**: Modern and fresh design across all devices.
+- **Booking & Listing**: Dedicated templates for booking and listing.
+- **30+ Pages**: A plethora of pages to suit all your needs.
+- **Tailwindcss v3.x**: Built on the latest version for a sleek design.
+- **Dark & Light Modes**: Switch between themes seamlessly.
+- **Latest Tech Stack**: NextJs 13.4.x (`app` directory), Typescript, and TailwindCss.
+- **React Ecosystem**: HeadlessUI components, React v.18.x, Google Map React, React-datepicker, and more.
+- **Code Quality**: Proptypes checking, React hooks, and Prettier for a consistent codebase.
+- **Interactive Components**: Over 8 listing cards, modal gallery, checkout pages, and more.
+- **Built-in React Packages**: A collection of essential packages for a smooth development experience.
 
-## Getting Started
+## 📦 In The Box
 
-### Installation
+- Full source code of the theme.
+- All React component files.
+- CSS & SCSS source codes.
+- All plugins & libraries.
+- Comprehensive documentation.
 
-Install the dependencies:
+## 🚀 Getting Started
 
-```bash
-npm install
-```
+1. Clone the repository.
+2. Navigate to the `app` directory.
+3. Install dependencies using `npm install` or `yarn install`.
+4. Run the development server using `npm run dev` or `yarn dev`.
+5. Explore the documentation for more details.
 
-### Development
+## 🙏 Acknowledgements
 
-Start the development server with HMR:
-
-```bash
-npm run dev
-```
-
-Your application will be available at `http://localhost:5173`.
-
-## Building for Production
-
-Create a production build:
-
-```bash
-npm run build
-```
-
-## Deployment
-
-### Docker Deployment
-
-To build and run using Docker:
-
-```bash
-docker build -t my-app .
-
-# Run the container
-docker run -p 3000:3000 my-app
-```
-
-The containerized application can be deployed to any platform that supports Docker, including:
-
-- AWS ECS
-- Google Cloud Run
-- Azure Container Apps
-- Digital Ocean App Platform
-- Fly.io
-- Railway
-
-### DIY Deployment
-
-If you're familiar with deploying Node applications, the built-in app server is production-ready.
-
-Make sure to deploy the output of `npm run build`
-
-```
-├── package.json
-├── package-lock.json (or pnpm-lock.yaml, or bun.lockb)
-├── build/
-│   ├── client/    # Static assets
-│   └── server/    # Server-side code
-```
-
-## Styling
-
-This template comes with [Tailwind CSS](https://tailwindcss.com/) already configured for a simple default starting experience. You can use whatever CSS framework you prefer.
+A big shoutout to all the libraries, plugins, and assets that made this project possible.
 
 ---
 
-Built with ❤️ using React Router.
+Crafted with ❤️ by [Hamed Hasan](https://github.com/Hamed-Hasan). Connect with me on [LinkedIn](https://www.linkedin.com/in/hamed-hasan).
