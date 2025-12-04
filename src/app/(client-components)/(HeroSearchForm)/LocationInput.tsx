@@ -12,6 +12,7 @@ export interface LocationInputProps {
   className?: string;
   divHideVerticalLineClass?: string;
   autoFocus?: boolean;
+  onLocationSelect?: (selectedValue: any) => void;
 }
 
 const LocationInput: FC<LocationInputProps> = ({
@@ -20,6 +21,7 @@ const LocationInput: FC<LocationInputProps> = ({
   desc = "Which location you are?",
   className = "nc-flex-1.5",
   divHideVerticalLineClass = "left-10 -right-0.5",
+  onLocationSelect,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -61,7 +63,10 @@ const LocationInput: FC<LocationInputProps> = ({
 
   const handleSelectLocation = (item: any) => {
     setValue(item.name + (item.state ? ", " + item.state : ""));
-    setShowPopover(false);
+    setShowPopover(false); // Close the popover after selection
+    setFocusedIndex(-1);
+    if (inputRef.current) inputRef.current.blur(); // Remove focus from input
+    if (onLocationSelect) onLocationSelect(item);
   };
 
   const {
@@ -100,8 +105,12 @@ const LocationInput: FC<LocationInputProps> = ({
           (prev) => (prev - 1 + filteredCities.length) % filteredCities.length
         );
         e.preventDefault();
-      } else if (e.key === "Enter" && focusedIndex >= 0) {
-        handleSelectLocation(filteredCities[focusedIndex]);
+      } else if (e.key === "Enter") {
+        if (focusedIndex >= 0) {
+          handleSelectLocation(filteredCities[focusedIndex]);
+        } else if (filteredCities.length === 1) {
+          handleSelectLocation(filteredCities[0]);
+        }
         e.preventDefault();
       }
     };
@@ -184,16 +193,19 @@ const LocationInput: FC<LocationInputProps> = ({
             autoFocus={showPopover}
             onChange={(e) => {
               setValue(e.currentTarget.value);
+              setShowPopover(true);
             }}
             ref={inputRef}
           />
           <span className="block mt-0.5 text-sm text-neutral-400 font-light ">
             <span className="line-clamp-1">{!!value ? placeHolder : desc}</span>
           </span>
-          {value && showPopover && (
+          {((value && showPopover) || (value && !showPopover)) && (
             <ClearDataButton
               onClick={() => {
                 setValue("");
+                setShowPopover(true);
+                if (inputRef.current) inputRef.current.focus();
               }}
             />
           )}

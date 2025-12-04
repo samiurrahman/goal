@@ -1,4 +1,4 @@
-import React, { FC, useState } from "react";
+import React, { FC, useState, useRef } from "react";
 import LocationInput from "../LocationInput";
 import GuestsInput from "../GuestsInput";
 import StayDatesRangeInput from "./StayDatesRangeInput";
@@ -7,6 +7,16 @@ const StaySearchForm: FC<{}> = ({}) => {
   const [dropOffLocationType, setDropOffLocationType] = useState<
     "Umrah" | "Hajj"
   >("Umrah");
+  const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const dateRangeRef = useRef<HTMLButtonElement>(null);
+
+  const handleLocationSelect = (value: any) => {
+    setSelectedLocation(value);
+    // Focus the StayDatesRangeInput when location is selected
+    if (dateRangeRef.current) {
+      dateRangeRef.current.focus();
+    }
+  };
 
   const renderRadioBtn = () => {
     return (
@@ -40,7 +50,10 @@ const StaySearchForm: FC<{}> = ({}) => {
       <form className="w-full relative rounded-[40px] xl:rounded-[49px] rounded-t-2xl xl:rounded-t-3xl shadow-xl dark:shadow-2xl bg-white dark:bg-neutral-800 ">
         {renderRadioBtn()}
         <div className={`relative flex flex-row`}>
-          <LocationInput className="flex-[1.5]" />
+          <LocationInput
+            className="flex-[1.5]"
+            onLocationSelect={handleLocationSelect}
+          />
           <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
           <StayDatesRangeInput className="flex-1" />
           <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
