@@ -1,15 +1,12 @@
 import React, { FC } from "react";
 import Logo from "@/shared/Logo";
 import MenuBar from "@/shared/MenuBar";
-import LangDropdown from "./LangDropdown";
 import NotifyDropdown from "./NotifyDropdown";
 import AvatarDropdown from "./AvatarDropdown";
-import DropdownTravelers from "./DropdownTravelers";
 import HeroSearchForm2MobileFactory from "../(HeroSearchForm2Mobile)/HeroSearchForm2MobileFactory";
 import Link from "next/link";
-import TemplatesDropdown from "./TemplatesDropdown";
 import { Route } from "@/routers/types";
-import { MapPinIcon, PercentBadgeIcon } from "@heroicons/react/24/outline";
+import { PercentBadgeIcon } from "@heroicons/react/24/outline";
 
 export interface MainNav2Props {
   className?: string;
