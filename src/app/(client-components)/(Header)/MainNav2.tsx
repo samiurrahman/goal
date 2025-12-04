@@ -6,7 +6,7 @@ import AvatarDropdown from "./AvatarDropdown";
 import HeroSearchForm2MobileFactory from "../(HeroSearchForm2Mobile)/HeroSearchForm2MobileFactory";
 import Link from "next/link";
 import { Route } from "@/routers/types";
-import { PercentBadgeIcon } from "@heroicons/react/24/outline";
+// import { PercentBadgeIcon } from "@heroicons/react/24/outline";
 
 export interface MainNav2Props {
   className?: string;
@@ -34,7 +34,7 @@ const MainNav2: FC<MainNav2Props> = ({ className = "" }) => {
               href={"/add-listing" as Route<string>}
               className="self-center text-opacity-90 group px-4 py-2 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-700 rounded-full inline-flex items-center text-sm text-gray-700 dark:text-neutral-300 font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
             >
-              <PercentBadgeIcon className="w-5 h-5 lg:w-7 lg:h-7 mr-1" />
+              {/* <PercentBadgeIcon className="w-5 h-5 lg:w-7 lg:h-7 mr-1" /> */}
               Offers
             </Link>
 
