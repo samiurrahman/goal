@@ -26,6 +26,7 @@ const LocationInput: FC<LocationInputProps> = ({
 
   const [value, setValue] = useState("");
   const [showPopover, setShowPopover] = useState(autoFocus);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
 
   useEffect(() => {
     setShowPopover(autoFocus);
@@ -59,25 +60,59 @@ const LocationInput: FC<LocationInputProps> = ({
   };
 
   const handleSelectLocation = (item: any) => {
-    setValue(item.district);
+    setValue(item.name + (item.state ? ", " + item.state : ""));
     setShowPopover(false);
   };
 
   const {
-    data: locations_maharashtra,
+    data: cities,
     error,
     isLoading,
   } = useQuery({
-    queryKey: ["locations_maharashtra"],
+    queryKey: ["cities"],
     queryFn: async () => {
-      let { data: locations_maharashtra, error } = await supabase
-        .from("locations_maharashtra")
-        .select("*");
+      let { data: cities, error } = await supabase.from("cities").select("*");
+
       if (error) throw error;
-      return locations_maharashtra;
+      return cities;
     },
   });
-  console.log("locations_maharashtra", locations_maharashtra);
+
+  // Filter cities based on input value
+  const filteredCities = value
+    ? cities?.filter((item) =>
+        (item.name + ", " + item.state)
+          .toLowerCase()
+          .includes(value.toLowerCase())
+      )
+    : cities;
+
+  // Handle keyboard navigation
+  useEffect(() => {
+    if (!showPopover) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!filteredCities || filteredCities.length === 0) return;
+      if (e.key === "ArrowDown") {
+        setFocusedIndex((prev) => (prev + 1) % filteredCities.length);
+        e.preventDefault();
+      } else if (e.key === "ArrowUp") {
+        setFocusedIndex(
+          (prev) => (prev - 1 + filteredCities.length) % filteredCities.length
+        );
+        e.preventDefault();
+      } else if (e.key === "Enter" && focusedIndex >= 0) {
+        handleSelectLocation(filteredCities[focusedIndex]);
+        e.preventDefault();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [showPopover, filteredCities, focusedIndex]);
+
+  // Reset focus index when value or popover changes
+  useEffect(() => {
+    setFocusedIndex(-1);
+  }, [value, showPopover]);
 
   const renderRecentSearches = () => {
     return (
@@ -86,17 +121,19 @@ const LocationInput: FC<LocationInputProps> = ({
           Locations
         </h3>
         <div className="mt-2">
-          {locations_maharashtra?.map((item) => (
+          {filteredCities?.map((item, idx) => (
             <span
               onClick={() => handleSelectLocation(item)}
-              key={item}
-              className="flex px-4 sm:px-8 items-center space-x-3 sm:space-x-4 py-4 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer"
+              key={item.id}
+              className={`flex px-4 sm:px-8 items-center space-x-3 sm:space-x-4 py-4 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer ${
+                focusedIndex === idx ? "bg-blue-100 dark:bg-blue-900" : ""
+              }`}
             >
               <span className="block text-neutral-400">
                 <ClockIcon className="h-4 sm:h-6 w-4 sm:w-6" />
               </span>
               <span className=" block font-medium text-neutral-700 dark:text-neutral-200">
-                {item.district}
+                {item.name}, {item.state}
               </span>
             </span>
           ))}
@@ -108,17 +145,19 @@ const LocationInput: FC<LocationInputProps> = ({
   const renderSearchValue = () => {
     return (
       <>
-        {locations_maharashtra?.map((item) => (
+        {filteredCities?.map((item, idx) => (
           <span
             onClick={() => handleSelectLocation(item)}
-            key={item}
-            className="flex px-4 sm:px-8 items-center space-x-3 sm:space-x-4 py-4 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer"
+            key={item.id}
+            className={`flex px-4 sm:px-8 items-center space-x-3 sm:space-x-4 py-4 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer ${
+              focusedIndex === idx ? "bg-blue-100 dark:bg-blue-900" : ""
+            }`}
           >
             <span className="block text-neutral-400">
               <ClockIcon className="h-4 w-4 sm:h-6 sm:w-6" />
             </span>
             <span className="block font-medium text-neutral-700 dark:text-neutral-200">
-              {item}
+              {item.name}, {item.state}
             </span>
           </span>
         ))}
@@ -168,7 +207,7 @@ const LocationInput: FC<LocationInputProps> = ({
       )}
 
       {showPopover && (
-        <div className="absolute left-0 z-40 w-full min-w-[300px] sm:min-w-[500px] bg-white dark:bg-neutral-800 top-full mt-3 py-3 sm:py-6 rounded-3xl shadow-xl max-h-96 overflow-y-auto">
+        <div className="absolute left-0 z-40 w-full min-w-[300px] sm:min-w-[500px] bg-white dark:bg-neutral-800 top-full mt-3 py-3 sm:py-6 rounded-3xl shadow-xl max-h-[60vh] overflow-y-auto">
           {value ? renderSearchValue() : renderRecentSearches()}
         </div>
       )}

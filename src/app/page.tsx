@@ -23,7 +23,7 @@ function PageHome() {
 
       <div className="container relative space-y-24 mb-24 lg:space-y-28 lg:mb-28">
         {/* SECTION HERO */}
-        <SectionHero className="pt-10 lg:pt-16 lg:pb-16" />
+        <SectionHero className="lg:pb-16" />
 
         {/* SECTION 1 */}
         {/* <SectionSliderNewCategories categories={DEMO_CATS} /> */}
