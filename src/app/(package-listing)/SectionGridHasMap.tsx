@@ -11,24 +11,57 @@ import Heading2 from "@/shared/Heading2";
 import CarCardH from "@/components/CarCardH";
 import AnyReactComponent from "@/components/AnyReactComponent/AnyReactComponent";
 import { supabase } from "@/utils/supabaseClient";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useRef, useEffect } from "react";
+import { CarDataType } from "@/data/types";
 
 export interface SectionGridHasMapProps {}
 
+const PAGE_SIZE = 20;
+
 const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
   const {
-    data: sampleListings,
+    data,
     error,
     isLoading,
-  } = useQuery({
-    queryKey: ["listing"],
-    queryFn: async () => {
-      let { data: sample, error } = await supabase.from("sample").select("*");
-
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useInfiniteQuery<CarDataType[], Error>({
+    queryKey: ["sample"],
+    queryFn: async ({ pageParam = 0 }) => {
+      const page = typeof pageParam === "number" ? pageParam : 0;
+      const { data: sample, error } = await supabase
+        .from("sample")
+        .select("*")
+        .range(page, page + PAGE_SIZE - 1);
       if (error) throw error;
-      return sample;
+      return sample as CarDataType[];
     },
+    getNextPageParam: (lastPage, allPages) => {
+      if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
+      return allPages.length * PAGE_SIZE;
+    },
+    initialPageParam: 0,
   });
+
+  // Infinite scroll observer
+  const loaderRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        fetchNextPage();
+      }
+    });
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => {
+      if (loaderRef.current) observer.unobserve(loaderRef.current);
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+
+  const sampleListings: CarDataType[] =
+    data?.pages.flatMap((page) => page as CarDataType[]) || [];
 
   return (
     <div>
@@ -39,7 +72,7 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
             heading="Cars in Tokyo"
             subHeading={
               <span className="block text-neutral-500 dark:text-neutral-400 mt-3">
-                233 cars
+                {sampleListings.length} cars
                 <span className="mx-2">·</span>
                 Aug 12 - 18
               </span>
@@ -49,12 +82,16 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
             <TabFilters />
           </div>
           <div className="grid grid-cols-1 gap-8">
-            {sampleListings?.map((item) => (
+            {sampleListings.map((item) => (
               <CarCardH data={item} key={item.id} />
             ))}
           </div>
-          <div className="flex mt-16 justify-center items-center">
-            <Pagination />
+          <div
+            ref={loaderRef}
+            className="flex mt-8 justify-center items-center"
+          >
+            {isFetchingNextPage && <span>Loading more...</span>}
+            {!hasNextPage && <span>No more cars to load.</span>}
           </div>
         </div>
       </div>
