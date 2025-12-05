@@ -5,7 +5,7 @@ import HeroSearchForm from "../(client-components)/(HeroSearchForm)/HeroSearchFo
 import Image from "next/image";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import SectionHowItWork from "@/components/SectionHowItWork";
-import TypingAnimation from "@/components/TypingAnimation";
+// import TypingAnimation from "@/components/TypingAnimation";
 
 export interface SectionHeroProps {
   className?: string;
@@ -24,11 +24,11 @@ const SectionHero: FC<SectionHeroProps> = ({ className = "" }) => {
           <h2 className="font-medium text-4xl md:text-4xl xl:text-6xl !leading-[114%] ">
             Better{" "}
             <span className="inline-block">
-              <TypingAnimation
+              {/* <TypingAnimation
                 words={["Search.", "Compare.", "Perform."]}
                 speed={100}
                 pause={1200}
-              />
+              /> */}
             </span>
           </h2>
         </div>

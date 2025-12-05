@@ -10,14 +10,25 @@ import TabFilters from "./TabFilters";
 import Heading2 from "@/shared/Heading2";
 import CarCardH from "@/components/CarCardH";
 import AnyReactComponent from "@/components/AnyReactComponent/AnyReactComponent";
-
-const DEMO_CARS = DEMO_CAR_LISTINGS.filter((_, i) => i < 12);
+import { supabase } from "@/utils/supabaseClient";
+import { useQuery } from "@tanstack/react-query";
 
 export interface SectionGridHasMapProps {}
 
 const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
-  const [currentHoverID, setCurrentHoverID] = useState<string | number>(-1);
-  const [showFullMapFixed, setShowFullMapFixed] = useState(false);
+  const {
+    data: sampleListings,
+    error,
+    isLoading,
+  } = useQuery({
+    queryKey: ["listing"],
+    queryFn: async () => {
+      let { data: sample, error } = await supabase.from("sample").select("*");
+
+      if (error) throw error;
+      return sample;
+    },
+  });
 
   return (
     <div>
@@ -38,14 +49,8 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
             <TabFilters />
           </div>
           <div className="grid grid-cols-1 gap-8">
-            {DEMO_CARS.map((item) => (
-              <div
-                key={item.id}
-                onMouseEnter={() => setCurrentHoverID((_) => item.id)}
-                onMouseLeave={() => setCurrentHoverID((_) => -1)}
-              >
-                <CarCardH data={item} />
-              </div>
+            {sampleListings?.map((item) => (
+              <CarCardH data={item} key={item.id} />
             ))}
           </div>
           <div className="flex mt-16 justify-center items-center">

@@ -14,9 +14,7 @@ export interface CarCardHProps {
   data?: CarDataType;
 }
 
-const DEMO_DATA: CarDataType = DEMO_CAR_LISTINGS[0];
-
-const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
+const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
   const {
     address,
     title,
@@ -35,12 +33,12 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
     return (
       <div className="relative w-full flex items-center justify-center md:w-72 flex-shrink-0 border-r border-neutral-200/80 dark:border-neutral-700">
         <div className="w-full py-5 sm:py-0">
-          <Image
+          {/* <Image
             alt=""
             className="w-full"
             src={featuredImage}
             sizes="(max-width: 640px) 100vw, 300px"
-          />
+          /> */}
         </div>
         <BtnLikeIcon isLiked={like} className="absolute right-3 top-3" />
         {saleOff && <SaleOffBadge className="absolute left-3 top-3" />}
@@ -106,10 +104,10 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
         <div className="w-14 border-b border-neutral-200/80 dark:border-neutral-700 my-4"></div>
         <div className="flex justify-between items-end">
           <div className="flex items-center space-x-3 text-sm text-neutral-700  dark:text-neutral-300">
-            <Avatar imgUrl={author.avatar} userName={author.displayName} />
+            {/* <Avatar imgUrl={author.avatar} userName={author.displayName} /> */}
             <span className="hidden sm:inline-block">
               <span className="hidden sm:inline">Car owner </span>{" "}
-              {author.displayName}
+              {/* {author.displayName} */}
             </span>
           </div>
           <span className="text-lg font-semibold text-secondary-700">
@@ -128,7 +126,7 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = DEMO_DATA }) => {
     <div
       className={`nc-CarCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden ${className}`}
     >
-      <Link href={href} className="flex flex-col md:flex-row">
+      <Link href={href || "#"} className="flex flex-col md:flex-row">
         {renderSliderGallery()}
         {renderContent()}
       </Link>
