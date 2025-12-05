@@ -1,15 +1,8 @@
 "use client";
 
-import React, { FC, useState } from "react";
-import GoogleMapReact from "google-map-react";
-import { DEMO_CAR_LISTINGS } from "@/data/listings";
-import ButtonClose from "@/shared/ButtonClose";
-import Checkbox from "@/shared/Checkbox";
-import Pagination from "@/shared/Pagination";
+import React, { FC } from "react";
 import TabFilters from "./TabFilters";
-import Heading2 from "@/shared/Heading2";
 import CarCardH from "@/components/CarCardH";
-import AnyReactComponent from "@/components/AnyReactComponent/AnyReactComponent";
 import { supabase } from "@/utils/supabaseClient";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRef, useEffect } from "react";
