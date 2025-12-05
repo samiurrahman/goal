@@ -68,7 +68,7 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
       <div className="relative flex min-h-screen">
         {/* CARDSSSS */}
         <div className="min-h-screen w-full flex-shrink-0 px-4 sm:px-6 md:px-8 ">
-          <Heading2
+          {/* <Heading2
             heading="Cars in Tokyo"
             subHeading={
               <span className="block text-neutral-500 dark:text-neutral-400 mt-3">
@@ -77,8 +77,8 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
                 Aug 12 - 18
               </span>
             }
-          />
-          <div className="mb-8 lg:mb-11">
+          /> */}
+          <div className="mb-8 lg:mb-11 mt-6">
             <TabFilters />
           </div>
           <div className="grid grid-cols-1 gap-8">
