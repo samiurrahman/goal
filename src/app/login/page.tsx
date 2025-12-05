@@ -14,16 +14,6 @@ export interface PageLoginProps {}
 
 const loginSocials = [
   {
-    name: "Continue with Facebook",
-    href: "#",
-    icon: facebookSvg,
-  },
-  {
-    name: "Continue with Twitter",
-    href: "#",
-    icon: twitterSvg,
-  },
-  {
     name: "Continue with Google",
     href: "#",
     icon: googleSvg,
@@ -61,22 +51,36 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
         </h2>
         <div className="max-w-md mx-auto space-y-6">
           <div className="grid gap-3">
-            {loginSocials.map((item, index) => (
-              <a
-                key={index}
-                href={item.href}
-                className="flex w-full rounded-lg bg-primary-50 dark:bg-neutral-800 px-4 py-3 transform transition-transform sm:px-6 hover:translate-y-[-2px]"
-              >
-                <Image
-                  className="flex-shrink-0"
-                  src={item.icon}
-                  alt={item.name}
-                />
-                <h3 className="flex-grow text-center text-sm font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
-                  {item.name}
-                </h3>
-              </a>
-            ))}
+            <button
+              type="button"
+              className="flex w-full rounded-lg bg-primary-50 dark:bg-neutral-800 px-4 py-3 transform transition-transform sm:px-6 hover:translate-y-[-2px]"
+              onClick={async () => {
+                setLoading(true);
+                setError(null);
+                const { error } = await supabase.auth.signInWithOAuth({
+                  provider: "google",
+                  options: {
+                    redirectTo:
+                      typeof window !== "undefined"
+                        ? window.location.origin
+                        : undefined,
+                  },
+                });
+                setLoading(false);
+                if (error) setError(error.message);
+              }}
+              disabled={loading}
+            >
+              <Image
+                className="flex-shrink-0"
+                src={googleSvg}
+                alt="Continue with Google"
+              />
+              <h3 className="flex-grow text-center text-sm font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
+                Continue with Google
+              </h3>
+            </button>
+            {error && <span className="text-red-500 text-sm">{error}</span>}
           </div>
           {/* OR */}
           <div className="relative text-center">

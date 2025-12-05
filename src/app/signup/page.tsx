@@ -53,6 +53,19 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
     }
   };
 
+  const handleOAuthSignUp = async (provider: "google") => {
+    setLoading(true);
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: window.location.origin,
+      },
+    });
+    setLoading(false);
+    if (error) setError(error.message);
+  };
+
   return (
     <div className={`nc-PageSignUp  `}>
       <div className="container mb-24 lg:mb-32">
@@ -61,22 +74,21 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
         </h2>
         <div className="max-w-md mx-auto space-y-6 ">
           <div className="grid gap-3">
-            {loginSocials.map((item, index) => (
-              <a
-                key={index}
-                href={item.href}
-                className="nc-will-change-transform flex w-full rounded-lg bg-primary-50 dark:bg-neutral-800 px-4 py-3 transform transition-transform sm:px-6 hover:translate-y-[-2px]"
-              >
-                <Image
-                  className="flex-shrink-0"
-                  src={item.icon}
-                  alt={item.name}
-                />
-                <h3 className="flex-grow text-center text-sm font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
-                  {item.name}
-                </h3>
-              </a>
-            ))}
+            <button
+              type="button"
+              className="nc-will-change-transform flex w-full rounded-lg bg-primary-50 dark:bg-neutral-800 px-4 py-3 transform transition-transform sm:px-6 hover:translate-y-[-2px]"
+              onClick={() => handleOAuthSignUp("google")}
+              disabled={loading}
+            >
+              <Image
+                className="flex-shrink-0"
+                src={googleSvg}
+                alt="Continue with Google"
+              />
+              <h3 className="flex-grow text-center text-sm font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
+                Continue with Google
+              </h3>
+            </button>
           </div>
           {/* OR */}
           <div className="relative text-center">
