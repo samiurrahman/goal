@@ -6,7 +6,7 @@ import CarCardH from "@/components/CarCardH";
 import { supabase } from "@/utils/supabaseClient";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useRef, useEffect } from "react";
-import { CarDataType } from "@/data/types";
+import { PackageListing } from "@/data/types";
 
 export interface SectionGridHasMapProps {}
 
@@ -20,7 +20,7 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery<CarDataType[], Error>({
+  } = useInfiniteQuery<PackageListing[], Error>({
     queryKey: ["packages"],
     queryFn: async ({ pageParam = 0 }) => {
       const page = typeof pageParam === "number" ? pageParam : 0;
@@ -29,7 +29,7 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
         .select("*")
         .range(page, page + PAGE_SIZE - 1);
       if (error) throw error;
-      return sample as CarDataType[];
+      return sample as PackageListing[];
     },
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
@@ -53,8 +53,8 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const sampleListings: CarDataType[] =
-    data?.pages.flatMap((page) => page as CarDataType[]) || [];
+  const sampleListings: PackageListing[] =
+    data?.pages.flatMap((page) => page as PackageListing[]) || [];
 
   return (
     <div>
