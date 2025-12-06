@@ -24,12 +24,12 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
     queryKey: ["packages"],
     queryFn: async ({ pageParam = 0 }) => {
       const page = typeof pageParam === "number" ? pageParam : 0;
-      const { data: sample, error } = await supabase
+      const { data, error } = await supabase
         .from("packages")
         .select("*")
         .range(page, page + PAGE_SIZE - 1);
       if (error) throw error;
-      return sample as PackageListing[];
+      return data as PackageListing[];
     },
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
@@ -53,7 +53,7 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const sampleListings: PackageListing[] =
+  const PackageListings: PackageListing[] =
     data?.pages.flatMap((page) => page as PackageListing[]) || [];
 
   return (
@@ -75,7 +75,7 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
             <TabFilters />
           </div>
           <div className="grid grid-cols-1 gap-8">
-            {sampleListings.map((item) => (
+            {PackageListings.map((item) => (
               <CarCardH data={item} key={item.id} />
             ))}
           </div>
