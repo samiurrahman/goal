@@ -40,7 +40,7 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
           <Image
             alt=""
             className="w-full"
-            src={thumbnail_url}
+            src={thumbnail_url || "/default-image.jpg"}
             width={865}
             height={466}
             sizes="(max-width: 640px) 100vw, 300px"
