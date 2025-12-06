@@ -21,11 +21,11 @@ const SectionGridHasMap: FC<SectionGridHasMapProps> = () => {
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery<CarDataType[], Error>({
-    queryKey: ["sample"],
+    queryKey: ["packages"],
     queryFn: async ({ pageParam = 0 }) => {
       const page = typeof pageParam === "number" ? pageParam : 0;
       const { data: sample, error } = await supabase
-        .from("sample")
+        .from("packages")
         .select("*")
         .range(page, page + PAGE_SIZE - 1);
       if (error) throw error;

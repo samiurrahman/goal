@@ -115,6 +115,49 @@ export interface ExperiencesDataType {
   };
 }
 
+// types/package.ts
+
+export type PackageType = "UMRAH" | "HAJJ";
+
+export interface PackageListing {
+  id: number;
+  slug: string;
+  type: PackageType;
+
+  title: string;
+  short_description: string | null;
+
+  total_duration_days: number;
+  makkah_days: number;
+  madinah_days: number;
+
+  price_per_person: number;
+  currency: string; // 'SAR' | 'USD' | 'INR' etc.
+
+  departure_city: string | null;
+  departure_date: string; // ISO date string: '2025-03-10'
+
+  includes_breakfast: boolean;
+  includes_airport_transfer: boolean;
+  includes_visa: boolean;
+  includes_zamzam: boolean;
+  zamzam_liters: number;
+
+  total_seats: number;
+  booked_seats: number;
+  seats_left: number;
+
+  thumbnail_url: string | null;
+
+  makkah_hotel_name: string | null;
+  makkah_hotel_distance_m: number | null;
+
+  madinah_hotel_name: string | null;
+  madinah_hotel_distance_m: number | null;
+
+  agent_name: string | null;
+}
+
 //
 export interface CarDataType {
   id: string | number;

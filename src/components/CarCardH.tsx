@@ -1,6 +1,6 @@
 import React, { FC } from "react";
 import { DEMO_CAR_LISTINGS } from "@/data/listings";
-import { CarDataType } from "@/data/types";
+import { CarDataType, PackageListing } from "@/data/types";
 import StartRating from "@/components/StartRating";
 import BtnLikeIcon from "@/components/BtnLikeIcon";
 import SaleOffBadge from "@/components/SaleOffBadge";
@@ -11,22 +11,26 @@ import Link from "next/link";
 
 export interface CarCardHProps {
   className?: string;
-  data?: CarDataType;
+  data?: PackageListing;
 }
 
 const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
   const {
-    address,
     title,
-    href,
-    like,
-    saleOff,
-    isAds,
-    price,
-    reviewStart,
-    reviewCount,
-    author,
-    featuredImage,
+    price_per_person,
+    currency,
+    thumbnail_url,
+    makkah_days,
+    madinah_days,
+    short_description,
+    includes_breakfast,
+    includes_airport_transfer,
+    includes_visa,
+    includes_zamzam,
+    zamzam_liters,
+    seats_left,
+    slug,
+    agent_name,
   } = data;
 
   const renderSliderGallery = () => {
@@ -40,8 +44,13 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
             sizes="(max-width: 640px) 100vw, 300px"
           /> */}
         </div>
-        <BtnLikeIcon isLiked={like} className="absolute right-3 top-3" />
-        {saleOff && <SaleOffBadge className="absolute left-3 top-3" />}
+        <BtnLikeIcon
+          isLiked={includes_breakfast}
+          className="absolute right-3 top-3"
+        />
+        {includes_breakfast && (
+          <SaleOffBadge className="absolute left-3 top-3" />
+        )}
       </div>
     );
   };
@@ -51,19 +60,19 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
       <div className="flex-grow p-3 sm:p-5 flex flex-col">
         <div className="space-y-2">
           <div className="flex items-center space-x-2">
-            {isAds && <Badge name="ADS" color="green" />}
+            {includes_breakfast && <Badge name="ADS" color="green" />}
             <h2 className="text-xl font-semibold capitalize">
               <span className="line-clamp-1">{title}</span>
             </h2>
           </div>
           <div className="flex items-center space-x-4 text-sm text-neutral-500 dark:text-neutral-400">
-            <StartRating reviewCount={reviewCount} point={reviewStart} />
+            {/* <StartRating reviewCount={reviewCount} point={reviewStart} /> */}
             <span>· </span>
             <div className="flex items-center">
               <span className="hidden sm:inline-block  text-base">
                 <i className="las la-map-marked"></i>
               </span>
-              <span className="sm:ml-2 line-clamp-1"> {address}</span>
+              <span className="sm:ml-2 line-clamp-1"> {short_description}</span>
             </div>
           </div>
         </div>
@@ -106,15 +115,16 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
           <div className="flex items-center space-x-3 text-sm text-neutral-700  dark:text-neutral-300">
             {/* <Avatar imgUrl={author.avatar} userName={author.displayName} /> */}
             <span className="hidden sm:inline-block">
-              <span className="hidden sm:inline">Car owner </span>{" "}
+              <span className="hidden sm:inline">{agent_name} </span>{" "}
               {/* {author.displayName} */}
             </span>
           </div>
           <span className="text-lg font-semibold text-secondary-700">
-            {price}
+            {currency}
+            {price_per_person}
             {` `}
             <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
-              /day
+              /Person
             </span>
           </span>
         </div>
@@ -126,7 +136,7 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
     <div
       className={`nc-CarCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden ${className}`}
     >
-      <Link href={href || "#"} className="flex flex-col md:flex-row">
+      <Link href={slug || "#"} className="flex flex-col md:flex-row">
         {renderSliderGallery()}
         {renderContent()}
       </Link>
