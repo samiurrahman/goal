@@ -37,12 +37,14 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
     return (
       <div className="relative w-full flex items-center justify-center md:w-72 flex-shrink-0 border-r border-neutral-200/80 dark:border-neutral-700">
         <div className="w-full py-5 sm:py-0">
-          {/* <Image
+          <Image
             alt=""
             className="w-full"
-            src={featuredImage}
+            src={thumbnail_url}
+            width={865}
+            height={466}
             sizes="(max-width: 640px) 100vw, 300px"
-          /> */}
+          />
         </div>
         <BtnLikeIcon
           isLiked={includes_breakfast}
