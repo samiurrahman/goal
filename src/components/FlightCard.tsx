@@ -23,14 +23,14 @@ const FlightCard: FC<FlightCardProps> = ({ className = "", data }) => {
       <div>
         <div className="flex flex-col md:flex-row ">
           <div className="w-24 md:w-20 lg:w-24 flex-shrink-0 md:pt-7">
-            <Image
+            {/* <Image
               src={data.airlines.logo}
               className="w-10"
               alt=""
               sizes="40px"
               width={40}
               height={40}
-            />
+            /> */}
           </div>
           <div className="flex my-5 md:my-0">
             <div className="flex-shrink-0 flex flex-col items-center py-2">
@@ -105,14 +105,14 @@ const FlightCard: FC<FlightCardProps> = ({ className = "", data }) => {
         <div className="flex  flex-col sm:flex-row sm:items-center space-y-6 sm:space-y-0">
           {/* LOGO IMG */}
           <div className="w-24 lg:w-32 flex-shrink-0">
-            <Image
+            {/* <Image
               src={data.airlines.logo}
               width={40}
               height={40}
               className="w-10"
               alt="air-logo"
               sizes="40px"
-            />
+            /> */}
           </div>
 
           {/* FOR MOBILE RESPONSIVE */}
@@ -148,7 +148,7 @@ const FlightCard: FC<FlightCardProps> = ({ className = "", data }) => {
           <div className="hidden lg:block  min-w-[150px] flex-[4] ">
             <div className="font-medium text-lg">11:00 - 20:00</div>
             <div className="text-sm text-neutral-500 font-normal mt-0.5">
-              {data.airlines.name}
+              data.airlines.name
             </div>
           </div>
 

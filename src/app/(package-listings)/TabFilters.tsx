@@ -377,7 +377,7 @@ const TabFilters = () => {
                 open ? "!border-primary-500 " : ""
               }`}
             >
-              <span>Flight time</span>
+              <span>Hotel Distance</span>
               <i className="las la-angle-down ml-2"></i>
             </Popover.Button>
             <Transition
