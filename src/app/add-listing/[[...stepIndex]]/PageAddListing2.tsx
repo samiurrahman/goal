@@ -4,7 +4,8 @@ import { MapPinIcon } from "@heroicons/react/24/solid";
 import LocationMarker from "@/components/AnyReactComponent/LocationMarker";
 import Label from "@/components/Label";
 import GoogleMapReact from "google-map-react";
-import React, { FC } from "react";
+import React, { FC, useState } from "react";
+import { getLocation } from "@/utils/getLocation";
 import ButtonSecondary from "@/shared/ButtonSecondary";
 import Input from "@/shared/Input";
 import Select from "@/shared/Select";
@@ -13,15 +14,33 @@ import FormItem from "../FormItem";
 export interface PageAddListing2Props {}
 
 const PageAddListing2: FC<PageAddListing2Props> = () => {
+  const [loadingLocation, setLoadingLocation] = useState(false);
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
+    null
+  );
+  const handleGetLocation = async () => {
+    setLoadingLocation(true);
+    try {
+      const loc = await getLocation();
+      setLocation(loc);
+    } catch (e) {
+      alert("Unable to get your location.");
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
   return (
     <>
       <h2 className="text-2xl font-semibold">Your place location</h2>
       <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
       {/* FORM */}
       <div className="space-y-8">
-        <ButtonSecondary>
+        <ButtonSecondary onClick={handleGetLocation} disabled={loadingLocation}>
           <MapPinIcon className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-          <span className="ml-3">Use current location</span>
+          <span className="ml-3">
+            {loadingLocation ? "Getting location..." : "Use current location"}
+          </span>
         </ButtonSecondary>
         {/* ITEM */}
         <FormItem label="Country/Region">
@@ -66,12 +85,14 @@ const PageAddListing2: FC<PageAddListing2Props> = () => {
                   }}
                   yesIWantToUseGoogleMapApiInternals
                   defaultZoom={15}
-                  defaultCenter={{
-                    lat: 55.9607277,
-                    lng: 36.2172614,
-                  }}
+                  defaultCenter={
+                    location || { lat: 55.9607277, lng: 36.2172614 }
+                  }
                 >
-                  <LocationMarker lat={55.9607277} lng={36.2172614} />
+                  <LocationMarker
+                    lat={location?.lat ?? 55.9607277}
+                    lng={location?.lng ?? 36.2172614}
+                  />
                 </GoogleMapReact>
               </div>
             </div>

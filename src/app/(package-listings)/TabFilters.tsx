@@ -85,7 +85,57 @@ const TabFilters = () => {
       : setAirlinesStates(airlinesStates.filter((i) => i !== name));
   };
 
-  //
+  // Sync filters to URL and fetch data on filter change
+  React.useEffect(() => {
+    // Build SEO/user-friendly query params
+    const params = new URLSearchParams();
+
+    if (isOnSale) params.set("sale", "1");
+    if (rangePrices[0] !== 100 || rangePrices[1] !== 5000)
+      params.set("price", `${rangePrices[0]}-${rangePrices[1]}`);
+    if (tripTimes !== 10) params.set("trip", `<${tripTimes}h`);
+    if (stopPontsStates.length)
+      params.set(
+        "stops",
+        stopPontsStates
+          .map((s) => s.replace(/\s+/g, "-").toLowerCase())
+          .join(",")
+      );
+    if (airlinesStates.length)
+      params.set(
+        "airlines",
+        airlinesStates
+          .map((a) => a.replace(/\s+/g, "-").toLowerCase())
+          .join(",")
+      );
+    // Flight times
+    Object.entries(catTimes).forEach(([key, val]) => {
+      params.set(
+        key.replace(/\s+/g, "").toLowerCase(),
+        `dep${val.Departure[0]}-${val.Departure[1]}_arr${val.Arrival[0]}-${val.Arrival[1]}`
+      );
+    });
+
+    // Update URL (without reload)
+    const url = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState({}, "", url);
+
+    // Fetch API with filters
+    fetch(`/api/flights?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        // handle data (e.g. set state)
+        // console.log("API data:", data);
+      });
+  }, [
+    isOnSale,
+    rangePrices,
+    tripTimes,
+    stopPontsStates,
+    airlinesStates,
+    catTimes,
+  ]);
+  console.log("called");
 
   const renderXClear = () => {
     return (
