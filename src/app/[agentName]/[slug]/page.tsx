@@ -22,10 +22,14 @@ import GuestsInput from "./GuestsInput";
 import SectionDateRange from "../SectionDateRange";
 import { Route } from "next";
 
-export interface ListingStayDetailPageProps {}
+export interface ListingStayDetailPageProps {
+  params: { agentName: string; slug: string };
+}
 
-const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({}) => {
-  //
+const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({ params }) => {
+  const { agentName, slug } = params;
+  console.log(agentName);
+  console.log(slug);
 
   let [isOpenModalAmenities, setIsOpenModalAmenities] = useState(false);
 

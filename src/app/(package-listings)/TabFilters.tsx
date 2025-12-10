@@ -181,8 +181,6 @@ const TabFilters = () => {
     window.addEventListener("popstate", syncFiltersFromUrl);
     return () => window.removeEventListener("popstate", syncFiltersFromUrl);
   }, []);
-  console.log("called");
-
   const renderXClear = () => {
     return (
       <span className="w-4 h-4 rounded-full bg-primary-500 text-white flex items-center justify-center ml-3 cursor-pointer">

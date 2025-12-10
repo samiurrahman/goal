@@ -7,9 +7,9 @@ import SectionSubscribe2 from "@/components/SectionSubscribe2";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React, { ReactNode } from "react";
 import MobileFooterSticky from "./(components)/MobileFooterSticky";
-import { imageGallery as listingStayImageGallery } from "./package-detail/constant";
-import { imageGallery as listingCarImageGallery } from "./package-detail/constant";
-import { imageGallery as listingExperienceImageGallery } from "./package-detail/constant";
+import { imageGallery as listingStayImageGallery } from "./[slug]/constant";
+import { imageGallery as listingCarImageGallery } from "./[slug]/constant";
+import { imageGallery as listingExperienceImageGallery } from "./[slug]/constant";
 import { Route } from "next";
 
 const DetailtLayout = ({ children }: { children: ReactNode }) => {

@@ -10,7 +10,7 @@ import Avatar from "@/shared/Avatar";
 import SaleOffBadge from "./SaleOffBadge";
 import { Package } from "@/data/types";
 import { formatPrice } from "@/utils/formatPrice";
-import { Amenities_demos } from "@/app/(listing-detail)/package-detail/constant";
+import { Amenities_demos } from "@/app/[agentName]/[slug]/constant";
 
 export interface PackageCardProps {
   className?: string;
@@ -30,6 +30,7 @@ const PackageCard: FC<PackageCardProps> = ({
     location,
     thumbnail_url,
     slug,
+    agent_name,
   } = data as Package;
 
   const renderDetail = () => {
@@ -59,7 +60,7 @@ const PackageCard: FC<PackageCardProps> = ({
           className="font-medium text-lg cursor-pointer text-primary-700 hover:underline"
           onClick={() => {
             if (slug) {
-              router.push(`/package-detail/${slug}`);
+              router.push(`/${agent_name}/${slug}`);
             }
           }}
         >
