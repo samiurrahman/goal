@@ -35,13 +35,14 @@ const PropertyCardH: FC<PropertyCardHProps> = ({
   const renderSliderGallery = () => {
     return (
       <div className="flex-shrink-0 p-3 w-full sm:w-64 ">
-        <GallerySlider
-          ratioClass="aspect-w-1 aspect-h-1"
-          galleryImgs={galleryImgs}
-          className="w-full h-full rounded-2xl overflow-hidden"
-          uniqueID={`PropertyCardH_${id}`}
-          href={href}
-        />
+        {/* <Image
+              src={data.airlines.logo}
+              width={40}
+              height={40}
+              className="w-10"
+              alt="air-logo"
+              sizes="40px"
+            /> */}
 
         {saleOff && (
           <SaleOffBadge className="absolute left-5 top-5 !bg-orange-500" />
@@ -131,7 +132,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({
     <div
       className={`nc-PropertyCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-3xl overflow-hidden ${className}`}
     >
-      <Link href={href} className="absolute inset-0"></Link>
+      {/* <Link href={href} className="absolute inset-0"></Link> */}
       <div className="h-full w-full flex flex-col sm:flex-row sm:items-center">
         {renderSliderGallery()}
         {renderContent()}

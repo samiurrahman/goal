@@ -45,17 +45,20 @@ export const includes_demo = [
 ];
 
 export const Amenities_demos = [
-  { name: "59 MPG Combined, 58 City/60 Hwy", icon: carUtilities1 },
+  { name: "SightSeeing", icon: carUtilities1 },
   {
-    name: "Forward Collision-Avoidance Assist with Pedestrian Detection (FCA-Ped)",
+    name: "Meals",
     icon: carUtilities2,
   },
-  { name: "139-hp gas/electric combined", icon: carUtilities3 },
-  { name: "Proximity Key with push button start", icon: carUtilities4 },
-  { name: "8-inch color touchscreen display audio", icon: carUtilities5 },
-  { name: "Smart Cruise Control with Stop & Go (SCC)", icon: carUtilities6 },
-  { name: "LED Daytime Running Lights (DRL)", icon: carUtilities7 },
-  { name: "Blind-Spot Collision Warning (BCW)", icon: carUtilities8 },
+  { name: "Visa", icon: carUtilities3 },
+  { name: "Laundry", icon: carUtilities4 },
+  {
+    name: "Makkah Tower 1 or similler hotel in Makkah (~300m)",
+    icon: carUtilities5,
+  },
+  { name: "Ajyad hotel in Madina (~400m)", icon: carUtilities6 },
+  { name: "Makkah stay 10 Days", icon: carUtilities7 },
+  { name: "Madina stay 8 Days", icon: carUtilities8 },
 ];
 
 export const imageGallery: ListingGalleryImage[] = [...PHOTOS].map(

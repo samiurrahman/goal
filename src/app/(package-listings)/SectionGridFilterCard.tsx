@@ -1,10 +1,11 @@
 "use client";
 import React, { FC, useRef, useEffect } from "react";
 import TabFilters from "./TabFilters";
-import FlightCard, { FlightCardProps } from "@/components/FlightCard";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import { supabase } from "@/utils/supabaseClient";
 import { useInfiniteQuery } from "@tanstack/react-query";
+import { Package } from "@/data/types";
+import PackageCard from "@/components/package";
 
 export interface SectionGridFilterCardProps {
   className?: string;
@@ -22,7 +23,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useInfiniteQuery<FlightCardProps["data"][], Error>({
+  } = useInfiniteQuery<Package[], Error>({
     queryKey: ["flights"],
     queryFn: async ({ pageParam = 0 }) => {
       const page = typeof pageParam === "number" ? pageParam : 0;
@@ -31,7 +32,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
         .select("*")
         .range(page, page + PAGE_SIZE - 1);
       if (error) throw error;
-      return data as FlightCardProps["data"][];
+      return data as Package[];
     },
     getNextPageParam: (lastPage, allPages) => {
       if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
@@ -55,8 +56,8 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const flightListings: FlightCardProps["data"][] =
-    data?.pages.flatMap((page) => page as FlightCardProps["data"][]) || [];
+  const packages: Package[] =
+    data?.pages.flatMap((page) => page as Package[]) || [];
 
   return (
     <div
@@ -66,15 +67,15 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
       <div className="mb-4 lg:mb-6 mt-6">
         <TabFilters />
       </div>
-      <div className="lg:p-10 lg:bg-neutral-50 lg:dark:bg-black/20 grid grid-cols-1 gap-6  rounded-3xl">
+      <div className="lg:p-10 lg:bg-neutral-50 lg:dark:bg-black/20 grid grid-cols-1 gap-6 rounded-3xl">
         {isLoading ? (
           <div className="flex justify-center items-center py-12">
             <ButtonPrimary loading>Loading Packages</ButtonPrimary>
           </div>
         ) : (
           <>
-            {flightListings.map((item, index) => (
-              <FlightCard key={item.id || index} data={item} />
+            {packages.map((item, index) => (
+              <PackageCard key={item.id || index} data={item} />
             ))}
             <div
               ref={loaderRef}

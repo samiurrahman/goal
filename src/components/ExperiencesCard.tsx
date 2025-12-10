@@ -28,7 +28,7 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
     galleryImgs,
     address,
     title,
-    href,
+    href = "/experiences/modern-loft",
     like,
     saleOff,
     isAds,
@@ -41,12 +41,12 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
   const renderSliderGallery = () => {
     return (
       <div className="relative w-full rounded-2xl overflow-hidden ">
-        <GallerySlider
+        {/* <GallerySlider
           uniqueID={`ExperiencesCard_${id}`}
           ratioClass={ratioClass}
           galleryImgs={galleryImgs}
           href={href}
-        />
+        /> */}
         <BtnLikeIcon isLiked={like} className="absolute right-3 top-3" />
         {saleOff && <SaleOffBadge className="absolute left-3 top-3" />}
       </div>
@@ -59,11 +59,11 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
         <div className="space-y-2">
           <div className="flex items-center text-neutral-500 dark:text-neutral-400 text-sm space-x-2">
             {size === "default" && <MapPinIcon className="w-4 h-4" />}
-            <span className="">{address}</span>
+            <span className="">address</span>
           </div>
 
           <div className="flex items-center space-x-2">
-            {isAds && <Badge name="ADS" color="green" />}
+            {true && <Badge name="ADS" color="green" />}
             <h2
               className={` font-medium capitalize ${
                 size === "default" ? "text-base" : "text-base"
@@ -76,7 +76,7 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
         <div className="border-b border-neutral-100 dark:border-neutral-800"></div>
         <div className="flex justify-between items-center">
           <span className="text-base font-semibold">
-            {price}
+            400
             {` `}
             {size === "default" && (
               <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">

@@ -1,3 +1,33 @@
+export interface Package {
+  id: number;
+  slug: string | null;
+  type: string | null;
+  title: string;
+  short_description: string | null;
+  total_duration_days: number | null;
+  makkah_days: number | null;
+  madinah_days: number | null;
+  price_per_person: number | null;
+  currency: string | null;
+  departure_city: string | null;
+  departure_date: string | null;
+  includes_breakfast: boolean | null;
+  includes_airport_transfer: boolean | null;
+  includes_visa: boolean | null;
+  includes_zamzam: boolean | null;
+  zamzam_liters: number | null;
+  total_seats: number | null;
+  booked_seats: number | null;
+  seats_left: number | null;
+  thumbnail_url: string | null;
+  makkah_hotel_name: string | null;
+  makkah_hotel_distance_m: number | null;
+  madinah_hotel_name: string | null;
+  madinah_hotel_distance_m: number | null;
+  agent_name: string | null;
+  location: string | null;
+  agent_id: number | null;
+}
 import { Route } from "@/routers/types";
 import { StaticImageData } from "next/image";
 

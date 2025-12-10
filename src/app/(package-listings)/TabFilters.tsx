@@ -135,6 +135,51 @@ const TabFilters = () => {
     airlinesStates,
     catTimes,
   ]);
+
+  // On mount and when URL changes, update filter state from URL
+  React.useEffect(() => {
+    const syncFiltersFromUrl = () => {
+      const params = new URLSearchParams(window.location.search);
+      setIsOnSale(params.get("sale") === "1");
+      const price = params.get("price");
+      if (price) {
+        const [min, max] = price.split("-").map(Number);
+        if (!isNaN(min) && !isNaN(max)) setRangePrices([min, max]);
+      }
+      const trip = params.get("trip");
+      if (trip && /^<\d+h$/.test(trip)) {
+        setTripTimes(Number(trip.replace(/[^\d]/g, "")));
+      }
+      const stops = params.get("stops");
+      setStopPontsStates(
+        stops ? stops.split(",").map((s) => s.replace(/-/g, " ")) : []
+      );
+      const airlines = params.get("airlines");
+      setAirlinesStates(airlines ? ["All Airlines"] : []);
+      // Flight times
+      Object.entries(catTimes).forEach(([key]) => {
+        const val = params.get(key.replace(/\s+/g, "").toLowerCase());
+        if (val) {
+          const depMatch = val.match(/dep(\d+)-(\d+)/);
+          const arrMatch = val.match(/arr(\d+)-(\d+)/);
+          setCatTimes((prev) => ({
+            ...prev,
+            [key]: {
+              Departure: depMatch
+                ? [Number(depMatch[1]), Number(depMatch[2])]
+                : prev[key].Departure,
+              Arrival: arrMatch
+                ? [Number(arrMatch[1]), Number(arrMatch[2])]
+                : prev[key].Arrival,
+            },
+          }));
+        }
+      });
+    };
+    syncFiltersFromUrl();
+    window.addEventListener("popstate", syncFiltersFromUrl);
+    return () => window.removeEventListener("popstate", syncFiltersFromUrl);
+  }, []);
   console.log("called");
 
   const renderXClear = () => {
@@ -148,112 +193,42 @@ const TabFilters = () => {
   const renderTabsTimeFlightTab = () => {
     return (
       <div>
-        <Tab.Group>
-          <Tab.List className="flex p-1 space-x-1 bg-primary-900/10 rounded-xl">
-            {Object.keys(catTimes).map((category) => (
-              <Tab
-                key={category}
-                className={({ selected }) =>
-                  `w-full py-2.5 text-sm leading-5 font-medium text-primary-700 dark:text-primary-400 rounded-lg focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60 ${
-                    selected
-                      ? "bg-white dark:bg-neutral-800 shadow"
-                      : " hover:bg-white/[0.15] dark:hover:bg-neutral-800"
-                  }`
-                }
-              >
-                {category}
-              </Tab>
-            ))}
-          </Tab.List>
-          <Tab.Panels className="mt-2">
-            {Object.values(catTimes).map((posts, idx) => {
-              return (
-                <Tab.Panel
-                  key={idx}
-                  className={
-                    "bg-neutral-50 dark:bg-neutral-900 rounded-xl p-3 space-y-8 focus:outline-none focus:ring-2 ring-offset-2 ring-offset-blue-400 ring-white ring-opacity-60"
-                  }
-                >
-                  <span className=" text-neutral-6000 dark:text-neutral-300 text-sm">
-                    {idx ? " Tokyo to Singapore" : " Singapore to Tokyo"}
-                  </span>
-                  <div></div>
-                  <div className="space-y-3">
-                    <div className="flex space-x-2">
-                      <i className="text-lg las la-plane-departure"></i>
-                      <span className="text-xs">Departure time:</span>
-                      <span className="text-xs text-primary-500 dark:text-primary-400">
-                        {posts.Departure[0]}:00 - {posts.Departure[1]}
-                        :00
-                      </span>
-                    </div>
-                    <Slider
-                      range
-                      min={0}
-                      max={24}
-                      defaultValue={posts.Departure}
-                      onChange={(val) =>
-                        setCatTimes((catTimes) =>
-                          !idx
-                            ? {
-                                ...catTimes,
-                                "Take Off": {
-                                  ...posts,
-                                  Departure: val as [number, number],
-                                },
-                              }
-                            : {
-                                ...catTimes,
-                                Landing: {
-                                  ...posts,
-                                  Departure: val as [number, number],
-                                },
-                              }
-                        )
-                      }
-                      allowCross={false}
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex space-x-2">
-                      <i className="text-lg las la-plane-arrival"></i>
-                      <span className="text-xs">Arrival time:</span>
-                      <span className="text-xs text-primary-500 dark:text-primary-400">
-                        {posts.Arrival[0]}:00 - {posts.Arrival[1]}:00
-                      </span>
-                    </div>
-                    <Slider
-                      range
-                      min={0}
-                      max={24}
-                      defaultValue={posts.Arrival}
-                      onChange={(val) =>
-                        setCatTimes((catTimes) =>
-                          !idx
-                            ? {
-                                ...catTimes,
-                                "Take Off": {
-                                  ...posts,
-                                  Arrival: val as [number, number],
-                                },
-                              }
-                            : {
-                                ...catTimes,
-                                Landing: {
-                                  ...posts,
-                                  Arrival: val as [number, number],
-                                },
-                              }
-                        )
-                      }
-                      allowCross={false}
-                    />
-                  </div>
-                </Tab.Panel>
-              );
-            })}
-          </Tab.Panels>
-        </Tab.Group>
+        <span className=" text-neutral-6000 dark:text-neutral-300 text-sm">
+          Tokyo to Singapore
+        </span>
+        <div></div>
+        <div className="space-y-3">
+          <div className="flex space-x-2">
+            <i className="text-lg las la-plane-departure"></i>
+            <span className="text-xs">Departure time:</span>
+            <span className="text-xs text-primary-500 dark:text-primary-400">
+              10:00 - 15:00
+            </span>
+          </div>
+          <Slider
+            range
+            min={0}
+            max={24}
+            defaultValue={[10, 15]}
+            allowCross={false}
+          />
+        </div>
+        <div className="space-y-3">
+          <div className="flex space-x-2">
+            <i className="text-lg las la-plane-arrival"></i>
+            <span className="text-xs">Arrival time:</span>
+            <span className="text-xs text-primary-500 dark:text-primary-400">
+              10:00 - 15:00
+            </span>
+          </div>
+          <Slider
+            range
+            min={0}
+            max={24}
+            defaultValue={[10, 15]}
+            allowCross={false}
+          />
+        </div>
       </div>
     );
   };
@@ -273,7 +248,7 @@ const TabFilters = () => {
                 }
                 `}
             >
-              <span>Airlines</span>
+              <span>Location</span>
               {!airlinesStates.length ? (
                 <i className="las la-angle-down ml-2"></i>
               ) : (
@@ -357,7 +332,7 @@ const TabFilters = () => {
                 }
                 `}
             >
-              <span>Stop points</span>
+              <span>Flight Stop</span>
               {!stopPontsStates.length ? (
                 <i className="las la-angle-down ml-2"></i>
               ) : (
@@ -472,7 +447,7 @@ const TabFilters = () => {
             <Popover.Button
               className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-primary-500 bg-primary-50 text-primary-700 focus:outline-none `}
             >
-              <span>less than {tripTimes} hours</span>
+              <span>No of Days</span>
               {renderXClear()}
             </Popover.Button>
             <Transition

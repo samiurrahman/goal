@@ -23,6 +23,7 @@ const PageAddListing2: FC<PageAddListing2Props> = () => {
     try {
       const loc = await getLocation();
       setLocation(loc);
+      console.log(location);
     } catch (e) {
       alert("Unable to get your location.");
     } finally {
