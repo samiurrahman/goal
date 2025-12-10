@@ -57,7 +57,15 @@ const TabFilters = () => {
   const [airlinesStates, setAirlinesStates] = useState<string[]>([]);
 
   //
-  let [catTimes, setCatTimes] = useState({
+  type CatTimeKey = "Take Off" | "Landing";
+  type CatTimesType = {
+    [K in CatTimeKey]: {
+      Departure: number[];
+      Arrival: number[];
+    };
+  };
+
+  let [catTimes, setCatTimes] = useState<CatTimesType>({
     "Take Off": {
       Departure: [0, 24],
       Arrival: [0, 24],
@@ -150,13 +158,6 @@ const TabFilters = () => {
       if (trip && /^<\d+h$/.test(trip)) {
         setTripTimes(Number(trip.replace(/[^\d]/g, "")));
       }
-      const stops = params.get("stops");
-      setStopPontsStates(
-        stops ? stops.split(",").map((s) => s.replace(/-/g, " ")) : []
-      );
-      const airlines = params.get("airlines");
-      setAirlinesStates(airlines ? ["All Airlines"] : []);
-      // Flight times
       Object.entries(catTimes).forEach(([key]) => {
         const val = params.get(key.replace(/\s+/g, "").toLowerCase());
         if (val) {
@@ -164,13 +165,13 @@ const TabFilters = () => {
           const arrMatch = val.match(/arr(\d+)-(\d+)/);
           setCatTimes((prev) => ({
             ...prev,
-            [key]: {
+            [key as CatTimeKey]: {
               Departure: depMatch
                 ? [Number(depMatch[1]), Number(depMatch[2])]
-                : prev[key].Departure,
+                : prev[key as CatTimeKey].Departure,
               Arrival: arrMatch
                 ? [Number(arrMatch[1]), Number(arrMatch[2])]
-                : prev[key].Arrival,
+                : prev[key as CatTimeKey].Arrival,
             },
           }));
         }
