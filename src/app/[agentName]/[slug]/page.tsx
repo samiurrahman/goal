@@ -594,7 +594,6 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
                 />
               </div>
 
-              {/* OVERLAY */}
               <div
                 className="absolute inset-0 bg-neutral-900 bg-opacity-20 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
                 onClick={handleOpenModalImageGallery}
