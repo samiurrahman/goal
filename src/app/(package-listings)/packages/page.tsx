@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     "best Hajj deals",
   ],
   openGraph: {
-    title: "Browse Hajj & Umrah Packages | GOAL",
+    title: "Browse Hajj & Umrah Packages",
     description:
       "Explore and compare hundreds of Hajj and Umrah packages from verified travel agents.",
     type: "website",

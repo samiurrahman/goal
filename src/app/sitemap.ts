@@ -22,6 +22,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       url: `${baseUrl}/contact`,
       lastModified: new Date(),
     },
+    {
+      url: `${baseUrl}/login`,
+      lastModified: new Date(),
+    },
+    {
+      url: `${baseUrl}/signup`,
+      lastModified: new Date(),
+    },
   ];
 
   // Fetch all packages from Supabase
@@ -30,9 +38,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   try {
     const { data: packages, error } = await supabase
       .from("packages")
-      .select("slug, agent_name, agent_id, updated_at")
-      .not("slug", "is", null)
-      .not("agent_name", "is", null);
+      .select("*");
 
     if (!error && packages) {
       dynamicRoutes = packages.map((pkg) => ({
