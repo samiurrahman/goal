@@ -9,26 +9,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     {
       url: baseUrl,
       lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 1,
     },
     {
       url: `${baseUrl}/packages`,
       lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.9,
     },
     {
       url: `${baseUrl}/about`,
       lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
     },
     {
       url: `${baseUrl}/contact`,
       lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.5,
     },
   ];
 
@@ -46,8 +38,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       dynamicRoutes = packages.map((pkg) => ({
         url: `${baseUrl}/${pkg.agent_name}/${pkg.slug}`,
         lastModified: pkg.updated_at ? new Date(pkg.updated_at) : new Date(),
-        changeFrequency: "weekly" as const,
-        priority: 0.8,
       }));
     }
   } catch (error) {
