@@ -4,6 +4,30 @@ import SectionSliderNewCategories from "@/components/SectionSliderNewCategories"
 import SectionSubscribe2 from "@/components/SectionSubscribe2";
 import React, { FC } from "react";
 import SectionGridFilterCard from "../SectionGridFilterCard";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Browse Hajj & Umrah Packages",
+  description:
+    "Explore and compare hundreds of Hajj and Umrah packages from verified travel agents. Find the best deals on hotels near Haram in Makkah and Madinah.",
+  keywords: [
+    "Hajj packages",
+    "Umrah packages",
+    "Makkah hotels",
+    "Madinah hotels",
+    "compare packages",
+    "best Hajj deals",
+  ],
+  openGraph: {
+    title: "Browse Hajj & Umrah Packages | GOAL",
+    description:
+      "Explore and compare hundreds of Hajj and Umrah packages from verified travel agents.",
+    type: "website",
+  },
+  alternates: {
+    canonical: "/packages",
+  },
+};
 
 export interface ListingFlightsPageProps {}
 

@@ -1,0 +1,20 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Disallow admin or internal pages
+Disallow: /api/
+Disallow: /admin/
+Disallow: /_next/
+Disallow: /checkout/
+Disallow: /pay-done/
+
+# Sitemap location
+Sitemap: https://hajjscanner.com/sitemap.xml
+
+# Crawl-delay for specific bots (optional)
+User-agent: Googlebot
+Crawl-delay: 0
+
+User-agent: Bingbot
+Crawl-delay: 1
