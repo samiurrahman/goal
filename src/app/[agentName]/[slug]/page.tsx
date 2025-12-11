@@ -22,11 +22,11 @@ import GuestsInput from "./GuestsInput";
 import SectionDateRange from "../SectionDateRange";
 import { Route } from "next";
 
-export interface ListingStayDetailPageProps {
+export interface PackageDetailProps {
   params: { agentName: string; slug: string };
 }
 
-const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({ params }) => {
+const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   const { agentName, slug } = params;
   console.log(agentName);
   console.log(slug);
@@ -638,4 +638,4 @@ const ListingStayDetailPage: FC<ListingStayDetailPageProps> = ({ params }) => {
   );
 };
 
-export default ListingStayDetailPage;
+export default PackageDetail;

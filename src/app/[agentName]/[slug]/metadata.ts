@@ -74,4 +74,5 @@ export async function generateMetadata({
   };
 }
 
-export { default } from "./PackageDetailClient";
+export { default } from "./page";
+// TODO: Create './PackageDetailClient.tsx' or correct the path if the file exists under a different name.
