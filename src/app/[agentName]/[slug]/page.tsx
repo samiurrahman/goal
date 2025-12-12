@@ -21,6 +21,7 @@ import StayDatesRangeInput from "./StayDatesRangeInput";
 import GuestsInput from "./GuestsInput";
 import SectionDateRange from "../SectionDateRange";
 import { Route } from "next";
+import Breadcrumb from "@/components/Breadcrumb";
 
 export interface PackageDetailProps {
   params: { agentName: string; slug: string };
@@ -561,6 +562,14 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
 
   return (
     <div className="nc-ListingStayDetailPage">
+      {/* BREADCRUMB */}
+      <Breadcrumb
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Packages", href: "/packages" },
+          { label: slug },
+        ]}
+      />
       {/*  HEADER */}
       <header className="rounded-md sm:rounded-xl">
         <div className="relative grid grid-cols-3 sm:grid-cols-4 gap-1 sm:gap-2">

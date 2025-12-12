@@ -1,5 +1,6 @@
 "use client";
 import React, { FC, useRef, useEffect } from "react";
+import Breadcrumb from "@/components/Breadcrumb";
 import TabFilters from "./TabFilters";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import { supabase } from "@/utils/supabaseClient";
@@ -64,6 +65,9 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
       className={`nc-SectionGridFilterCard ${className}`}
       data-nc-id="SectionGridFilterCard"
     >
+      <Breadcrumb
+        items={[{ label: "Home", href: "/" }, { label: "Packages" }]}
+      />
       <div className="mb-4 lg:mb-6 mt-6">
         <TabFilters />
       </div>
