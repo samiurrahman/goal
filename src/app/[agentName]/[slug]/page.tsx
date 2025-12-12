@@ -562,68 +562,39 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
 
   return (
     <div className="nc-ListingStayDetailPage">
-      {/* BREADCRUMB */}
-      <Breadcrumb
-        items={[
-          { label: "Home", href: "/" },
-          { label: "Packages", href: "/packages" },
-          { label: slug },
-        ]}
-      />
-      {/*  HEADER */}
-      <header className="rounded-md sm:rounded-xl">
-        <div className="relative grid grid-cols-3 sm:grid-cols-4 gap-1 sm:gap-2">
-          <div
-            className="col-span-2 row-span-3 sm:row-span-2 relative rounded-md sm:rounded-xl overflow-hidden cursor-pointer"
-            onClick={handleOpenModalImageGallery}
-          >
-            <Image
-              fill
-              className="object-cover rounded-md sm:rounded-xl"
-              src={PHOTOS[0]}
-              alt=""
-              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 50vw"
-            />
-            <div className="absolute inset-0 bg-neutral-900 bg-opacity-20 opacity-0 hover:opacity-100 transition-opacity"></div>
-          </div>
-          {PHOTOS.filter((_, i) => i >= 1 && i < 5).map((item, index) => (
-            <div
-              key={index}
-              className={`relative rounded-md sm:rounded-xl overflow-hidden ${
-                index >= 3 ? "hidden sm:block" : ""
-              }`}
-            >
-              <div className="aspect-w-4 aspect-h-3 sm:aspect-w-6 sm:aspect-h-5">
-                <Image
-                  fill
-                  className="object-cover rounded-md sm:rounded-xl "
-                  src={item || ""}
-                  alt=""
-                  sizes="400px"
-                />
-              </div>
-
-              <div
-                className="absolute inset-0 bg-neutral-900 bg-opacity-20 opacity-0 hover:opacity-100 transition-opacity cursor-pointer"
-                onClick={handleOpenModalImageGallery}
-              />
-            </div>
-          ))}
-
-          <button
-            className="absolute hidden md:flex md:items-center md:justify-center left-3 bottom-3 px-4 py-2 rounded-xl bg-neutral-100 text-neutral-500 hover:bg-neutral-200 z-10"
-            onClick={handleOpenModalImageGallery}
-          >
-            <Squares2X2Icon className="w-5 h-5" />
-            <span className="ml-2 text-neutral-800 text-sm font-medium">
-              Show all photos
-            </span>
-          </button>
-        </div>
+      {/* BANNER IMAGE WITH FADE-OUT */}
+      <header className="relative h-64 sm:h-80 md:h-96 w-full rounded-md sm:rounded-xl overflow-hidden">
+        <Image
+          src={PHOTOS[0]}
+          alt="Banner"
+          fill
+          className="object-cover w-full h-full"
+          priority
+          sizes="100vw"
+        />
+        {/* Fade-out gradient at the bottom */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(to bottom, rgba(0,0,0,0.25) 60%, rgba(255,255,255,1) 100%)",
+          }}
+        />
       </header>
 
+      {/* BREADCRUMB */}
+      <div className="relative z-20 mt-4">
+        <Breadcrumb
+          items={[
+            { label: "Home", href: "/" },
+            { label: "Packages", href: "/packages" },
+            { label: slug },
+          ]}
+        />
+      </div>
+
       {/* MAIN */}
-      <main className=" relative z-10 mt-11 flex flex-col lg:flex-row ">
+      <main className="relative z-10  flex flex-col lg:flex-row ">
         {/* CONTENT */}
         <div className="w-full lg:w-3/5 xl:w-2/3 space-y-8 lg:space-y-10 lg:pr-10">
           {renderSection1()}
