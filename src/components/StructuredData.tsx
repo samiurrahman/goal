@@ -18,7 +18,7 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
       structuredData = {
         "@context": "https://schema.org",
         "@type": "Organization",
-        name: data.name || "GOAL",
+        name: data.name || "Hajjscanner",
         url: data.url || process.env.NEXT_PUBLIC_SITE_URL,
         logo: data.logo || `${process.env.NEXT_PUBLIC_SITE_URL}/logo.png`,
         description:
@@ -37,7 +37,7 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
       structuredData = {
         "@context": "https://schema.org",
         "@type": "WebSite",
-        name: data.name || "GOAL",
+        name: data.name || "Hajjscanner",
         url: data.url || process.env.NEXT_PUBLIC_SITE_URL,
         description: data.description || "Book Hajj and Umrah packages online",
         potentialAction: {
@@ -70,7 +70,7 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
       structuredData = {
         "@context": "https://schema.org",
         "@type": "TravelAgency",
-        name: data.name || "GOAL",
+        name: data.name || "Hajjscanner",
         description: data.description,
         url: data.url,
         image: data.image,
@@ -89,7 +89,7 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
         image: data.image,
         brand: {
           "@type": "Brand",
-          name: data.brand || "GOAL",
+          name: data.brand || "Hajjscanner",
         },
         offers: {
           "@type": "Offer",
@@ -100,7 +100,7 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
           availability: "https://schema.org/InStock",
           seller: {
             "@type": "Organization",
-            name: data.seller || "GOAL",
+            name: data.seller || "Hajjscanner",
           },
         },
         aggregateRating: data.rating

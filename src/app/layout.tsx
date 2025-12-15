@@ -25,11 +25,11 @@ export const metadata: Metadata = {
     process.env.NEXT_PUBLIC_SITE_URL || "https://hajjscanner.com"
   ),
   title: {
-    default: "GOAL - Premium Hajj & Umrah Packages | Best Islamic Travel Deals",
-    template: "%s | GOAL",
+    default: "Hajj & Umrah Packages | Best Islamic Travel Deals",
+    template: "%s | Hajjscanner",
   },
   description:
-    "Discover affordable Hajj and Umrah packages with GOAL. Compare prices from verified travel agents, book hotels near Haram, and plan your spiritual journey with ease.",
+    "Discover affordable Hajj and Umrah packages with Hajjscanner. Compare prices from verified travel agents, book hotels near Haram, and plan your spiritual journey with ease.",
   keywords: [
     "Hajj packages",
     "Umrah packages",
@@ -41,9 +41,9 @@ export const metadata: Metadata = {
     "travel agents",
     "pilgrimage packages",
   ],
-  authors: [{ name: "GOAL" }],
-  creator: "GOAL",
-  publisher: "GOAL",
+  authors: [{ name: "Hajjscanner" }],
+  creator: "Hajjscanner",
+  publisher: "Hajjscanner",
   robots: {
     index: true,
     follow: true,
@@ -59,26 +59,26 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: process.env.NEXT_PUBLIC_SITE_URL || "https://hajjscanner.com",
-    siteName: "GOAL",
-    title: "GOAL - Premium Hajj & Umrah Packages",
+    siteName: "Hajjscanner",
+    title: "Premium Hajj & Umrah Packages",
     description:
-      "Discover affordable Hajj and Umrah packages with GOAL. Compare prices from verified travel agents and plan your spiritual journey.",
+      "Discover affordable Hajj and Umrah packages with Hajjscanner. Compare prices from verified travel agents and plan your spiritual journey.",
     images: [
       {
         url: "/og-image.jpg",
         width: 1200,
         height: 630,
-        alt: "GOAL - Hajj & Umrah Packages",
+        alt: "Hajj & Umrah Packages",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "GOAL - Premium Hajj & Umrah Packages",
+    title: "Premium Hajj & Umrah Packages",
     description:
       "Discover affordable Hajj and Umrah packages. Compare prices and book your spiritual journey.",
     images: ["/og-image.jpg"],
-    creator: "@goal",
+    creator: "@hajjscanner",
   },
   verification: {
     google: "your-google-verification-code",
@@ -109,7 +109,7 @@ export default function RootLayout({
         <StructuredData
           type="Organization"
           data={{
-            name: "GOAL",
+            name: "Hajjscanner",
             url: baseUrl,
             logo: `${baseUrl}/logo.png`,
             description:
@@ -125,7 +125,7 @@ export default function RootLayout({
         <StructuredData
           type="WebSite"
           data={{
-            name: "GOAL",
+            name: "Hajjscanner",
             url: baseUrl,
             description:
               "Book Hajj and Umrah packages online with verified travel agents",
