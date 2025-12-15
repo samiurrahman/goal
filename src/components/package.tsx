@@ -11,6 +11,7 @@ import SaleOffBadge from "./SaleOffBadge";
 import { Package } from "@/data/types";
 import { formatPrice } from "@/utils/formatPrice";
 import { Amenities_demos } from "@/app/[agentName]/[slug]/constant";
+import carUtilities8 from "@/images/HIW1.png";
 
 export interface PackageCardProps {
   className?: string;
@@ -57,8 +58,9 @@ const PackageCard: FC<PackageCardProps> = ({
         {/* 2 */}
         <Link
           href={`/${agent_name}/${slug}`}
-          className="font-medium text-lg cursor-pointer text-primary-700 hover:underline"
+          className="text-lg font-medium capitalize hover:underline"
           prefetch={true}
+          onClick={(e) => e.stopPropagation()}
         >
           {title}
         </Link>
@@ -105,6 +107,7 @@ const PackageCard: FC<PackageCardProps> = ({
     <div
       className={`nc-FlightCardgroup p-4 sm:p-6 relative bg-white dark:bg-neutral-900 border border-neutral-100
      dark:border-neutral-800 rounded-2xl overflow-hidden hover:shadow-lg transition-shadow space-y-6 ${className}`}
+      onClick={() => setIsOpen(!isOpen)}
     >
       <div className={` sm:pr-20 relative  ${className}`}>
         {/*  eslint-disable-next-line jsx-a11y/anchor-has-content */}
@@ -123,7 +126,7 @@ const PackageCard: FC<PackageCardProps> = ({
           {/* LOGO IMG */}
           <div className="w-20 lg:w-24 flex-shrink-0">
             <Image
-              src={thumbnail_url || "/default-image.png"}
+              src={thumbnail_url || carUtilities8}
               width={100}
               height={100}
               className="w-20"

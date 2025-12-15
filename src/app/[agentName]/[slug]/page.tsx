@@ -45,16 +45,12 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     setIsOpenModalAmenities(true);
   }
 
-  const handleOpenModalImageGallery = () => {
-    router.push(`${thisPathname}/?modal=PHOTO_TOUR_SCROLLABLE` as Route);
-  };
-
   const renderSection1 = () => {
     return (
       <div className="listingSection__wrap !space-y-6">
         {/* 1 */}
         <div className="flex justify-between items-center">
-          <Badge name="Wooden house" />
+          <Badge name="Verified agent" color="green" />
           <LikeSaveBtns />
         </div>
 

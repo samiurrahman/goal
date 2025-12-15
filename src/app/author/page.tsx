@@ -16,10 +16,15 @@ import Avatar from "@/shared/Avatar";
 import ButtonSecondary from "@/shared/ButtonSecondary";
 import SocialsList from "@/shared/SocialsList";
 
-export interface AuthorPageProps {}
+export interface AgentDetailsProps {}
 
-const AuthorPage: FC<AuthorPageProps> = ({}) => {
-  let [categories] = useState(["Stays", "Experiences", "Car for rent"]);
+const AgentDetailsPage: FC<{ params: { agentDetails: string } }> = ({
+  params,
+}) => {
+  const { agentDetails } = params;
+  console.log(agentDetails);
+
+  let [categories] = useState(["Umrah Packages", "Hajj Packages"]);
 
   const renderSidebar = () => {
     return (
@@ -223,4 +228,4 @@ const AuthorPage: FC<AuthorPageProps> = ({}) => {
   );
 };
 
-export default AuthorPage;
+export default AgentDetailsPage;
