@@ -25,7 +25,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
     hasNextPage,
     isFetchingNextPage,
   } = useInfiniteQuery<Package[], Error>({
-    queryKey: ["flights"],
+    queryKey: ["packages"],
     queryFn: async ({ pageParam = 0 }) => {
       const page = typeof pageParam === "number" ? pageParam : 0;
       const { data, error } = await supabase
@@ -88,7 +88,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
               {isFetchingNextPage && (
                 <ButtonPrimary loading>Loading more Packages</ButtonPrimary>
               )}
-              {!hasNextPage && <span>No more flights to load.</span>}
+              {!hasNextPage && <span>No more Packages to load.</span>}
             </div>
           </>
         )}

@@ -22,6 +22,7 @@ import GuestsInput from "./GuestsInput";
 import SectionDateRange from "../SectionDateRange";
 import { Route } from "next";
 import Breadcrumb from "@/components/Breadcrumb";
+import carUtilities8 from "@/images/HIW1.png";
 
 export interface PackageDetailProps {
   params: { agentName: string; slug: string };
@@ -45,43 +46,94 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     setIsOpenModalAmenities(true);
   }
 
+  const iternaryItem = () => {
+    return (
+      <div>
+        <div className="flex flex-col md:flex-row ">
+          <div className="w-24 md:w-20 lg:w-24 flex-shrink-0 md:pt-7">
+            <Image
+              src={carUtilities8}
+              className="w-10"
+              alt=""
+              sizes="40px"
+              width={40}
+              height={40}
+            />
+          </div>
+          <div className="flex my-5 md:my-0">
+            <div className="flex-shrink-0 flex flex-col items-center py-2">
+              <span className="block w-6 h-6 rounded-full border border-neutral-400"></span>
+              <span className="block flex-grow border-l border-neutral-400 border-dashed my-1"></span>
+              <span className="block w-6 h-6 rounded-full border border-neutral-400"></span>
+            </div>
+            <div className="ml-4 space-y-10 text-sm">
+              <div className="flex flex-col space-y-1">
+                <span className=" text-neutral-500 dark:text-neutral-400">
+                  Monday, August 12 · 10:00
+                </span>
+                <span className=" font-semibold">
+                  Tokyo International Airport (HND)
+                </span>
+              </div>
+              <div className="flex flex-col space-y-1">
+                <span className=" text-neutral-500 dark:text-neutral-400">
+                  Monday, August 16 · 10:00
+                </span>
+                <span className=" font-semibold">
+                  Singapore International Airport (SIN)
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="border-l border-neutral-200 dark:border-neutral-700 md:mx-6 lg:mx-10"></div>
+          <ul className="text-sm text-neutral-500 dark:text-neutral-400 space-y-1 md:space-y-2">
+            <li>Trip time: 7 hours 45 minutes</li>
+            <li>ANA · Business class · Boeing 787 · NH 847</li>
+          </ul>
+        </div>
+      </div>
+    );
+  };
+
+  const iternary = () => {
+    return (
+      <div className="listingSection__wrap">
+        <h2 className="text-2xl font-semibold">Iternary</h2>
+        <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
+        {iternaryItem()}
+        <div className="my-7 md:my-10 space-y-5 md:pl-24">
+          <div className="border-t border-neutral-200 dark:border-neutral-700" />
+          <div className="text-neutral-700 dark:text-neutral-300 text-sm md:text-base">
+            Makkah Stay 7 Days
+          </div>
+          <div className="border-t border-neutral-200 dark:border-neutral-700" />
+        </div>
+        {iternaryItem()}
+        <div className="my-7 md:my-10 space-y-5 md:pl-24">
+          <div className="border-t border-neutral-200 dark:border-neutral-700" />
+          <div className="text-neutral-700 dark:text-neutral-300 text-sm md:text-base">
+            Madina Stay 7 Day
+          </div>
+          <div className="border-t border-neutral-200 dark:border-neutral-700" />
+        </div>
+        {iternaryItem()}
+      </div>
+    );
+  };
+
   const renderSection1 = () => {
     return (
       <div className="listingSection__wrap !space-y-6">
         {/* 1 */}
         <div className="flex justify-between items-center">
-          <Badge name="Verified agent" color="green" />
+          <Badge name="Government Verified" color="green" />
           <LikeSaveBtns />
         </div>
 
         {/* 2 */}
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold">
-          Beach House in Collingwood
+        <h2 className="text-2xl sm:text-2xl lg:text-3xl font-semibold">
+          Luxury umrah package from Mumbai to Mumbai
         </h2>
-
-        {/* 3 */}
-        <div className="flex items-center space-x-4">
-          <StartRating />
-          <span>·</span>
-          <span>
-            <i className="las la-map-marker-alt"></i>
-            <span className="ml-1"> Tokyo, Jappan</span>
-          </span>
-        </div>
-
-        {/* 4 */}
-        <div className="flex items-center">
-          <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />
-          <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
-            Hosted by{" "}
-            <span className="text-neutral-900 dark:text-neutral-200 font-medium">
-              Kevin Francis
-            </span>
-          </span>
-        </div>
-
-        {/* 5 */}
-        <div className="w-full border-b border-neutral-100 dark:border-neutral-700" />
 
         {/* 6 */}
         <div className="flex items-center justify-between xl:justify-start space-x-8 xl:space-x-12 text-sm text-neutral-700 dark:text-neutral-300">
@@ -109,6 +161,29 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
               2 <span className="hidden sm:inline-block">bedrooms</span>
             </span>
           </div>
+        </div>
+        {/* 5 */}
+        <div className="w-full border-b border-neutral-100 dark:border-neutral-700" />
+        {/* 4 */}
+        <div className="flex items-center">
+          <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />
+          <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
+            Package by{" "}
+            <span className="text-neutral-900 dark:text-neutral-200 font-medium">
+              Iqra Hajj Tours
+            </span>
+            {/* make it linkable will redirect to detail page */}
+          </span>
+        </div>
+
+        {/* 3 */}
+        <div className="flex items-center space-x-4">
+          <StartRating />
+          <span>·</span>
+          <span>
+            <i className="las la-map-marker-alt"></i>
+            <span className="ml-1"> Tokyo, Japan</span>
+          </span>
         </div>
       </div>
     );
@@ -253,7 +328,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         <div>
           <h2 className="text-2xl font-semibold">Room Rates </h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-            Prices may increase on weekends or holidays
+            Prices by room type
           </span>
         </div>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
@@ -261,28 +336,20 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         <div className="flow-root">
           <div className="text-sm sm:text-base text-neutral-6000 dark:text-neutral-300 -mb-4">
             <div className="p-4 bg-neutral-100 dark:bg-neutral-800 flex justify-between items-center space-x-4 rounded-lg">
-              <span>Monday - Thursday</span>
+              <span>5 People sharing</span>
               <span>$199</span>
             </div>
             <div className="p-4  flex justify-between items-center space-x-4 rounded-lg">
-              <span>Monday - Thursday</span>
+              <span>4 People sharing</span>
               <span>$199</span>
             </div>
             <div className="p-4 bg-neutral-100 dark:bg-neutral-800 flex justify-between items-center space-x-4 rounded-lg">
-              <span>Friday - Sunday</span>
+              <span>3 People sharing</span>
               <span>$219</span>
             </div>
             <div className="p-4 flex justify-between items-center space-x-4 rounded-lg">
-              <span>Rent by month</span>
+              <span>2 People sharing</span>
               <span>-8.34 %</span>
-            </div>
-            <div className="p-4 bg-neutral-100 dark:bg-neutral-800 flex justify-between items-center space-x-4 rounded-lg">
-              <span>Minimum number of nights</span>
-              <span>1 night</span>
-            </div>
-            <div className="p-4 flex justify-between items-center space-x-4 rounded-lg">
-              <span>Max number of nights</span>
-              <span>90 nights</span>
             </div>
           </div>
         </div>
@@ -594,10 +661,11 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         {/* CONTENT */}
         <div className="w-full lg:w-3/5 xl:w-2/3 space-y-8 lg:space-y-10 lg:pr-10">
           {renderSection1()}
+          {iternary()}
+          {renderSection4()}
           {renderSection2()}
           {renderSection3()}
-          {renderSection4()}
-          <SectionDateRange />
+          {/* <SectionDateRange /> */}
           {renderSection5()}
           {renderSection6()}
           {renderSection7()}

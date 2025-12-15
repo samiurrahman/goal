@@ -66,9 +66,10 @@ const PackageCard: FC<PackageCardProps> = ({
         </Link>
 
         {/* 3 */}
+        {/* sami  it me Add Package provider name here */}
         <div className="flex items-center space-x-4 text-neutral-700 dark:text-neutral-300 -ml-2">
           <span>
-            <Badge name="Verified" color="green" />
+            <Badge name="Government Verified" color="green" />
           </span>
           {/* <span>·</span> */}
 
