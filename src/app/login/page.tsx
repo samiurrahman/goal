@@ -2,6 +2,7 @@
 import React, { FC, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
+import Cookies from "js-cookie";
 import facebookSvg from "@/images/Facebook.svg";
 import twitterSvg from "@/images/Twitter.svg";
 import googleSvg from "@/images/Google.svg";
@@ -9,6 +10,7 @@ import Input from "@/shared/Input";
 import ButtonPrimary from "@/shared/ButtonPrimary";
 import Image from "next/image";
 import Link from "next/link";
+import { stringify } from "querystring";
 
 export interface PageLoginProps {}
 
@@ -31,14 +33,22 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    console.log(data);
+
     setLoading(false);
     if (error) {
       setError(error.message);
     } else {
+      // Store access token in cookie
+      if (data?.session?.access_token) {
+        Cookies.set("sb-access-token", data.session.access_token, {
+          path: "/",
+        });
+      }
       router.push("/");
     }
   };
@@ -57,7 +67,7 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
               onClick={async () => {
                 setLoading(true);
                 setError(null);
-                const { error } = await supabase.auth.signInWithOAuth({
+                const { data, error } = await supabase.auth.signInWithOAuth({
                   provider: "google",
                   options: {
                     redirectTo:
@@ -67,7 +77,11 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
                   },
                 });
                 setLoading(false);
+                localStorage.setItem("oauth-redirect", stringify(data));
+                console.log("social", data);
+
                 if (error) setError(error.message);
+                // For OAuth, Supabase will handle the redirect and set the cookie on callback page
               }}
               disabled={loading}
             >

@@ -3,7 +3,7 @@
 import Badge from "@/shared/Badge";
 import Image from "next/image";
 import React, { FC, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import LikeSaveBtns from "./LikeSaveBtns";
 import StartRating from "./StartRating";
 import Avatar from "@/shared/Avatar";
@@ -51,21 +51,17 @@ const PackageCard: FC<PackageCardProps> = ({
     );
   };
 
-  const router = useRouter();
   const renderSection1 = () => {
     return (
       <div className="listingPackages__wrap  flex-grow">
         {/* 2 */}
-        <h1
+        <Link
+          href={`/${agent_name}/${slug}`}
           className="font-medium text-lg cursor-pointer text-primary-700 hover:underline"
-          onClick={() => {
-            if (slug) {
-              router.push(`/${agent_name}/${slug}`);
-            }
-          }}
+          prefetch={true}
         >
           {title}
-        </h1>
+        </Link>
 
         {/* 3 */}
         <div className="flex items-center space-x-4 text-neutral-700 dark:text-neutral-300 -ml-2">
