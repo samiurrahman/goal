@@ -1,3 +1,4 @@
+"use client";
 import React, { FC, useState, useRef } from "react";
 import LocationInput from "../LocationInput";
 import GuestsInput from "../GuestsInput";

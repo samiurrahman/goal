@@ -1,10 +1,7 @@
-"use client";
 import React, { FC } from "react";
 import imagePng from "@/images/banner_01.jpg";
 import HeroSearchForm from "../(client-components)/(HeroSearchForm)/HeroSearchForm";
 import Image from "next/image";
-import ButtonPrimary from "@/shared/ButtonPrimary";
-import SectionHowItWork from "@/components/SectionHowItWork";
 // import TypingAnimation from "@/components/TypingAnimation";
 
 export interface SectionHeroProps {
