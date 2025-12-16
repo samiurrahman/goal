@@ -5,7 +5,7 @@ import { supabase } from "@/utils/supabaseClient";
  * Custom hook to fetch cities from Supabase.
  * Returns { data: cities, error, isLoading }
  */
-export function useCities() {
+function useCities() {
   return useQuery({
     queryKey: ["cities"],
     queryFn: async () => {
@@ -15,3 +15,4 @@ export function useCities() {
     },
   });
 }
+export { useCities };
