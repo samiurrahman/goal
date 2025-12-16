@@ -32,18 +32,14 @@ export interface PackageDetailProps {
 
 const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   const { agentName, slug } = params;
-  console.log(agentName);
-  console.log(slug);
+  // Room rate selection state
+  const [selectedRate, setSelectedRate] = useState(roomRates[0]);
 
   let [isOpenModalAmenities, setIsOpenModalAmenities] = useState(false);
-
-  const thisPathname = usePathname();
-  const router = useRouter();
 
   function closeModalAmenities() {
     setIsOpenModalAmenities(false);
   }
-
   function openModalAmenities() {
     setIsOpenModalAmenities(true);
   }
@@ -325,7 +321,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     );
   };
 
-  const renderSection4 = () => {
+  const roomType = () => {
     return (
       <div className="listingSection__wrap">
         {/* HEADING */}
@@ -342,12 +338,17 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
             {roomRates.map((item, idx) => (
               <div
                 key={item.label}
-                className={`p-4 flex justify-between items-center space-x-4 rounded-lg ${
-                  item.highlight ? "bg-neutral-100 dark:bg-neutral-800" : ""
+                className={`p-4 flex justify-between items-center space-x-4 rounded-lg cursor-pointer transition-all duration-150 ${
+                  selectedRate.label === item.label
+                    ? "bg-blue-100 dark:bg-blue-800 border border-blue-400"
+                    : item.highlight
+                    ? "bg-neutral-100 dark:bg-neutral-800"
+                    : ""
                 }`}
+                onClick={() => setSelectedRate(item)}
               >
                 <span className="flex items-end ">
-                  {<item.icon />}
+                  {item.icon && <item.icon />}
                   <span className="ml-2">{item.label}</span>
                 </span>
                 <span>INR {item.value}</span>
@@ -582,14 +583,26 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   };
 
   const purchaseSummary = () => {
+    // Parse value as number
+    const pricePerPerson = Number(selectedRate.value);
+    // number of guests from API (hardcoded for now)
+    const numberOfGuests = 4;
+    const total = pricePerPerson * numberOfGuests;
+    const gstRate = 0.05;
+    const gstAmount = total * gstRate;
+    const grandTotal = total + gstAmount;
+    const formattedPrice = pricePerPerson.toLocaleString("en-IN");
+    const formattedTotal = total.toLocaleString("en-IN");
+    const formattedGst = gstAmount.toLocaleString("en-IN");
+    const formattedGrandTotal = grandTotal.toLocaleString("en-IN");
     return (
       <div className="listingSectionSidebar__wrap shadow-xl">
         {/* PRICE */}
         <div className="flex justify-between">
           <span className="text-3xl font-semibold">
-            INR 75,000
+            INR {formattedPrice}
             <span className="ml-1 text-base font-normal text-neutral-500 dark:text-neutral-400">
-              /night
+              / person x {numberOfGuests} guests
             </span>
           </span>
         </div>
@@ -604,17 +617,19 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         {/* SUM */}
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>INR 75,000 x 4 night</span>
-            <span>INR 3,00,000</span>
+            <span>
+              INR {formattedPrice} x {numberOfGuests} guests
+            </span>
+            <span>INR {formattedTotal}</span>
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>GST</span>
-            <span>18%</span>
+            <span>GST (5%)</span>
+            <span>INR {formattedGst}</span>
           </div>
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
           <div className="flex justify-between font-semibold">
             <span>Total</span>
-            <span>INR 3,00,000</span>
+            <span>INR {formattedGrandTotal}</span>
           </div>
         </div>
 
@@ -663,7 +678,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         <div className="w-full lg:w-3/5 xl:w-2/3 space-y-8 lg:space-y-10 lg:pr-10">
           {renderSection1()}
           {iternary()}
-          {renderSection4()}
+          {roomType()}
           {renderSection2()}
           {renderSection3()}
           {/* <SectionDateRange /> */}
