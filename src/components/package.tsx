@@ -11,6 +11,7 @@ import SaleOffBadge from "./SaleOffBadge";
 import { Package } from "@/data/types";
 import { formatPrice } from "@/utils/formatPrice";
 import { Amenities_demos } from "@/app/[agentName]/[slug]/constant";
+import { MakkahIcon, MadinaIcon } from "@/components/icons/icons";
 import carUtilities8 from "@/images/HIW1.png";
 
 export interface PackageCardProps {
@@ -79,12 +80,12 @@ const PackageCard: FC<PackageCardProps> = ({
             <span className="ml-1 text-sm"> {total_duration_days} Days</span>
           </span>
           <span className="flex items-center">
-            <i className="las la-map-marker-alt text-1xl"></i>
-            <span className="ml-1 text-sm"> Madina Hotel (~300m)</span>
+            <MakkahIcon />
+            <span className="ml-1 text-sm"> Ajyad Hotel (~300m)</span>
           </span>
           <span className="flex items-center">
-            <i className="las la-map-marker-alt text-1xl"></i>
-            <span className="ml-1 text-sm"> Makkah Hotel (~500m)</span>
+            <MadinaIcon />
+            <span className="ml-1.5 text-sm"> Milton Hotel (~500m)</span>
           </span>
 
           <StartRating />

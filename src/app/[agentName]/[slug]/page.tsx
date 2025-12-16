@@ -17,12 +17,14 @@ import LikeSaveBtns from "@/components/LikeSaveBtns";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { Amenities_demos, PHOTOS } from "./constant";
+import { roomRates } from "./constant";
 import StayDatesRangeInput from "./StayDatesRangeInput";
 import GuestsInput from "./GuestsInput";
 import SectionDateRange from "../SectionDateRange";
 import { Route } from "next";
 import Breadcrumb from "@/components/Breadcrumb";
 import carUtilities8 from "@/images/HIW1.png";
+import { MakkahIcon, MadinaIcon } from "@/components/icons/icons";
 
 export interface PackageDetailProps {
   params: { agentName: string; slug: string };
@@ -146,13 +148,13 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           </div>
           <div className="flex items-center space-x-3">
             <span className="flex items-center">
-              <i className="las la-hotel text-2xl"></i>
+              <MakkahIcon />
               <span className="ml-1 text-sm"> Madina Hotel (~300m)</span>
             </span>
           </div>
           <div className="flex items-center space-x-3">
             <span className="flex items-center">
-              <i className="las la-hotel text-2xl"></i>
+              <MadinaIcon />
               <span className="ml-1 text-sm"> Makkah Hotel (~500m)</span>
             </span>
           </div>
@@ -337,22 +339,20 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         {/* CONTENT */}
         <div className="flow-root">
           <div className="text-sm sm:text-base text-neutral-6000 dark:text-neutral-300 -mb-4">
-            <div className="p-4 bg-neutral-100 dark:bg-neutral-800 flex justify-between items-center space-x-4 rounded-lg">
-              <span>5 People sharing</span>
-              <span>$199</span>
-            </div>
-            <div className="p-4  flex justify-between items-center space-x-4 rounded-lg">
-              <span>4 People sharing</span>
-              <span>$199</span>
-            </div>
-            <div className="p-4 bg-neutral-100 dark:bg-neutral-800 flex justify-between items-center space-x-4 rounded-lg">
-              <span>3 People sharing</span>
-              <span>$219</span>
-            </div>
-            <div className="p-4 flex justify-between items-center space-x-4 rounded-lg">
-              <span>2 People sharing</span>
-              <span>-8.34 %</span>
-            </div>
+            {roomRates.map((item, idx) => (
+              <div
+                key={item.label}
+                className={`p-4 flex justify-between items-center space-x-4 rounded-lg ${
+                  item.highlight ? "bg-neutral-100 dark:bg-neutral-800" : ""
+                }`}
+              >
+                <span className="flex items-end ">
+                  {<item.icon />}
+                  <span className="ml-2">{item.label}</span>
+                </span>
+                <span>INR {item.value}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -581,18 +581,17 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     );
   };
 
-  const renderSidebar = () => {
+  const purchaseSummary = () => {
     return (
       <div className="listingSectionSidebar__wrap shadow-xl">
         {/* PRICE */}
         <div className="flex justify-between">
           <span className="text-3xl font-semibold">
-            $119
+            INR 75,000
             <span className="ml-1 text-base font-normal text-neutral-500 dark:text-neutral-400">
               /night
             </span>
           </span>
-          <StartRating />
         </div>
 
         {/* FORM */}
@@ -605,17 +604,17 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         {/* SUM */}
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>$119 x 3 night</span>
-            <span>$357</span>
+            <span>INR 75,000 x 4 night</span>
+            <span>INR 3,00,000</span>
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>Service charge</span>
-            <span>$0</span>
+            <span>GST</span>
+            <span>18%</span>
           </div>
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
           <div className="flex justify-between font-semibold">
             <span>Total</span>
-            <span>$199</span>
+            <span>INR 3,00,000</span>
           </div>
         </div>
 
@@ -676,7 +675,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
 
         {/* SIDEBAR */}
         <div className="hidden lg:block flex-grow mt-14 lg:mt-0">
-          <div className="sticky top-28">{renderSidebar()}</div>
+          <div className="sticky top-28">{purchaseSummary()}</div>
         </div>
       </main>
     </div>

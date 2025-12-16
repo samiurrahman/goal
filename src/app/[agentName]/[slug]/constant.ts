@@ -1,3 +1,10 @@
+import { People } from "./../../about/SectionFounder";
+import {
+  fivePeopleIcon,
+  fourPeopleIcon,
+  threePeopleIcon,
+  twoPeopleIcon,
+} from "@/components/icons/icons";
 import { ListingGalleryImage } from "@/components/listing-image-gallery/utils/types";
 import carUtilities1 from "@/images/carUtilities/1.png";
 import carUtilities2 from "@/images/carUtilities/2.png";
@@ -40,7 +47,7 @@ export const PHOTOS: string[] = [
 ];
 
 export const Amenities_demos = [
-  { name: "SightSeeing", icon: carUtilities1 },
+  { name: "23rd Oct to 30th Oct", icon: carUtilities1 },
   {
     name: "Meals",
     icon: carUtilities2,
@@ -55,6 +62,38 @@ export const Amenities_demos = [
   { name: "Makkah stay 10 Days", icon: carUtilities7 },
   { name: "Madina stay 8 Days", icon: carUtilities8 },
 ];
+
+export const roomRates = [
+  {
+    label: "5 People sharing",
+    value: "75000",
+    people: 5,
+    highlight: true,
+    icon: fivePeopleIcon,
+  },
+  {
+    label: "4 People sharing",
+    value: "85000",
+    people: 4,
+    highlight: false,
+    icon: fourPeopleIcon,
+  },
+  {
+    label: "3 People sharing",
+    value: "95000",
+    people: 3,
+    highlight: true,
+    icon: threePeopleIcon,
+  },
+  {
+    label: "2 People sharing",
+    value: "110000",
+    people: 2,
+    highlight: false,
+    icon: twoPeopleIcon,
+  },
+];
+
 export const imageGallery: ListingGalleryImage[] = [...PHOTOS].map(
   (item, index): ListingGalleryImage => {
     return {
