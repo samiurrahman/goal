@@ -4,7 +4,7 @@ import React, { FC, useRef, useEffect } from "react";
 import Breadcrumb from "@/components/Breadcrumb";
 import TabFilters from "./TabFilters";
 import ButtonPrimary from "@/shared/ButtonPrimary";
-import { supabase } from "@/utils/supabaseClient";
+import supabase from "@/utils/supabaseClient";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { Package } from "@/data/types";
 import PackageCard from "@/components/package";
