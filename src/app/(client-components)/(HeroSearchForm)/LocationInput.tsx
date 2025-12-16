@@ -3,8 +3,7 @@
 import { ClockIcon, MapPinIcon } from "@heroicons/react/24/outline";
 import React, { useState, useRef, useEffect, FC } from "react";
 import ClearDataButton from "./ClearDataButton";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/utils/supabaseClient";
+import { useCities } from "@/hooks/useCities";
 
 export interface LocationInputProps {
   placeHolder?: string;
@@ -18,7 +17,7 @@ export interface LocationInputProps {
 const LocationInput: FC<LocationInputProps> = ({
   autoFocus = false,
   placeHolder = "Location",
-  desc = "Which location you are?",
+  desc = "where to?",
   className = "nc-flex-1.5",
   divHideVerticalLineClass = "left-10 -right-0.5",
   onLocationSelect,
@@ -69,19 +68,7 @@ const LocationInput: FC<LocationInputProps> = ({
     if (onLocationSelect) onLocationSelect(item);
   };
 
-  const {
-    data: cities,
-    error,
-    isLoading,
-  } = useQuery({
-    queryKey: ["cities"],
-    queryFn: async () => {
-      let { data: cities, error } = await supabase.from("cities").select("*");
-
-      if (error) throw error;
-      return cities;
-    },
-  });
+  const { data: cities, error, isLoading } = useCities();
 
   // Filter cities based on input value
   const filteredCities = value

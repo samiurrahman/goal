@@ -34,9 +34,7 @@ const HeroSearchForm2RealEstateMobile = () => {
         <div className="ml-3 flex-1 text-left overflow-hidden">
           <span className="block font-medium text-sm">Where to?</span>
           <span className="block mt-0.5 text-xs font-light text-neutral-500 dark:text-neutral-400 ">
-            <span className="line-clamp-1">
-              Anywhere • Any week • Add guests
-            </span>
+            <span className="line-clamp-1">where? • Any week • Add guests</span>
           </span>
         </div>
 

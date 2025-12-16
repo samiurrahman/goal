@@ -134,8 +134,11 @@ export default function RootLayout({
       </head>
       <body className="bg-white text-base dark:bg-neutral-900 text-neutral-900 dark:text-neutral-200">
         <ClientCommons />
-        <SiteHeader />
-        <ReactQueryProvider>{children}</ReactQueryProvider>
+
+        <ReactQueryProvider>
+          <SiteHeader />
+          {children}
+        </ReactQueryProvider>
         {/* <Footer /> */}
       </body>
     </html>

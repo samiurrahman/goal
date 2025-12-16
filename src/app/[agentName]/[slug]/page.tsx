@@ -131,7 +131,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         </div>
 
         {/* 2 */}
-        <h2 className="text-2xl sm:text-2xl lg:text-3xl font-semibold">
+        <h2 className="text-2xl sm:text-2xl lg:text-2xl font-semibold">
           Luxury umrah package from Mumbai to Mumbai
         </h2>
 

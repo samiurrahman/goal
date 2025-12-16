@@ -2,6 +2,7 @@
 
 import { MapPinIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 import React, { useState, useEffect, useRef, FC } from "react";
+import { useCities } from "@/hooks/useCities";
 
 interface Props {
   onClick?: () => void;
@@ -20,6 +21,7 @@ const LocationInput: FC<Props> = ({
   const [value, setValue] = useState("");
   const containerRef = useRef(null);
   const inputRef = useRef(null);
+  const { data: cities, error, isLoading } = useCities();
 
   useEffect(() => {
     setValue(defaultValue);
@@ -33,31 +35,39 @@ const LocationInput: FC<Props> = ({
     }, 0);
   };
 
-  const renderSearchValues = ({
-    heading,
-    items,
-  }: {
-    heading: string;
-    items: string[];
-  }) => {
+  // Render filtered cities based on input value
+  const renderSearchValues = ({ heading }: { heading: string }) => {
+    // Filter cities based on input value
+    const filteredCities = value
+      ? cities?.filter((item: any) =>
+          (item.name + (item.state ? ", " + item.state : ""))
+            .toLowerCase()
+            .includes(value.toLowerCase())
+        )
+      : cities;
     return (
       <>
         <p className="block font-semibold text-base">
           {heading || "Destinations"}
         </p>
-        <div className="mt-3">
-          {items.map((item) => {
-            return (
-              <div
-                className="py-2 mb-1 flex items-center space-x-3 text-sm"
-                onClick={() => handleSelectLocation(item)}
-                key={item}
-              >
-                <MapPinIcon className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-                <span className="">{item}</span>
-              </div>
-            );
-          })}
+        <div className="mt-3" style={{ maxHeight: "30vh", overflowY: "auto" }}>
+          {filteredCities?.map((item: any) => (
+            <div
+              className="py-2 mb-1 flex items-center space-x-3 text-sm"
+              onClick={() =>
+                handleSelectLocation(
+                  item.name + (item.state ? ", " + item.state : "")
+                )
+              }
+              key={item.id}
+            >
+              <MapPinIcon className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
+              <span className="">
+                {item.name}
+                {item.state ? ", " + item.state : ""}
+              </span>
+            </div>
+          ))}
         </div>
       </>
     );
@@ -72,7 +82,7 @@ const LocationInput: FC<Props> = ({
         <div className="relative mt-5">
           <input
             className={`block w-full bg-transparent border px-4 py-3 pr-12 border-neutral-900 dark:border-neutral-200 rounded-xl focus:ring-0 focus:outline-none text-base leading-none placeholder-neutral-500 dark:placeholder-neutral-300 truncate font-bold placeholder:truncate`}
-            placeholder={"Search destinations"}
+            placeholder={"Search location"}
             value={value}
             onChange={(e) => setValue(e.currentTarget.value)}
             ref={inputRef}
@@ -82,27 +92,9 @@ const LocationInput: FC<Props> = ({
           </span>
         </div>
         <div className="mt-7">
-          {value
-            ? renderSearchValues({
-                heading: "Locations",
-                items: [
-                  "Afghanistan",
-                  "Albania",
-                  "Algeria",
-                  "American Samao",
-                  "Andorra",
-                ],
-              })
-            : renderSearchValues({
-                heading: "Popular destinations",
-                items: [
-                  "Australia",
-                  "Canada",
-                  "Germany",
-                  "United Kingdom",
-                  "United Arab Emirates",
-                ],
-              })}
+          {renderSearchValues({
+            heading: value ? "Locations" : "Popular destinations",
+          })}
         </div>
       </div>
     </div>
