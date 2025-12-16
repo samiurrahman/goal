@@ -2,6 +2,7 @@
 const nextConfig = {
   reactStrictMode: false,
   experimental: {},
+  transpilePackages: ["@supabase/supabase-js"],
   images: {
     remotePatterns: [
       {

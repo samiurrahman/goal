@@ -2,6 +2,9 @@
 node_modules/
 client_secret_244391185334-ajae4isl9h8903l3ul3ph83ttqllkmms.apps.googleusercontent.com.json
 .yarn/
+package-lock.json
+# Build directories
+build/
 
 # Next.js build output
 .next/

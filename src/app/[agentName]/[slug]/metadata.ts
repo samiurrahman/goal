@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import supabase from "@/utils/supabaseClient";
+import { supabase } from "@/utils/supabaseClient";
 import { Package } from "@/data/types";
 
 interface PageProps {

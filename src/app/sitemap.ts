@@ -1,5 +1,5 @@
 import { MetadataRoute } from "next";
-import supabase from "@/utils/supabaseClient";
+import { supabase } from "@/utils/supabaseClient";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hajjscanner.com";
