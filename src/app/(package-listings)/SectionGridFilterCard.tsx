@@ -1,5 +1,6 @@
 "use client";
 import React, { FC, useRef, useEffect } from "react";
+
 import Breadcrumb from "@/components/Breadcrumb";
 import TabFilters from "./TabFilters";
 import ButtonPrimary from "@/shared/ButtonPrimary";
@@ -67,6 +68,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
     >
       <Breadcrumb
         items={[{ label: "Home", href: "/" }, { label: "Packages" }]}
+        className="mt-6"
       />
       <div className="mb-4 lg:mb-6 mt-6">
         <TabFilters />
