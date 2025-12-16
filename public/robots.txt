@@ -10,7 +10,7 @@ Disallow: /checkout/
 Disallow: /pay-done/
 
 # Sitemap location
-Sitemap: https://hajjscanner.com/sitemap.xml
+# Sitemap: https://hajjscanner.com/sitemap.xml
 
 # Crawl-delay for specific bots (optional)
 User-agent: Googlebot
