@@ -125,10 +125,10 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     return (
       <div className="listingSection__wrap !space-y-6">
         {/* 1 */}
-        <div className="flex justify-between items-center">
+        {/* <div className="flex justify-between items-center">
           <Badge name="Government Verified" color="green" />
           <LikeSaveBtns />
-        </div>
+        </div> */}
 
         {/* 2 */}
         <h2 className="text-2xl sm:text-2xl lg:text-2xl font-semibold">
@@ -136,29 +136,30 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         </h2>
 
         {/* 6 */}
-        <div className="flex items-center justify-between xl:justify-start space-x-8 xl:space-x-12 text-sm text-neutral-700 dark:text-neutral-300">
+        <div className="flex items-center justify-between xl:justify-start space-x-6 xl:space-x-6 text-sm text-neutral-700 dark:text-neutral-300">
           <div className="flex items-center space-x-3 ">
-            <i className=" las la-user text-2xl "></i>
-            <span className="">
-              6 <span className="hidden sm:inline-block">guests</span>
+            <span className="flex items-center">
+              {/* <i className="las la-map-marker-alt"></i> */}
+              <i className="las la-calendar-week text-2xl"></i>
+              <span className="ml-1 text-sm"> 5 Days, 4 Nights </span>
             </span>
           </div>
           <div className="flex items-center space-x-3">
-            <i className=" las la-bed text-2xl"></i>
-            <span className=" ">
-              6 <span className="hidden sm:inline-block">beds</span>
+            <span className="flex items-center">
+              <i className="las la-hotel text-2xl"></i>
+              <span className="ml-1 text-sm"> Madina Hotel (~300m)</span>
             </span>
           </div>
           <div className="flex items-center space-x-3">
-            <i className=" las la-bath text-2xl"></i>
-            <span className=" ">
-              3 <span className="hidden sm:inline-block">baths</span>
+            <span className="flex items-center">
+              <i className="las la-hotel text-2xl"></i>
+              <span className="ml-1 text-sm"> Makkah Hotel (~500m)</span>
             </span>
           </div>
           <div className="flex items-center space-x-3">
-            <i className=" las la-door-open text-2xl"></i>
-            <span className=" ">
-              2 <span className="hidden sm:inline-block">bedrooms</span>
+            <span className="flex items-center">
+              <i className="las la-plane-departure text-2xl"></i>
+              <span className="ml-1 text-sm"> Mumbai to Mumbai</span>
             </span>
           </div>
         </div>
@@ -172,6 +173,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
             <span className="text-neutral-900 dark:text-neutral-200 font-medium">
               Iqra Hajj Tours
             </span>
+            <Badge name="Government Verified" color="green" />
             {/* make it linkable will redirect to detail page */}
           </span>
         </div>
@@ -182,7 +184,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           <span>·</span>
           <span>
             <i className="las la-map-marker-alt"></i>
-            <span className="ml-1"> Tokyo, Japan</span>
+            <span className="ml-1"> Akola, Maharashtra</span>
           </span>
         </div>
       </div>
@@ -666,10 +668,10 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           {renderSection2()}
           {renderSection3()}
           {/* <SectionDateRange /> */}
+          {renderSection8()}
           {renderSection5()}
           {renderSection6()}
-          {renderSection7()}
-          {renderSection8()}
+          {/* {renderSection7()} */}
         </div>
 
         {/* SIDEBAR */}
