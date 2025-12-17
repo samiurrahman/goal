@@ -159,7 +159,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   return (
     <div className="nc-ListingStayDetailPage">
       {/* BANNER IMAGE WITH FADE-OUT */}
-      {/* <header className="relative h-64 sm:h-80 md:h-96 w-full rounded-md sm:rounded-xl overflow-hidden">
+      <header className="relative h-64 sm:h-80 md:h-96 w-full rounded-md sm:rounded-xl overflow-hidden">
         <Image
           src={PHOTOS[0]}
           alt="Banner"
@@ -175,7 +175,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
               "linear-gradient(to bottom, rgba(0,0,0,0.25) 60%, rgba(255,255,255,1) 100%)",
           }}
         />
-      </header> */}
+      </header>
 
       {/* BREADCRUMB */}
       <div className="relative z-20 mt-4">
