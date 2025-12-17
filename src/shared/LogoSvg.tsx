@@ -11,14 +11,14 @@ const LogoSvg = () => {
     >
       <g
         fill="#4338CA"
-        font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
+        fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"
       >
         <rect x="5" y="60" width="10" height="10" />
-        <text x="20" y="70" font-weight="600" font-size="48">
+        <text x="20" y="70" fontWeight="600" fontSize="48">
           H
         </text>
 
-        <text x="55" y="70" font-weight="600" font-size="48">
+        <text x="55" y="70" fontWeight="600" fontSize="48">
           S
         </text>
       </g>

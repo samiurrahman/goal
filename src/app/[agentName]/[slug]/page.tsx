@@ -21,6 +21,7 @@ import Policies from "./Policies";
 import HostInformation from "./HostInformation";
 import AmenitiesSection from "./AmenitiesSection";
 import PackageInfo from "./PackageInfo";
+// import LocationSection from "./LocationSection";
 
 export interface PackageDetailProps {
   params: { agentName: string; slug: string };
@@ -30,11 +31,6 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   const { agentName, slug } = params;
   // Room rate selection state
   const [selectedRate, setSelectedRate] = useState(roomRates[0]);
-
-  const [isOpenModalAmenities, setIsOpenModalAmenities] = useState(false);
-
-  const openModalAmenities = () => setIsOpenModalAmenities(true);
-  const closeModalAmenities = () => setIsOpenModalAmenities(false);
 
   // Dummy data for policies
   const policiesData = {
@@ -93,75 +89,13 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     responseTime: "Fast response - within a few hours",
     profileUrl: "/author",
   };
-
-  const renderSection6 = () => {
-    return (
-      <div className="listingSection__wrap">
-        {/* HEADING */}
-        <h2 className="text-2xl font-semibold">Reviews (23 reviews)</h2>
-        <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
-
-        {/* Content */}
-        <div className="space-y-5">
-          <FiveStartIconForRate iconClass="w-6 h-6" className="space-x-0.5" />
-          <div className="relative">
-            <Input
-              fontClass=""
-              sizeClass="h-16 px-4 py-3"
-              rounded="rounded-3xl"
-              placeholder="Share your thoughts ..."
-            />
-            <ButtonCircle
-              className="absolute right-2 top-1/2 transform -translate-y-1/2"
-              size=" w-12 h-12 "
-            >
-              <ArrowRightIcon className="w-5 h-5" />
-            </ButtonCircle>
-          </div>
-        </div>
-
-        {/* comment */}
-        <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-          <CommentListing className="py-8" />
-          <CommentListing className="py-8" />
-          <CommentListing className="py-8" />
-          <CommentListing className="py-8" />
-          <div className="pt-8">
-            <ButtonSecondary>View more 20 reviews</ButtonSecondary>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderSection7 = () => {
-    return (
-      <div className="listingSection__wrap">
-        {/* HEADING */}
-        <div>
-          <h2 className="text-2xl font-semibold">Location</h2>
-          <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-            San Diego, CA, United States of America (SAN-San Diego Intl.)
-          </span>
-        </div>
-        <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
-
-        {/* MAP */}
-        <div className="aspect-w-5 aspect-h-5 sm:aspect-h-3 ring-1 ring-black/10 rounded-xl z-0">
-          <div className="rounded-xl overflow-hidden z-0">
-            <iframe
-              width="100%"
-              height="100%"
-              loading="lazy"
-              allowFullScreen
-              referrerPolicy="no-referrer-when-downgrade"
-              src="https://www.google.com/maps/embed/v1/place?key=AIzaSyAGVJfZMAKYfZ71nzL_v5i3LjTTWnCYwTY&q=Eiffel+Tower,Paris+France"
-            ></iframe>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  // Dummy data for location
+  // const locationData = {
+  //   title: "Location",
+  //   address: "San Diego, CA, United States of America (SAN-San Diego Intl.)",
+  //   mapSrc:
+  //     "https://www.google.com/maps/embed/v1/place?key=AIzaSyAGVJfZMAKYfZ71nzL_v5i3LjTTWnCYwTY&q=Eiffel+Tower,Paris+France",
+  // };
 
   const purchaseSummary = () => {
     // Parse value as number
@@ -267,8 +201,9 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
             providerVerified={true}
             providerLocation="Akola, Maharashtra"
           />
-          {/* Use Iternary component */}
+
           <Iternary data={iternaryData} />
+
           <RoomRates
             rates={roomRates}
             selectedRate={selectedRate}
@@ -279,26 +214,25 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
                 icon: (props: React.SVGProps<SVGSVGElement>) => {
                   const Icon = rate.icon;
                   return Icon ? <Icon {...props} /> : <></>;
-                }, // Ensure icon is always defined
+                },
               })
             }
           />
+
           <PackageInfo {...packageInfoData} />
+
           <AmenitiesSection
             amenities={Amenities_demos.map((item) => ({
               ...item,
               icon:
                 typeof item.icon === "string" ? item.icon : item.icon.src ?? "",
             }))}
-            isOpen={isOpenModalAmenities}
-            openModal={openModalAmenities}
-            closeModal={closeModalAmenities}
           />
           <Policies {...policiesData} />
+          {/* <LocationSection {...locationData} /> */}
           <HostInformation {...hostData} />
         </div>
 
-        {/* SIDEBAR */}
         <div className="hidden lg:block flex-grow mt-14 lg:mt-0">
           <div className="sticky top-28">{purchaseSummary()}</div>
         </div>

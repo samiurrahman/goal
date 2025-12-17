@@ -206,7 +206,7 @@ const LocationInput: FC<LocationInputProps> = ({
       )}
 
       {showPopover && (
-        <div className="absolute left-0 z-40 w-full min-w-[300px] sm:min-w-[500px] bg-white dark:bg-neutral-800 top-full mt-3 py-3 sm:py-6 rounded-3xl shadow-xl max-h-[60vh] overflow-y-auto">
+        <div className="absolute left-0 z-40 w-full min-w-[300px] sm:min-w-[500px] bg-white dark:bg-neutral-800 top-full mt-3 py-3 sm:py-6 rounded-3xl shadow-xl max-h-[35vh] overflow-y-auto">
           {value ? renderSearchValue() : renderRecentSearches()}
         </div>
       )}
