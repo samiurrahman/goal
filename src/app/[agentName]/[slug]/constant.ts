@@ -65,31 +65,31 @@ export const Amenities_demos = [
 
 export const roomRates = [
   {
-    label: "5 People sharing",
-    value: "75000",
-    people: 5,
-    highlight: true,
+    label: "Standard",
+    value: "10000",
+    people: 1,
+    highlight: false, // Make sure this is always boolean
     icon: fivePeopleIcon,
   },
   {
-    label: "4 People sharing",
-    value: "85000",
-    people: 4,
-    highlight: false,
+    label: "Deluxe",
+    value: "15000",
+    people: 2,
+    highlight: true, // Always boolean
     icon: fourPeopleIcon,
   },
   {
     label: "3 People sharing",
     value: "95000",
     people: 3,
-    highlight: true,
+    highlight: false,
     icon: threePeopleIcon,
   },
   {
     label: "2 People sharing",
     value: "110000",
     people: 2,
-    highlight: false,
+    highlight: true,
     icon: twoPeopleIcon,
   },
 ];
