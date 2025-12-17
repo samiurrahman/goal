@@ -10,7 +10,7 @@ import Avatar from "@/shared/Avatar";
 import SaleOffBadge from "./SaleOffBadge";
 import { Package } from "@/data/types";
 import { formatPrice } from "@/utils/formatPrice";
-import { Amenities_demos } from "@/app/[agentName]/[slug]/constant";
+import { Amenities_demos } from "@/app/[agentName]/(components)/constant";
 import { MakkahIcon, MadinaIcon } from "@/components/icons/icons";
 import carUtilities8 from "@/images/HIW1.png";
 

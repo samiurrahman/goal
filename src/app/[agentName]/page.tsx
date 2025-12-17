@@ -1,35 +1,29 @@
 "use client";
 
 import React, { FC, useState } from "react";
-import { ArrowRightIcon } from "@heroicons/react/24/outline";
-import CommentListing from "@/components/CommentListing";
-import FiveStartIconForRate from "@/components/FiveStartIconForRate";
-import ButtonCircle from "@/shared/ButtonCircle";
 import ButtonPrimary from "@/shared/ButtonPrimary";
-import ButtonSecondary from "@/shared/ButtonSecondary";
-import Input from "@/shared/Input";
 import Image from "next/image";
-import { Amenities_demos, PHOTOS } from "../(components)/constant";
-import { roomRates } from "../(components)/constant";
-import StayDatesRangeInput from "../(components)/StayDatesRangeInput";
-import GuestsInput from "../(components)/GuestsInput";
+import { Amenities_demos, PHOTOS } from "./(components)/constant";
+import { roomRates } from "./(components)/constant";
+import StayDatesRangeInput from "./(components)/StayDatesRangeInput";
+import GuestsInput from "./(components)/GuestsInput";
 import Breadcrumb from "@/components/Breadcrumb";
-import Iternary from "../(components)/Iternary";
-import PackageMeta from "../(components)/PackageMeta";
-import RoomRates from "../(components)/RoomRates";
-import Policies from "../(components)/Policies";
-import HostInformation from "../(components)/HostInformation";
-import AmenitiesSection from "../(components)/AmenitiesSection";
-import PackageInfo from "../(components)/PackageInfo";
+import Iternary from "./(components)/Iternary";
+import PackageMeta from "./(components)/PackageMeta";
+import RoomRates from "./(components)/RoomRates";
+import Policies from "./(components)/Policies";
+import AmenitiesSection from "./(components)/AmenitiesSection";
+import PackageInfo from "./(components)/PackageInfo";
 // import LocationSection from "./LocationSection";
 
-export interface PackageDetailProps {
-  params: { agentName: string; slug: string };
+export interface AgentDetailsProps {
+  params: { agentName: string };
 }
 
-const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
-  const { agentName, slug } = params;
-  console.log(agentName, slug);
+const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
+  const { agentName } = params;
+  console.log(agentName);
+
   // Room rate selection state
   const [selectedRate, setSelectedRate] = useState(roomRates[0]);
 
@@ -78,17 +72,6 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       "There is a private bathroom with bidet in all units, along with a hairdryer and free toiletries.",
       "The Symphony 9 Tam Coc offers a terrace. Both a bicycle rental service and a car rental service are available at the accommodation, while cycling can be enjoyed nearby.",
     ],
-  };
-
-  const hostData = {
-    name: "Kevin Francis",
-    places: 12,
-    description:
-      "Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides accommodation, an outdoor swimming pool, a bar, a shared lounge, a garden and barbecue facilities...",
-    joined: "Joined in March 2016",
-    responseRate: "100%",
-    responseTime: "Fast response - within a few hours",
-    profileUrl: "/iqra-hajj-tours",
   };
   // Dummy data for location
   // const locationData = {
@@ -182,8 +165,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         <Breadcrumb
           items={[
             { label: "Home", href: "/" },
-            { label: "Packages", href: "/packages" },
-            { label: slug },
+            { label: agentName, href: `/packages/${agentName}` },
           ]}
         />
       </div>
@@ -231,7 +213,6 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           />
           <Policies {...policiesData} />
           {/* <LocationSection {...locationData} /> */}
-          <HostInformation {...hostData} />
         </div>
 
         <div className="hidden lg:block flex-grow mt-14 lg:mt-0">
@@ -242,4 +223,4 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   );
 };
 
-export default PackageDetail;
+export default AgentDetails;
