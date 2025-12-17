@@ -21,6 +21,7 @@ import Policies from "../(components)/Policies";
 import HostInformation from "../(components)/HostInformation";
 import AmenitiesSection from "../(components)/AmenitiesSection";
 import PackageInfo from "../(components)/PackageInfo";
+import MobileFooterSticky from "../(components)/MobileFooterSticky";
 // import LocationSection from "./LocationSection";
 
 export interface PackageDetailProps {
@@ -238,6 +239,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           <div className="sticky top-28">{purchaseSummary()}</div>
         </div>
       </main>
+      <MobileFooterSticky />
     </div>
   );
 };
