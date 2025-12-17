@@ -2,6 +2,7 @@ import React from "react";
 import Avatar from "@/shared/Avatar";
 import StartRating from "@/components/StartRating";
 import ButtonSecondary from "@/shared/ButtonSecondary";
+import Link from "next/link";
 
 interface HostInformationProps {
   name: string;
@@ -33,9 +34,12 @@ const HostInformation: React.FC<HostInformationProps> = ({
         radius="rounded-full"
       />
       <div>
-        <a className="block text-xl font-medium" href="##">
+        <Link
+          href={`/${profileUrl}`}
+          className="block text-xl font-medium hover:underline"
+        >
           {name}
-        </a>
+        </Link>
         <div className="mt-1.5 flex items-center text-sm text-neutral-500 dark:text-neutral-400">
           <StartRating />
           <span className="mx-2">·</span>

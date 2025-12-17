@@ -88,7 +88,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     joined: "Joined in March 2016",
     responseRate: "100%",
     responseTime: "Fast response - within a few hours",
-    profileUrl: "/iqra-hajj-tours",
+    profileUrl: agentName,
   };
   // Dummy data for location
   // const locationData = {
@@ -158,7 +158,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   return (
     <div className="nc-ListingStayDetailPage">
       {/* BANNER IMAGE WITH FADE-OUT */}
-      <header className="relative h-64 sm:h-80 md:h-96 w-full rounded-md sm:rounded-xl overflow-hidden">
+      {/* <header className="relative h-64 sm:h-80 md:h-96 w-full rounded-md sm:rounded-xl overflow-hidden">
         <Image
           src={PHOTOS[0]}
           alt="Banner"
@@ -167,7 +167,6 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           priority
           sizes="100vw"
         />
-        {/* Fade-out gradient at the bottom */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
@@ -175,7 +174,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
               "linear-gradient(to bottom, rgba(0,0,0,0.25) 60%, rgba(255,255,255,1) 100%)",
           }}
         />
-      </header>
+      </header> */}
 
       {/* BREADCRUMB */}
       <div className="relative z-20 mt-4">
@@ -199,6 +198,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
             madinaHotel="Madina Hotel (~300m)"
             route="Mumbai to Mumbai"
             provider="Iqra Hajj Tours"
+            url={agentName}
             providerVerified={true}
             providerLocation="Akola, Maharashtra"
           />

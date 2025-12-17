@@ -3,6 +3,7 @@ import Avatar from "@/shared/Avatar";
 import Badge from "@/shared/Badge";
 import StartRating from "@/components/StartRating";
 import { MakkahIcon, MadinaIcon } from "@/components/icons/icons";
+import Link from "next/link";
 
 export interface PackageMetaProps {
   title: string;
@@ -13,6 +14,7 @@ export interface PackageMetaProps {
   provider: string;
   providerVerified?: boolean;
   providerLocation: string;
+  url: string;
 }
 
 const PackageMeta: React.FC<PackageMetaProps> = ({
@@ -24,6 +26,7 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
   provider,
   providerVerified = true,
   providerLocation,
+  url,
 }) => {
   return (
     <div className="listingSection__wrap !space-y-6">
@@ -64,10 +67,13 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
       <div className="flex items-center">
         <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />
         <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
-          Package by{" "}
-          <span className="text-neutral-900 dark:text-neutral-200 font-medium">
+          Package provider{" "}
+          <Link
+            href={`/${url}`}
+            className="text-neutral-900 dark:text-neutral-200 font-medium hover:underline"
+          >
             {provider}
-          </span>
+          </Link>
           {providerVerified && (
             <Badge name="Government Verified" color="green" />
           )}
