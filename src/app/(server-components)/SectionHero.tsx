@@ -1,5 +1,5 @@
 import React, { FC } from "react";
-import imagePng from "@/images/banner_01.jpg";
+import imagePng from "@/images/banner_04.png";
 import HeroSearchForm from "../(client-components)/(HeroSearchForm)/HeroSearchForm";
 import Image from "next/image";
 // import TypingAnimation from "@/components/TypingAnimation";
