@@ -1,5 +1,5 @@
 "use client";
-import React, { FC, useRef, useEffect } from "react";
+import React, { FC, useRef, useEffect, useMemo } from "react";
 
 import Breadcrumb from "@/components/Breadcrumb";
 import TabFilters from "./TabFilters";
@@ -58,8 +58,10 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const packages: Package[] =
-    data?.pages.flatMap((page) => page as Package[]) || [];
+  const packages = useMemo(
+    () => data?.pages.flatMap((page) => page as Package[]) || [],
+    [data?.pages]
+  );
 
   return (
     <div
@@ -74,6 +76,11 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
         <TabFilters />
       </div>
       <div className="lg:p-10 lg:bg-neutral-50 lg:dark:bg-black/20 grid grid-cols-1 gap-6 rounded-3xl">
+        {error && (
+          <div className="flex justify-center items-center py-12 text-red-500">
+            Error: {error.message}
+          </div>
+        )}
         {isLoading ? (
           <div className="flex justify-center items-center py-12">
             <ButtonPrimary loading>Loading Packages</ButtonPrimary>
