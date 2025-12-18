@@ -2,7 +2,7 @@
 
 Welcome to **Chisfis**, a responsive Nextjs template theme tailored for Online booking, Listing, Real Estate, and booking systems. Whether you're running an accommodation service, travel experience, cruise, car rental, real estate, or a travel agency, Chisfis has got you covered.
 
-![Chisfis Banner](https://i.ibb.co/JqPfydC/b-landing.png) 
+![Chisfis Banner](https://i.ibb.co/JqPfydC/b-landing.png)
 
 ## 🌟 Features
 

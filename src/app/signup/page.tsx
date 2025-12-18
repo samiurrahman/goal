@@ -15,26 +15,26 @@ export interface PageSignUpProps {}
 
 const loginSocials = [
   {
-    name: "Continue with Facebook",
-    href: "#",
+    name: 'Continue with Facebook',
+    href: '#',
     icon: facebookSvg,
   },
   {
-    name: "Continue with Twitter",
-    href: "#",
+    name: 'Continue with Twitter',
+    href: '#',
     icon: twitterSvg,
   },
   {
-    name: "Continue with Google",
-    href: "#",
+    name: 'Continue with Google',
+    href: '#',
     icon: googleSvg,
   },
 ];
 
 const PageSignUp: FC<PageSignUpProps> = ({}) => {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -58,7 +58,7 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
     }
   };
 
-  const handleOAuthSignUp = async (provider: "google") => {
+  const handleOAuthSignUp = async (provider: 'google') => {
     setLoading(true);
     setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
@@ -84,14 +84,10 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
             <button
               type="button"
               className="nc-will-change-transform flex w-full rounded-lg bg-primary-50 dark:bg-neutral-800 px-4 py-3 transform transition-transform sm:px-6 hover:translate-y-[-2px]"
-              onClick={() => handleOAuthSignUp("google")}
+              onClick={() => handleOAuthSignUp('google')}
               disabled={loading}
             >
-              <Image
-                className="flex-shrink-0"
-                src={googleSvg}
-                alt="Continue with Google"
-              />
+              <Image className="flex-shrink-0" src={googleSvg} alt="Continue with Google" />
               <h3 className="flex-grow text-center text-sm font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
                 Continue with Google
               </h3>
@@ -107,9 +103,7 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
           {/* FORM */}
           <form className="grid grid-cols-1 gap-6" onSubmit={handleSignUp}>
             <label className="block">
-              <span className="text-neutral-800 dark:text-neutral-200">
-                Email address
-              </span>
+              <span className="text-neutral-800 dark:text-neutral-200">Email address</span>
               <Input
                 type="email"
                 placeholder="example@example.com"
@@ -132,7 +126,7 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
               />
             </label>
             <ButtonPrimary type="submit" disabled={loading}>
-              {loading ? "Signing up..." : "Continue"}
+              {loading ? 'Signing up...' : 'Continue'}
             </ButtonPrimary>
             {error && <span className="text-red-500 text-sm">{error}</span>}
           </form>

@@ -1,6 +1,6 @@
-import Image, { StaticImageData } from "next/image";
-import React, { FC, ReactNode } from "react";
-import ButtonPrimary from "@/shared/ButtonPrimary";
+import Image, { StaticImageData } from 'next/image';
+import React, { FC, ReactNode } from 'react';
+import ButtonPrimary from '@/shared/ButtonPrimary';
 
 export interface SectionHeroProps {
   className?: string;
@@ -11,7 +11,7 @@ export interface SectionHeroProps {
 }
 
 const SectionHero: FC<SectionHeroProps> = ({
-  className = "",
+  className = '',
   rightImg,
   heading,
   subHeading,

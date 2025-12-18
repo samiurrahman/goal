@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import Logo from "@/shared/Logo";
-import SocialsList1 from "@/shared/SocialsList1";
-import { CustomLink } from "@/data/types";
-import React from "react";
-import FooterNav from "./FooterNav";
+import Logo from '@/shared/Logo';
+import SocialsList1 from '@/shared/SocialsList1';
+import { CustomLink } from '@/data/types';
+import React from 'react';
+import FooterNav from './FooterNav';
 
 export interface WidgetFooterMenu {
   id: string;
@@ -14,47 +14,47 @@ export interface WidgetFooterMenu {
 
 const widgetMenus: WidgetFooterMenu[] = [
   {
-    id: "5",
-    title: "Getting started",
+    id: '5',
+    title: 'Getting started',
     menus: [
-      { href: "#", label: "Installation" },
-      { href: "#", label: "Release Notes" },
-      { href: "#", label: "Upgrade Guide" },
-      { href: "#", label: "Browser Support" },
-      { href: "#", label: "Editor Support" },
+      { href: '#', label: 'Installation' },
+      { href: '#', label: 'Release Notes' },
+      { href: '#', label: 'Upgrade Guide' },
+      { href: '#', label: 'Browser Support' },
+      { href: '#', label: 'Editor Support' },
     ],
   },
   {
-    id: "1",
-    title: "Explore",
+    id: '1',
+    title: 'Explore',
     menus: [
-      { href: "#", label: "Design features" },
-      { href: "#", label: "Prototyping" },
-      { href: "#", label: "Design systems" },
-      { href: "#", label: "Pricing" },
-      { href: "#", label: "Security" },
+      { href: '#', label: 'Design features' },
+      { href: '#', label: 'Prototyping' },
+      { href: '#', label: 'Design systems' },
+      { href: '#', label: 'Pricing' },
+      { href: '#', label: 'Security' },
     ],
   },
   {
-    id: "2",
-    title: "Resources",
+    id: '2',
+    title: 'Resources',
     menus: [
-      { href: "#", label: "Best practices" },
-      { href: "#", label: "Support" },
-      { href: "#", label: "Developers" },
-      { href: "#", label: "Learn design" },
-      { href: "#", label: "Releases" },
+      { href: '#', label: 'Best practices' },
+      { href: '#', label: 'Support' },
+      { href: '#', label: 'Developers' },
+      { href: '#', label: 'Learn design' },
+      { href: '#', label: 'Releases' },
     ],
   },
   {
-    id: "4",
-    title: "Community",
+    id: '4',
+    title: 'Community',
     menus: [
-      { href: "#", label: "Discussion Forums" },
-      { href: "#", label: "Code of Conduct" },
-      { href: "#", label: "Community Resources" },
-      { href: "#", label: "Contributing" },
-      { href: "#", label: "Concurrent Mode" },
+      { href: '#', label: 'Discussion Forums' },
+      { href: '#', label: 'Code of Conduct' },
+      { href: '#', label: 'Community Resources' },
+      { href: '#', label: 'Contributing' },
+      { href: '#', label: 'Concurrent Mode' },
     ],
   },
 ];
@@ -63,9 +63,7 @@ const Footer: React.FC = () => {
   const renderWidgetMenuItem = (menu: WidgetFooterMenu, index: number) => {
     return (
       <div key={index} className="text-sm">
-        <h2 className="font-semibold text-neutral-700 dark:text-neutral-200">
-          {menu.title}
-        </h2>
+        <h2 className="font-semibold text-neutral-700 dark:text-neutral-200">{menu.title}</h2>
         <ul className="mt-5 space-y-4">
           {menu.menus.map((item, index) => (
             <li key={index}>

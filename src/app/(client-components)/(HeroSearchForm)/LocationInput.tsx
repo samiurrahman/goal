@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { ClockIcon, MapPinIcon } from "@heroicons/react/24/outline";
-import React, { useState, useRef, useEffect, FC } from "react";
-import ClearDataButton from "./ClearDataButton";
-import { useCities } from "@/hooks/useCities";
+import { ClockIcon, MapPinIcon } from '@heroicons/react/24/outline';
+import React, { useState, useRef, useEffect, FC } from 'react';
+import ClearDataButton from './ClearDataButton';
+import { useCities } from '@/hooks/useCities';
 
 export interface LocationInputProps {
   placeHolder?: string;
@@ -16,16 +16,16 @@ export interface LocationInputProps {
 
 const LocationInput: FC<LocationInputProps> = ({
   autoFocus = false,
-  placeHolder = "Location",
-  desc = "where to?",
-  className = "nc-flex-1.5",
-  divHideVerticalLineClass = "left-10 -right-0.5",
+  placeHolder = 'Location',
+  desc = 'where to?',
+  className = 'nc-flex-1.5',
+  divHideVerticalLineClass = 'left-10 -right-0.5',
   onLocationSelect,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState('');
   const [showPopover, setShowPopover] = useState(autoFocus);
   const [focusedIndex, setFocusedIndex] = useState(-1);
 
@@ -35,11 +35,11 @@ const LocationInput: FC<LocationInputProps> = ({
 
   useEffect(() => {
     if (eventClickOutsideDiv) {
-      document.removeEventListener("click", eventClickOutsideDiv);
+      document.removeEventListener('click', eventClickOutsideDiv);
     }
-    showPopover && document.addEventListener("click", eventClickOutsideDiv);
+    showPopover && document.addEventListener('click', eventClickOutsideDiv);
     return () => {
-      document.removeEventListener("click", eventClickOutsideDiv);
+      document.removeEventListener('click', eventClickOutsideDiv);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showPopover]);
@@ -61,7 +61,7 @@ const LocationInput: FC<LocationInputProps> = ({
   };
 
   const handleSelectLocation = (item: any) => {
-    setValue(item.name + (item.state ? ", " + item.state : ""));
+    setValue(item.name + (item.state ? ', ' + item.state : ''));
     setShowPopover(false); // Close the popover after selection
     setFocusedIndex(-1);
     if (inputRef.current) inputRef.current.blur(); // Remove focus from input
@@ -73,9 +73,7 @@ const LocationInput: FC<LocationInputProps> = ({
   // Filter cities based on input value
   const filteredCities = value
     ? cities?.filter((item) =>
-        (item.name + ", " + item.state)
-          .toLowerCase()
-          .includes(value.toLowerCase())
+        (item.name + ', ' + item.state).toLowerCase().includes(value.toLowerCase())
       )
     : cities;
 
@@ -84,15 +82,13 @@ const LocationInput: FC<LocationInputProps> = ({
     if (!showPopover) return;
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!filteredCities || filteredCities.length === 0) return;
-      if (e.key === "ArrowDown") {
+      if (e.key === 'ArrowDown') {
         setFocusedIndex((prev) => (prev + 1) % filteredCities.length);
         e.preventDefault();
-      } else if (e.key === "ArrowUp") {
-        setFocusedIndex(
-          (prev) => (prev - 1 + filteredCities.length) % filteredCities.length
-        );
+      } else if (e.key === 'ArrowUp') {
+        setFocusedIndex((prev) => (prev - 1 + filteredCities.length) % filteredCities.length);
         e.preventDefault();
-      } else if (e.key === "Enter") {
+      } else if (e.key === 'Enter') {
         if (focusedIndex >= 0) {
           handleSelectLocation(filteredCities[focusedIndex]);
         } else if (filteredCities.length === 1) {
@@ -101,8 +97,8 @@ const LocationInput: FC<LocationInputProps> = ({
         e.preventDefault();
       }
     };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [showPopover, filteredCities, focusedIndex]);
 
   // Reset focus index when value or popover changes
@@ -122,7 +118,7 @@ const LocationInput: FC<LocationInputProps> = ({
               onClick={() => handleSelectLocation(item)}
               key={item.id}
               className={`flex px-4 sm:px-8 items-center space-x-3 sm:space-x-4 py-4 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer ${
-                focusedIndex === idx ? "bg-blue-100 dark:bg-blue-900" : ""
+                focusedIndex === idx ? 'bg-blue-100 dark:bg-blue-900' : ''
               }`}
             >
               <span className="block text-neutral-400">
@@ -146,7 +142,7 @@ const LocationInput: FC<LocationInputProps> = ({
             onClick={() => handleSelectLocation(item)}
             key={item.id}
             className={`flex px-4 sm:px-8 items-center space-x-3 sm:space-x-4 py-4 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer ${
-              focusedIndex === idx ? "bg-blue-100 dark:bg-blue-900" : ""
+              focusedIndex === idx ? 'bg-blue-100 dark:bg-blue-900' : ''
             }`}
           >
             <span className="block text-neutral-400">
@@ -166,7 +162,7 @@ const LocationInput: FC<LocationInputProps> = ({
       <div
         onClick={() => setShowPopover(true)}
         className={`flex z-10 flex-1 relative [ nc-hero-field-padding ] flex-shrink-0 items-center space-x-3 cursor-pointer focus:outline-none text-left  ${
-          showPopover ? "nc-hero-field-focused" : ""
+          showPopover ? 'nc-hero-field-focused' : ''
         }`}
       >
         <div className="text-neutral-300 dark:text-neutral-400">
@@ -190,7 +186,7 @@ const LocationInput: FC<LocationInputProps> = ({
           {((value && showPopover) || (value && !showPopover)) && (
             <ClearDataButton
               onClick={() => {
-                setValue("");
+                setValue('');
                 setShowPopover(true);
                 if (inputRef.current) inputRef.current.focus();
               }}

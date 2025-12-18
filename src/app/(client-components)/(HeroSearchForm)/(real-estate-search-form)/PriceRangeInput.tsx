@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React, { Fragment, useState, FC } from "react";
-import { Popover, Transition } from "@headlessui/react";
-import Slider from "rc-slider";
-import convertNumbThousand from "@/utils/convertNumbThousand";
-import ButtonSubmit from "../ButtonSubmit";
-import { CurrencyDollarIcon } from "@heroicons/react/24/outline";
+import React, { Fragment, useState, FC } from 'react';
+import { Popover, Transition } from '@headlessui/react';
+import Slider from 'rc-slider';
+import convertNumbThousand from '@/utils/convertNumbThousand';
+import ButtonSubmit from '../ButtonSubmit';
+import { CurrencyDollarIcon } from '@heroicons/react/24/outline';
 
 export interface PriceRangeInputProps {
   onChange?: (data: any) => void;
@@ -14,7 +14,7 @@ export interface PriceRangeInputProps {
 
 const PriceRangeInput: FC<PriceRangeInputProps> = ({
   onChange,
-  fieldClassName = "[ nc-hero-field-padding ]",
+  fieldClassName = '[ nc-hero-field-padding ]',
 }) => {
   const [rangePrices, setRangePrices] = useState([100000, 4000000]);
 
@@ -24,12 +24,12 @@ const PriceRangeInput: FC<PriceRangeInputProps> = ({
         <>
           <div
             className={`flex-1 z-10 flex items-center focus:outline-none cursor-pointer ${
-              open ? "nc-hero-field-focused" : ""
+              open ? 'nc-hero-field-focused' : ''
             }`}
           >
             <Popover.Button
               className={`flex-1 flex text-left items-center focus:outline-none ${fieldClassName} space-x-3 `}
-              onClickCapture={() => document.querySelector("html")?.click()}
+              onClickCapture={() => document.querySelector('html')?.click()}
             >
               <div className="text-neutral-300 dark:text-neutral-400">
                 <CurrencyDollarIcon className="w-5 h-5 lg:w-7 lg:h-7" />

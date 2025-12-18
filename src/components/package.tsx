@@ -1,28 +1,25 @@
-"use client";
+'use client';
 
-import Badge from "@/shared/Badge";
-import Image from "next/image";
-import React, { FC, useState } from "react";
-import Link from "next/link";
-import LikeSaveBtns from "./LikeSaveBtns";
-import StartRating from "./StartRating";
-import Avatar from "@/shared/Avatar";
-import SaleOffBadge from "./SaleOffBadge";
-import { Package } from "@/data/types";
-import { formatPrice } from "@/utils/formatPrice";
-import { Amenities_demos } from "@/app/[agentName]/(components)/constant";
-import { MakkahIcon, MadinaIcon } from "@/components/icons/icons";
-import carUtilities8 from "@/images/HIW1.png";
+import Badge from '@/shared/Badge';
+import Image from 'next/image';
+import React, { FC, useState } from 'react';
+import Link from 'next/link';
+import LikeSaveBtns from './LikeSaveBtns';
+import StartRating from './StartRating';
+import Avatar from '@/shared/Avatar';
+import SaleOffBadge from './SaleOffBadge';
+import { Package } from '@/data/types';
+import { formatPrice } from '@/utils/formatPrice';
+import { Amenities_demos } from '@/app/[agentName]/(components)/constant';
+import { MakkahIcon, MadinaIcon } from '@/components/icons/icons';
+import carUtilities8 from '@/images/HIW1.png';
 
 export interface PackageCardProps {
   className?: string;
   data: Package;
 }
 
-const PackageCard: FC<PackageCardProps> = ({
-  className = "",
-  data = {} as Package,
-}) => {
+const PackageCard: FC<PackageCardProps> = ({ className = '', data = {} as Package }) => {
   const [isOpen, setIsOpen] = useState(false);
   const {
     title,
@@ -96,9 +93,7 @@ const PackageCard: FC<PackageCardProps> = ({
                 {formatPrice(price_per_person)}
               </span>
             </div>
-            <div className="text-xs sm:text-sm text-neutral-500 font-normal mt-0.5">
-              per person
-            </div>
+            <div className="text-xs sm:text-sm text-neutral-500 font-normal mt-0.5">per person</div>
           </div>
         </div>
       </div>
@@ -117,7 +112,7 @@ const PackageCard: FC<PackageCardProps> = ({
 
         <span
           className={`absolute right-0 bottom-0 sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 w-10 h-10 bg-neutral-50 dark:bg-neutral-800 rounded-full flex items-center justify-center cursor-pointer ${
-            isOpen ? "transform -rotate-180" : ""
+            isOpen ? 'transform -rotate-180' : ''
           }`}
           onClick={() => setIsOpen(!isOpen)}
         >

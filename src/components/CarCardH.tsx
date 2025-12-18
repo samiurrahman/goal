@@ -1,20 +1,20 @@
-import React, { FC } from "react";
-import { DEMO_CAR_LISTINGS } from "@/data/listings";
-import { CarDataType, PackageListing } from "@/data/types";
-import StartRating from "@/components/StartRating";
-import BtnLikeIcon from "@/components/BtnLikeIcon";
-import SaleOffBadge from "@/components/SaleOffBadge";
-import Badge from "@/shared/Badge";
-import Avatar from "@/shared/Avatar";
-import Image from "next/image";
-import Link from "next/link";
+import React, { FC } from 'react';
+import { DEMO_CAR_LISTINGS } from '@/data/listings';
+import { CarDataType, PackageListing } from '@/data/types';
+import StartRating from '@/components/StartRating';
+import BtnLikeIcon from '@/components/BtnLikeIcon';
+import SaleOffBadge from '@/components/SaleOffBadge';
+import Badge from '@/shared/Badge';
+import Avatar from '@/shared/Avatar';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export interface CarCardHProps {
   className?: string;
   data?: PackageListing;
 }
 
-const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
+const CarCardH: FC<CarCardHProps> = ({ className = '', data = {} }) => {
   const {
     title,
     price_per_person,
@@ -40,19 +40,14 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
           <Image
             alt=""
             className="w-full"
-            src={thumbnail_url || "/default-image.jpg"}
+            src={thumbnail_url || '/default-image.jpg'}
             width={865}
             height={466}
             sizes="(max-width: 640px) 100vw, 300px"
           />
         </div>
-        <BtnLikeIcon
-          isLiked={includes_breakfast}
-          className="absolute right-3 top-3"
-        />
-        {includes_breakfast && (
-          <SaleOffBadge className="absolute left-3 top-3" />
-        )}
+        <BtnLikeIcon isLiked={includes_breakfast} className="absolute right-3 top-3" />
+        {includes_breakfast && <SaleOffBadge className="absolute left-3 top-3" />}
       </div>
     );
   };
@@ -92,23 +87,17 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
           {/* --- */}
           <div className="flex items-center space-x-2">
             <i className="las la-user-friends text-xl"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              4 seats
-            </span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">4 seats</span>
           </div>
           {/* --- */}
           <div className="flex items-center space-x-2">
             <i className="las la-dharmachakra text-xl"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              Auto gearbox
-            </span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Auto gearbox</span>
           </div>
           {/* --- */}
           <div className="flex items-center space-x-2">
             <i className="las la-suitcase text-xl"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              2 bags
-            </span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">2 bags</span>
           </div>
         </div>
 
@@ -117,8 +106,7 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
           <div className="flex items-center space-x-3 text-sm text-neutral-700  dark:text-neutral-300">
             {/* <Avatar imgUrl={author.avatar} userName={author.displayName} /> */}
             <span className="hidden sm:inline-block">
-              <span className="hidden sm:inline">{agent_name} </span>{" "}
-              {/* {author.displayName} */}
+              <span className="hidden sm:inline">{agent_name} </span> {/* {author.displayName} */}
             </span>
           </div>
           <span className="text-lg font-semibold text-secondary-700">
@@ -138,7 +126,7 @@ const CarCardH: FC<CarCardHProps> = ({ className = "", data = {} }) => {
     <div
       className={`nc-CarCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden ${className}`}
     >
-      <Link href={slug || "#"} className="flex flex-col md:flex-row">
+      <Link href={slug || '#'} className="flex flex-col md:flex-row">
         {renderSliderGallery()}
         {renderContent()}
       </Link>

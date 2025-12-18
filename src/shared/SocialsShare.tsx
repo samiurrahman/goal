@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC } from 'react';
 
 export interface SocialsShareProps {
   className?: string;
@@ -12,15 +12,15 @@ export interface SocialType {
 }
 
 const socials: SocialType[] = [
-  { name: "Facebook", icon: "lab la-facebook-f", href: "#" },
-  { name: "Twitter", icon: "lab la-twitter", href: "#" },
-  { name: "Linkedin", icon: "lab la-linkedin-in", href: "#" },
-  { name: "Instagram", icon: "lab la-instagram", href: "#" },
+  { name: 'Facebook', icon: 'lab la-facebook-f', href: '#' },
+  { name: 'Twitter', icon: 'lab la-twitter', href: '#' },
+  { name: 'Linkedin', icon: 'lab la-linkedin-in', href: '#' },
+  { name: 'Instagram', icon: 'lab la-instagram', href: '#' },
 ];
 
 const SocialsShare: FC<SocialsShareProps> = ({
-  className = "grid gap-[6px]",
-  itemClass = "w-7 h-7 text-base hover:bg-neutral-100",
+  className = 'grid gap-[6px]',
+  itemClass = 'w-7 h-7 text-base hover:bg-neutral-100',
 }) => {
   const renderItem = (item: SocialType, index: number) => {
     return (

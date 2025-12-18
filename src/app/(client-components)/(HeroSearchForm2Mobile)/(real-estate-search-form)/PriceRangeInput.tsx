@@ -1,22 +1,17 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { FC } from "react";
-import Slider from "rc-slider";
-import convertNumbThousand from "@/utils/convertNumbThousand";
+import React, { useEffect, useState } from 'react';
+import { FC } from 'react';
+import Slider from 'rc-slider';
+import convertNumbThousand from '@/utils/convertNumbThousand';
 
 export interface PriceRangeInputProps {
   onChange?: (e: number[]) => void;
   defaultValue?: number[];
 }
 
-const PriceRangeInput: FC<PriceRangeInputProps> = ({
-  onChange,
-  defaultValue,
-}) => {
-  const [rangePrices, setRangePrices] = useState(
-    defaultValue || [100000, 4000000]
-  );
+const PriceRangeInput: FC<PriceRangeInputProps> = ({ onChange, defaultValue }) => {
+  const [rangePrices, setRangePrices] = useState(defaultValue || [100000, 4000000]);
 
   useEffect(() => {
     if (!defaultValue) return;
@@ -25,9 +20,7 @@ const PriceRangeInput: FC<PriceRangeInputProps> = ({
 
   return (
     <div className="p-5">
-      <span className="block font-semibold text-xl sm:text-2xl">
-        Range Price?
-      </span>
+      <span className="block font-semibold text-xl sm:text-2xl">Range Price?</span>
       <div className="relative flex flex-col space-y-8 mt-7">
         <Slider
           range

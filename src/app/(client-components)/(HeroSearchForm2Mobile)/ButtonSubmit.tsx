@@ -1,5 +1,5 @@
-import React, { FC } from "react";
-import { PathName } from "@/routers/types";
+import React, { FC } from 'react';
+import { PathName } from '@/routers/types';
 
 interface Props {
   className?: string;
@@ -7,9 +7,9 @@ interface Props {
   href?: PathName;
 }
 const ButtonSubmit: FC<Props> = ({
-  className = "",
+  className = '',
   onClick = () => {},
-  href = "/listing-stay",
+  href = '/listing-stay',
 }) => {
   return (
     <button

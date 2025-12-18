@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import React, { Fragment, useState } from "react";
-import { FC } from "react";
-import DatePicker from "react-datepicker";
-import { Popover, Transition } from "@headlessui/react";
-import { CalendarIcon } from "@heroicons/react/24/outline";
-import DatePickerCustomHeaderTwoMonth from "@/components/DatePickerCustomHeaderTwoMonth";
-import DatePickerCustomDay from "@/components/DatePickerCustomDay";
-import ClearDataButton from "../ClearDataButton";
-import ButtonSubmit from "../ButtonSubmit";
+import React, { Fragment, useState } from 'react';
+import { FC } from 'react';
+import DatePicker from 'react-datepicker';
+import { Popover, Transition } from '@headlessui/react';
+import { CalendarIcon } from '@heroicons/react/24/outline';
+import DatePickerCustomHeaderTwoMonth from '@/components/DatePickerCustomHeaderTwoMonth';
+import DatePickerCustomDay from '@/components/DatePickerCustomDay';
+import ClearDataButton from '../ClearDataButton';
+import ButtonSubmit from '../ButtonSubmit';
 
 export interface RentalCarDatesRangeInputProps {
   className?: string;
@@ -17,14 +17,12 @@ export interface RentalCarDatesRangeInputProps {
 }
 
 const RentalCarDatesRangeInput: FC<RentalCarDatesRangeInputProps> = ({
-  className = "",
-  fieldClassName = "[ nc-hero-field-padding ]",
+  className = '',
+  fieldClassName = '[ nc-hero-field-padding ]',
   hasButtonSubmit = true,
 }) => {
-  const [startDate, setStartDate] = useState<Date | null>(
-    new Date("2023/03/01")
-  );
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/03/16"));
+  const [startDate, setStartDate] = useState<Date | null>(new Date('2023/03/01'));
+  const [endDate, setEndDate] = useState<Date | null>(new Date('2023/03/16'));
 
   const onChangeDate = (dates: [Date | null, Date | null]) => {
     const [start, end] = dates;
@@ -40,20 +38,20 @@ const RentalCarDatesRangeInput: FC<RentalCarDatesRangeInputProps> = ({
         </div>
         <div className="flex-grow text-left">
           <span className="block xl:text-lg font-semibold">
-            {startDate?.toLocaleDateString("en-US", {
-              month: "short",
-              day: "2-digit",
-            }) || "Add dates"}
+            {startDate?.toLocaleDateString('en-US', {
+              month: 'short',
+              day: '2-digit',
+            }) || 'Add dates'}
             {endDate
-              ? " - " +
-                endDate?.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "2-digit",
+              ? ' - ' +
+                endDate?.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: '2-digit',
                 })
-              : ""}
+              : ''}
           </span>
           <span className="block mt-1 text-sm text-neutral-400 leading-none font-light">
-            {"Pick up - Drop off"}
+            {'Pick up - Drop off'}
           </span>
         </div>
       </>
@@ -62,14 +60,12 @@ const RentalCarDatesRangeInput: FC<RentalCarDatesRangeInputProps> = ({
 
   return (
     <>
-      <Popover
-        className={`RentalCarDatesRangeInput relative flex ${className}`}
-      >
+      <Popover className={`RentalCarDatesRangeInput relative flex ${className}`}>
         {({ open }) => (
           <>
             <div
               className={`flex-1 z-10 flex items-center focus:outline-none ${
-                open ? "nc-hero-field-focused" : ""
+                open ? 'nc-hero-field-focused' : ''
               }`}
             >
               <Popover.Button
@@ -114,9 +110,7 @@ const RentalCarDatesRangeInput: FC<RentalCarDatesRangeInputProps> = ({
                     monthsShown={2}
                     showPopperArrow={false}
                     inline
-                    renderCustomHeader={(p) => (
-                      <DatePickerCustomHeaderTwoMonth {...p} />
-                    )}
+                    renderCustomHeader={(p) => <DatePickerCustomHeaderTwoMonth {...p} />}
                     renderDayContents={(day, date) => (
                       <DatePickerCustomDay dayOfMonth={day} date={date} />
                     )}

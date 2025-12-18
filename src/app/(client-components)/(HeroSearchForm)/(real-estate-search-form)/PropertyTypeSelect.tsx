@@ -1,30 +1,29 @@
-"use client";
-import React, { Fragment, FC } from "react";
-import { Popover, Transition } from "@headlessui/react";
-import Checkbox from "@/shared/Checkbox";
-import { ClassOfProperties } from "../../type";
-import { HomeIcon } from "@heroicons/react/24/outline";
+'use client';
+import React, { Fragment, FC } from 'react';
+import { Popover, Transition } from '@headlessui/react';
+import Checkbox from '@/shared/Checkbox';
+import { ClassOfProperties } from '../../type';
+import { HomeIcon } from '@heroicons/react/24/outline';
 
 const defaultPropertyType: ClassOfProperties[] = [
   {
-    name: "Duplex House",
-    description: "Have a place to yourself",
+    name: 'Duplex House',
+    description: 'Have a place to yourself',
     checked: true,
   },
   {
-    name: "Ferme House",
-    description: "Have your own room and share some common spaces",
+    name: 'Ferme House',
+    description: 'Have your own room and share some common spaces',
     checked: false,
   },
   {
-    name: "Chalet House",
-    description:
-      "Have a private or shared room in a boutique hotel, hostel, and more",
+    name: 'Chalet House',
+    description: 'Have a private or shared room in a boutique hotel, hostel, and more',
     checked: false,
   },
   {
-    name: "Maison House",
-    description: "Stay in a shared space, like a common room",
+    name: 'Maison House',
+    description: 'Stay in a shared space, like a common room',
     checked: false,
   },
 ];
@@ -36,19 +35,19 @@ export interface PropertyTypeSelectProps {
 
 const PropertyTypeSelect: FC<PropertyTypeSelectProps> = ({
   onChange,
-  fieldClassName = "[ nc-hero-field-padding ]",
+  fieldClassName = '[ nc-hero-field-padding ]',
 }) => {
   const [typeOfProperty, setTypeOfProperty] =
     React.useState<ClassOfProperties[]>(defaultPropertyType);
 
-  let typeOfPropertyText = "";
+  let typeOfPropertyText = '';
   if (typeOfProperty && typeOfProperty.length > 0) {
     typeOfPropertyText = typeOfProperty
       .filter((item) => item.checked)
       .map((item) => {
         return item.name;
       })
-      .join(", ");
+      .join(', ');
   }
   return (
     <Popover className="flex relative flex-1">
@@ -56,18 +55,16 @@ const PropertyTypeSelect: FC<PropertyTypeSelectProps> = ({
         <>
           <Popover.Button
             className={`flex z-10 text-left w-full flex-shrink-0 items-center ${fieldClassName} space-x-3 focus:outline-none cursor-pointer ${
-              open ? "nc-hero-field-focused" : ""
+              open ? 'nc-hero-field-focused' : ''
             }`}
-            onClickCapture={() => document.querySelector("html")?.click()}
+            onClickCapture={() => document.querySelector('html')?.click()}
           >
             <div className="text-neutral-300 dark:text-neutral-400">
               <HomeIcon className="w-5 h-5 lg:w-7 lg:h-7" />
             </div>
             <div className="flex-1">
               <span className="block xl:text-lg font-semibold overflow-hidden">
-                <span className="line-clamp-1">
-                  {typeOfPropertyText || `Type`}
-                </span>
+                <span className="line-clamp-1">{typeOfPropertyText || `Type`}</span>
               </span>
               <span className="block mt-1 text-sm text-neutral-400 leading-none font-light ">
                 Property type

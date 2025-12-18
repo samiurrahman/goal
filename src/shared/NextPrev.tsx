@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React, { FC } from "react";
-import twFocusClass from "@/utils/twFocusClass";
+import React, { FC } from 'react';
+import twFocusClass from '@/utils/twFocusClass';
 
 export interface NextPrevProps {
   className?: string;
@@ -15,10 +15,10 @@ export interface NextPrevProps {
 }
 
 const NextPrev: FC<NextPrevProps> = ({
-  className = "",
+  className = '',
   onClickNext = () => {},
   onClickPrev = () => {},
-  btnClassName = "w-10 h-10",
+  btnClassName = 'w-10 h-10',
   onlyNext = false,
   onlyPrev = false,
 }) => {
@@ -31,7 +31,7 @@ const NextPrev: FC<NextPrevProps> = ({
       {!onlyNext && (
         <button
           className={`${btnClassName} ${
-            !onlyPrev ? "mr-[6px]" : ""
+            !onlyPrev ? 'mr-[6px]' : ''
           } bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-6000 dark:hover:border-neutral-500 rounded-full flex items-center justify-center hover:border-neutral-300 ${twFocusClass()}`}
           onClick={onClickPrev}
           title="Prev"

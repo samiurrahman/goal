@@ -1,9 +1,9 @@
-import React, { FC } from "react";
-import { AuthorType } from "@/data/types";
-import { StarIcon } from "@heroicons/react/24/solid";
-import Avatar from "@/shared/Avatar";
-import Badge from "@/shared/Badge";
-import Link from "next/link";
+import React, { FC } from 'react';
+import { AuthorType } from '@/data/types';
+import { StarIcon } from '@heroicons/react/24/solid';
+import Avatar from '@/shared/Avatar';
+import Badge from '@/shared/Badge';
+import Link from 'next/link';
 
 export interface CardAuthorBoxProps {
   className?: string;
@@ -11,12 +11,8 @@ export interface CardAuthorBoxProps {
   index?: number;
 }
 
-const CardAuthorBox: FC<CardAuthorBoxProps> = ({
-  className = "",
-  author,
-  index,
-}) => {
-  const { displayName, href = "/", avatar, starRating } = author;
+const CardAuthorBox: FC<CardAuthorBoxProps> = ({ className = '', author, index }) => {
+  const { displayName, href = '/', avatar, starRating } = author;
   return (
     <Link
       href={href}
@@ -25,7 +21,7 @@ const CardAuthorBox: FC<CardAuthorBoxProps> = ({
       {index && (
         <Badge
           className="absolute left-3 top-3"
-          color={index === 1 ? "red" : index === 2 ? "blue" : "green"}
+          color={index === 1 ? 'red' : index === 2 ? 'blue' : 'green'}
           name={`#${index}`}
         />
       )}
@@ -39,16 +35,12 @@ const CardAuthorBox: FC<CardAuthorBoxProps> = ({
         <h2 className={`text-base font-medium`}>
           <span className="line-clamp-1">{displayName}</span>
         </h2>
-        <span
-          className={`block mt-1.5 text-sm text-neutral-500 dark:text-neutral-400`}
-        >
+        <span className={`block mt-1.5 text-sm text-neutral-500 dark:text-neutral-400`}>
           New York
         </span>
       </div>
       <div className="py-2 px-5 mt-4 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center ">
-        <span className="text-xs font-medium pt-[1px]">
-          {starRating || 4.9}
-        </span>
+        <span className="text-xs font-medium pt-[1px]">{starRating || 4.9}</span>
         <StarIcon className="w-5 h-5 text-amber-500 ml-2 " />
       </div>
     </Link>

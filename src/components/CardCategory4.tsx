@@ -1,19 +1,16 @@
-import React, { FC } from "react";
-import { TaxonomyType } from "@/data/types";
-import convertNumbThousand from "@/utils/convertNumbThousand";
-import Link from "next/link";
-import Image from "next/image";
+import React, { FC } from 'react';
+import { TaxonomyType } from '@/data/types';
+import convertNumbThousand from '@/utils/convertNumbThousand';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export interface CardCategory4Props {
   className?: string;
   taxonomy: TaxonomyType;
 }
 
-const CardCategory4: FC<CardCategory4Props> = ({
-  className = "",
-  taxonomy,
-}) => {
-  const { count, name, href = "/", thumbnail, listingType } = taxonomy;
+const CardCategory4: FC<CardCategory4Props> = ({ className = '', taxonomy }) => {
+  const { count, name, href = '/', thumbnail, listingType } = taxonomy;
   return (
     <Link
       href={href}
@@ -24,7 +21,7 @@ const CardCategory4: FC<CardCategory4Props> = ({
         className={`flex-shrink-0 relative w-full aspect-w-5 aspect-h-5 sm:aspect-h-6 h-0 rounded-2xl overflow-hidden group`}
       >
         <Image
-          src={thumbnail || ""}
+          src={thumbnail || ''}
           className="object-cover w-full h-full rounded-2xl"
           fill
           alt="archive"
@@ -38,14 +35,12 @@ const CardCategory4: FC<CardCategory4Props> = ({
         >
           {name}
         </h2>
-        <span
-          className={`block mt-2 text-sm text-neutral-6000 dark:text-neutral-400`}
-        >
+        <span className={`block mt-2 text-sm text-neutral-6000 dark:text-neutral-400`}>
           {convertNumbThousand(count || 0)}
           {` `}
-          {(!listingType || listingType === "stay") && "properties"}
-          {listingType === "car" && "cars"}
-          {listingType === "experiences" && "experiences"}
+          {(!listingType || listingType === 'stay') && 'properties'}
+          {listingType === 'car' && 'cars'}
+          {listingType === 'experiences' && 'experiences'}
         </span>
       </div>
     </Link>

@@ -4,7 +4,7 @@ export interface GuestsObject {
   guestInfants?: number;
 }
 
-export type StaySearchFormFields = "location" | "guests" | "dates";
+export type StaySearchFormFields = 'location' | 'guests' | 'dates';
 
 export interface PropertyType {
   name: string;

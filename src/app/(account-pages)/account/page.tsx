@@ -1,10 +1,10 @@
-import React, { FC } from "react";
-import Label from "@/components/Label";
-import Avatar from "@/shared/Avatar";
-import ButtonPrimary from "@/shared/ButtonPrimary";
-import Input from "@/shared/Input";
-import Select from "@/shared/Select";
-import Textarea from "@/shared/Textarea";
+import React, { FC } from 'react';
+import Label from '@/components/Label';
+import Avatar from '@/shared/Avatar';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import Input from '@/shared/Input';
+import Select from '@/shared/Select';
+import Textarea from '@/shared/Textarea';
 
 export interface AccountPageProps {}
 
@@ -37,10 +37,7 @@ const AccountPage = () => {
 
               <span className="mt-1 text-xs">Change Image</span>
             </div>
-            <input
-              type="file"
-              className="absolute inset-0 opacity-0 cursor-pointer"
-            />
+            <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" />
           </div>
         </div>
         <div className="flex-grow mt-10 md:mt-0 md:pl-16 max-w-3xl space-y-6">

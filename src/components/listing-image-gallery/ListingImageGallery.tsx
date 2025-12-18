@@ -1,26 +1,26 @@
-"use client";
+'use client';
 
-import "./styles/index.css";
-import Image from "next/image";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { FC, Fragment, useEffect, useRef } from "react";
-import Modal from "./components/Modal";
-import type { ListingGalleryImage } from "./utils/types";
-import { useLastViewedPhoto } from "./utils/useLastViewedPhoto";
-import { ArrowSmallLeftIcon } from "@heroicons/react/24/outline";
-import { Dialog, Transition } from "@headlessui/react";
-import LikeSaveBtns from "../LikeSaveBtns";
-import { Route } from "next";
+import './styles/index.css';
+import Image from 'next/image';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { FC, Fragment, useEffect, useRef } from 'react';
+import Modal from './components/Modal';
+import type { ListingGalleryImage } from './utils/types';
+import { useLastViewedPhoto } from './utils/useLastViewedPhoto';
+import { ArrowSmallLeftIcon } from '@heroicons/react/24/outline';
+import { Dialog, Transition } from '@headlessui/react';
+import LikeSaveBtns from '../LikeSaveBtns';
+import { Route } from 'next';
 
 const PHOTOS: string[] = [
-  "https://images.pexels.com/photos/6129967/pexels-photo-6129967.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260",
-  "https://images.pexels.com/photos/7163619/pexels-photo-7163619.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-  "https://images.pexels.com/photos/6527036/pexels-photo-6527036.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-  "https://images.pexels.com/photos/6969831/pexels-photo-6969831.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-  "https://images.pexels.com/photos/6438752/pexels-photo-6438752.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-  "https://images.pexels.com/photos/1320686/pexels-photo-1320686.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-  "https://images.pexels.com/photos/261394/pexels-photo-261394.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
-  "https://images.pexels.com/photos/2861361/pexels-photo-2861361.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+  'https://images.pexels.com/photos/6129967/pexels-photo-6129967.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260',
+  'https://images.pexels.com/photos/7163619/pexels-photo-7163619.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
+  'https://images.pexels.com/photos/6527036/pexels-photo-6527036.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
+  'https://images.pexels.com/photos/6969831/pexels-photo-6969831.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
+  'https://images.pexels.com/photos/6438752/pexels-photo-6438752.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
+  'https://images.pexels.com/photos/1320686/pexels-photo-1320686.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
+  'https://images.pexels.com/photos/261394/pexels-photo-261394.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
+  'https://images.pexels.com/photos/2861361/pexels-photo-2861361.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
 ];
 
 export const DEMO_IMAGE: ListingGalleryImage[] = [...PHOTOS].map(
@@ -33,7 +33,7 @@ export const DEMO_IMAGE: ListingGalleryImage[] = [...PHOTOS].map(
 );
 
 export const getNewParam = ({
-  paramName = "photoId",
+  paramName = 'photoId',
   value,
 }: {
   paramName?: string;
@@ -50,13 +50,9 @@ interface Props {
   isShowModal: boolean;
 }
 
-const ListingImageGallery: FC<Props> = ({
-  images = DEMO_IMAGE,
-  onClose,
-  isShowModal,
-}) => {
+const ListingImageGallery: FC<Props> = ({ images = DEMO_IMAGE, onClose, isShowModal }) => {
   const searchParams = useSearchParams();
-  const photoId = searchParams?.get("photoId");
+  const photoId = searchParams?.get('photoId');
   const router = useRouter();
   const [lastViewedPhoto, setLastViewedPhoto] = useLastViewedPhoto();
 
@@ -65,7 +61,7 @@ const ListingImageGallery: FC<Props> = ({
   useEffect(() => {
     // This effect keeps track of the last viewed photo in the modal to keep the index page in sync when the user navigates back
     if (lastViewedPhoto && !photoId) {
-      lastViewedPhotoRef.current?.scrollIntoView({ block: "center" });
+      lastViewedPhotoRef.current?.scrollIntoView({ block: 'center' });
       setLastViewedPhoto(null);
     }
   }, [photoId, lastViewedPhoto, setLastViewedPhoto]);
@@ -84,7 +80,7 @@ const ListingImageGallery: FC<Props> = ({
               // @ts-ignore
               setLastViewedPhoto(photoId);
               let params = new URLSearchParams(document.location.search);
-              params.delete("photoId");
+              params.delete('photoId');
               router.push(`${thisPathname}/?${params.toString()}` as Route);
             }}
           />
@@ -105,7 +101,7 @@ const ListingImageGallery: FC<Props> = ({
                 alt="chisfis listing gallery "
                 className="transform rounded-lg brightness-90 transition will-change-auto group-hover:brightness-110 focus:outline-none"
                 style={{
-                  transform: "translate3d(0, 0, 0)",
+                  transform: 'translate3d(0, 0, 0)',
                 }}
                 src={url}
                 width={720}

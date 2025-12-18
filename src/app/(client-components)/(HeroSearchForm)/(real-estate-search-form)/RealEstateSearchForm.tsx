@@ -1,7 +1,7 @@
-import React, { FC } from "react";
-import LocationInput from "../LocationInput";
-import PriceRangeInput from "./PriceRangeInput";
-import PropertyTypeSelect from "./PropertyTypeSelect";
+import React, { FC } from 'react';
+import LocationInput from '../LocationInput';
+import PriceRangeInput from './PriceRangeInput';
+import PropertyTypeSelect from './PropertyTypeSelect';
 
 export interface RealEstateSearchFormProps {}
 

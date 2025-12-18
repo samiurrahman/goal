@@ -1,5 +1,5 @@
-import React from "react";
-import Link from "next/link";
+import React from 'react';
+import Link from 'next/link';
 
 export interface BreadcrumbItem {
   label: string;
@@ -11,7 +11,7 @@ interface BreadcrumbProps {
   className?: string;
 }
 
-const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, className = "" }) => {
+const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, className = '' }) => {
   return (
     <nav className={`text-sm mb-4 ${className}`} aria-label="breadcrumb">
       <ol className="flex flex-wrap items-center space-x-2">
@@ -24,9 +24,7 @@ const Breadcrumb: React.FC<BreadcrumbProps> = ({ items, className = "" }) => {
             ) : (
               <span className="text-gray-500">{item.label}</span>
             )}
-            {idx < items.length - 1 && (
-              <span className="mx-2 text-gray-400">/</span>
-            )}
+            {idx < items.length - 1 && <span className="mx-2 text-gray-400">/</span>}
           </li>
         ))}
       </ol>

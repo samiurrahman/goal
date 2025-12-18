@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import React, { useState } from "react";
-import { FC } from "react";
-import { useEffect } from "react";
-import ClearDataButton from "./ClearDataButton";
-import { useRef } from "react";
-import useOutsideAlerter from "@/hooks/useOutsideAlerter";
-import { MapPinIcon } from "@heroicons/react/24/outline";
+import React, { useState } from 'react';
+import { FC } from 'react';
+import { useEffect } from 'react';
+import ClearDataButton from './ClearDataButton';
+import { useRef } from 'react';
+import useOutsideAlerter from '@/hooks/useOutsideAlerter';
+import { MapPinIcon } from '@heroicons/react/24/outline';
 
 export interface LocationInputProps {
   onInputDone?: (value: string) => void;
@@ -20,15 +20,15 @@ export interface LocationInputProps {
 const LocationInput: FC<LocationInputProps> = ({
   autoFocus = false,
   onInputDone,
-  placeHolder = "Location",
-  desc = "Where are you going?",
-  className = "nc-flex-1.5",
-  divHideVerticalLineClass = "left-10 -right-0.5",
+  placeHolder = 'Location',
+  desc = 'Where are you going?',
+  className = 'nc-flex-1.5',
+  divHideVerticalLineClass = 'left-10 -right-0.5',
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const [value, setValue] = useState("");
+  const [value, setValue] = useState('');
   const [showPopover, setShowPopover] = useState(autoFocus);
 
   useEffect(() => {
@@ -77,9 +77,7 @@ const LocationInput: FC<LocationInputProps> = ({
               <span className="block text-neutral-400">
                 <MapPinIcon className="h-4 w-4 sm:h-6 sm:w-6" />
               </span>
-              <span className=" block text-neutral-700 dark:text-neutral-200">
-                {item}
-              </span>
+              <span className=" block text-neutral-700 dark:text-neutral-200">{item}</span>
             </span>
           ))}
         </div>
@@ -91,10 +89,10 @@ const LocationInput: FC<LocationInputProps> = ({
     return (
       <>
         {[
-          "Ha Noi, Viet Nam",
-          "San Diego, CA",
-          "Humboldt Park, Chicago, IL",
-          "Bangor, Northern Ireland",
+          'Ha Noi, Viet Nam',
+          'San Diego, CA',
+          'Humboldt Park, Chicago, IL',
+          'Bangor, Northern Ireland',
         ].map((item) => (
           <span
             onClick={() => handleSelectLocation(item)}
@@ -104,9 +102,7 @@ const LocationInput: FC<LocationInputProps> = ({
             <span className="block text-neutral-400">
               <MapPinIcon className="h-4 w-4 sm:h-6 sm:w-6" />
             </span>
-            <span className="block text-neutral-700 dark:text-neutral-200">
-              {item}
-            </span>
+            <span className="block text-neutral-700 dark:text-neutral-200">{item}</span>
           </span>
         ))}
       </>
@@ -118,7 +114,7 @@ const LocationInput: FC<LocationInputProps> = ({
       <div
         onClick={() => setShowPopover(true)}
         className={`flex flex-1 relative z-10 [ nc-hero-field-padding--small ] flex-shrink-0 items-center space-x-3 cursor-pointer focus:outline-none text-left ${
-          showPopover ? "nc-hero-field-focused--2" : ""
+          showPopover ? 'nc-hero-field-focused--2' : ''
         }`}
       >
         <div className="flex-1">
@@ -133,9 +129,7 @@ const LocationInput: FC<LocationInputProps> = ({
           <span className="block mt-0.5 text-sm text-neutral-400 font-light ">
             <span className="line-clamp-1">{!!value ? placeHolder : desc}</span>
           </span>
-          {value && showPopover && (
-            <ClearDataButton onClick={() => setValue("")} />
-          )}
+          {value && showPopover && <ClearDataButton onClick={() => setValue('')} />}
         </div>
       </div>
 

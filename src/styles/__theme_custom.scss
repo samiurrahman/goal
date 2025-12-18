@@ -85,7 +85,8 @@
 
 .nc-hero-field-focused {
   @apply rounded-full dark:bg-white/5;
-  box-shadow: rgba(17, 17, 26, 0.05) 0px 4px 16px,
+  box-shadow:
+    rgba(17, 17, 26, 0.05) 0px 4px 16px,
     rgba(17, 17, 26, 0.05) 0px 8px 32px;
 }
 
@@ -124,7 +125,8 @@
 
 .nc-hero-field-focused--2 {
   @apply rounded-full dark:bg-white/5;
-  box-shadow: rgba(17, 17, 26, 0.05) 0px 4px 16px,
+  box-shadow:
+    rgba(17, 17, 26, 0.05) 0px 4px 16px,
     rgba(17, 17, 26, 0.05) 0px 8px 32px;
 }
 
@@ -206,11 +208,11 @@ button.gm-control-active.gm-fullscreen-control {
 }
 
 //
-input[type="time"]::-webkit-calendar-picker-indicator {
+input[type='time']::-webkit-calendar-picker-indicator {
   @apply dark:bg-neutral-500 rounded-md;
 }
 
-[type="button"] {
+[type='button'] {
   -webkit-appearance: none !important;
 }
 
@@ -246,7 +248,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 
 .menuIsNew_lv1 {
   > a::before {
-    content: "New!";
+    content: 'New!';
     position: absolute;
     top: -2px;
     right: 0;
@@ -262,7 +264,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 .menuIsNew {
   > a::after {
-    content: "New!";
+    content: 'New!';
     display: inline-block;
     padding: 0 5px;
     line-height: 15px;
@@ -288,6 +290,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
 }
 
 .nc-custom-shadow-1 {
-  box-shadow: rgba(17, 17, 26, 0.1) 0px 4px 16px,
+  box-shadow:
+    rgba(17, 17, 26, 0.1) 0px 4px 16px,
     rgba(17, 17, 26, 0.05) 0px 8px 32px;
 }

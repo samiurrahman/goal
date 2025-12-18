@@ -1,5 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/utils/supabaseClient";
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/utils/supabaseClient';
 
 /**
  * Custom hook to fetch cities from Supabase.
@@ -7,9 +7,9 @@ import { supabase } from "@/utils/supabaseClient";
  */
 function useCities() {
   return useQuery({
-    queryKey: ["cities"],
+    queryKey: ['cities'],
     queryFn: async () => {
-      let { data: cities, error } = await supabase.from("cities").select("*");
+      let { data: cities, error } = await supabase.from('cities').select('*');
       if (error) throw error;
       return cities;
     },

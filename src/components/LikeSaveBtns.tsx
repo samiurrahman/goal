@@ -1,11 +1,11 @@
-"use client";
-import React, { useState, useRef } from "react";
-import useOutsideAlerter from "@/hooks/useOutsideAlerter";
+'use client';
+import React, { useState, useRef } from 'react';
+import useOutsideAlerter from '@/hooks/useOutsideAlerter';
 
 const LikeSaveBtns = () => {
   const [showShare, setShowShare] = useState(false);
   const [copied, setCopied] = useState(false);
-  const url = typeof window !== "undefined" ? window.location.href : "";
+  const url = typeof window !== 'undefined' ? window.location.href : '';
 
   const shareRef = useRef<HTMLDivElement>(null);
   useOutsideAlerter(shareRef, () => setShowShare(false));
@@ -22,7 +22,7 @@ const LikeSaveBtns = () => {
 
   const shareLinks = [
     {
-      name: "WhatsApp",
+      name: 'WhatsApp',
       href: `https://wa.me/?text=${encodeURIComponent(url)}`,
       icon: (
         <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -118,9 +118,7 @@ const LikeSaveBtns = () => {
                       <rect x="9" y="9" width="13" height="13" rx="2" />
                       <rect x="3" y="3" width="13" height="13" rx="2" />
                     </svg>
-                    <span className="ml-2">
-                      {copied ? "Copied!" : "Copy link"}
-                    </span>
+                    <span className="ml-2">{copied ? 'Copied!' : 'Copy link'}</span>
                   </button>
                 </li>
               </ul>

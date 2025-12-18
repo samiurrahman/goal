@@ -1,19 +1,16 @@
-import React, { FC } from "react";
-import { TaxonomyType } from "@/data/types";
-import convertNumbThousand from "@/utils/convertNumbThousand";
-import Link from "next/link";
-import Image from "next/image";
+import React, { FC } from 'react';
+import { TaxonomyType } from '@/data/types';
+import convertNumbThousand from '@/utils/convertNumbThousand';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export interface CardCategory5Props {
   className?: string;
   taxonomy: TaxonomyType;
 }
 
-const CardCategory5: FC<CardCategory5Props> = ({
-  className = "",
-  taxonomy,
-}) => {
-  const { count, name, href = "/", thumbnail } = taxonomy;
+const CardCategory5: FC<CardCategory5Props> = ({ className = '', taxonomy }) => {
+  const { count, name, href = '/', thumbnail } = taxonomy;
   return (
     <Link
       href={href}
@@ -26,7 +23,7 @@ const CardCategory5: FC<CardCategory5Props> = ({
         <Image
           fill
           alt=""
-          src={thumbnail || ""}
+          src={thumbnail || ''}
           className="object-cover w-full h-full rounded-2xl"
           sizes="(max-width: 400px) 100vw, 400px"
         />
@@ -38,9 +35,7 @@ const CardCategory5: FC<CardCategory5Props> = ({
         >
           {name}
         </h2>
-        <span
-          className={`block mt-2 text-sm text-neutral-6000 dark:text-neutral-400`}
-        >
+        <span className={`block mt-2 text-sm text-neutral-6000 dark:text-neutral-400`}>
           {convertNumbThousand(count)} properties
         </span>
       </div>

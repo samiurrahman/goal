@@ -1,9 +1,9 @@
-import React from "react";
-import Avatar from "@/shared/Avatar";
-import Badge from "@/shared/Badge";
-import StartRating from "@/components/StartRating";
-import { MakkahIcon, MadinaIcon } from "@/components/icons/icons";
-import Link from "next/link";
+import React from 'react';
+import Avatar from '@/shared/Avatar';
+import Badge from '@/shared/Badge';
+import StartRating from '@/components/StartRating';
+import { MakkahIcon, MadinaIcon } from '@/components/icons/icons';
+import Link from 'next/link';
 
 export interface PackageMetaProps {
   title: string;
@@ -31,9 +31,7 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
   return (
     <div className="listingSection__wrap !space-y-6">
       {/* Heading */}
-      <h2 className="text-2xl sm:text-2xl lg:text-2xl font-semibold">
-        {title}
-      </h2>
+      <h2 className="text-2xl sm:text-2xl lg:text-2xl font-semibold">{title}</h2>
       {/* Meta Row */}
       <div className="flex items-center justify-between xl:justify-start space-x-6 xl:space-x-6 text-sm text-neutral-700 dark:text-neutral-300">
         <div className="flex items-center space-x-3 ">
@@ -67,16 +65,14 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
       <div className="flex items-center">
         <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />
         <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
-          Package provider{" "}
+          Package provider{' '}
           <Link
             href={`/${url}`}
             className="text-neutral-900 dark:text-neutral-200 font-medium hover:underline"
           >
             {provider}
           </Link>
-          {providerVerified && (
-            <Badge name="Government Verified" color="green" />
-          )}
+          {providerVerified && <Badge name="Government Verified" color="green" />}
         </span>
       </div>
       {/* Location & Rating */}

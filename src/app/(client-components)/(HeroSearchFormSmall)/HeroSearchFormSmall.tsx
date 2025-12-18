@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { FC, useEffect, useState } from "react";
-import { StaySearchFormFields } from "../type";
-import StaySearchForm from "./(stay-search-form)/StaySearchForm";
-import ExperiencesSearchForm from "./(experiences-search-form)/ExperiencesSearchForm";
-import RentalCarSearchForm from "./(car-search-form)/RentalCarSearchForm";
-import FlightSearchForm from "./(flight-search-form)/FlightSearchForm";
+import React, { FC, useEffect, useState } from 'react';
+import { StaySearchFormFields } from '../type';
+import StaySearchForm from './(stay-search-form)/StaySearchForm';
+import ExperiencesSearchForm from './(experiences-search-form)/ExperiencesSearchForm';
+import RentalCarSearchForm from './(car-search-form)/RentalCarSearchForm';
+import FlightSearchForm from './(flight-search-form)/FlightSearchForm';
 
-export type SearchTab = "Stays" | "Experiences" | "Cars" | "Flights";
+export type SearchTab = 'Stays' | 'Experiences' | 'Cars' | 'Flights';
 
 export interface HeroSearchFormSmallProps {
   className?: string;
@@ -15,11 +15,11 @@ export interface HeroSearchFormSmallProps {
   onTabChange?: (tab: SearchTab) => void;
   defaultFieldFocus?: StaySearchFormFields;
 }
-const TABS: SearchTab[] = ["Stays", "Experiences", "Cars", "Flights"];
+const TABS: SearchTab[] = ['Stays', 'Experiences', 'Cars', 'Flights'];
 
 const HeroSearchFormSmall: FC<HeroSearchFormSmallProps> = ({
-  className = "",
-  defaultTab = "Stays",
+  className = '',
+  defaultTab = 'Stays',
   onTabChange,
   defaultFieldFocus,
 }) => {
@@ -42,8 +42,8 @@ const HeroSearchFormSmall: FC<HeroSearchFormSmallProps> = ({
               }}
               className={`relative flex-shrink-0 flex items-center cursor-pointer text-base ${
                 active
-                  ? "text-neutral-900 dark:text-neutral-200 font-medium"
-                  : "text-neutral-500 dark:text-neutral-300 "
+                  ? 'text-neutral-900 dark:text-neutral-200 font-medium'
+                  : 'text-neutral-500 dark:text-neutral-300 '
               } `}
               key={tab}
             >
@@ -62,13 +62,13 @@ const HeroSearchFormSmall: FC<HeroSearchFormSmallProps> = ({
 
   const renderForm = () => {
     switch (tabActive) {
-      case "Stays":
+      case 'Stays':
         return <StaySearchForm defaultFieldFocus={defaultFieldFocus} />;
-      case "Experiences":
+      case 'Experiences':
         return <ExperiencesSearchForm />;
-      case "Cars":
+      case 'Cars':
         return <RentalCarSearchForm />;
-      case "Flights":
+      case 'Flights':
         return <FlightSearchForm />;
 
       default:
@@ -77,10 +77,7 @@ const HeroSearchFormSmall: FC<HeroSearchFormSmallProps> = ({
   };
 
   return (
-    <div
-      className={`nc-HeroSearchFormSmall ${className}`}
-      data-nc-id="HeroSearchFormSmall"
-    >
+    <div className={`nc-HeroSearchFormSmall ${className}`} data-nc-id="HeroSearchFormSmall">
       {renderTab()}
       <div className="mt-2">{renderForm()}</div>
     </div>

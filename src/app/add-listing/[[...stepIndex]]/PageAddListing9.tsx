@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import DatePickerCustomDay from "@/components/DatePickerCustomDay";
-import DatePickerCustomHeaderTwoMonth from "@/components/DatePickerCustomHeaderTwoMonth";
-import NcInputNumber from "@/components/NcInputNumber";
-import React, { FC, useState } from "react";
-import DatePicker from "react-datepicker";
+import DatePickerCustomDay from '@/components/DatePickerCustomDay';
+import DatePickerCustomHeaderTwoMonth from '@/components/DatePickerCustomHeaderTwoMonth';
+import NcInputNumber from '@/components/NcInputNumber';
+import React, { FC, useState } from 'react';
+import DatePicker from 'react-datepicker';
 
 export interface PageAddListing9Props {}
 
 const PageAddListing9: FC<PageAddListing9Props> = () => {
   const [dates, setDates] = useState<number[]>([
-    new Date("2023/02/06").getTime(),
-    new Date("2023/02/09").getTime(),
-    new Date("2023/02/15").getTime(),
+    new Date('2023/02/06').getTime(),
+    new Date('2023/02/09').getTime(),
+    new Date('2023/02/15').getTime(),
   ]);
 
   return (
@@ -36,8 +36,8 @@ const PageAddListing9: FC<PageAddListing9Props> = () => {
       <div>
         <h2 className="text-2xl font-semibold">Set your availability</h2>
         <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-          Editing your calendar is easy—just select a date to block or unblock
-          it. You can always make changes after you publish.
+          Editing your calendar is easy—just select a date to block or unblock it. You can always
+          make changes after you publish.
         </span>
       </div>
 
@@ -63,9 +63,7 @@ const PageAddListing9: FC<PageAddListing9Props> = () => {
           excludeDates={dates.filter(Boolean).map((item) => new Date(item))}
           inline
           renderCustomHeader={(p) => <DatePickerCustomHeaderTwoMonth {...p} />}
-          renderDayContents={(day, date) => (
-            <DatePickerCustomDay dayOfMonth={day} date={date} />
-          )}
+          renderDayContents={(day, date) => <DatePickerCustomDay dayOfMonth={day} date={date} />}
         />
       </div>
     </>

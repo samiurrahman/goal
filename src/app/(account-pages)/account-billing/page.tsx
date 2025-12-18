@@ -1,5 +1,5 @@
-import React from "react";
-import ButtonPrimary from "@/shared/ButtonPrimary";
+import React from 'react';
+import ButtonPrimary from '@/shared/ButtonPrimary';
 
 const AccountBilling = () => {
   return (
@@ -16,10 +16,9 @@ const AccountBilling = () => {
               payout methods, which can be set up below. Go to FAQ.`}
           <br />
           <br />
-          To get paid, you need to set up a payout method Airbnb releases
-          payouts about 24 hours after a guest’s scheduled check-in time. The
-          time it takes for the funds to appear in your account depends on your
-          payout method. Learn more
+          To get paid, you need to set up a payout method Airbnb releases payouts about 24 hours
+          after a guest’s scheduled check-in time. The time it takes for the funds to appear in your
+          account depends on your payout method. Learn more
         </span>
         <div className="pt-10">
           <ButtonPrimary>Add payout mothod</ButtonPrimary>

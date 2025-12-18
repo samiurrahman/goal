@@ -1,13 +1,13 @@
-import React, { FC } from "react";
-import GallerySlider from "@/components/GallerySlider";
-import { DEMO_EXPERIENCES_LISTINGS } from "@/data/listings";
-import { ExperiencesDataType } from "@/data/types";
-import StartRating from "@/components/StartRating";
-import BtnLikeIcon from "@/components/BtnLikeIcon";
-import SaleOffBadge from "@/components/SaleOffBadge";
-import Badge from "@/shared/Badge";
-import Avatar from "@/shared/Avatar";
-import Link from "next/link";
+import React, { FC } from 'react';
+import GallerySlider from '@/components/GallerySlider';
+import { DEMO_EXPERIENCES_LISTINGS } from '@/data/listings';
+import { ExperiencesDataType } from '@/data/types';
+import StartRating from '@/components/StartRating';
+import BtnLikeIcon from '@/components/BtnLikeIcon';
+import SaleOffBadge from '@/components/SaleOffBadge';
+import Badge from '@/shared/Badge';
+import Avatar from '@/shared/Avatar';
+import Link from 'next/link';
 
 export interface ExperiencesCardHProps {
   className?: string;
@@ -16,10 +16,7 @@ export interface ExperiencesCardHProps {
 
 const DEMO_DATA: ExperiencesDataType = DEMO_EXPERIENCES_LISTINGS[0];
 
-const ExperiencesCardH: FC<ExperiencesCardHProps> = ({
-  className = "",
-  data = DEMO_DATA,
-}) => {
+const ExperiencesCardH: FC<ExperiencesCardHProps> = ({ className = '', data = DEMO_DATA }) => {
   const {
     galleryImgs,
     address,
@@ -81,15 +78,11 @@ const ExperiencesCardH: FC<ExperiencesCardHProps> = ({
         <div className="flex items-center space-x-8 mt-4  ">
           <div className="flex items-center space-x-2">
             <i className="las la-clock text-lg"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              3 hours
-            </span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">3 hours</span>
           </div>
           <div className="flex items-center space-x-2">
             <i className="las la-user text-lg"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              Up to 6 people
-            </span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Up to 6 people</span>
           </div>
         </div>
         <div className="w-14 border-b border-neutral-100 dark:border-neutral-800 my-4"></div>
@@ -97,8 +90,7 @@ const ExperiencesCardH: FC<ExperiencesCardHProps> = ({
           <div className="flex items-center space-x-3 text-sm text-neutral-700  dark:text-neutral-300">
             <Avatar imgUrl={author.avatar} userName={author.displayName} />
             <span className="hidden sm:inline-block">
-              <span className="hidden sm:inline">Hosted by</span>{" "}
-              {author.displayName}
+              <span className="hidden sm:inline">Hosted by</span> {author.displayName}
             </span>
           </div>
           <span className="text-base font-semibold text-secondary-700">

@@ -1,59 +1,59 @@
-import React from "react";
-import SectionSubscribe2 from "@/components/SectionSubscribe2";
-import BackgroundSection from "@/components/BackgroundSection";
-import BgGlassmorphism from "@/components/BgGlassmorphism";
-import { TaxonomyType } from "@/data/types";
-import SectionGridAuthorBox from "@/components/SectionGridAuthorBox";
-import SectionGridCategoryBox from "@/components/SectionGridCategoryBox";
-import SectionHero3 from "@/app/(server-components)/SectionHero3";
-import CardCategory6 from "@/components/CardCategory6";
-import SectionGridFeaturePlaces from "@/components/SectionGridFeaturePlaces";
+import React from 'react';
+import SectionSubscribe2 from '@/components/SectionSubscribe2';
+import BackgroundSection from '@/components/BackgroundSection';
+import BgGlassmorphism from '@/components/BgGlassmorphism';
+import { TaxonomyType } from '@/data/types';
+import SectionGridAuthorBox from '@/components/SectionGridAuthorBox';
+import SectionGridCategoryBox from '@/components/SectionGridCategoryBox';
+import SectionHero3 from '@/app/(server-components)/SectionHero3';
+import CardCategory6 from '@/components/CardCategory6';
+import SectionGridFeaturePlaces from '@/components/SectionGridFeaturePlaces';
 
 const DEMO_CATS_2: TaxonomyType[] = [
   {
-    id: "1",
-    href: "/listing-stay",
-    name: "Enjoy the great cold",
-    taxonomy: "category",
+    id: '1',
+    href: '/listing-stay',
+    name: 'Enjoy the great cold',
+    taxonomy: 'category',
     count: 188288,
     thumbnail:
-      "https://images.pexels.com/photos/5764100/pexels-photo-5764100.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260",
+      'https://images.pexels.com/photos/5764100/pexels-photo-5764100.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260',
   },
   {
-    id: "222",
-    href: "/listing-stay",
-    name: "Sleep in a floating way",
-    taxonomy: "category",
+    id: '222',
+    href: '/listing-stay',
+    name: 'Sleep in a floating way',
+    taxonomy: 'category',
     count: 188288,
     thumbnail:
-      "https://images.pexels.com/photos/2869499/pexels-photo-2869499.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+      'https://images.pexels.com/photos/2869499/pexels-photo-2869499.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
   },
   {
-    id: "3",
-    href: "/listing-stay",
+    id: '3',
+    href: '/listing-stay',
     name: "In the billionaire's house",
-    taxonomy: "category",
+    taxonomy: 'category',
     count: 188288,
     thumbnail:
-      "https://images.pexels.com/photos/7031413/pexels-photo-7031413.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+      'https://images.pexels.com/photos/7031413/pexels-photo-7031413.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
   },
   {
-    id: "4",
-    href: "/listing-stay",
-    name: "Cool in the deep forest",
-    taxonomy: "category",
+    id: '4',
+    href: '/listing-stay',
+    name: 'Cool in the deep forest',
+    taxonomy: 'category',
     count: 188288,
     thumbnail:
-      "https://images.pexels.com/photos/247532/pexels-photo-247532.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+      'https://images.pexels.com/photos/247532/pexels-photo-247532.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
   },
   {
-    id: "5",
-    href: "/listing-stay",
+    id: '5',
+    href: '/listing-stay',
     name: "In the billionaire's house",
-    taxonomy: "category",
+    taxonomy: 'category',
     count: 188288,
     thumbnail:
-      "https://images.pexels.com/photos/7031413/pexels-photo-7031413.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+      'https://images.pexels.com/photos/7031413/pexels-photo-7031413.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
   },
 ];
 

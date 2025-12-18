@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import React, { FC } from "react";
+import React, { FC } from 'react';
 
 export interface CheckboxProps {
   label?: string;
@@ -12,10 +12,10 @@ export interface CheckboxProps {
 }
 
 const Checkbox: FC<CheckboxProps> = ({
-  subLabel = "",
-  label = "",
+  subLabel = '',
+  label = '',
   name,
-  className = "",
+  className = '',
   defaultChecked,
   onChange,
 }) => {
@@ -30,13 +30,8 @@ const Checkbox: FC<CheckboxProps> = ({
         onChange={(e) => onChange && onChange(e.target.checked)}
       />
       {label && (
-        <label
-          htmlFor={name}
-          className="ml-3.5 flex flex-col flex-1 justify-center"
-        >
-          <span className=" text-neutral-900 dark:text-neutral-100">
-            {label}
-          </span>
+        <label htmlFor={name} className="ml-3.5 flex flex-col flex-1 justify-center">
+          <span className=" text-neutral-900 dark:text-neutral-100">{label}</span>
           {subLabel && (
             <p className="mt-1 text-neutral-500 dark:text-neutral-400 text-sm font-light">
               {subLabel}

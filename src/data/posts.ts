@@ -1,7 +1,7 @@
-import __posts from "./jsons/__posts.json";
-import { DEMO_CATEGORIES } from "./taxonomies";
-import { PostDataType } from "./types";
-import { DEMO_AUTHORS } from "./authors";
+import __posts from './jsons/__posts.json';
+import { DEMO_CATEGORIES } from './taxonomies';
+import { PostDataType } from './types';
+import { DEMO_AUTHORS } from './authors';
 
 // FOR MAIN DEMO
 const DEMO_POSTS = __posts.map((post): PostDataType => {

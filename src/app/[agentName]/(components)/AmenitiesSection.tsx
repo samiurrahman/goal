@@ -1,7 +1,7 @@
-import React, { FC, Fragment } from "react";
-import { Dialog, Transition } from "@headlessui/react";
-import ButtonSecondary from "@/shared/ButtonSecondary";
-import ButtonClose from "@/shared/ButtonClose";
+import React, { FC, Fragment } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
+import ButtonSecondary from '@/shared/ButtonSecondary';
+import ButtonClose from '@/shared/ButtonClose';
 
 interface Amenity {
   name: string;

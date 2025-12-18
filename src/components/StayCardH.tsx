@@ -1,12 +1,12 @@
-import React, { FC } from "react";
-import GallerySlider from "@/components/GallerySlider";
-import { DEMO_STAY_LISTINGS } from "@/data/listings";
-import { StayDataType } from "@/data/types";
-import StartRating from "@/components/StartRating";
-import BtnLikeIcon from "@/components/BtnLikeIcon";
-import SaleOffBadge from "@/components/SaleOffBadge";
-import Badge from "@/shared/Badge";
-import Link from "next/link";
+import React, { FC } from 'react';
+import GallerySlider from '@/components/GallerySlider';
+import { DEMO_STAY_LISTINGS } from '@/data/listings';
+import { StayDataType } from '@/data/types';
+import StartRating from '@/components/StartRating';
+import BtnLikeIcon from '@/components/BtnLikeIcon';
+import SaleOffBadge from '@/components/SaleOffBadge';
+import Badge from '@/shared/Badge';
+import Link from 'next/link';
 
 export interface StayCardHProps {
   className?: string;
@@ -15,10 +15,7 @@ export interface StayCardHProps {
 
 const DEMO_DATA = DEMO_STAY_LISTINGS[0];
 
-const StayCardH: FC<StayCardHProps> = ({
-  className = "",
-  data = DEMO_DATA,
-}) => {
+const StayCardH: FC<StayCardHProps> = ({ className = '', data = DEMO_DATA }) => {
   const {
     galleryImgs,
     listingCategory,
@@ -55,43 +52,31 @@ const StayCardH: FC<StayCardHProps> = ({
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <i className="las la-user text-lg"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              6 guests
-            </span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">6 guests</span>
           </div>
           <div className="flex items-center space-x-3">
             <i className="las la-bed text-lg"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              6 beds
-            </span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">6 beds</span>
           </div>
         </div>
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <i className="las la-bath text-lg"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              3 baths
-            </span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">3 baths</span>
           </div>
           <div className="flex items-center space-x-3">
             <i className="las la-smoking-ban text-lg"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              No smoking
-            </span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">No smoking</span>
           </div>
         </div>
         <div className="space-y-3">
           <div className="flex items-center space-x-3">
             <i className="las la-door-open text-lg"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              6 bedrooms
-            </span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">6 bedrooms</span>
           </div>
           <div className="flex items-center space-x-3">
             <i className="las la-wifi text-lg"></i>
-            <span className="text-sm text-neutral-500 dark:text-neutral-400">
-              Wifi
-            </span>
+            <span className="text-sm text-neutral-500 dark:text-neutral-400">Wifi</span>
           </div>
         </div>
       </div>

@@ -1,15 +1,13 @@
-import React, { FC } from "react";
-import imagePng from "@/images/hero-right-3.png";
-import Image from "next/image";
-import HeroRealEstateSearchForm from "../(client-components)/(HeroSearchForm)/(real-estate-search-form)/HeroRealEstateSearchForm";
+import React, { FC } from 'react';
+import imagePng from '@/images/hero-right-3.png';
+import Image from 'next/image';
+import HeroRealEstateSearchForm from '../(client-components)/(HeroSearchForm)/(real-estate-search-form)/HeroRealEstateSearchForm';
 
 export interface SectionHero2ArchivePageProps {
   className?: string;
 }
 
-const SectionHero2ArchivePage: FC<SectionHero2ArchivePageProps> = ({
-  className = "",
-}) => {
+const SectionHero2ArchivePage: FC<SectionHero2ArchivePageProps> = ({ className = '' }) => {
   return (
     <div
       className={`nc-SectionHero2ArchivePage relative ${className}`}

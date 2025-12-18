@@ -1,24 +1,20 @@
-"use client";
+'use client';
 
-import React, { Fragment, useState, FC } from "react";
-import { Popover, Transition } from "@headlessui/react";
-import { CalendarIcon } from "@heroicons/react/24/outline";
-import DatePickerCustomHeaderTwoMonth from "@/components/DatePickerCustomHeaderTwoMonth";
-import DatePickerCustomDay from "@/components/DatePickerCustomDay";
-import DatePicker from "react-datepicker";
-import ClearDataButton from "@/app/(client-components)/(HeroSearchForm)/ClearDataButton";
+import React, { Fragment, useState, FC } from 'react';
+import { Popover, Transition } from '@headlessui/react';
+import { CalendarIcon } from '@heroicons/react/24/outline';
+import DatePickerCustomHeaderTwoMonth from '@/components/DatePickerCustomHeaderTwoMonth';
+import DatePickerCustomDay from '@/components/DatePickerCustomDay';
+import DatePicker from 'react-datepicker';
+import ClearDataButton from '@/app/(client-components)/(HeroSearchForm)/ClearDataButton';
 
 export interface StayDatesRangeInputProps {
   className?: string;
 }
 
-const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({
-  className = "flex-1",
-}) => {
-  const [startDate, setStartDate] = useState<Date | null>(
-    new Date("2023/02/06")
-  );
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/02/23"));
+const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({ className = 'flex-1' }) => {
+  const [startDate, setStartDate] = useState<Date | null>(new Date('2023/02/06'));
+  const [endDate, setEndDate] = useState<Date | null>(new Date('2023/02/23'));
   //
 
   const onChangeDate = (dates: [Date | null, Date | null]) => {
@@ -35,20 +31,20 @@ const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({
         </div>
         <div className="flex-grow text-left">
           <span className="block xl:text-lg font-semibold">
-            {startDate?.toLocaleDateString("en-US", {
-              month: "short",
-              day: "2-digit",
-            }) || "Add dates"}
+            {startDate?.toLocaleDateString('en-US', {
+              month: 'short',
+              day: '2-digit',
+            }) || 'Add dates'}
             {endDate
-              ? " - " +
-                endDate?.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "2-digit",
+              ? ' - ' +
+                endDate?.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: '2-digit',
                 })
-              : ""}
+              : ''}
           </span>
           <span className="block mt-1 text-sm text-neutral-400 leading-none font-light">
-            {"Check in - Check out"}
+            {'Check in - Check out'}
           </span>
         </div>
       </>
@@ -61,13 +57,11 @@ const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({
         <>
           <Popover.Button
             className={`flex-1 flex relative p-3 items-center space-x-3 focus:outline-none ${
-              open ? "shadow-lg" : ""
+              open ? 'shadow-lg' : ''
             }`}
           >
             {renderInput()}
-            {startDate && open && (
-              <ClearDataButton onClick={() => onChangeDate([null, null])} />
-            )}
+            {startDate && open && <ClearDataButton onClick={() => onChangeDate([null, null])} />}
           </Popover.Button>
 
           <Transition
@@ -90,9 +84,7 @@ const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({
                   monthsShown={2}
                   showPopperArrow={false}
                   inline
-                  renderCustomHeader={(p) => (
-                    <DatePickerCustomHeaderTwoMonth {...p} />
-                  )}
+                  renderCustomHeader={(p) => <DatePickerCustomHeaderTwoMonth {...p} />}
                   renderDayContents={(day, date) => (
                     <DatePickerCustomDay dayOfMonth={day} date={date} />
                   )}
