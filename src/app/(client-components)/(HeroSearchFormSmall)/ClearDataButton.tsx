@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import React from "react";
-import { FC } from "react";
+import React from 'react';
+import { FC } from 'react';
 
 export interface ClearDataButtonProps {
   onClick?: () => void;
@@ -21,11 +21,7 @@ const ClearDataButton: FC<ClearDataButtonProps> = ({ onClick }) => {
         stroke="currentColor"
         strokeWidth={2}
       >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M6 18L18 6M6 6l12 12"
-        />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
       </svg>
     </span>
   );

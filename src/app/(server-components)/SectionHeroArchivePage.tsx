@@ -1,19 +1,19 @@
-import React, { FC, ReactNode } from "react";
-import imagePng from "@/images/hero-right2.png";
-import HeroSearchForm from "../(client-components)/(HeroSearchForm)/HeroSearchForm";
+import React, { FC, ReactNode } from 'react';
+import imagePng from '@/images/hero-right2.png';
+import HeroSearchForm from '../(client-components)/(HeroSearchForm)/HeroSearchForm';
 // import SearchTab from "../(client-components)/(HeroSearchForm)/HeroSearchForm";
-import Image, { StaticImageData } from "next/image";
+import Image, { StaticImageData } from 'next/image';
 
 export interface SectionHeroArchivePageProps {
   className?: string;
   listingType?: ReactNode;
-  currentPage: "Stays" | "Experiences" | "Cars" | "Flights";
-  currentTab: "SearchTab";
+  currentPage: 'Stays' | 'Experiences' | 'Cars' | 'Flights';
+  currentTab: 'SearchTab';
   rightImage?: StaticImageData;
 }
 
 const SectionHeroArchivePage: FC<SectionHeroArchivePageProps> = ({
-  className = "",
+  className = '',
   listingType,
   currentPage,
   currentTab,

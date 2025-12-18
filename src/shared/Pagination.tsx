@@ -1,25 +1,25 @@
-import { CustomLink } from "@/data/types";
-import React, { FC } from "react";
-import twFocusClass from "@/utils/twFocusClass";
-import Link from "next/link";
-import { Route } from "@/routers/types";
+import { CustomLink } from '@/data/types';
+import React, { FC } from 'react';
+import twFocusClass from '@/utils/twFocusClass';
+import Link from 'next/link';
+import { Route } from '@/routers/types';
 
 const DEMO_PAGINATION: CustomLink[] = [
   {
-    label: "1",
-    href: "#",
+    label: '1',
+    href: '#',
   },
   {
-    label: "2",
-    href: "#",
+    label: '2',
+    href: '#',
   },
   {
-    label: "3",
-    href: "#",
+    label: '3',
+    href: '#',
   },
   {
-    label: "4",
-    href: "#",
+    label: '4',
+    href: '#',
   },
 ];
 
@@ -27,7 +27,7 @@ export interface PaginationProps {
   className?: string;
 }
 
-const Pagination: FC<PaginationProps> = ({ className = "" }) => {
+const Pagination: FC<PaginationProps> = ({ className = '' }) => {
   const renderItem = (pag: CustomLink, index: number) => {
     if (index === 0) {
       // RETURN ACTIVE PAGINATION
@@ -53,9 +53,7 @@ const Pagination: FC<PaginationProps> = ({ className = "" }) => {
   };
 
   return (
-    <nav
-      className={`nc-Pagination inline-flex space-x-1 text-base font-medium ${className}`}
-    >
+    <nav className={`nc-Pagination inline-flex space-x-1 text-base font-medium ${className}`}>
       {DEMO_PAGINATION.map(renderItem)}
     </nav>
   );

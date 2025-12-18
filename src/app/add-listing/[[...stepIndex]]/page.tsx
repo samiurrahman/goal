@@ -1,14 +1,14 @@
-import React from "react";
-import PageAddListing1 from "./PageAddListing1";
-import PageAddListing10 from "./PageAddListing10";
-import PageAddListing2 from "./PageAddListing2";
-import PageAddListing3 from "./PageAddListing3";
-import PageAddListing4 from "./PageAddListing4";
-import PageAddListing5 from "./PageAddListing5";
-import PageAddListing6 from "./PageAddListing6";
-import PageAddListing7 from "./PageAddListing7";
-import PageAddListing8 from "./PageAddListing8";
-import PageAddListing9 from "./PageAddListing9";
+import React from 'react';
+import PageAddListing1 from './PageAddListing1';
+import PageAddListing10 from './PageAddListing10';
+import PageAddListing2 from './PageAddListing2';
+import PageAddListing3 from './PageAddListing3';
+import PageAddListing4 from './PageAddListing4';
+import PageAddListing5 from './PageAddListing5';
+import PageAddListing6 from './PageAddListing6';
+import PageAddListing7 from './PageAddListing7';
+import PageAddListing8 from './PageAddListing8';
+import PageAddListing9 from './PageAddListing9';
 
 const Page = ({
   params,

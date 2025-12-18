@@ -1,23 +1,23 @@
-import { PostDataType } from "@/data/types";
-import React, { FC } from "react";
+import { PostDataType } from '@/data/types';
+import React, { FC } from 'react';
 
 export interface PostTypeFeaturedIconProps {
   className?: string;
-  postType?: PostDataType["postType"];
+  postType?: PostDataType['postType'];
   onClick?: () => void;
   wrapSize?: string;
   iconSize?: string;
 }
 
 const PostTypeFeaturedIcon: FC<PostTypeFeaturedIconProps> = ({
-  className = "",
-  postType = "standard",
+  className = '',
+  postType = 'standard',
   onClick,
-  wrapSize = "w-11 h-11",
-  iconSize = "w-6 h-6",
+  wrapSize = 'w-11 h-11',
+  iconSize = 'w-6 h-6',
 }) => {
   const renderMediaIcon = () => {
-    if (postType === "video") {
+    if (postType === 'video') {
       return (
         <svg
           className={iconSize}
@@ -37,7 +37,7 @@ const PostTypeFeaturedIcon: FC<PostTypeFeaturedIconProps> = ({
       );
     }
 
-    if (postType === "audio") {
+    if (postType === 'audio') {
       return (
         <svg
           className={iconSize}
@@ -84,7 +84,7 @@ const PostTypeFeaturedIcon: FC<PostTypeFeaturedIconProps> = ({
       );
     }
 
-    if (postType === "gallery") {
+    if (postType === 'gallery') {
       return (
         <svg
           className={iconSize}
@@ -126,7 +126,7 @@ const PostTypeFeaturedIcon: FC<PostTypeFeaturedIconProps> = ({
       data-nc-id="PostTypeFeaturedIcon"
       onClick={onClick}
     >
-      {!!postType && postType !== "standard" && (
+      {!!postType && postType !== 'standard' && (
         <span
           className={`bg-neutral-900 bg-opacity-60 rounded-full flex  items-center justify-center text-xl text-white border border-white ${wrapSize}`}
         >

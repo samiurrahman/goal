@@ -1,18 +1,18 @@
-"use client";
+'use client';
 
-import { Route } from "@/routers/types";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import React from "react";
+import { Route } from '@/routers/types';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import React from 'react';
 
 export const Nav = () => {
   const pathname = usePathname();
 
   const listNav: Route[] = [
-    "/account",
-    "/account-savelists",
-    "/account-password",
-    "/account-billing",
+    '/account',
+    '/account-savelists',
+    '/account-password',
+    '/account-billing',
   ];
 
   return (
@@ -25,12 +25,10 @@ export const Nav = () => {
               key={item}
               href={item}
               className={`block py-5 md:py-8 border-b-2 flex-shrink-0 capitalize ${
-                isActive
-                  ? "border-primary-500 font-medium"
-                  : "border-transparent"
+                isActive ? 'border-primary-500 font-medium' : 'border-transparent'
               }`}
             >
-              {item.replace("-", " ").replace("/", " ")}
+              {item.replace('-', ' ').replace('/', ' ')}
             </Link>
           );
         })}

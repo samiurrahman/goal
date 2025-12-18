@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export interface RoomRate {
   label: string;
@@ -14,11 +14,7 @@ export interface RoomRatesProps {
   onSelect: (rate: RoomRate) => void;
 }
 
-const RoomRates: React.FC<RoomRatesProps> = ({
-  rates,
-  selectedRate,
-  onSelect,
-}) => {
+const RoomRates: React.FC<RoomRatesProps> = ({ rates, selectedRate, onSelect }) => {
   return (
     <div className="listingSection__wrap">
       {/* HEADING */}
@@ -37,10 +33,10 @@ const RoomRates: React.FC<RoomRatesProps> = ({
               key={item.label}
               className={`p-4 flex justify-between items-center space-x-4 rounded-lg cursor-pointer transition-all duration-150 ${
                 selectedRate.label === item.label
-                  ? "bg-blue-100 dark:bg-blue-800 border border-blue-400"
+                  ? 'bg-blue-100 dark:bg-blue-800 border border-blue-400'
                   : item.highlight
-                  ? "bg-neutral-100 dark:bg-neutral-800"
-                  : ""
+                    ? 'bg-neutral-100 dark:bg-neutral-800'
+                    : ''
               }`}
               onClick={() => onSelect(item)}
             >

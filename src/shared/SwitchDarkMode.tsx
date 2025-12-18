@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React from "react";
-import { MoonIcon } from "@heroicons/react/24/solid";
-import { SunIcon } from "@heroicons/react/24/outline";
-import { useThemeMode } from "@/utils/useThemeMode";
+import React from 'react';
+import { MoonIcon } from '@heroicons/react/24/solid';
+import { SunIcon } from '@heroicons/react/24/outline';
+import { useThemeMode } from '@/utils/useThemeMode';
 export interface SwitchDarkModeProps {
   className?: string;
 }
-const SwitchDarkMode: React.FC<SwitchDarkModeProps> = ({ className = "" }) => {
+const SwitchDarkMode: React.FC<SwitchDarkModeProps> = ({ className = '' }) => {
   const { _toogleDarkMode, isDarkMode, toDark, toLight } = useThemeMode();
 
   return (

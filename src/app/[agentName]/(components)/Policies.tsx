@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC } from 'react';
 
 interface PoliciesProps {
   cancellation: string;
@@ -16,9 +16,7 @@ const Policies: FC<PoliciesProps> = ({ cancellation, checkIn, checkOut, notes })
     {/* Cancellation policy */}
     <div>
       <h4 className="text-lg font-semibold">Cancellation policy</h4>
-      <span className="block mt-3 text-neutral-500 dark:text-neutral-400">
-        {cancellation}
-      </span>
+      <span className="block mt-3 text-neutral-500 dark:text-neutral-400">{cancellation}</span>
     </div>
     <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
 

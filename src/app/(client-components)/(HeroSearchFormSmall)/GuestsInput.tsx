@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { useEffect, useState } from "react";
-import { FC } from "react";
-import ClearDataButton from "./ClearDataButton";
-import ButtonSubmit from "./ButtonSubmit";
-import useOutsideAlerter from "@/hooks/useOutsideAlerter";
-import { PathName } from "@/routers/types";
-import NcInputNumber from "@/components/NcInputNumber";
-import { GuestsObject } from "../type";
+import React, { useEffect, useState } from 'react';
+import { FC } from 'react';
+import ClearDataButton from './ClearDataButton';
+import ButtonSubmit from './ButtonSubmit';
+import useOutsideAlerter from '@/hooks/useOutsideAlerter';
+import { PathName } from '@/routers/types';
+import NcInputNumber from '@/components/NcInputNumber';
+import { GuestsObject } from '../type';
 
 export interface GuestsInputProps {
   className?: string;
@@ -17,8 +17,8 @@ export interface GuestsInputProps {
 }
 
 const GuestsInput: FC<GuestsInputProps> = ({
-  fieldClassName = "[ nc-hero-field-padding--small ]",
-  className = "",
+  fieldClassName = '[ nc-hero-field-padding--small ]',
+  className = '',
   autoFocus = false,
   submitLink,
 }) => {
@@ -41,28 +41,27 @@ const GuestsInput: FC<GuestsInputProps> = ({
       guestChildren: guestChildrenInputValue,
       guestInfants: guestInfantsInputValue,
     };
-    if (type === "guestAdults") {
+    if (type === 'guestAdults') {
       setGuestAdultsInputValue(value);
       newValue.guestAdults = value;
     }
-    if (type === "guestChildren") {
+    if (type === 'guestChildren') {
       setGuestChildrenInputValue(value);
       newValue.guestChildren = value;
     }
-    if (type === "guestInfants") {
+    if (type === 'guestInfants') {
       setGuestInfantsInputValue(value);
       newValue.guestInfants = value;
     }
   };
 
-  const totalGuests =
-    guestChildrenInputValue + guestAdultsInputValue + guestInfantsInputValue;
+  const totalGuests = guestChildrenInputValue + guestAdultsInputValue + guestInfantsInputValue;
 
   return (
     <div className={`flex z-10 relative ${className}`} ref={refContainer}>
       <div
         className={`flex z-10 relative flex-1 text-left justify-between items-center focus:outline-none cursor-pointer ${
-          isOpen ? "nc-hero-field-focused--2" : ""
+          isOpen ? 'nc-hero-field-focused--2' : ''
         }`}
       >
         <div
@@ -72,11 +71,9 @@ const GuestsInput: FC<GuestsInputProps> = ({
           }}
         >
           <div className="flex-1 text-left">
-            <span className="block font-semibold">
-              {totalGuests || ""} Guests
-            </span>
+            <span className="block font-semibold">{totalGuests || ''} Guests</span>
             <span className="block mt-1 text-sm text-neutral-400 leading-none font-light">
-              {totalGuests ? "Guests" : "Add guests"}
+              {totalGuests ? 'Guests' : 'Add guests'}
             </span>
           </div>
         </div>
@@ -105,7 +102,7 @@ const GuestsInput: FC<GuestsInputProps> = ({
           <NcInputNumber
             className="w-full"
             defaultValue={guestAdultsInputValue}
-            onChange={(value) => handleChangeData(value, "guestAdults")}
+            onChange={(value) => handleChangeData(value, 'guestAdults')}
             max={10}
             min={1}
             label="Adults"
@@ -114,7 +111,7 @@ const GuestsInput: FC<GuestsInputProps> = ({
           <NcInputNumber
             className="w-full mt-6"
             defaultValue={guestChildrenInputValue}
-            onChange={(value) => handleChangeData(value, "guestChildren")}
+            onChange={(value) => handleChangeData(value, 'guestChildren')}
             max={4}
             label="Children"
             desc="Ages 2–12"
@@ -123,7 +120,7 @@ const GuestsInput: FC<GuestsInputProps> = ({
           <NcInputNumber
             className="w-full mt-6"
             defaultValue={guestInfantsInputValue}
-            onChange={(value) => handleChangeData(value, "guestInfants")}
+            onChange={(value) => handleChangeData(value, 'guestInfants')}
             max={4}
             label="Infants"
             desc="Ages 0–2"

@@ -2,14 +2,14 @@
 const nextConfig = {
   reactStrictMode: false,
   experimental: {},
-  transpilePackages: ["@supabase/supabase-js"],
+  transpilePackages: ['@supabase/supabase-js'],
   images: {
     remotePatterns: [
       {
-        protocol: "https",
-        hostname: "*",
-        port: "",
-        pathname: "/**",
+        protocol: 'https',
+        hostname: '*',
+        port: '',
+        pathname: '/**',
       },
     ],
   },

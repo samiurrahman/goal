@@ -1,48 +1,48 @@
-"use client";
+'use client';
 
-import React, { Fragment, useState } from "react";
-import { Dialog, Popover, Tab, Transition } from "@headlessui/react";
-import ButtonPrimary from "@/shared/ButtonPrimary";
-import ButtonThird from "@/shared/ButtonThird";
-import ButtonClose from "@/shared/ButtonClose";
-import Checkbox from "@/shared/Checkbox";
-import convertNumbThousand from "@/utils/convertNumbThousand";
-import Slider from "rc-slider";
-import { XMarkIcon } from "@heroicons/react/24/outline";
+import React, { Fragment, useState } from 'react';
+import { Dialog, Popover, Tab, Transition } from '@headlessui/react';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import ButtonThird from '@/shared/ButtonThird';
+import ButtonClose from '@/shared/ButtonClose';
+import Checkbox from '@/shared/Checkbox';
+import convertNumbThousand from '@/utils/convertNumbThousand';
+import Slider from 'rc-slider';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 
 // DEMO DATA
 const typeOfAirlines = [
   {
-    name: "Star Alliance",
+    name: 'Star Alliance',
   },
   {
-    name: "Air China",
+    name: 'Air China',
   },
   {
-    name: "Air India",
+    name: 'Air India',
   },
   {
-    name: "Air New Zealand",
+    name: 'Air New Zealand',
   },
   {
-    name: "Asiana",
+    name: 'Asiana',
   },
   {
-    name: "Bangkok Airways",
+    name: 'Bangkok Airways',
   },
 ];
 const stopPoints = [
   {
-    name: "Nonstop",
+    name: 'Nonstop',
   },
   {
-    name: "Up to 1 stops",
+    name: 'Up to 1 stops',
   },
   {
-    name: "Up to 2 stops",
+    name: 'Up to 2 stops',
   },
   {
-    name: "Any number of stops",
+    name: 'Any number of stops',
   },
 ];
 
@@ -57,7 +57,7 @@ const TabFilters = () => {
   const [airlinesStates, setAirlinesStates] = useState<string[]>([]);
 
   //
-  type CatTimeKey = "Take Off" | "Landing";
+  type CatTimeKey = 'Take Off' | 'Landing';
   type CatTimesType = {
     [K in CatTimeKey]: {
       Departure: number[];
@@ -66,7 +66,7 @@ const TabFilters = () => {
   };
 
   let [catTimes, setCatTimes] = useState<CatTimesType>({
-    "Take Off": {
+    'Take Off': {
       Departure: [0, 24],
       Arrival: [0, 24],
     },
@@ -98,35 +98,31 @@ const TabFilters = () => {
     // Build SEO/user-friendly query params
     const params = new URLSearchParams();
 
-    if (isOnSale) params.set("sale", "1");
+    if (isOnSale) params.set('sale', '1');
     if (rangePrices[0] !== 100 || rangePrices[1] !== 5000)
-      params.set("price", `${rangePrices[0]}-${rangePrices[1]}`);
-    if (tripTimes !== 10) params.set("trip", `<${tripTimes}h`);
+      params.set('price', `${rangePrices[0]}-${rangePrices[1]}`);
+    if (tripTimes !== 10) params.set('trip', `<${tripTimes}h`);
     if (stopPontsStates.length)
       params.set(
-        "stops",
-        stopPontsStates
-          .map((s) => s.replace(/\s+/g, "-").toLowerCase())
-          .join(",")
+        'stops',
+        stopPontsStates.map((s) => s.replace(/\s+/g, '-').toLowerCase()).join(',')
       );
     if (airlinesStates.length)
       params.set(
-        "airlines",
-        airlinesStates
-          .map((a) => a.replace(/\s+/g, "-").toLowerCase())
-          .join(",")
+        'airlines',
+        airlinesStates.map((a) => a.replace(/\s+/g, '-').toLowerCase()).join(',')
       );
     // Flight times
     Object.entries(catTimes).forEach(([key, val]) => {
       params.set(
-        key.replace(/\s+/g, "").toLowerCase(),
+        key.replace(/\s+/g, '').toLowerCase(),
         `dep${val.Departure[0]}-${val.Departure[1]}_arr${val.Arrival[0]}-${val.Arrival[1]}`
       );
     });
 
     // Update URL (without reload)
     const url = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState({}, "", url);
+    window.history.replaceState({}, '', url);
 
     // Fetch API with filters
     fetch(`/api/flights?${params.toString()}`)
@@ -135,31 +131,24 @@ const TabFilters = () => {
         // handle data (e.g. set state)
         // console.log("API data:", data);
       });
-  }, [
-    isOnSale,
-    rangePrices,
-    tripTimes,
-    stopPontsStates,
-    airlinesStates,
-    catTimes,
-  ]);
+  }, [isOnSale, rangePrices, tripTimes, stopPontsStates, airlinesStates, catTimes]);
 
   // On mount and when URL changes, update filter state from URL
   React.useEffect(() => {
     const syncFiltersFromUrl = () => {
       const params = new URLSearchParams(window.location.search);
-      setIsOnSale(params.get("sale") === "1");
-      const price = params.get("price");
+      setIsOnSale(params.get('sale') === '1');
+      const price = params.get('price');
       if (price) {
-        const [min, max] = price.split("-").map(Number);
+        const [min, max] = price.split('-').map(Number);
         if (!isNaN(min) && !isNaN(max)) setRangePrices([min, max]);
       }
-      const trip = params.get("trip");
+      const trip = params.get('trip');
       if (trip && /^<\d+h$/.test(trip)) {
-        setTripTimes(Number(trip.replace(/[^\d]/g, "")));
+        setTripTimes(Number(trip.replace(/[^\d]/g, '')));
       }
       Object.entries(catTimes).forEach(([key]) => {
-        const val = params.get(key.replace(/\s+/g, "").toLowerCase());
+        const val = params.get(key.replace(/\s+/g, '').toLowerCase());
         if (val) {
           const depMatch = val.match(/dep(\d+)-(\d+)/);
           const arrMatch = val.match(/arr(\d+)-(\d+)/);
@@ -178,8 +167,8 @@ const TabFilters = () => {
       });
     };
     syncFiltersFromUrl();
-    window.addEventListener("popstate", syncFiltersFromUrl);
-    return () => window.removeEventListener("popstate", syncFiltersFromUrl);
+    window.addEventListener('popstate', syncFiltersFromUrl);
+    return () => window.removeEventListener('popstate', syncFiltersFromUrl);
   }, []);
   const renderXClear = () => {
     return (
@@ -192,41 +181,23 @@ const TabFilters = () => {
   const renderTabsTimeFlightTab = () => {
     return (
       <div>
-        <span className=" text-neutral-6000 dark:text-neutral-300 text-sm">
-          Tokyo to Singapore
-        </span>
+        <span className=" text-neutral-6000 dark:text-neutral-300 text-sm">Tokyo to Singapore</span>
         <div></div>
         <div className="space-y-3">
           <div className="flex space-x-2">
             <i className="text-lg las la-plane-departure"></i>
             <span className="text-xs">Departure time:</span>
-            <span className="text-xs text-primary-500 dark:text-primary-400">
-              10:00 - 15:00
-            </span>
+            <span className="text-xs text-primary-500 dark:text-primary-400">10:00 - 15:00</span>
           </div>
-          <Slider
-            range
-            min={0}
-            max={24}
-            defaultValue={[10, 15]}
-            allowCross={false}
-          />
+          <Slider range min={0} max={24} defaultValue={[10, 15]} allowCross={false} />
         </div>
         <div className="space-y-3">
           <div className="flex space-x-2">
             <i className="text-lg las la-plane-arrival"></i>
             <span className="text-xs">Arrival time:</span>
-            <span className="text-xs text-primary-500 dark:text-primary-400">
-              10:00 - 15:00
-            </span>
+            <span className="text-xs text-primary-500 dark:text-primary-400">10:00 - 15:00</span>
           </div>
-          <Slider
-            range
-            min={0}
-            max={24}
-            defaultValue={[10, 15]}
-            allowCross={false}
-          />
+          <Slider range min={0} max={24} defaultValue={[10, 15]} allowCross={false} />
         </div>
       </div>
     );
@@ -239,21 +210,15 @@ const TabFilters = () => {
           <>
             <Popover.Button
               className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 focus:outline-none
-               ${open ? "!border-primary-500 " : ""}
-                ${
-                  !!airlinesStates.length
-                    ? "!border-primary-500 bg-primary-50"
-                    : ""
-                }
+               ${open ? '!border-primary-500 ' : ''}
+                ${!!airlinesStates.length ? '!border-primary-500 bg-primary-50' : ''}
                 `}
             >
               <span>Location</span>
               {!airlinesStates.length ? (
                 <i className="las la-angle-down ml-2"></i>
               ) : (
-                <span onClick={() => setAirlinesStates([])}>
-                  {renderXClear()}
-                </span>
+                <span onClick={() => setAirlinesStates([])}>{renderXClear()}</span>
               )}
             </Popover.Button>
             <Transition
@@ -271,10 +236,8 @@ const TabFilters = () => {
                     <Checkbox
                       name="All Airlines"
                       label="All Airlines"
-                      defaultChecked={airlinesStates.includes("All Airlines")}
-                      onChange={(checked) =>
-                        handleChangeAirlines(checked, "All Airlines")
-                      }
+                      defaultChecked={airlinesStates.includes('All Airlines')}
+                      onChange={(checked) => handleChangeAirlines(checked, 'All Airlines')}
                     />
                     <hr />
                     {typeOfAirlines.map((item) => (
@@ -283,9 +246,7 @@ const TabFilters = () => {
                           name={item.name}
                           label={item.name}
                           defaultChecked={airlinesStates.includes(item.name)}
-                          onChange={(checked) =>
-                            handleChangeAirlines(checked, item.name)
-                          }
+                          onChange={(checked) => handleChangeAirlines(checked, item.name)}
                         />
                       </div>
                     ))}
@@ -300,10 +261,7 @@ const TabFilters = () => {
                     >
                       Clear
                     </ButtonThird>
-                    <ButtonPrimary
-                      onClick={close}
-                      sizeClass="px-4 py-2 sm:px-5"
-                    >
+                    <ButtonPrimary onClick={close} sizeClass="px-4 py-2 sm:px-5">
                       Apply
                     </ButtonPrimary>
                   </div>
@@ -323,21 +281,15 @@ const TabFilters = () => {
           <>
             <Popover.Button
               className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 focus:outline-none 
-              ${open ? "!border-primary-500 " : ""}
-                ${
-                  !!stopPontsStates.length
-                    ? "!border-primary-500 bg-primary-50"
-                    : ""
-                }
+              ${open ? '!border-primary-500 ' : ''}
+                ${!!stopPontsStates.length ? '!border-primary-500 bg-primary-50' : ''}
                 `}
             >
               <span>Flight Stop</span>
               {!stopPontsStates.length ? (
                 <i className="las la-angle-down ml-2"></i>
               ) : (
-                <span onClick={() => setStopPontsStates([])}>
-                  {renderXClear()}
-                </span>
+                <span onClick={() => setStopPontsStates([])}>{renderXClear()}</span>
               )}
             </Popover.Button>
             <Transition
@@ -358,9 +310,7 @@ const TabFilters = () => {
                           name={item.name}
                           label={item.name}
                           defaultChecked={stopPontsStates.includes(item.name)}
-                          onChange={(checked) =>
-                            handleChangeStopPoint(checked, item.name)
-                          }
+                          onChange={(checked) => handleChangeStopPoint(checked, item.name)}
                         />
                       </div>
                     ))}
@@ -375,10 +325,7 @@ const TabFilters = () => {
                     >
                       Clear
                     </ButtonThird>
-                    <ButtonPrimary
-                      onClick={close}
-                      sizeClass="px-4 py-2 sm:px-5"
-                    >
+                    <ButtonPrimary onClick={close} sizeClass="px-4 py-2 sm:px-5">
                       Apply
                     </ButtonPrimary>
                   </div>
@@ -398,7 +345,7 @@ const TabFilters = () => {
           <>
             <Popover.Button
               className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 focus:outline-none ${
-                open ? "!border-primary-500 " : ""
+                open ? '!border-primary-500 ' : ''
               }`}
             >
               <span>Hotel Distance</span>
@@ -422,10 +369,7 @@ const TabFilters = () => {
                     <ButtonThird onClick={close} sizeClass="px-4 py-2 sm:px-5">
                       Clear
                     </ButtonThird>
-                    <ButtonPrimary
-                      onClick={close}
-                      sizeClass="px-4 py-2 sm:px-5"
-                    >
+                    <ButtonPrimary onClick={close} sizeClass="px-4 py-2 sm:px-5">
                       Apply
                     </ButtonPrimary>
                   </div>
@@ -479,10 +423,7 @@ const TabFilters = () => {
                     <ButtonThird onClick={close} sizeClass="px-4 py-2 sm:px-5">
                       Clear
                     </ButtonThird>
-                    <ButtonPrimary
-                      onClick={close}
-                      sizeClass="px-4 py-2 sm:px-5"
-                    >
+                    <ButtonPrimary onClick={close} sizeClass="px-4 py-2 sm:px-5">
                       Apply
                     </ButtonPrimary>
                   </div>
@@ -506,7 +447,7 @@ const TabFilters = () => {
               <span>
                 {`$${convertNumbThousand(
                   rangePrices[0]
-                )} - $${convertNumbThousand(rangePrices[1])}`}{" "}
+                )} - $${convertNumbThousand(rangePrices[1])}`}{' '}
               </span>
               {renderXClear()}
             </Popover.Button>
@@ -544,9 +485,7 @@ const TabFilters = () => {
                         </label>
                         <div className="mt-1 relative rounded-md">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-neutral-500 sm:text-sm">
-                              $
-                            </span>
+                            <span className="text-neutral-500 sm:text-sm">$</span>
                           </div>
                           <input
                             type="text"
@@ -567,9 +506,7 @@ const TabFilters = () => {
                         </label>
                         <div className="mt-1 relative rounded-md">
                           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-neutral-500 sm:text-sm">
-                              $
-                            </span>
+                            <span className="text-neutral-500 sm:text-sm">$</span>
                           </div>
                           <input
                             type="text"
@@ -587,10 +524,7 @@ const TabFilters = () => {
                     <ButtonThird onClick={close} sizeClass="px-4 py-2 sm:px-5">
                       Clear
                     </ButtonThird>
-                    <ButtonPrimary
-                      onClick={close}
-                      sizeClass="px-4 py-2 sm:px-5"
-                    >
+                    <ButtonPrimary onClick={close} sizeClass="px-4 py-2 sm:px-5">
                       Apply
                     </ButtonPrimary>
                   </div>
@@ -608,8 +542,8 @@ const TabFilters = () => {
       <div
         className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border focus:outline-none cursor-pointer transition-all ${
           isOnSale
-            ? "border-primary-500 bg-primary-50 text-primary-700"
-            : "border-neutral-300 dark:border-neutral-700"
+            ? 'border-primary-500 bg-primary-50 text-primary-700'
+            : 'border-neutral-300 dark:border-neutral-700'
         }`}
         onClick={() => setIsOnSale(!isOnSale)}
       >
@@ -690,10 +624,7 @@ const TabFilters = () => {
               </Transition.Child>
 
               {/* This element is to trick the browser into centering the modal contents. */}
-              <span
-                className="inline-block h-screen align-middle"
-                aria-hidden="true"
-              >
+              <span className="inline-block h-screen align-middle" aria-hidden="true">
                 &#8203;
               </span>
               <Transition.Child
@@ -707,10 +638,7 @@ const TabFilters = () => {
               >
                 <div className="inline-flex flex-col w-full max-w-4xl text-left align-middle transition-all transform overflow-hidden rounded-2xl bg-white dark:bg-neutral-900 dark:border dark:border-neutral-700 dark:text-neutral-100 shadow-xl h-full">
                   <div className="relative flex-shrink-0 px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 text-center">
-                    <Dialog.Title
-                      as="h3"
-                      className="text-lg font-medium leading-6 text-gray-900"
-                    >
+                    <Dialog.Title as="h3" className="text-lg font-medium leading-6 text-gray-900">
                       Flight filters
                     </Dialog.Title>
                     <span className="absolute left-3 top-3">
@@ -724,17 +652,13 @@ const TabFilters = () => {
                       {/* ---- */}
                       <div className="py-7">
                         <h3 className="text-xl font-medium">Airlines</h3>
-                        <div className="mt-6 relative ">
-                          {renderMoreFilterItem(typeOfAirlines)}
-                        </div>
+                        <div className="mt-6 relative ">{renderMoreFilterItem(typeOfAirlines)}</div>
                       </div>
                       {/* --------- */}
                       {/* ---- */}
                       <div className="py-7">
                         <h3 className="text-xl font-medium">Stop points</h3>
-                        <div className="mt-6 relative ">
-                          {renderMoreFilterItem(stopPoints)}
-                        </div>
+                        <div className="mt-6 relative ">{renderMoreFilterItem(stopPoints)}</div>
                       </div>
 
                       {/* --------- */}
@@ -765,9 +689,7 @@ const TabFilters = () => {
                                 </label>
                                 <div className="mt-1 relative rounded-md">
                                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span className="text-neutral-500 sm:text-sm">
-                                      $
-                                    </span>
+                                    <span className="text-neutral-500 sm:text-sm">$</span>
                                   </div>
                                   <input
                                     type="text"
@@ -788,9 +710,7 @@ const TabFilters = () => {
                                 </label>
                                 <div className="mt-1 relative rounded-md">
                                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <span className="text-neutral-500 sm:text-sm">
-                                      $
-                                    </span>
+                                    <span className="text-neutral-500 sm:text-sm">$</span>
                                   </div>
                                   <input
                                     type="text"
@@ -836,16 +756,10 @@ const TabFilters = () => {
                   </div>
 
                   <div className="p-4 sm:p-6 flex-shrink-0 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
-                    <ButtonThird
-                      onClick={closeModalMoreFilter}
-                      sizeClass="px-4 py-2 sm:px-5"
-                    >
+                    <ButtonThird onClick={closeModalMoreFilter} sizeClass="px-4 py-2 sm:px-5">
                       Clear
                     </ButtonThird>
-                    <ButtonPrimary
-                      onClick={closeModalMoreFilter}
-                      sizeClass="px-4 py-2 sm:px-5"
-                    >
+                    <ButtonPrimary onClick={closeModalMoreFilter} sizeClass="px-4 py-2 sm:px-5">
                       Apply
                     </ButtonPrimary>
                   </div>

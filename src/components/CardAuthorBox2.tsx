@@ -1,21 +1,18 @@
-import React, { FC } from "react";
-import { AuthorType } from "@/data/types";
-import { ArrowRightIcon } from "@heroicons/react/24/solid";
-import Avatar from "@/shared/Avatar";
-import convertNumbThousand from "@/utils/convertNumbThousand";
-import Link from "next/link";
-import Image from "next/image";
+import React, { FC } from 'react';
+import { AuthorType } from '@/data/types';
+import { ArrowRightIcon } from '@heroicons/react/24/solid';
+import Avatar from '@/shared/Avatar';
+import convertNumbThousand from '@/utils/convertNumbThousand';
+import Link from 'next/link';
+import Image from 'next/image';
 
 export interface CardAuthorBox2Props {
   className?: string;
   author: AuthorType;
 }
 
-const CardAuthorBox2: FC<CardAuthorBox2Props> = ({
-  className = "",
-  author,
-}) => {
-  const { displayName, href = "/", avatar, jobName, count, bgImage } = author;
+const CardAuthorBox2: FC<CardAuthorBox2Props> = ({ className = '', author }) => {
+  const { displayName, href = '/', avatar, jobName, count, bgImage } = author;
   return (
     <Link
       href={href}
@@ -24,17 +21,11 @@ const CardAuthorBox2: FC<CardAuthorBox2Props> = ({
     >
       <div className="relative flex-shrink-0 ">
         <div className="flex aspect-w-7 aspect-h-3 md:aspect-h-4 w-full h-0">
-          <Image
-            fill
-            alt=""
-            src={bgImage || ""}
-            sizes="(max-width: 400px) 100vw, 400px"
-          />
+          <Image fill alt="" src={bgImage || ''} sizes="(max-width: 400px) 100vw, 400px" />
         </div>
         <div className="absolute top-3 inset-x-3 flex">
           <div className="py-1 px-4 bg-neutral-100 dark:bg-neutral-800 rounded-full flex items-center justify-center leading-none text-xs font-medium">
-            {convertNumbThousand(count)}{" "}
-            <ArrowRightIcon className="w-5 h-5 text-yellow-600 ml-3" />
+            {convertNumbThousand(count)} <ArrowRightIcon className="w-5 h-5 text-yellow-600 ml-3" />
           </div>
         </div>
       </div>
@@ -63,9 +54,7 @@ const CardAuthorBox2: FC<CardAuthorBox2Props> = ({
           <h2 className={`text-base font-medium`}>
             <span className="line-clamp-1">{displayName}</span>
           </h2>
-          <span
-            className={`block mt-1 text-sm text-neutral-500 dark:text-neutral-400`}
-          >
+          <span className={`block mt-1 text-sm text-neutral-500 dark:text-neutral-400`}>
             @{jobName}
           </span>
         </div>

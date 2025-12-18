@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React, { FC, Fragment, ReactNode, useEffect, useState } from "react";
-import { Dialog, Transition } from "@headlessui/react";
-import ButtonClose from "@/shared/ButtonClose";
-import Button from "@/shared/Button";
+import React, { FC, Fragment, ReactNode, useEffect, useState } from 'react';
+import { Dialog, Transition } from '@headlessui/react';
+import ButtonClose from '@/shared/ButtonClose';
+import Button from '@/shared/Button';
 
 export interface NcModalProps {
   renderContent: () => ReactNode;
@@ -19,24 +19,24 @@ export interface NcModalProps {
 const NcModal: FC<NcModalProps> = ({
   renderTrigger,
   renderContent,
-  contentExtraClass = "max-w-screen-xl",
-  contentPaddingClass = "py-4 px-6 md:py-5",
-  triggerText = "Open Modal",
-  modalTitle = "Modal title",
+  contentExtraClass = 'max-w-screen-xl',
+  contentPaddingClass = 'py-4 px-6 md:py-5',
+  triggerText = 'Open Modal',
+  modalTitle = 'Modal title',
   isOpenProp,
   onCloseModal,
 }) => {
   let [isOpen, setIsOpen] = useState(!!isOpenProp);
 
   function closeModal() {
-    if (typeof isOpenProp !== "boolean") {
+    if (typeof isOpenProp !== 'boolean') {
       setIsOpen(false);
     }
     onCloseModal && onCloseModal();
   }
 
   function openModal() {
-    if (typeof isOpenProp !== "boolean") {
+    if (typeof isOpenProp !== 'boolean') {
       setIsOpen(true);
     }
   }
@@ -54,11 +54,7 @@ const NcModal: FC<NcModalProps> = ({
       )}
 
       <Transition appear show={isOpen} as={Fragment}>
-        <Dialog
-          as="div"
-          className="fixed inset-0 z-50 overflow-y-auto"
-          onClose={closeModal}
-        >
+        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={closeModal}>
           <div className="min-h-screen px-1 text-center md:px-4">
             <Transition.Child
               as={Fragment}
@@ -73,10 +69,7 @@ const NcModal: FC<NcModalProps> = ({
             </Transition.Child>
 
             {/* This element is to trick the browser into centering the modal contents. */}
-            <span
-              className="inline-block h-screen align-middle"
-              aria-hidden="true"
-            >
+            <span className="inline-block h-screen align-middle" aria-hidden="true">
               &#8203;
             </span>
             <Transition.Child

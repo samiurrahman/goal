@@ -1,25 +1,25 @@
-import React, { FC } from "react";
-import SectionSubscribe2 from "@/components/SectionSubscribe2";
-import SocialsList from "@/shared/SocialsList";
-import Label from "@/components/Label";
-import Input from "@/shared/Input";
-import Textarea from "@/shared/Textarea";
-import ButtonPrimary from "@/shared/ButtonPrimary";
+import React, { FC } from 'react';
+import SectionSubscribe2 from '@/components/SectionSubscribe2';
+import SocialsList from '@/shared/SocialsList';
+import Label from '@/components/Label';
+import Input from '@/shared/Input';
+import Textarea from '@/shared/Textarea';
+import ButtonPrimary from '@/shared/ButtonPrimary';
 
 export interface PageContactProps {}
 
 const info = [
   {
-    title: "🗺 ADDRESS",
-    desc: "Photo booth tattooed prism, portland taiyaki hoodie neutra typewriter",
+    title: '🗺 ADDRESS',
+    desc: 'Photo booth tattooed prism, portland taiyaki hoodie neutra typewriter',
   },
   {
-    title: "💌 EMAIL",
-    desc: "nc.example@example.com",
+    title: '💌 EMAIL',
+    desc: 'nc.example@example.com',
   },
   {
-    title: "☎ PHONE",
-    desc: "000-123-456-7890",
+    title: '☎ PHONE',
+    desc: '000-123-456-7890',
   },
 ];
 
@@ -55,20 +55,12 @@ const PageContact: FC<PageContactProps> = ({}) => {
                 <label className="block">
                   <Label>Full name</Label>
 
-                  <Input
-                    placeholder="Example Doe"
-                    type="text"
-                    className="mt-1"
-                  />
+                  <Input placeholder="Example Doe" type="text" className="mt-1" />
                 </label>
                 <label className="block">
                   <Label>Email address</Label>
 
-                  <Input
-                    type="email"
-                    placeholder="example@example.com"
-                    className="mt-1"
-                  />
+                  <Input type="email" placeholder="example@example.com" className="mt-1" />
                 </label>
                 <label className="block">
                   <Label>Message</Label>

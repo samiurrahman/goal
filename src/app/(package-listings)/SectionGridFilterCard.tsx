@@ -1,13 +1,13 @@
-"use client";
-import React, { FC, useRef, useEffect, useMemo } from "react";
+'use client';
+import React, { FC, useRef, useEffect, useMemo } from 'react';
 
-import Breadcrumb from "@/components/Breadcrumb";
-import TabFilters from "./TabFilters";
-import ButtonPrimary from "@/shared/ButtonPrimary";
-import { supabase } from "@/utils/supabaseClient";
-import { useInfiniteQuery } from "@tanstack/react-query";
-import { Package } from "@/data/types";
-import PackageCard from "@/components/package";
+import Breadcrumb from '@/components/Breadcrumb';
+import TabFilters from './TabFilters';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import { supabase } from '@/utils/supabaseClient';
+import { useInfiniteQuery } from '@tanstack/react-query';
+import { Package } from '@/data/types';
+import PackageCard from '@/components/package';
 
 export interface SectionGridFilterCardProps {
   className?: string;
@@ -15,33 +15,25 @@ export interface SectionGridFilterCardProps {
 
 const PAGE_SIZE = 20;
 
-const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
-  className = "",
-}) => {
-  const {
-    data,
-    error,
-    isLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useInfiniteQuery<Package[], Error>({
-    queryKey: ["packages"],
-    queryFn: async ({ pageParam = 0 }) => {
-      const page = typeof pageParam === "number" ? pageParam : 0;
-      const { data, error } = await supabase
-        .from("packages")
-        .select("*")
-        .range(page, page + PAGE_SIZE - 1);
-      if (error) throw error;
-      return data as Package[];
-    },
-    getNextPageParam: (lastPage, allPages) => {
-      if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
-      return allPages.length * PAGE_SIZE;
-    },
-    initialPageParam: 0,
-  });
+const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' }) => {
+  const { data, error, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    useInfiniteQuery<Package[], Error>({
+      queryKey: ['packages'],
+      queryFn: async ({ pageParam = 0 }) => {
+        const page = typeof pageParam === 'number' ? pageParam : 0;
+        const { data, error } = await supabase
+          .from('packages')
+          .select('*')
+          .range(page, page + PAGE_SIZE - 1);
+        if (error) throw error;
+        return data as Package[];
+      },
+      getNextPageParam: (lastPage, allPages) => {
+        if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
+        return allPages.length * PAGE_SIZE;
+      },
+      initialPageParam: 0,
+    });
 
   // Infinite scroll observer
   const loaderRef = useRef<HTMLDivElement>(null);
@@ -64,14 +56,8 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
   );
 
   return (
-    <div
-      className={`nc-SectionGridFilterCard ${className}`}
-      data-nc-id="SectionGridFilterCard"
-    >
-      <Breadcrumb
-        items={[{ label: "Home", href: "/" }, { label: "Packages" }]}
-        className="mt-6"
-      />
+    <div className={`nc-SectionGridFilterCard ${className}`} data-nc-id="SectionGridFilterCard">
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Packages' }]} className="mt-6" />
       <div className="mb-4 lg:mb-6 mt-6">
         <TabFilters />
       </div>
@@ -90,13 +76,8 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
             {packages.map((item, index) => (
               <PackageCard key={item.id || index} data={item} />
             ))}
-            <div
-              ref={loaderRef}
-              className="flex mt-12 justify-center items-center"
-            >
-              {isFetchingNextPage && (
-                <ButtonPrimary loading>Loading more Packages</ButtonPrimary>
-              )}
+            <div ref={loaderRef} className="flex mt-12 justify-center items-center">
+              {isFetchingNextPage && <ButtonPrimary loading>Loading more Packages</ButtonPrimary>}
               {!hasNextPage && <span>No more Packages to load.</span>}
             </div>
           </>

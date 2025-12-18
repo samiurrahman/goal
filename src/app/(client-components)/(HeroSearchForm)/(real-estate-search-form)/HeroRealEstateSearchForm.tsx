@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React, { FC, useState } from "react";
-import RealEstateSearchForm from "./RealEstateSearchForm";
+import React, { FC, useState } from 'react';
+import RealEstateSearchForm from './RealEstateSearchForm';
 
-export type SearchRealEstateTab = "Buy" | "Rent" | "Sell";
+export type SearchRealEstateTab = 'Buy' | 'Rent' | 'Sell';
 
 export interface HeroRealEstateSearchFormProps {
   className?: string;
@@ -11,10 +11,10 @@ export interface HeroRealEstateSearchFormProps {
 }
 
 const HeroRealEstateSearchForm: FC<HeroRealEstateSearchFormProps> = ({
-  className = "",
-  currentTab = "Buy",
+  className = '',
+  currentTab = 'Buy',
 }) => {
-  const tabs: SearchRealEstateTab[] = ["Buy", "Rent", "Sell"];
+  const tabs: SearchRealEstateTab[] = ['Buy', 'Rent', 'Sell'];
   const [tabActive, setTabActive] = useState<SearchRealEstateTab>(currentTab);
 
   const renderTab = () => {
@@ -26,9 +26,7 @@ const HeroRealEstateSearchForm: FC<HeroRealEstateSearchFormProps> = ({
             <li
               onClick={() => setTabActive(tab)}
               className={`flex items-center cursor-pointer text-sm lg:text-base font-medium ${
-                active
-                  ? ""
-                  : "text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-100"
+                active ? '' : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-100'
               } `}
               key={tab}
             >
@@ -45,7 +43,7 @@ const HeroRealEstateSearchForm: FC<HeroRealEstateSearchFormProps> = ({
 
   const renderForm = () => {
     switch (tabActive) {
-      case "Buy":
+      case 'Buy':
         return <RealEstateSearchForm />;
 
       default:
@@ -54,9 +52,7 @@ const HeroRealEstateSearchForm: FC<HeroRealEstateSearchFormProps> = ({
   };
 
   return (
-    <div
-      className={`nc-HeroRealEstateSearchForm w-full max-w-6xl py-5 lg:py-0 ${className}`}
-    >
+    <div className={`nc-HeroRealEstateSearchForm w-full max-w-6xl py-5 lg:py-0 ${className}`}>
       {renderTab()}
       {renderForm()}
     </div>

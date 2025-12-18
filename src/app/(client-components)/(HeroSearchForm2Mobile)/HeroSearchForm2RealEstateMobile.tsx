@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import { Dialog, Tab, Transition } from "@headlessui/react";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import { XMarkIcon } from "@heroicons/react/24/solid";
-import React, { Fragment, useState } from "react";
-import ButtonSubmit from "./ButtonSubmit";
-import { useTimeoutFn } from "react-use";
-import RealestateSearchForm from "./(real-estate-search-form)/RealestateSearchForm";
+import { Dialog, Tab, Transition } from '@headlessui/react';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon } from '@heroicons/react/24/solid';
+import React, { Fragment, useState } from 'react';
+import ButtonSubmit from './ButtonSubmit';
+import { useTimeoutFn } from 'react-use';
+import RealestateSearchForm from './(real-estate-search-form)/RealestateSearchForm';
 
 const HeroSearchForm2RealEstateMobile = () => {
   const [showModal, setShowModal] = useState(false);
@@ -84,14 +84,12 @@ const HeroSearchForm2RealEstateMobile = () => {
                       </div>
 
                       <Tab.List className="pt-12 flex w-full justify-center font-semibold text-sm sm:text-base text-neutral-500 dark:text-neutral-400 space-x-6 sm:space-x-8">
-                        {["Buy", "Rent", "Sold"].map((item, index) => (
+                        {['Buy', 'Rent', 'Sold'].map((item, index) => (
                           <Tab key={index} as={Fragment}>
                             {({ selected }) => (
                               <div className="relative focus:outline-none focus-visible:ring-0 outline-none select-none">
                                 <div
-                                  className={`${
-                                    selected ? "text-black dark:text-white" : ""
-                                  }  `}
+                                  className={`${selected ? 'text-black dark:text-white' : ''}  `}
                                 >
                                   {item}
                                 </div>

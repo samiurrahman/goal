@@ -1,13 +1,13 @@
-"use client";
+'use client';
 
-import React, { Fragment, useState } from "react";
-import { FC } from "react";
-import DatePicker from "react-datepicker";
-import { Popover, Transition } from "@headlessui/react";
-import DatePickerCustomHeaderTwoMonth from "@/components/DatePickerCustomHeaderTwoMonth";
-import DatePickerCustomDay from "@/components/DatePickerCustomDay";
-import ClearDataButton from "../ClearDataButton";
-import ButtonSubmit from "../ButtonSubmit";
+import React, { Fragment, useState } from 'react';
+import { FC } from 'react';
+import DatePicker from 'react-datepicker';
+import { Popover, Transition } from '@headlessui/react';
+import DatePickerCustomHeaderTwoMonth from '@/components/DatePickerCustomHeaderTwoMonth';
+import DatePickerCustomDay from '@/components/DatePickerCustomDay';
+import ClearDataButton from '../ClearDataButton';
+import ButtonSubmit from '../ButtonSubmit';
 
 export interface FlightDateRangeInputProps {
   className?: string;
@@ -17,15 +17,13 @@ export interface FlightDateRangeInputProps {
 }
 
 const FlightDateRangeInput: FC<FlightDateRangeInputProps> = ({
-  className = "",
-  fieldClassName = "[ nc-hero-field-padding--small ]",
+  className = '',
+  fieldClassName = '[ nc-hero-field-padding--small ]',
   hasButtonSubmit = true,
   selectsRange = true,
 }) => {
-  const [startDate, setStartDate] = useState<Date | null>(
-    new Date("2023/05/01")
-  );
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/05/16"));
+  const [startDate, setStartDate] = useState<Date | null>(new Date('2023/05/01'));
+  const [endDate, setEndDate] = useState<Date | null>(new Date('2023/05/16'));
 
   const onChangeRangeDate = (dates: [Date | null, Date | null]) => {
     const [start, end] = dates;
@@ -38,20 +36,20 @@ const FlightDateRangeInput: FC<FlightDateRangeInputProps> = ({
       <>
         <div className="flex-grow text-left">
           <span className="block xl:text-base font-semibold">
-            {startDate?.toLocaleDateString("en-US", {
-              month: "short",
-              day: "2-digit",
-            }) || "Add dates"}
+            {startDate?.toLocaleDateString('en-US', {
+              month: 'short',
+              day: '2-digit',
+            }) || 'Add dates'}
             {selectsRange && endDate
-              ? " - " +
-                endDate?.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "2-digit",
+              ? ' - ' +
+                endDate?.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: '2-digit',
                 })
-              : ""}
+              : ''}
           </span>
           <span className="block mt-1 text-sm text-neutral-400 leading-none font-light">
-            {selectsRange ? "Pick up - Drop off" : "Pick up date"}
+            {selectsRange ? 'Pick up - Drop off' : 'Pick up date'}
           </span>
         </div>
       </>
@@ -65,7 +63,7 @@ const FlightDateRangeInput: FC<FlightDateRangeInputProps> = ({
           <>
             <div
               className={`flex-1 z-10 flex items-center focus:outline-none ${
-                open ? "nc-hero-field-focused--2" : ""
+                open ? 'nc-hero-field-focused--2' : ''
               }`}
             >
               <Popover.Button
@@ -74,9 +72,7 @@ const FlightDateRangeInput: FC<FlightDateRangeInputProps> = ({
                 {renderInput()}
 
                 {startDate && open && (
-                  <ClearDataButton
-                    onClick={() => onChangeRangeDate([null, null])}
-                  />
+                  <ClearDataButton onClick={() => onChangeRangeDate([null, null])} />
                 )}
               </Popover.Button>
 
@@ -113,9 +109,7 @@ const FlightDateRangeInput: FC<FlightDateRangeInputProps> = ({
                       monthsShown={2}
                       showPopperArrow={false}
                       inline
-                      renderCustomHeader={(p) => (
-                        <DatePickerCustomHeaderTwoMonth {...p} />
-                      )}
+                      renderCustomHeader={(p) => <DatePickerCustomHeaderTwoMonth {...p} />}
                       renderDayContents={(day, date) => (
                         <DatePickerCustomDay dayOfMonth={day} date={date} />
                       )}
@@ -127,9 +121,7 @@ const FlightDateRangeInput: FC<FlightDateRangeInputProps> = ({
                       monthsShown={2}
                       showPopperArrow={false}
                       inline
-                      renderCustomHeader={(p) => (
-                        <DatePickerCustomHeaderTwoMonth {...p} />
-                      )}
+                      renderCustomHeader={(p) => <DatePickerCustomHeaderTwoMonth {...p} />}
                       renderDayContents={(day, date) => (
                         <DatePickerCustomDay dayOfMonth={day} date={date} />
                       )}

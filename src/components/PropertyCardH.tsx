@@ -1,12 +1,12 @@
-import React, { FC } from "react";
-import GallerySlider from "@/components/GallerySlider";
-import { DEMO_STAY_LISTINGS } from "@/data/listings";
-import StartRating from "@/components/StartRating";
-import BtnLikeIcon from "@/components/BtnLikeIcon";
-import SaleOffBadge from "@/components/SaleOffBadge";
-import Badge from "@/shared/Badge";
-import { StayDataType } from "@/data/types";
-import Link from "next/link";
+import React, { FC } from 'react';
+import GallerySlider from '@/components/GallerySlider';
+import { DEMO_STAY_LISTINGS } from '@/data/listings';
+import StartRating from '@/components/StartRating';
+import BtnLikeIcon from '@/components/BtnLikeIcon';
+import SaleOffBadge from '@/components/SaleOffBadge';
+import Badge from '@/shared/Badge';
+import { StayDataType } from '@/data/types';
+import Link from 'next/link';
 
 export interface PropertyCardHProps {
   className?: string;
@@ -15,22 +15,9 @@ export interface PropertyCardHProps {
 
 const DEMO_DATA = DEMO_STAY_LISTINGS[0];
 
-const PropertyCardH: FC<PropertyCardHProps> = ({
-  className = "",
-  data = DEMO_DATA,
-}) => {
-  const {
-    galleryImgs,
-    title,
-    href,
-    like,
-    saleOff,
-    isAds,
-    price,
-    reviewStart,
-    reviewCount,
-    id,
-  } = data;
+const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = DEMO_DATA }) => {
+  const { galleryImgs, title, href, like, saleOff, isAds, price, reviewStart, reviewCount, id } =
+    data;
 
   const renderSliderGallery = () => {
     return (
@@ -44,9 +31,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({
               sizes="40px"
             /> */}
 
-        {saleOff && (
-          <SaleOffBadge className="absolute left-5 top-5 !bg-orange-500" />
-        )}
+        {saleOff && <SaleOffBadge className="absolute left-5 top-5 !bg-orange-500" />}
       </div>
     );
   };
@@ -58,9 +43,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({
           <span className="hidden sm:inline-block">
             <i className="las la-bed text-lg"></i>
           </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            6 beds
-          </span>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">6 beds</span>
         </div>
 
         {/* ---- */}
@@ -68,9 +51,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({
           <span className="hidden sm:inline-block">
             <i className="las la-bath text-lg"></i>
           </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            3 baths
-          </span>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">3 baths</span>
         </div>
 
         {/* ---- */}
@@ -78,9 +59,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({
           <span className="hidden sm:inline-block">
             <i className="las la-expand-arrows-alt text-lg"></i>
           </span>
-          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-            1200 Sq. Fit
-          </span>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">1200 Sq. Fit</span>
         </div>
       </div>
     );

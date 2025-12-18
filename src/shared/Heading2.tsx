@@ -1,5 +1,5 @@
-import React from "react";
-import { ReactNode } from "react";
+import React from 'react';
+import { ReactNode } from 'react';
 
 export interface Heading2Props {
   heading?: ReactNode;
@@ -8,8 +8,8 @@ export interface Heading2Props {
 }
 
 const Heading2: React.FC<Heading2Props> = ({
-  className = "",
-  heading = "Stays in Tokyo",
+  className = '',
+  heading = 'Stays in Tokyo',
   subHeading,
 }) => {
   return (

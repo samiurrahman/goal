@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { StarIcon } from "@heroicons/react/24/solid";
-import React, { FC, useEffect } from "react";
-import { useState } from "react";
+import { StarIcon } from '@heroicons/react/24/solid';
+import React, { FC, useEffect } from 'react';
+import { useState } from 'react';
 
 export interface FiveStartIconForRateProps {
   className?: string;
@@ -11,8 +11,8 @@ export interface FiveStartIconForRateProps {
 }
 
 const FiveStartIconForRate: FC<FiveStartIconForRateProps> = ({
-  className = "",
-  iconClass = "w-4 h-4",
+  className = '',
+  iconClass = 'w-4 h-4',
   defaultPoint = 5,
 }) => {
   const [point, setPoint] = useState(defaultPoint);
@@ -32,7 +32,7 @@ const FiveStartIconForRate: FC<FiveStartIconForRateProps> = ({
           <StarIcon
             key={item}
             className={`${
-              point >= item || currentHover >= item ? "text-yellow-500" : ""
+              point >= item || currentHover >= item ? 'text-yellow-500' : ''
             } ${iconClass}`}
             onMouseEnter={() => setCurrentHover(() => item)}
             onMouseLeave={() => setCurrentHover(() => 0)}

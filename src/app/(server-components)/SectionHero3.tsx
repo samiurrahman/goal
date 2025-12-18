@@ -1,18 +1,15 @@
-import React, { FC } from "react";
-import imagePng from "@/images/travelhero2.png";
-import Image from "next/image";
-import ButtonPrimary from "@/shared/ButtonPrimary";
+import React, { FC } from 'react';
+import imagePng from '@/images/travelhero2.png';
+import Image from 'next/image';
+import ButtonPrimary from '@/shared/ButtonPrimary';
 
 export interface SectionHero3Props {
   className?: string;
 }
 
-const SectionHero3: FC<SectionHero3Props> = ({ className = "" }) => {
+const SectionHero3: FC<SectionHero3Props> = ({ className = '' }) => {
   return (
-    <div
-      className={`nc-SectionHero3 relative ${className}`}
-      data-nc-id="SectionHero3"
-    >
+    <div className={`nc-SectionHero3 relative ${className}`} data-nc-id="SectionHero3">
       <div className="absolute z-10 inset-x-0 top-[10%] sm:top-[15%] text-center flex flex-col items-center max-w-2xl mx-auto space-y-4 lg:space-y-5 xl:space-y-8">
         <span className="sm:text-lg md:text-xl font-semibold text-neutral-900">
           Booking tax-free from Chis. platform

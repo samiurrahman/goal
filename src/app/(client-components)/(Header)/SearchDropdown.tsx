@@ -1,14 +1,14 @@
-"use client";
+'use client';
 
-import { Popover, Transition } from "@headlessui/react";
-import Input from "@/shared/Input";
-import React, { FC, Fragment } from "react";
+import { Popover, Transition } from '@headlessui/react';
+import Input from '@/shared/Input';
+import React, { FC, Fragment } from 'react';
 
 interface Props {
   className?: string;
 }
 
-const SearchDropdown: FC<Props> = ({ className = "" }) => {
+const SearchDropdown: FC<Props> = ({ className = '' }) => {
   const inputRef = React.createRef<HTMLInputElement>();
 
   return (
@@ -37,10 +37,7 @@ const SearchDropdown: FC<Props> = ({ className = "" }) => {
                 leaveFrom="opacity-100 translate-y-0"
                 leaveTo="opacity-0 translate-y-1"
               >
-                <Popover.Panel
-                  static
-                  className="absolute right-0 z-10 top-full w-screen max-w-sm"
-                >
+                <Popover.Panel static className="absolute right-0 z-10 top-full w-screen max-w-sm">
                   <form action="" method="POST">
                     <Input
                       ref={inputRef}

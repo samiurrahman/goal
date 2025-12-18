@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import React, { Fragment, useState, FC } from "react";
-import DatePicker from "react-datepicker";
-import { Popover, Transition } from "@headlessui/react";
-import DatePickerCustomHeaderTwoMonth from "@/components/DatePickerCustomHeaderTwoMonth";
-import DatePickerCustomDay from "@/components/DatePickerCustomDay";
-import ClearDataButton from "../ClearDataButton";
+import React, { Fragment, useState, FC } from 'react';
+import DatePicker from 'react-datepicker';
+import { Popover, Transition } from '@headlessui/react';
+import DatePickerCustomHeaderTwoMonth from '@/components/DatePickerCustomHeaderTwoMonth';
+import DatePickerCustomDay from '@/components/DatePickerCustomDay';
+import ClearDataButton from '../ClearDataButton';
 
 export interface ExperiencesDateSingleInputProps {
   className?: string;
@@ -13,13 +13,11 @@ export interface ExperiencesDateSingleInputProps {
 }
 
 const ExperiencesDateSingleInput: FC<ExperiencesDateSingleInputProps> = ({
-  className = "",
-  fieldClassName = "[ nc-hero-field-padding--small ]",
+  className = '',
+  fieldClassName = '[ nc-hero-field-padding--small ]',
 }) => {
-  const [startDate, setStartDate] = useState<Date | null>(
-    new Date("2023/03/01")
-  );
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/03/16"));
+  const [startDate, setStartDate] = useState<Date | null>(new Date('2023/03/01'));
+  const [endDate, setEndDate] = useState<Date | null>(new Date('2023/03/16'));
 
   const onChangeDate = (dates: [Date | null, Date | null]) => {
     const [start, end] = dates;
@@ -32,20 +30,20 @@ const ExperiencesDateSingleInput: FC<ExperiencesDateSingleInputProps> = ({
       <>
         <div className="flex-grow text-left">
           <span className="block xl:text-base font-semibold">
-            {startDate?.toLocaleDateString("en-US", {
-              month: "short",
-              day: "2-digit",
-            }) || "Date"}
+            {startDate?.toLocaleDateString('en-US', {
+              month: 'short',
+              day: '2-digit',
+            }) || 'Date'}
             {endDate
-              ? " - " +
-                endDate?.toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "2-digit",
+              ? ' - ' +
+                endDate?.toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: '2-digit',
                 })
-              : ""}
+              : ''}
           </span>
           <span className="block mt-1 text-sm text-neutral-400 leading-none font-light">
-            {startDate ? "Date" : `Add dates`}
+            {startDate ? 'Date' : `Add dates`}
           </span>
         </div>
       </>
@@ -54,20 +52,16 @@ const ExperiencesDateSingleInput: FC<ExperiencesDateSingleInputProps> = ({
 
   return (
     <>
-      <Popover
-        className={`ExperiencesDateSingleInput relative flex ${className}`}
-      >
+      <Popover className={`ExperiencesDateSingleInput relative flex ${className}`}>
         {({ open }) => (
           <>
             <Popover.Button
               className={`flex-1 z-10 flex relative ${fieldClassName} items-center space-x-3 focus:outline-none ${
-                open ? "nc-hero-field-focused--2" : ""
+                open ? 'nc-hero-field-focused--2' : ''
               }`}
             >
               {renderInput()}
-              {startDate && open && (
-                <ClearDataButton onClick={() => onChangeDate([null, null])} />
-              )}
+              {startDate && open && <ClearDataButton onClick={() => onChangeDate([null, null])} />}
             </Popover.Button>
 
             {open && (
@@ -94,9 +88,7 @@ const ExperiencesDateSingleInput: FC<ExperiencesDateSingleInputProps> = ({
                     monthsShown={2}
                     showPopperArrow={false}
                     inline
-                    renderCustomHeader={(p) => (
-                      <DatePickerCustomHeaderTwoMonth {...p} />
-                    )}
+                    renderCustomHeader={(p) => <DatePickerCustomHeaderTwoMonth {...p} />}
                     renderDayContents={(day, date) => (
                       <DatePickerCustomDay dayOfMonth={day} date={date} />
                     )}

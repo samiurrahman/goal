@@ -1,31 +1,31 @@
-"use client";
-import React, { FC, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/utils/supabaseClient";
-import Cookies from "js-cookie";
-import facebookSvg from "@/images/Facebook.svg";
-import twitterSvg from "@/images/Twitter.svg";
-import googleSvg from "@/images/Google.svg";
-import Input from "@/shared/Input";
-import ButtonPrimary from "@/shared/ButtonPrimary";
-import Image from "next/image";
-import Link from "next/link";
-import { stringify } from "querystring";
+'use client';
+import React, { FC, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/utils/supabaseClient';
+import Cookies from 'js-cookie';
+import facebookSvg from '@/images/Facebook.svg';
+import twitterSvg from '@/images/Twitter.svg';
+import googleSvg from '@/images/Google.svg';
+import Input from '@/shared/Input';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import Image from 'next/image';
+import Link from 'next/link';
+import { stringify } from 'querystring';
 
 export interface PageLoginProps {}
 
 const loginSocials = [
   {
-    name: "Continue with Google",
-    href: "#",
+    name: 'Continue with Google',
+    href: '#',
     icon: googleSvg,
   },
 ];
 
 const PageLogin: FC<PageLoginProps> = ({}) => {
   const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -45,11 +45,11 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
     } else {
       // Store access token in cookie
       if (data?.session?.access_token) {
-        Cookies.set("sb-access-token", data.session.access_token, {
-          path: "/",
+        Cookies.set('sb-access-token', data.session.access_token, {
+          path: '/',
         });
       }
-      router.push("/");
+      router.push('/');
     }
   };
 
@@ -68,28 +68,21 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
                 setLoading(true);
                 setError(null);
                 const { data, error } = await supabase.auth.signInWithOAuth({
-                  provider: "google",
+                  provider: 'google',
                   options: {
-                    redirectTo:
-                      typeof window !== "undefined"
-                        ? window.location.origin
-                        : undefined,
+                    redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
                   },
                 });
                 setLoading(false);
-                localStorage.setItem("oauth-redirect", stringify(data));
-                console.log("social", data);
+                localStorage.setItem('oauth-redirect', stringify(data));
+                console.log('social', data);
 
                 if (error) setError(error.message);
                 // For OAuth, Supabase will handle the redirect and set the cookie on callback page
               }}
               disabled={loading}
             >
-              <Image
-                className="flex-shrink-0"
-                src={googleSvg}
-                alt="Continue with Google"
-              />
+              <Image className="flex-shrink-0" src={googleSvg} alt="Continue with Google" />
               <h3 className="flex-grow text-center text-sm font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
                 Continue with Google
               </h3>
@@ -106,9 +99,7 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
           {/* FORM */}
           <form className="grid grid-cols-1 gap-6" onSubmit={handleSignIn}>
             <label className="block">
-              <span className="text-neutral-800 dark:text-neutral-200">
-                Email address
-              </span>
+              <span className="text-neutral-800 dark:text-neutral-200">Email address</span>
               <Input
                 type="email"
                 placeholder="example@example.com"
@@ -134,7 +125,7 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
               />
             </label>
             <ButtonPrimary type="submit" disabled={loading}>
-              {loading ? "Logging in..." : "Continue"}
+              {loading ? 'Logging in...' : 'Continue'}
             </ButtonPrimary>
             {error && <span className="text-red-500 text-sm">{error}</span>}
           </form>

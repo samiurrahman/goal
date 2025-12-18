@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 interface LocationSectionProps {
   title: string;
@@ -6,18 +6,12 @@ interface LocationSectionProps {
   mapSrc: string;
 }
 
-const LocationSection: React.FC<LocationSectionProps> = ({
-  title,
-  address,
-  mapSrc,
-}) => (
+const LocationSection: React.FC<LocationSectionProps> = ({ title, address, mapSrc }) => (
   <div className="listingSection__wrap">
     {/* HEADING */}
     <div>
       <h2 className="text-2xl font-semibold">{title}</h2>
-      <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-        {address}
-      </span>
+      <span className="block mt-2 text-neutral-500 dark:text-neutral-400">{address}</span>
     </div>
     <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
 

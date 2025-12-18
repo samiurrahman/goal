@@ -1,15 +1,13 @@
-import React, { FC, Fragment, useState } from "react";
-import CheckOutPagePageMain from "@/app/checkout/PageMain";
-import { Dialog, Transition } from "@headlessui/react";
-import { XMarkIcon } from "@heroicons/react/24/solid";
+import React, { FC, Fragment, useState } from 'react';
+import CheckOutPagePageMain from '@/app/checkout/PageMain';
+import { Dialog, Transition } from '@headlessui/react';
+import { XMarkIcon } from '@heroicons/react/24/solid';
 
 interface ModalReserveMobileProps {
   renderChildren?: (p: { openModal: () => void }) => React.ReactNode;
 }
 
-const ModalReserveMobile: FC<ModalReserveMobileProps> = ({
-  renderChildren,
-}) => {
+const ModalReserveMobile: FC<ModalReserveMobileProps> = ({ renderChildren }) => {
   const [showModal, setShowModal] = useState(false);
 
   //
@@ -52,10 +50,7 @@ const ModalReserveMobile: FC<ModalReserveMobileProps> = ({
                 <Dialog.Panel className="relative h-full flex-1 flex flex-col justify-between overflow-auto">
                   <>
                     <div className="absolute left-4 top-4">
-                      <button
-                        className="focus:outline-none focus:ring-0"
-                        onClick={closeModal}
-                      >
+                      <button className="focus:outline-none focus:ring-0" onClick={closeModal}>
                         <XMarkIcon className="w-5 h-5 text-black dark:text-white" />
                       </button>
                     </div>

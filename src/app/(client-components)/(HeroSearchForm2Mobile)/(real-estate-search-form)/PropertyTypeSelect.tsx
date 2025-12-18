@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import React, { useEffect } from "react";
-import { FC } from "react";
-import Checkbox from "@/shared/Checkbox";
-import { ClassOfProperties } from "../../type";
+import React, { useEffect } from 'react';
+import { FC } from 'react';
+import Checkbox from '@/shared/Checkbox';
+import { ClassOfProperties } from '../../type';
 
 // DEMO DATA
 
@@ -12,13 +12,10 @@ export interface PropertyTypeSelectProps {
   defaultValue?: ClassOfProperties[];
 }
 
-const PropertyTypeSelect: FC<PropertyTypeSelectProps> = ({
-  onChange,
-  defaultValue,
-}) => {
-  const [typeOfProperty, setTypeOfProperty] = React.useState<
-    ClassOfProperties[]
-  >(defaultValue || []);
+const PropertyTypeSelect: FC<PropertyTypeSelectProps> = ({ onChange, defaultValue }) => {
+  const [typeOfProperty, setTypeOfProperty] = React.useState<ClassOfProperties[]>(
+    defaultValue || []
+  );
 
   useEffect(() => {
     if (!defaultValue) return;
@@ -27,9 +24,7 @@ const PropertyTypeSelect: FC<PropertyTypeSelectProps> = ({
 
   return (
     <div className="p-5">
-      <span className="block font-semibold text-xl sm:text-2xl">
-        Property types
-      </span>
+      <span className="block font-semibold text-xl sm:text-2xl">Property types</span>
       <div className="relative flex flex-col space-y-5 mt-7">
         {typeOfProperty.map((item, index) => (
           <div key={item.name} className="">

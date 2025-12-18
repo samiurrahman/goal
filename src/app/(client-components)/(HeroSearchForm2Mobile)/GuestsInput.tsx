@@ -1,8 +1,8 @@
-"use client";
-import React, { useEffect, useState } from "react";
-import NcInputNumber from "@/components/NcInputNumber";
-import { FC } from "react";
-import { GuestsObject } from "../type";
+'use client';
+import React, { useEffect, useState } from 'react';
+import NcInputNumber from '@/components/NcInputNumber';
+import { FC } from 'react';
+import { GuestsObject } from '../type';
 
 export interface GuestsInputProps {
   defaultValue?: GuestsObject;
@@ -10,11 +10,7 @@ export interface GuestsInputProps {
   className?: string;
 }
 
-const GuestsInput: FC<GuestsInputProps> = ({
-  defaultValue,
-  onChange,
-  className = "",
-}) => {
+const GuestsInput: FC<GuestsInputProps> = ({ defaultValue, onChange, className = '' }) => {
   const [guestAdultsInputValue, setGuestAdultsInputValue] = useState(
     defaultValue?.guestAdults || 0
   );
@@ -41,15 +37,15 @@ const GuestsInput: FC<GuestsInputProps> = ({
       guestChildren: guestChildrenInputValue,
       guestInfants: guestInfantsInputValue,
     };
-    if (type === "guestAdults") {
+    if (type === 'guestAdults') {
       setGuestAdultsInputValue(value);
       newValue.guestAdults = value;
     }
-    if (type === "guestChildren") {
+    if (type === 'guestChildren') {
       setGuestChildrenInputValue(value);
       newValue.guestChildren = value;
     }
-    if (type === "guestInfants") {
+    if (type === 'guestInfants') {
       setGuestInfantsInputValue(value);
       newValue.guestInfants = value;
     }
@@ -58,13 +54,11 @@ const GuestsInput: FC<GuestsInputProps> = ({
 
   return (
     <div className={`flex flex-col relative p-5 ${className}`}>
-      <span className="mb-5 block font-semibold text-xl sm:text-2xl">
-        {`Who's coming?`}
-      </span>
+      <span className="mb-5 block font-semibold text-xl sm:text-2xl">{`Who's coming?`}</span>
       <NcInputNumber
         className="w-full"
         defaultValue={guestAdultsInputValue}
-        onChange={(value) => handleChangeData(value, "guestAdults")}
+        onChange={(value) => handleChangeData(value, 'guestAdults')}
         max={20}
         label="Adults"
         desc="Ages 13 or above"
@@ -72,7 +66,7 @@ const GuestsInput: FC<GuestsInputProps> = ({
       <NcInputNumber
         className="w-full mt-6"
         defaultValue={guestChildrenInputValue}
-        onChange={(value) => handleChangeData(value, "guestChildren")}
+        onChange={(value) => handleChangeData(value, 'guestChildren')}
         max={20}
         label="Children"
         desc="Ages 2–12"
@@ -81,7 +75,7 @@ const GuestsInput: FC<GuestsInputProps> = ({
       <NcInputNumber
         className="w-full mt-6"
         defaultValue={guestInfantsInputValue}
-        onChange={(value) => handleChangeData(value, "guestInfants")}
+        onChange={(value) => handleChangeData(value, 'guestInfants')}
         max={20}
         label="Infants"
         desc="Ages 0–2"

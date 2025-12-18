@@ -1,16 +1,16 @@
-import React, { useState, Fragment, useEffect } from "react";
-import { Transition, Dialog } from "@headlessui/react";
-import NavMobile from "./Navigation/NavMobile";
-import { Bars3Icon } from "@heroicons/react/24/outline";
-import { usePathname } from "next/navigation";
+import React, { useState, Fragment, useEffect } from 'react';
+import { Transition, Dialog } from '@headlessui/react';
+import NavMobile from './Navigation/NavMobile';
+import { Bars3Icon } from '@heroicons/react/24/outline';
+import { usePathname } from 'next/navigation';
 
 export interface MenuBarProps {
   className?: string;
   iconClassName?: string;
 }
 const MenuBar: React.FC<MenuBarProps> = ({
-  className = "p-2.5 rounded-lg text-neutral-700 dark:text-neutral-300",
-  iconClassName = "h-8 w-8",
+  className = 'p-2.5 rounded-lg text-neutral-700 dark:text-neutral-300',
+  iconClassName = 'h-8 w-8',
 }) => {
   const [isVisable, setIsVisable] = useState(false);
 
@@ -26,11 +26,7 @@ const MenuBar: React.FC<MenuBarProps> = ({
   const renderContent = () => {
     return (
       <Transition appear show={isVisable} as={Fragment}>
-        <Dialog
-          as="div"
-          className="relative z-50 overflow-hidden"
-          onClose={handleCloseMenu}
-        >
+        <Dialog as="div" className="relative z-50 overflow-hidden" onClose={handleCloseMenu}>
           <Transition.Child
             as={Fragment}
             enter=" duration-300"

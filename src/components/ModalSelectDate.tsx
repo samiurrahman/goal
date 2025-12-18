@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import DatePicker from "react-datepicker";
-import { Dialog, Transition } from "@headlessui/react";
-import { XMarkIcon } from "@heroicons/react/24/solid";
-import React, { FC, Fragment, useEffect, useState } from "react";
-import ButtonPrimary from "@/shared/ButtonPrimary";
-import DatePickerCustomHeaderTwoMonth from "./DatePickerCustomHeaderTwoMonth";
-import DatePickerCustomDay from "./DatePickerCustomDay";
+import DatePicker from 'react-datepicker';
+import { Dialog, Transition } from '@headlessui/react';
+import { XMarkIcon } from '@heroicons/react/24/solid';
+import React, { FC, Fragment, useEffect, useState } from 'react';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import DatePickerCustomHeaderTwoMonth from './DatePickerCustomHeaderTwoMonth';
+import DatePickerCustomDay from './DatePickerCustomDay';
 
 interface ModalSelectDateProps {
   renderChildren?: (p: { openModal: () => void }) => React.ReactNode;
@@ -15,10 +15,8 @@ interface ModalSelectDateProps {
 const ModalSelectDate: FC<ModalSelectDateProps> = ({ renderChildren }) => {
   const [showModal, setShowModal] = useState(false);
 
-  const [startDate, setStartDate] = useState<Date | null>(
-    new Date("2023/02/06")
-  );
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/02/23"));
+  const [startDate, setStartDate] = useState<Date | null>(new Date('2023/02/06'));
+  const [endDate, setEndDate] = useState<Date | null>(new Date('2023/02/23'));
 
   const onChangeDate = (dates: [Date | null, Date | null]) => {
     const [start, end] = dates;
@@ -67,10 +65,7 @@ const ModalSelectDate: FC<ModalSelectDateProps> = ({ renderChildren }) => {
                 <Dialog.Panel className="relative h-full overflow-hidden flex-1 flex flex-col justify-between ">
                   <>
                     <div className="absolute left-4 top-4">
-                      <button
-                        className="focus:outline-none focus:ring-0"
-                        onClick={closeModal}
-                      >
+                      <button className="focus:outline-none focus:ring-0" onClick={closeModal}>
                         <XMarkIcon className="w-5 h-5 text-black dark:text-white" />
                       </button>
                     </div>
@@ -98,10 +93,7 @@ const ModalSelectDate: FC<ModalSelectDateProps> = ({ renderChildren }) => {
                                   <DatePickerCustomHeaderTwoMonth {...p} />
                                 )}
                                 renderDayContents={(day, date) => (
-                                  <DatePickerCustomDay
-                                    dayOfMonth={day}
-                                    date={date}
-                                  />
+                                  <DatePickerCustomDay dayOfMonth={day} date={date} />
                                 )}
                               />
                             </div>

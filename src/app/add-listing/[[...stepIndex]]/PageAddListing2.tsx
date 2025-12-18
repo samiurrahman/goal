@@ -1,23 +1,21 @@
-"use client";
+'use client';
 
-import { MapPinIcon } from "@heroicons/react/24/solid";
-import LocationMarker from "@/components/AnyReactComponent/LocationMarker";
-import Label from "@/components/Label";
-import GoogleMapReact from "google-map-react";
-import React, { FC, useState } from "react";
-import { getLocation } from "@/utils/getLocation";
-import ButtonSecondary from "@/shared/ButtonSecondary";
-import Input from "@/shared/Input";
-import Select from "@/shared/Select";
-import FormItem from "../FormItem";
+import { MapPinIcon } from '@heroicons/react/24/solid';
+import LocationMarker from '@/components/AnyReactComponent/LocationMarker';
+import Label from '@/components/Label';
+import GoogleMapReact from 'google-map-react';
+import React, { FC, useState } from 'react';
+import { getLocation } from '@/utils/getLocation';
+import ButtonSecondary from '@/shared/ButtonSecondary';
+import Input from '@/shared/Input';
+import Select from '@/shared/Select';
+import FormItem from '../FormItem';
 
 export interface PageAddListing2Props {}
 
 const PageAddListing2: FC<PageAddListing2Props> = () => {
   const [loadingLocation, setLoadingLocation] = useState(false);
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(
-    null
-  );
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const handleGetLocation = async () => {
     setLoadingLocation(true);
     try {
@@ -25,7 +23,7 @@ const PageAddListing2: FC<PageAddListing2Props> = () => {
       setLocation(loc);
       console.log(location);
     } catch (e) {
-      alert("Unable to get your location.");
+      alert('Unable to get your location.');
     } finally {
       setLoadingLocation(false);
     }
@@ -40,7 +38,7 @@ const PageAddListing2: FC<PageAddListing2Props> = () => {
         <ButtonSecondary onClick={handleGetLocation} disabled={loadingLocation}>
           <MapPinIcon className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
           <span className="ml-3">
-            {loadingLocation ? "Getting location..." : "Use current location"}
+            {loadingLocation ? 'Getting location...' : 'Use current location'}
           </span>
         </ButtonSecondary>
         {/* ITEM */}
@@ -82,13 +80,11 @@ const PageAddListing2: FC<PageAddListing2Props> = () => {
               <div className="rounded-xl overflow-hidden">
                 <GoogleMapReact
                   bootstrapURLKeys={{
-                    key: "AIzaSyAGVJfZMAKYfZ71nzL_v5i3LjTTWnCYwTY",
+                    key: 'AIzaSyAGVJfZMAKYfZ71nzL_v5i3LjTTWnCYwTY',
                   }}
                   yesIWantToUseGoogleMapApiInternals
                   defaultZoom={15}
-                  defaultCenter={
-                    location || { lat: 55.9607277, lng: 36.2172614 }
-                  }
+                  defaultCenter={location || { lat: 55.9607277, lng: 36.2172614 }}
                 >
                   <LocationMarker
                     lat={location?.lat ?? 55.9607277}

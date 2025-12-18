@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import { Popover, Transition } from "@headlessui/react";
-import { ChevronDownIcon } from "@heroicons/react/24/solid";
-import { Fragment } from "react";
-import { PathName } from "@/routers/types";
-import Link from "next/link";
+import { Popover, Transition } from '@headlessui/react';
+import { ChevronDownIcon } from '@heroicons/react/24/solid';
+import { Fragment } from 'react';
+import { PathName } from '@/routers/types';
+import Link from 'next/link';
 
 interface SolutionItem {
   name: string;
@@ -16,28 +16,28 @@ interface SolutionItem {
 
 const solutions: SolutionItem[] = [
   {
-    name: "Stays",
-    description: "Stays rental description ",
-    href: "/listing-stay",
+    name: 'Stays',
+    description: 'Stays rental description ',
+    href: '/listing-stay',
     active: true,
     icon: IconOne,
   },
   {
-    name: "Real Estate",
-    description: "Real Estate description",
-    href: "/listing-real-estate",
+    name: 'Real Estate',
+    description: 'Real Estate description',
+    href: '/listing-real-estate',
     icon: IconTwo,
   },
   {
-    name: "Cars",
-    description: "Car rental description",
-    href: "/listing-car",
+    name: 'Cars',
+    description: 'Car rental description',
+    href: '/listing-car',
     icon: IconThree,
   },
   {
-    name: "Experiences",
-    description: "Tour and experiences",
-    href: "/listing-experiences",
+    name: 'Experiences',
+    description: 'Tour and experiences',
+    href: '/listing-experiences',
     icon: IconFour,
   },
 ];
@@ -48,13 +48,13 @@ export default function DropdownTravelers() {
       {({ open, close }) => (
         <>
           <Popover.Button
-            className={`${open ? "" : "text-opacity-90"}
+            className={`${open ? '' : 'text-opacity-90'}
                 group self-center py-2 h-10 sm:h-12 rounded-md text-sm sm:text-base font-medium hover:text-opacity-100 focus:outline-none`}
           >
             <div className={` inline-flex items-center `} role="button">
               <span>Travelers</span>
               <ChevronDownIcon
-                className={`${open ? "-rotate-180" : "text-opacity-70 "}
+                className={`${open ? '-rotate-180' : 'text-opacity-70 '}
                   ml-2 h-5 w-5 text-neutral-700 group-hover:text-opacity-80 transition ease-in-out duration-150 `}
                 aria-hidden="true"
               />
@@ -78,7 +78,7 @@ export default function DropdownTravelers() {
                       href={item.href}
                       onClick={() => close()}
                       className={`flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-50 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 ${
-                        item.active ? "bg-neutral-100 dark:bg-neutral-700" : ""
+                        item.active ? 'bg-neutral-100 dark:bg-neutral-700' : ''
                       }`}
                     >
                       <div className="flex items-center justify-center flex-shrink-0 w-10 h-10 bg-primary-50 rounded-md text-primary-500 sm:h-12 sm:w-12">
@@ -100,9 +100,7 @@ export default function DropdownTravelers() {
                     className="flow-root px-2 py-2 space-y-0.5 transition duration-150 ease-in-out rounded-md focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
                   >
                     <span className="flex items-center">
-                      <span className="text-sm font-medium ">
-                        Documentation
-                      </span>
+                      <span className="text-sm font-medium ">Documentation</span>
                     </span>
                     <span className="block text-sm text-gray-500 dark:text-neutral-400">
                       Start integrating products and tools
@@ -120,12 +118,7 @@ export default function DropdownTravelers() {
 
 function IconFour() {
   return (
-    <svg
-      className="w-7 h-7"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M15.0301 10.77L20.6901 6.97998C21.2601 6.59998 21.4101 5.81998 21.0301 5.25998L19.2101 2.54996C18.8301 1.97996 18.0501 1.82996 17.4901 2.20996L11.8301 5.99997L15.0301 10.77Z"
         stroke="currentColor"
@@ -167,12 +160,7 @@ function IconFour() {
 
 function IconTwo() {
   return (
-    <svg
-      className="w-7 h-7"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M13 22H5C3 22 2 21 2 19V11C2 9 3 8 5 8H10V19C10 21 11 22 13 22Z"
         stroke="currentColor"
@@ -235,12 +223,7 @@ function IconTwo() {
 
 function IconThree() {
   return (
-    <svg
-      className="w-7 h-7"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M15.51 2.82996H8.49C6 2.82996 5.45 4.06996 5.13 5.58996L4 11H20L18.87 5.58996C18.55 4.06996 18 2.82996 15.51 2.82996Z"
         stroke="currentColor"
@@ -303,12 +286,7 @@ function IconThree() {
 
 function IconOne() {
   return (
-    <svg
-      className="w-7 h-7"
-      viewBox="0 0 24 24"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path
         d="M17.22 2H8.96005C8.56005 2 8.18002 2.14 7.87002 2.38L5.68002 4.13C4.80002 4.83 4.80002 6.15999 5.68002 6.85999L7.87002 8.60999C8.18002 8.85999 8.57005 8.98999 8.96005 8.98999H17.22C18.19 8.98999 18.97 8.20999 18.97 7.23999V3.73999C18.97 2.77999 18.19 2 17.22 2Z"
         stroke="currentColor"

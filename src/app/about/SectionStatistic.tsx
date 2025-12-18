@@ -1,5 +1,5 @@
-import React, { FC } from "react";
-import Heading from "@/shared/Heading";
+import React, { FC } from 'react';
+import Heading from '@/shared/Heading';
 
 export interface Statistic {
   id: string;
@@ -9,21 +9,19 @@ export interface Statistic {
 
 const FOUNDER_DEMO: Statistic[] = [
   {
-    id: "1",
-    heading: "10 million",
-    subHeading:
-      "Articles have been public around the world (as of Sept. 30, 2021)",
+    id: '1',
+    heading: '10 million',
+    subHeading: 'Articles have been public around the world (as of Sept. 30, 2021)',
   },
   {
-    id: "2",
-    heading: "100,000",
-    subHeading: "Registered users account (as of Sept. 30, 2021)",
+    id: '2',
+    heading: '100,000',
+    subHeading: 'Registered users account (as of Sept. 30, 2021)',
   },
   {
-    id: "3",
-    heading: "220+",
-    subHeading:
-      "Countries and regions have our presence (as of Sept. 30, 2021)",
+    id: '3',
+    heading: '220+',
+    subHeading: 'Countries and regions have our presence (as of Sept. 30, 2021)',
   },
 ];
 
@@ -31,7 +29,7 @@ export interface SectionStatisticProps {
   className?: string;
 }
 
-const SectionStatistic: FC<SectionStatisticProps> = ({ className = "" }) => {
+const SectionStatistic: FC<SectionStatisticProps> = ({ className = '' }) => {
   return (
     <div className={`nc-SectionStatistic relative ${className}`}>
       <Heading

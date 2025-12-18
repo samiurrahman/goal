@@ -1,10 +1,10 @@
-"use client";
+'use client';
 
-import Heading from "@/shared/Heading";
-import NcPlayIcon from "@/shared/NcPlayIcon";
-import NcPlayIcon2 from "@/shared/NcPlayIcon2";
-import Image from "next/image";
-import React, { FC, useState } from "react";
+import Heading from '@/shared/Heading';
+import NcPlayIcon from '@/shared/NcPlayIcon';
+import NcPlayIcon2 from '@/shared/NcPlayIcon2';
+import Image from 'next/image';
+import React, { FC, useState } from 'react';
 
 export interface VideoType {
   id: string;
@@ -19,41 +19,38 @@ export interface SectionVideosProps {
 
 const VIDEOS_DEMO: VideoType[] = [
   {
-    id: "Ao7e4iisKMs",
-    title: "Magical Scotland - 4K Scenic Relaxation Film with Calming Music",
+    id: 'Ao7e4iisKMs',
+    title: 'Magical Scotland - 4K Scenic Relaxation Film with Calming Music',
     thumbnail:
-      "https://images.pexels.com/photos/131423/pexels-photo-131423.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+      'https://images.pexels.com/photos/131423/pexels-photo-131423.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
   },
   {
-    id: "a5V6gdu5ih8",
-    title: "Magical Scotland - 4K Scenic Relaxation Film with Calming Music",
+    id: 'a5V6gdu5ih8',
+    title: 'Magical Scotland - 4K Scenic Relaxation Film with Calming Music',
     thumbnail:
-      "https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+      'https://images.pexels.com/photos/186077/pexels-photo-186077.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
   },
   {
-    id: "MuB7HHeuNbc",
-    title: "Magical Scotland - 4K Scenic Relaxation Film with Calming Music",
+    id: 'MuB7HHeuNbc',
+    title: 'Magical Scotland - 4K Scenic Relaxation Film with Calming Music',
     thumbnail:
-      "https://images.pexels.com/photos/1660995/pexels-photo-1660995.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+      'https://images.pexels.com/photos/1660995/pexels-photo-1660995.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
   },
   {
-    id: "eEaZvEZye84",
-    title: "Magical Scotland - 4K Scenic Relaxation Film with Calming Music",
+    id: 'eEaZvEZye84',
+    title: 'Magical Scotland - 4K Scenic Relaxation Film with Calming Music',
     thumbnail:
-      "https://images.pexels.com/photos/4983184/pexels-photo-4983184.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+      'https://images.pexels.com/photos/4983184/pexels-photo-4983184.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
   },
   {
-    id: "EuDJZDaSP0Q",
-    title: "Magical Scotland - 4K Scenic Relaxation Film with Calming Music",
+    id: 'EuDJZDaSP0Q',
+    title: 'Magical Scotland - 4K Scenic Relaxation Film with Calming Music',
     thumbnail:
-      "https://images.pexels.com/photos/2549018/pexels-photo-2549018.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260",
+      'https://images.pexels.com/photos/2549018/pexels-photo-2549018.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
   },
 ];
 
-const SectionVideos: FC<SectionVideosProps> = ({
-  videos = VIDEOS_DEMO,
-  className = "",
-}) => {
+const SectionVideos: FC<SectionVideosProps> = ({ videos = VIDEOS_DEMO, className = '' }) => {
   const [isPlay, setIsPlay] = useState(false);
   const [currentVideo, setCurrentVideo] = useState(0);
 

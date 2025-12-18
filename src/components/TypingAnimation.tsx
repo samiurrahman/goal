@@ -1,5 +1,5 @@
-"use client";
-import React, { useEffect, useState } from "react";
+'use client';
+import React, { useEffect, useState } from 'react';
 
 interface TypingAnimationProps {
   words: string[];
@@ -7,13 +7,9 @@ interface TypingAnimationProps {
   pause?: number;
 }
 
-const TypingAnimation: React.FC<TypingAnimationProps> = ({
-  words,
-  speed = 100,
-  pause = 1200,
-}) => {
+const TypingAnimation: React.FC<TypingAnimationProps> = ({ words, speed = 100, pause = 1200 }) => {
   const [currentWord, setCurrentWord] = useState(0);
-  const [displayed, setDisplayed] = useState("");
+  const [displayed, setDisplayed] = useState('');
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {

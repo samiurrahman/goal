@@ -1,34 +1,34 @@
-import React, { FC } from "react";
-import GallerySlider from "@/components/GallerySlider";
-import { DEMO_EXPERIENCES_LISTINGS } from "@/data/listings";
-import { ExperiencesDataType } from "@/data/types";
-import StartRating from "@/components/StartRating";
-import BtnLikeIcon from "@/components/BtnLikeIcon";
-import SaleOffBadge from "@/components/SaleOffBadge";
-import Badge from "@/shared/Badge";
-import Link from "next/link";
-import { MapPinIcon } from "@heroicons/react/24/outline";
+import React, { FC } from 'react';
+import GallerySlider from '@/components/GallerySlider';
+import { DEMO_EXPERIENCES_LISTINGS } from '@/data/listings';
+import { ExperiencesDataType } from '@/data/types';
+import StartRating from '@/components/StartRating';
+import BtnLikeIcon from '@/components/BtnLikeIcon';
+import SaleOffBadge from '@/components/SaleOffBadge';
+import Badge from '@/shared/Badge';
+import Link from 'next/link';
+import { MapPinIcon } from '@heroicons/react/24/outline';
 
 export interface ExperiencesCardProps {
   className?: string;
   ratioClass?: string;
   data?: ExperiencesDataType;
-  size?: "default" | "small";
+  size?: 'default' | 'small';
 }
 
 const DEMO_DATA: ExperiencesDataType = DEMO_EXPERIENCES_LISTINGS[0];
 
 const ExperiencesCard: FC<ExperiencesCardProps> = ({
-  size = "default",
-  className = "",
+  size = 'default',
+  className = '',
   data = DEMO_DATA,
-  ratioClass = "aspect-w-3 aspect-h-3",
+  ratioClass = 'aspect-w-3 aspect-h-3',
 }) => {
   const {
     galleryImgs,
     address,
     title,
-    href = "/experiences/modern-loft",
+    href = '/experiences/modern-loft',
     like,
     saleOff,
     isAds,
@@ -55,10 +55,10 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
 
   const renderContent = () => {
     return (
-      <div className={size === "default" ? "py-4 space-y-3" : "p-3 space-y-1"}>
+      <div className={size === 'default' ? 'py-4 space-y-3' : 'p-3 space-y-1'}>
         <div className="space-y-2">
           <div className="flex items-center text-neutral-500 dark:text-neutral-400 text-sm space-x-2">
-            {size === "default" && <MapPinIcon className="w-4 h-4" />}
+            {size === 'default' && <MapPinIcon className="w-4 h-4" />}
             <span className="">address</span>
           </div>
 
@@ -66,7 +66,7 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
             {true && <Badge name="ADS" color="green" />}
             <h2
               className={` font-medium capitalize ${
-                size === "default" ? "text-base" : "text-base"
+                size === 'default' ? 'text-base' : 'text-base'
               }`}
             >
               <span className="line-clamp-1">{title}</span>
@@ -78,7 +78,7 @@ const ExperiencesCard: FC<ExperiencesCardProps> = ({
           <span className="text-base font-semibold">
             400
             {` `}
-            {size === "default" && (
+            {size === 'default' && (
               <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
                 /person
               </span>

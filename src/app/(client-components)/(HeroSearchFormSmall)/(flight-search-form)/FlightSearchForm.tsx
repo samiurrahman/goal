@@ -1,36 +1,36 @@
-"use client";
+'use client';
 
-import React, { FC, useState } from "react";
-import LocationInput from "../LocationInput";
-import { Popover, Transition } from "@headlessui/react";
-import { ChevronDownIcon } from "@heroicons/react/24/solid";
-import { Fragment } from "react";
-import NcInputNumber from "@/components/NcInputNumber";
-import FlightDateRangeInput from "./FlightDateRangeInput";
-import { GuestsObject } from "../../type";
+import React, { FC, useState } from 'react';
+import LocationInput from '../LocationInput';
+import { Popover, Transition } from '@headlessui/react';
+import { ChevronDownIcon } from '@heroicons/react/24/solid';
+import { Fragment } from 'react';
+import NcInputNumber from '@/components/NcInputNumber';
+import FlightDateRangeInput from './FlightDateRangeInput';
+import { GuestsObject } from '../../type';
 
 export interface FlightSearchFormProps {}
 
 const flightClass = [
   {
-    name: "Economy",
-    href: "##",
+    name: 'Economy',
+    href: '##',
   },
   {
-    name: "Business",
-    href: "##",
+    name: 'Business',
+    href: '##',
   },
   {
-    name: "Multiple",
-    href: "##",
+    name: 'Multiple',
+    href: '##',
   },
 ];
 
 const FlightSearchForm: FC<FlightSearchFormProps> = ({}) => {
-  const [dropOffLocationType, setDropOffLocationType] = useState<
-    "roundTrip" | "oneWay" | ""
-  >("roundTrip");
-  const [flightClassState, setFlightClassState] = useState("Economy");
+  const [dropOffLocationType, setDropOffLocationType] = useState<'roundTrip' | 'oneWay' | ''>(
+    'roundTrip'
+  );
+  const [flightClassState, setFlightClassState] = useState('Economy');
   const [guestAdultsInputValue, setGuestAdultsInputValue] = useState(2);
   const [guestChildrenInputValue, setGuestChildrenInputValue] = useState(1);
   const [guestInfantsInputValue, setGuestInfantsInputValue] = useState(1);
@@ -41,22 +41,21 @@ const FlightSearchForm: FC<FlightSearchFormProps> = ({}) => {
       guestChildren: guestChildrenInputValue,
       guestInfants: guestInfantsInputValue,
     };
-    if (type === "guestAdults") {
+    if (type === 'guestAdults') {
       setGuestAdultsInputValue(value);
       newValue.guestAdults = value;
     }
-    if (type === "guestChildren") {
+    if (type === 'guestChildren') {
       setGuestChildrenInputValue(value);
       newValue.guestChildren = value;
     }
-    if (type === "guestInfants") {
+    if (type === 'guestInfants') {
       setGuestInfantsInputValue(value);
       newValue.guestInfants = value;
     }
   };
 
-  const totalGuests =
-    guestChildrenInputValue + guestAdultsInputValue + guestInfantsInputValue;
+  const totalGuests = guestChildrenInputValue + guestAdultsInputValue + guestInfantsInputValue;
 
   const renderGuest = () => {
     return (
@@ -67,10 +66,10 @@ const FlightSearchForm: FC<FlightSearchFormProps> = ({}) => {
               <Popover.Button
                 className={`px-4 py-1.5 rounded-md inline-flex items-center font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-0 text-xs`}
               >
-                <span>{`${totalGuests || ""} Guests`}</span>
+                <span>{`${totalGuests || ''} Guests`}</span>
                 <ChevronDownIcon
                   className={`${
-                    open ? "" : "text-opacity-70"
+                    open ? '' : 'text-opacity-70'
                   } ml-2 h-4 w-4 group-hover:text-opacity-80 transition ease-in-out duration-150`}
                   aria-hidden="true"
                 />
@@ -88,7 +87,7 @@ const FlightSearchForm: FC<FlightSearchFormProps> = ({}) => {
                   <NcInputNumber
                     className="w-full"
                     defaultValue={guestAdultsInputValue}
-                    onChange={(value) => handleChangeData(value, "guestAdults")}
+                    onChange={(value) => handleChangeData(value, 'guestAdults')}
                     max={10}
                     min={1}
                     label="Adults"
@@ -97,9 +96,7 @@ const FlightSearchForm: FC<FlightSearchFormProps> = ({}) => {
                   <NcInputNumber
                     className="w-full mt-6"
                     defaultValue={guestChildrenInputValue}
-                    onChange={(value) =>
-                      handleChangeData(value, "guestChildren")
-                    }
+                    onChange={(value) => handleChangeData(value, 'guestChildren')}
                     max={4}
                     label="Children"
                     desc="Ages 2–12"
@@ -108,9 +105,7 @@ const FlightSearchForm: FC<FlightSearchFormProps> = ({}) => {
                   <NcInputNumber
                     className="w-full mt-6"
                     defaultValue={guestInfantsInputValue}
-                    onChange={(value) =>
-                      handleChangeData(value, "guestInfants")
-                    }
+                    onChange={(value) => handleChangeData(value, 'guestInfants')}
                     max={4}
                     label="Infants"
                     desc="Ages 0–2"
@@ -136,7 +131,7 @@ const FlightSearchForm: FC<FlightSearchFormProps> = ({}) => {
                 <span>{`${flightClassState}`}</span>
                 <ChevronDownIcon
                   className={`${
-                    open ? "" : "text-opacity-70"
+                    open ? '' : 'text-opacity-70'
                   } ml-2 h-4 w-4 group-hover:text-opacity-80 transition ease-in-out duration-150`}
                   aria-hidden="true"
                 />
@@ -183,21 +178,21 @@ const FlightSearchForm: FC<FlightSearchFormProps> = ({}) => {
       <div className="pb-3 flex justify-center space-x-3">
         <div
           className={`py-1.5 px-4 flex items-center rounded-full font-medium text-xs cursor-pointer select-none ${
-            dropOffLocationType === "roundTrip"
-              ? "bg-black shadow-black/10 shadow-lg text-white"
-              : "border border-neutral-300 dark:border-neutral-700"
+            dropOffLocationType === 'roundTrip'
+              ? 'bg-black shadow-black/10 shadow-lg text-white'
+              : 'border border-neutral-300 dark:border-neutral-700'
           }`}
-          onClick={(e) => setDropOffLocationType("roundTrip")}
+          onClick={(e) => setDropOffLocationType('roundTrip')}
         >
           Round-trip
         </div>
         <div
           className={`py-1.5 px-4 flex items-center rounded-full font-medium text-xs cursor-pointer select-none ${
-            dropOffLocationType === "oneWay"
-              ? "bg-black text-white shadow-black/10 shadow-lg"
-              : "border border-neutral-300 dark:border-neutral-700"
+            dropOffLocationType === 'oneWay'
+              ? 'bg-black text-white shadow-black/10 shadow-lg'
+              : 'border border-neutral-300 dark:border-neutral-700'
           }`}
-          onClick={(e) => setDropOffLocationType("oneWay")}
+          onClick={(e) => setDropOffLocationType('oneWay')}
         >
           One-way
         </div>
@@ -233,7 +228,7 @@ const FlightSearchForm: FC<FlightSearchFormProps> = ({}) => {
           />
           <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
           <FlightDateRangeInput
-            selectsRange={dropOffLocationType !== "oneWay"}
+            selectsRange={dropOffLocationType !== 'oneWay'}
             className="flex-1"
           />
         </div>

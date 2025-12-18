@@ -1,27 +1,27 @@
-"use client";
+'use client';
 
-import React, { FC, useState } from "react";
-import { ArrowRightIcon } from "@heroicons/react/24/outline";
-import CommentListing from "@/components/CommentListing";
-import FiveStartIconForRate from "@/components/FiveStartIconForRate";
-import ButtonCircle from "@/shared/ButtonCircle";
-import ButtonPrimary from "@/shared/ButtonPrimary";
-import ButtonSecondary from "@/shared/ButtonSecondary";
-import Input from "@/shared/Input";
-import Image from "next/image";
-import { Amenities_demos, PHOTOS } from "../(components)/constant";
-import { roomRates } from "../(components)/constant";
-import StayDatesRangeInput from "../(components)/StayDatesRangeInput";
-import GuestsInput from "../(components)/GuestsInput";
-import Breadcrumb from "@/components/Breadcrumb";
-import Iternary from "../(components)/Iternary";
-import PackageMeta from "../(components)/PackageMeta";
-import RoomRates from "../(components)/RoomRates";
-import Policies from "../(components)/Policies";
-import HostInformation from "../(components)/HostInformation";
-import AmenitiesSection from "../(components)/AmenitiesSection";
-import PackageInfo from "../(components)/PackageInfo";
-import MobileFooterSticky from "../(components)/MobileFooterSticky";
+import React, { FC, useState } from 'react';
+import { ArrowRightIcon } from '@heroicons/react/24/outline';
+import CommentListing from '@/components/CommentListing';
+import FiveStartIconForRate from '@/components/FiveStartIconForRate';
+import ButtonCircle from '@/shared/ButtonCircle';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import ButtonSecondary from '@/shared/ButtonSecondary';
+import Input from '@/shared/Input';
+import Image from 'next/image';
+import { Amenities_demos, PHOTOS } from '../(components)/constant';
+import { roomRates } from '../(components)/constant';
+import StayDatesRangeInput from '../(components)/StayDatesRangeInput';
+import GuestsInput from '../(components)/GuestsInput';
+import Breadcrumb from '@/components/Breadcrumb';
+import Iternary from '../(components)/Iternary';
+import PackageMeta from '../(components)/PackageMeta';
+import RoomRates from '../(components)/RoomRates';
+import Policies from '../(components)/Policies';
+import HostInformation from '../(components)/HostInformation';
+import AmenitiesSection from '../(components)/AmenitiesSection';
+import PackageInfo from '../(components)/PackageInfo';
+import MobileFooterSticky from '../(components)/MobileFooterSticky';
 // import LocationSection from "./LocationSection";
 
 export interface PackageDetailProps {
@@ -30,65 +30,64 @@ export interface PackageDetailProps {
 
 const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   const { agentName, slug } = params;
-  console.log(agentName, slug);
   // Room rate selection state
   const [selectedRate, setSelectedRate] = useState(roomRates[0]);
 
   // Dummy data for policies
   const policiesData = {
     cancellation:
-      "Refund 50% of the booking value when customers cancel the room within 48 hours after successful booking and 14 days before the check-in time. Then, cancel the room 14 days before the check-in time, get a 50% refund of the total amount paid (minus the service fee).",
-    checkIn: "08:00 am - 12:00 am",
-    checkOut: "02:00 pm - 04:00 pm",
+      'Refund 50% of the booking value when customers cancel the room within 48 hours after successful booking and 14 days before the check-in time. Then, cancel the room 14 days before the check-in time, get a 50% refund of the total amount paid (minus the service fee).',
+    checkIn: '08:00 am - 12:00 am',
+    checkOut: '02:00 pm - 04:00 pm',
     notes: [
-      "Ban and I will work together to keep the landscape and environment green and clean by not littering, not using stimulants and respecting people around.",
-      "Do not sing karaoke past 11:30",
+      'Ban and I will work together to keep the landscape and environment green and clean by not littering, not using stimulants and respecting people around.',
+      'Do not sing karaoke past 11:30',
     ],
   };
   // Dummy data for demonstration
   const iternaryData = [
     {
-      fromDate: "Monday, August 12 · 10:00",
-      fromLocation: "Tokyo International Airport (HND)",
-      toDate: "Monday, August 16 · 10:00",
-      toLocation: "Singapore International Airport (SIN)",
-      tripTime: "7 hours 45 minutes",
-      flightInfo: "ANA · Business class · Boeing 787 · NH 847",
+      fromDate: 'Monday, August 12 · 10:00',
+      fromLocation: 'Tokyo International Airport (HND)',
+      toDate: 'Monday, August 16 · 10:00',
+      toLocation: 'Singapore International Airport (SIN)',
+      tripTime: '7 hours 45 minutes',
+      flightInfo: 'ANA · Business class · Boeing 787 · NH 847',
     },
     {
-      fromDate: "Tuesday, August 17 · 09:00",
-      fromLocation: "Singapore International Airport (SIN)",
-      toDate: "Tuesday, August 17 · 15:00",
-      toLocation: "Jeddah International Airport (JED)",
-      tripTime: "8 hours 00 minutes",
-      flightInfo: "Emirates · Economy class · Boeing 777 · EK 123",
+      fromDate: 'Tuesday, August 17 · 09:00',
+      fromLocation: 'Singapore International Airport (SIN)',
+      toDate: 'Tuesday, August 17 · 15:00',
+      toLocation: 'Jeddah International Airport (JED)',
+      tripTime: '8 hours 00 minutes',
+      flightInfo: 'Emirates · Economy class · Boeing 777 · EK 123',
     },
     {
-      fromDate: "Wednesday, August 18 · 08:00",
-      fromLocation: "Jeddah International Airport (JED)",
-      toDate: "Wednesday, August 18 · 12:00",
-      toLocation: "Makkah Hotel",
-      tripTime: "4 hours 00 minutes",
-      flightInfo: "Private Transfer",
+      fromDate: 'Wednesday, August 18 · 08:00',
+      fromLocation: 'Jeddah International Airport (JED)',
+      toDate: 'Wednesday, August 18 · 12:00',
+      toLocation: 'Makkah Hotel',
+      tripTime: '4 hours 00 minutes',
+      flightInfo: 'Private Transfer',
     },
   ];
   const packageInfoData = {
-    title: "Stay information",
+    title: 'Stay information',
     details: [
-      "Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides accommodation, an outdoor swimming pool, a bar, a shared lounge, a garden and barbecue facilities. Complimentary WiFi is provided.",
-      "There is a private bathroom with bidet in all units, along with a hairdryer and free toiletries.",
-      "The Symphony 9 Tam Coc offers a terrace. Both a bicycle rental service and a car rental service are available at the accommodation, while cycling can be enjoyed nearby.",
+      'Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides accommodation, an outdoor swimming pool, a bar, a shared lounge, a garden and barbecue facilities. Complimentary WiFi is provided.≠',
+      'There is a private bathroom with bidet in all units, along with a hairdryer and free toiletries.',
+      'The Symphony 9 Tam Coc offers a terrace. Both a bicycle rental service and a car rental service are available at the accommodation, while cycling can be enjoyed nearby.',
     ],
   };
 
   const hostData = {
-    name: "Kevin Francis",
+    name: 'Kevin Francis',
     places: 12,
     description:
-      "Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides accommodation, an outdoor swimming pool, a bar, a shared lounge, a garden and barbecue facilities...",
-    joined: "Joined in March 2016",
-    responseRate: "100%",
-    responseTime: "Fast response - within a few hours",
+      'Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides accommodation, an outdoor swimming pool, a bar, a shared lounge, a garden and barbecue facilities...',
+    joined: 'Joined in March 2016',
+    responseRate: '100%',
+    responseTime: 'Fast response - within a few hours',
     profileUrl: agentName,
   };
   // Dummy data for location
@@ -108,10 +107,10 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     const gstRate = 0.05;
     const gstAmount = total * gstRate;
     const grandTotal = total + gstAmount;
-    const formattedPrice = pricePerPerson.toLocaleString("en-IN");
-    const formattedTotal = total.toLocaleString("en-IN");
-    const formattedGst = gstAmount.toLocaleString("en-IN");
-    const formattedGrandTotal = grandTotal.toLocaleString("en-IN");
+    const formattedPrice = pricePerPerson.toLocaleString('en-IN');
+    const formattedTotal = total.toLocaleString('en-IN');
+    const formattedGst = gstAmount.toLocaleString('en-IN');
+    const formattedGrandTotal = grandTotal.toLocaleString('en-IN');
     return (
       <div className="listingSectionSidebar__wrap shadow-xl">
         {/* PRICE */}
@@ -151,7 +150,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         </div>
 
         {/* SUBMIT */}
-        <ButtonPrimary href={"/checkout"}>Reserve</ButtonPrimary>
+        <ButtonPrimary href={'/checkout'}>Reserve</ButtonPrimary>
       </div>
     );
   };
@@ -172,7 +171,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "linear-gradient(to bottom, rgba(0,0,0,0.25) 60%, rgba(255,255,255,1) 100%)",
+              'linear-gradient(to bottom, rgba(0,0,0,0.25) 60%, rgba(255,255,255,1) 100%)',
           }}
         />
       </header>
@@ -181,8 +180,8 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       <div className="relative z-20 mt-4">
         <Breadcrumb
           items={[
-            { label: "Home", href: "/" },
-            { label: "Packages", href: "/packages" },
+            { label: 'Home', href: '/' },
+            { label: 'Packages', href: '/packages' },
             { label: slug },
           ]}
         />
@@ -226,8 +225,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           <AmenitiesSection
             amenities={Amenities_demos.map((item) => ({
               ...item,
-              icon:
-                typeof item.icon === "string" ? item.icon : item.icon.src ?? "",
+              icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
             }))}
           />
           <Policies {...policiesData} />

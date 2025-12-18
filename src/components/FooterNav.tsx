@@ -1,19 +1,15 @@
-"use client";
+'use client';
 
-import {
-  HeartIcon,
-  MagnifyingGlassIcon,
-  UserCircleIcon,
-} from "@heroicons/react/24/outline";
-import React, { useEffect, useRef } from "react";
-import { PathName } from "@/routers/types";
-import MenuBar from "@/shared/MenuBar";
-import isInViewport from "@/utils/isInViewport";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { HeartIcon, MagnifyingGlassIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import React, { useEffect, useRef } from 'react';
+import { PathName } from '@/routers/types';
+import MenuBar from '@/shared/MenuBar';
+import isInViewport from '@/utils/isInViewport';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 let WIN_PREV_POSITION = 0;
-if (typeof window !== "undefined") {
+if (typeof window !== 'undefined') {
   WIN_PREV_POSITION = window.pageYOffset;
 }
 
@@ -25,22 +21,22 @@ interface NavItem {
 
 const NAV: NavItem[] = [
   {
-    name: "Explore",
-    link: "/",
+    name: 'Explore',
+    link: '/',
     icon: MagnifyingGlassIcon,
   },
   {
-    name: "Wishlists",
-    link: "/account-savelists",
+    name: 'Wishlists',
+    link: '/account-savelists',
     icon: HeartIcon,
   },
   {
-    name: "Log in",
-    link: "/account",
+    name: 'Log in',
+    link: '/account',
     icon: UserCircleIcon,
   },
   {
-    name: "Menu",
+    name: 'Menu',
     icon: MenuBar,
   },
 ];
@@ -51,14 +47,14 @@ const FooterNav = () => {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.addEventListener("scroll", handleEvent);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scroll', handleEvent);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleEvent = () => {
-    if (typeof window !== "undefined") {
+    if (typeof window !== 'undefined') {
       window.requestAnimationFrame(showHideHeaderMenu);
     }
   };
@@ -73,22 +69,16 @@ const FooterNav = () => {
 
     // SHOW _ HIDE MAIN MENU
     if (currentScrollPos > WIN_PREV_POSITION) {
-      if (
-        isInViewport(containerRef.current) &&
-        currentScrollPos - WIN_PREV_POSITION < 80
-      ) {
+      if (isInViewport(containerRef.current) && currentScrollPos - WIN_PREV_POSITION < 80) {
         return;
       }
 
-      containerRef.current.classList.add("FooterNav--hide");
+      containerRef.current.classList.add('FooterNav--hide');
     } else {
-      if (
-        !isInViewport(containerRef.current) &&
-        WIN_PREV_POSITION - currentScrollPos < 80
-      ) {
+      if (!isInViewport(containerRef.current) && WIN_PREV_POSITION - currentScrollPos < 80) {
         return;
       }
-      containerRef.current.classList.remove("FooterNav--hide");
+      containerRef.current.classList.remove('FooterNav--hide');
     }
 
     WIN_PREV_POSITION = currentScrollPos;
@@ -102,15 +92,11 @@ const FooterNav = () => {
         key={index}
         href={item.link}
         className={`flex flex-col items-center justify-between text-neutral-500 dark:text-neutral-300/90 ${
-          isActive ? "text-neutral-900 dark:text-neutral-100" : ""
+          isActive ? 'text-neutral-900 dark:text-neutral-100' : ''
         }`}
       >
-        <item.icon className={`w-6 h-6 ${isActive ? "text-red-600" : ""}`} />
-        <span
-          className={`text-[11px] leading-none mt-1 ${
-            isActive ? "text-red-600" : ""
-          }`}
-        >
+        <item.icon className={`w-6 h-6 ${isActive ? 'text-red-600' : ''}`} />
+        <span className={`text-[11px] leading-none mt-1 ${isActive ? 'text-red-600' : ''}`}>
           {item.name}
         </span>
       </Link>
@@ -118,7 +104,7 @@ const FooterNav = () => {
       <div
         key={index}
         className={`flex flex-col items-center justify-between text-neutral-500 dark:text-neutral-300/90 ${
-          isActive ? "text-neutral-900 dark:text-neutral-100" : ""
+          isActive ? 'text-neutral-900 dark:text-neutral-100' : ''
         }`}
       >
         <item.icon iconClassName="w-6 h-6" className={``} />

@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC } from 'react';
 
 interface Props {
   value?: string;
@@ -11,7 +11,7 @@ const DatePickerCustomTime: FC<Props> = ({ onChange, value }) => {
       <input
         value={value}
         onChange={(e) => onChange?.(e.target.value)}
-        style={{ border: "solid 1px pink" }}
+        style={{ border: 'solid 1px pink' }}
       />
     </div>
   );

@@ -1,5 +1,5 @@
-import React, { FC } from "react";
-import Checkbox from "@/shared/Checkbox";
+import React, { FC } from 'react';
+import Checkbox from '@/shared/Checkbox';
 
 export interface PageAddListing4Props {}
 
@@ -9,8 +9,7 @@ const PageAddListing4: FC<PageAddListing4Props> = () => {
       <div>
         <h2 className="text-2xl font-semibold">Amenities </h2>
         <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-          Many customers have searched for accommodation based on amenities
-          criteria
+          Many customers have searched for accommodation based on amenities criteria
         </span>
       </div>
       <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
@@ -48,18 +47,10 @@ const PageAddListing4: FC<PageAddListing4Props> = () => {
           <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             <Checkbox label="Wardrobe" name="Wardrobe" defaultChecked />
             <Checkbox label="Cloth hook" name="Cloth hook" />
-            <Checkbox
-              label="Extra cushion"
-              name="Extra cushion"
-              defaultChecked
-            />
+            <Checkbox label="Extra cushion" name="Extra cushion" defaultChecked />
             <Checkbox label="Gas stove" name="Gas stove" />
             <Checkbox label="Toilet paper" name="Toilet paper" />
-            <Checkbox
-              label="Free toiletries"
-              name="Free toiletries"
-              defaultChecked
-            />
+            <Checkbox label="Free toiletries" name="Free toiletries" defaultChecked />
             <Checkbox label="Makeup table" name="Makeup table" />
             <Checkbox label="Hot pot" name="Hot pot" />
             <Checkbox label="Bathroom heaters" name="Bathroom heaters" />

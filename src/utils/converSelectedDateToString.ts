@@ -1,18 +1,18 @@
-import { DateRage } from "@/app/(client-components)/type";
+import { DateRage } from '@/app/(client-components)/type';
 
 const converSelectedDateToString = ([startDate, endDate]: DateRage) => {
   const dateString =
-    (startDate?.toLocaleDateString("en-US", {
-      month: "short",
-      day: "2-digit",
-    }) || "") +
+    (startDate?.toLocaleDateString('en-US', {
+      month: 'short',
+      day: '2-digit',
+    }) || '') +
     (endDate
-      ? " - " +
-        endDate?.toLocaleDateString("en-US", {
-          month: "short",
-          day: "2-digit",
+      ? ' - ' +
+        endDate?.toLocaleDateString('en-US', {
+          month: 'short',
+          day: '2-digit',
         })
-      : "");
+      : '');
   return dateString;
 };
 

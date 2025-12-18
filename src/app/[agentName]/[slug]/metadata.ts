@@ -1,33 +1,31 @@
-import { Metadata } from "next";
-import { supabase } from "@/utils/supabaseClient";
-import { Package } from "@/data/types";
+import { Metadata } from 'next';
+import { supabase } from '@/utils/supabaseClient';
+import { Package } from '@/data/types';
 
 interface PageProps {
   params: { agentName: string; slug: string };
 }
 
-export async function generateMetadata({
-  params,
-}: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { agentName, slug } = params;
 
   // Fetch package details from Supabase
   const { data: packageData } = await supabase
-    .from("packages")
-    .select("*")
-    .eq("slug", slug)
+    .from('packages')
+    .select('*')
+    .eq('slug', slug)
     .single();
 
   const pkg = packageData as Package | null;
 
   if (!pkg) {
     return {
-      title: "Package Not Found",
-      description: "The requested package could not be found.",
+      title: 'Package Not Found',
+      description: 'The requested package could not be found.',
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hajjscanner.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hajjscanner.com';
   const packageUrl = `${baseUrl}/${agentName}/${slug}`;
 
   return {
@@ -38,19 +36,17 @@ export async function generateMetadata({
     keywords: [
       pkg.title,
       `${pkg.total_duration_days} days package`,
-      pkg.agent_name || "",
-      "Hajj package",
-      "Umrah package",
-      pkg.departure_city || "",
-      pkg.makkah_hotel_name || "",
-      pkg.madinah_hotel_name || "",
+      pkg.agent_name || '',
+      'Hajj package',
+      'Umrah package',
+      pkg.departure_city || '',
+      pkg.makkah_hotel_name || '',
+      pkg.madinah_hotel_name || '',
     ],
     openGraph: {
       title: `${pkg.title} - ${pkg.currency}${pkg.price_per_person}`,
-      description:
-        pkg.short_description ||
-        `${pkg.total_duration_days} days Hajj/Umrah package`,
-      type: "website",
+      description: pkg.short_description || `${pkg.total_duration_days} days Hajj/Umrah package`,
+      type: 'website',
       url: packageUrl,
       images: [
         {
@@ -62,10 +58,9 @@ export async function generateMetadata({
       ],
     },
     twitter: {
-      card: "summary_large_image",
+      card: 'summary_large_image',
       title: `${pkg.title} - ${pkg.currency}${pkg.price_per_person}`,
-      description:
-        pkg.short_description || `${pkg.total_duration_days} days package`,
+      description: pkg.short_description || `${pkg.total_duration_days} days package`,
       images: [pkg.thumbnail_url || `${baseUrl}/default-package.jpg`],
     },
     alternates: {
@@ -74,5 +69,5 @@ export async function generateMetadata({
   };
 }
 
-export { default } from "./page";
+export { default } from './page';
 // TODO: Create './PackageDetailClient.tsx' or correct the path if the file exists under a different name.

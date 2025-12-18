@@ -17,13 +17,13 @@ const idCounter: Record<string, number> = {};
  * ncNanoId()
  * // => '105'
  */
-function ncNanoId(prefix = "ncNanoId_") {
+function ncNanoId(prefix = 'ncNanoId_') {
   if (!idCounter[prefix]) {
     idCounter[prefix] = 0;
   }
 
   const id = ++idCounter[prefix];
-  if (prefix === "$lodash$") {
+  if (prefix === '$lodash$') {
     return `${id}`;
   }
 

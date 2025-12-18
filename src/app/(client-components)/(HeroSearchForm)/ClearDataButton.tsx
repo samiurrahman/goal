@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { XMarkIcon } from "@heroicons/react/24/outline";
-import React from "react";
-import { FC } from "react";
+import { XMarkIcon } from '@heroicons/react/24/outline';
+import React from 'react';
+import { FC } from 'react';
 
 export interface ClearDataButtonProps {
   onClick: () => void;

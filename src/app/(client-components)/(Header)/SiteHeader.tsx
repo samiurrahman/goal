@@ -1,19 +1,19 @@
-"use client";
+'use client';
 
-import React, { Fragment, useEffect, useRef, useState } from "react";
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 import {
   ShoppingBagIcon as ShoppingCartIcon,
   Cog8ToothIcon as CogIcon,
-} from "@heroicons/react/24/outline";
-import { Popover, Transition } from "@headlessui/react";
-import { PathName } from "@/routers/types";
-import Link from "next/link";
-import Header from "./Header";
-import Header3 from "./Header3";
-import { usePathname } from "next/navigation";
-import { useThemeMode } from "@/utils/useThemeMode";
+} from '@heroicons/react/24/outline';
+import { Popover, Transition } from '@headlessui/react';
+import { PathName } from '@/routers/types';
+import Link from 'next/link';
+import Header from './Header';
+import Header3 from './Header3';
+import { usePathname } from 'next/navigation';
+import { useThemeMode } from '@/utils/useThemeMode';
 
-export type SiteHeaders = "Header 1" | "Header 2" | "Header 3";
+export type SiteHeaders = 'Header 1' | 'Header 2' | 'Header 3';
 
 interface HomePageItem {
   name: string;
@@ -22,28 +22,28 @@ interface HomePageItem {
 
 let OPTIONS = {
   root: null,
-  rootMargin: "0px",
+  rootMargin: '0px',
   threshold: 1.0,
 };
 let OBSERVER: IntersectionObserver | null = null;
 const PAGES_HIDE_HEADER_BORDER: PathName[] = [
-  "/home-3",
-  "/listing-car-detail",
-  "/listing-experiences-detail",
-  "/listing-stay-detail",
+  '/home-3',
+  '/listing-car-detail',
+  '/listing-experiences-detail',
+  '/listing-stay-detail',
 ];
 
 const SiteHeader = () => {
   const anchorRef = useRef<HTMLDivElement>(null);
 
-  let [headers] = useState<SiteHeaders[]>(["Header 1", "Header 2", "Header 3"]);
+  let [headers] = useState<SiteHeaders[]>(['Header 1', 'Header 2', 'Header 3']);
 
   let [homePages] = useState<HomePageItem[]>([
-    { name: "Travel", slug: "/" },
-    { name: "Real Estate", slug: "/home-2" },
-    { name: "Booking", slug: "/home-3" },
+    { name: 'Travel', slug: '/' },
+    { name: 'Real Estate', slug: '/home-2' },
+    { name: 'Booking', slug: '/home-3' },
   ]);
-  const [headerSelected, setHeaderSelected] = useState<SiteHeaders>("Header 2");
+  const [headerSelected, setHeaderSelected] = useState<SiteHeaders>('Header 2');
 
   const [isTopOfPage, setIsTopOfPage] = useState(true);
 
@@ -86,8 +86,8 @@ const SiteHeader = () => {
                 key={header}
                 className={`py-1.5 px-3.5 flex items-center rounded-full font-medium text-xs cursor-pointer select-none ${
                   headerSelected === header
-                    ? "bg-black text-white shadow-black/10 shadow-lg"
-                    : "border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500"
+                    ? 'bg-black text-white shadow-black/10 shadow-lg'
+                    : 'border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500'
                 }`}
                 onClick={() => setHeaderSelected(header)}
               >
@@ -112,8 +112,8 @@ const SiteHeader = () => {
                 href={home.slug}
                 className={`py-1.5 px-3.5 flex items-center rounded-full font-medium text-xs cursor-pointer select-none ${
                   pathname === home.slug
-                    ? "bg-black text-white shadow-black/10 shadow-lg"
-                    : "border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500"
+                    ? 'bg-black text-white shadow-black/10 shadow-lg'
+                    : 'border border-neutral-300 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500'
                 }`}
               >
                 {home.name}
@@ -135,7 +135,7 @@ const SiteHeader = () => {
               <>
                 <Popover.Button
                   className={`p-2.5 bg-white hover:bg-neutral-100 dark:bg-primary-6000 dark:hover:bg-primary-700 rounded-xl shadow-xl border border-neutral-200 dark:border-primary-6000 z-10 focus:outline-none ${
-                    open ? " focus:ring-2 ring-primary-500" : ""
+                    open ? ' focus:ring-2 ring-primary-500' : ''
                   }`}
                 >
                   <CogIcon className="w-8 h-8" />
@@ -169,18 +169,16 @@ const SiteHeader = () => {
   };
 
   const renderHeader = () => {
-    let headerClassName = "shadow-sm dark:border-b dark:border-neutral-700";
+    let headerClassName = 'shadow-sm dark:border-b dark:border-neutral-700';
     if (PAGES_HIDE_HEADER_BORDER.includes(pathname as PathName)) {
-      headerClassName = isTopOfPage
-        ? ""
-        : "shadow-sm dark:border-b dark:border-neutral-700";
+      headerClassName = isTopOfPage ? '' : 'shadow-sm dark:border-b dark:border-neutral-700';
     }
     switch (headerSelected) {
-      case "Header 1":
+      case 'Header 1':
         return <Header className={headerClassName} navType="MainNav1" />;
-      case "Header 2":
+      case 'Header 2':
         return <Header className={headerClassName} navType="MainNav2" />;
-      case "Header 3":
+      case 'Header 3':
         return <Header3 className={headerClassName} />;
 
       default:

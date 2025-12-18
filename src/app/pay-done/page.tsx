@@ -1,7 +1,7 @@
-import StartRating from "@/components/StartRating";
-import React, { FC } from "react";
-import ButtonPrimary from "@/shared/ButtonPrimary";
-import Image from "next/image";
+import StartRating from '@/components/StartRating';
+import React, { FC } from 'react';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import Image from 'next/image';
 
 export interface PayPageProps {}
 
@@ -9,9 +9,7 @@ const PayPage: FC<PayPageProps> = () => {
   const renderContent = () => {
     return (
       <div className="w-full flex flex-col sm:rounded-2xl space-y-10 px-0 sm:p-6 xl:p-8">
-        <h2 className="text-3xl lg:text-4xl font-semibold">
-          Congratulation 🎉
-        </h2>
+        <h2 className="text-3xl lg:text-4xl font-semibold">Congratulation 🎉</h2>
 
         <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
 
@@ -64,9 +62,7 @@ const PayPage: FC<PayPageProps> = () => {
 
               <div className="flex flex-col">
                 <span className="text-sm text-neutral-400">Date</span>
-                <span className="mt-1.5 text-lg font-semibold">
-                  Aug 12 - 16, 2021
-                </span>
+                <span className="mt-1.5 text-lg font-semibold">Aug 12 - 16, 2021</span>
               </div>
             </div>
             <div className="flex-1 p-5 flex space-x-4">

@@ -1,33 +1,29 @@
-"use client";
+'use client';
 
-import { Tab } from "@headlessui/react";
-import { PencilSquareIcon } from "@heroicons/react/24/outline";
-import React, { FC, Fragment, useState } from "react";
-import visaPng from "@/images/vis.png";
-import mastercardPng from "@/images/mastercard.svg";
-import Input from "@/shared/Input";
-import Label from "@/components/Label";
-import Textarea from "@/shared/Textarea";
-import ButtonPrimary from "@/shared/ButtonPrimary";
-import StartRating from "@/components/StartRating";
-import NcModal from "@/shared/NcModal";
-import ModalSelectDate from "@/components/ModalSelectDate";
-import converSelectedDateToString from "@/utils/converSelectedDateToString";
-import ModalSelectGuests from "@/components/ModalSelectGuests";
-import Image from "next/image";
-import { GuestsObject } from "../(client-components)/type";
+import { Tab } from '@headlessui/react';
+import { PencilSquareIcon } from '@heroicons/react/24/outline';
+import React, { FC, Fragment, useState } from 'react';
+import visaPng from '@/images/vis.png';
+import mastercardPng from '@/images/mastercard.svg';
+import Input from '@/shared/Input';
+import Label from '@/components/Label';
+import Textarea from '@/shared/Textarea';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import StartRating from '@/components/StartRating';
+import NcModal from '@/shared/NcModal';
+import ModalSelectDate from '@/components/ModalSelectDate';
+import converSelectedDateToString from '@/utils/converSelectedDateToString';
+import ModalSelectGuests from '@/components/ModalSelectGuests';
+import Image from 'next/image';
+import { GuestsObject } from '../(client-components)/type';
 
 export interface CheckOutPagePageMainProps {
   className?: string;
 }
 
-const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
-  className = "",
-}) => {
-  const [startDate, setStartDate] = useState<Date | null>(
-    new Date("2023/02/06")
-  );
-  const [endDate, setEndDate] = useState<Date | null>(new Date("2023/02/23"));
+const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' }) => {
+  const [startDate, setStartDate] = useState<Date | null>(new Date('2023/02/06'));
+  const [endDate, setEndDate] = useState<Date | null>(new Date('2023/02/23'));
 
   const [guests, setGuests] = useState<GuestsObject>({
     guestAdults: 2,
@@ -54,9 +50,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
               <span className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-1">
                 Hotel room in Tokyo, Jappan
               </span>
-              <span className="text-base font-medium mt-1 block">
-                The Lounge & Bar
-              </span>
+              <span className="text-base font-medium mt-1 block">The Lounge & Bar</span>
             </div>
             <span className="block  text-sm text-neutral-500 dark:text-neutral-400">
               2 beds · 2 baths
@@ -89,9 +83,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
   const renderMain = () => {
     return (
       <div className="w-full flex flex-col sm:rounded-2xl sm:border border-neutral-200 dark:border-neutral-700 space-y-8 px-0 sm:p-6 xl:p-8">
-        <h2 className="text-3xl lg:text-4xl font-semibold">
-          Confirm and payment
-        </h2>
+        <h2 className="text-3xl lg:text-4xl font-semibold">Confirm and payment</h2>
         <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
         <div>
           <div>
@@ -140,8 +132,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                     <span className="mt-1.5 text-lg font-semibold">
                       <span className="line-clamp-1">
                         {`${
-                          (guests.guestAdults || 0) +
-                          (guests.guestChildren || 0)
+                          (guests.guestAdults || 0) + (guests.guestChildren || 0)
                         } Guests, ${guests.guestInfants || 0} Infants`}
                       </span>
                     </span>
@@ -165,8 +156,8 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                     <button
                       className={`px-4 py-1.5 sm:px-6 sm:py-2.5 rounded-full focus:outline-none ${
                         selected
-                          ? "bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900"
-                          : "text-neutral-6000 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                          ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900'
+                          : 'text-neutral-6000 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                       }`}
                     >
                       Paypal
@@ -178,17 +169,13 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
                     <button
                       className={`px-4 py-1.5 sm:px-6 sm:py-2.5  rounded-full flex items-center justify-center focus:outline-none  ${
                         selected
-                          ? "bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900"
-                          : " text-neutral-6000 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                          ? 'bg-neutral-800 dark:bg-neutral-200 text-white dark:text-neutral-900'
+                          : ' text-neutral-6000 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
                       }`}
                     >
                       <span className="mr-2.5">Credit card</span>
                       <Image className="w-8" src={visaPng} alt="visa" />
-                      <Image
-                        className="w-8"
-                        src={mastercardPng}
-                        alt="mastercard"
-                      />
+                      <Image className="w-8" src={mastercardPng} alt="mastercard" />
                     </button>
                   )}
                 </Tab>
@@ -242,7 +229,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({
               </Tab.Panels>
             </Tab.Group>
             <div className="pt-8">
-              <ButtonPrimary href={"/pay-done"}>Confirm and pay</ButtonPrimary>
+              <ButtonPrimary href={'/pay-done'}>Confirm and pay</ButtonPrimary>
             </div>
           </div>
         </div>

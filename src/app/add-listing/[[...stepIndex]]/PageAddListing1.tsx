@@ -1,7 +1,7 @@
-import React, { FC } from "react";
-import Input from "@/shared/Input";
-import Select from "@/shared/Select";
-import FormItem from "../FormItem";
+import React, { FC } from 'react';
+import Input from '@/shared/Input';
+import Select from '@/shared/Select';
+import FormItem from '../FormItem';
 
 export interface PageAddListing1Props {}
 

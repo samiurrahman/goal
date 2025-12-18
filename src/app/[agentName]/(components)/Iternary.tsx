@@ -1,5 +1,5 @@
-import React from "react";
-import IternaryItem, { IternaryItemProps } from "./IternaryItem";
+import React from 'react';
+import IternaryItem, { IternaryItemProps } from './IternaryItem';
 
 export interface IternaryProps {
   data: IternaryItemProps[];

@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 
 export const MakkahIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg
@@ -91,15 +91,15 @@ export const fivePeopleIcon = (props: React.SVGProps<SVGSVGElement>) => (
     xmlns="http://www.w3.org/2000/svg"
   >
     <g fill="#e5e7eb">
-      <circle cx="12" cy="4.5" r="1.8" />{" "}
-      <path d="M12 7C10.6 7 9.5 8.1 9.5 9.5V10.5H14.5V9.5C14.5 8.1 13.4 7 12 7Z" />{" "}
-      <circle cx="18.5" cy="9" r="1.8" />{" "}
+      <circle cx="12" cy="4.5" r="1.8" />{' '}
+      <path d="M12 7C10.6 7 9.5 8.1 9.5 9.5V10.5H14.5V9.5C14.5 8.1 13.4 7 12 7Z" />{' '}
+      <circle cx="18.5" cy="9" r="1.8" />{' '}
       <path d="M18.5 11.5C17.1 11.5 16 12.6 16 14V15H21V14C21 12.6 19.9 11.5 18.5 11.5Z" />
-      <circle cx="16.5" cy="18" r="1.8" />{" "}
+      <circle cx="16.5" cy="18" r="1.8" />{' '}
       <path d="M16.5 20.5C15.1 20.5 14 21.6 14 23V24H19V23C19 21.6 17.9 20.5 16.5 20.5Z" />
-      <circle cx="7.5" cy="18" r="1.8" />{" "}
+      <circle cx="7.5" cy="18" r="1.8" />{' '}
       <path d="M7.5 20.5C6.1 20.5 5 21.6 5 23V24H10V23C10 21.6 8.9 20.5 7.5 20.5Z" />
-      <circle cx="5.5" cy="9" r="1.8" />{" "}
+      <circle cx="5.5" cy="9" r="1.8" />{' '}
       <path d="M5.5 11.5C4.1 11.5 3 12.6 3 14V15H8V14C8 12.6 6.9 11.5 5.5 11.5Z" />
     </g>
   </svg>

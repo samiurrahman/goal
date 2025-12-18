@@ -1,6 +1,6 @@
-import { StarIcon } from "@heroicons/react/24/solid";
-import React, { FC } from "react";
-import Avatar from "@/shared/Avatar";
+import { StarIcon } from '@heroicons/react/24/solid';
+import React, { FC } from 'react';
+import Avatar from '@/shared/Avatar';
 
 interface CommentListingDataType {
   name: string;
@@ -17,23 +17,20 @@ export interface CommentListingProps {
 }
 
 const DEMO_DATA: CommentListingDataType = {
-  name: "Cody Fisher",
-  date: "May 20, 2021",
+  name: 'Cody Fisher',
+  date: 'May 20, 2021',
   comment:
-    "There’s no stopping the tech giant. Apple now opens its 100th store in China.There’s no stopping the tech giant.",
+    'There’s no stopping the tech giant. Apple now opens its 100th store in China.There’s no stopping the tech giant.',
   starPoint: 5,
 };
 
 const CommentListing: FC<CommentListingProps> = ({
-  className = "",
+  className = '',
   data = DEMO_DATA,
   hasListingTitle,
 }) => {
   return (
-    <div
-      className={`nc-CommentListing flex space-x-4 ${className}`}
-      data-nc-id="CommentListing"
-    >
+    <div className={`nc-CommentListing flex space-x-4 ${className}`} data-nc-id="CommentListing">
       <div className="pt-0.5">
         <Avatar
           sizeClass="h-10 w-10 text-lg"
@@ -68,9 +65,7 @@ const CommentListing: FC<CommentListingProps> = ({
             <StarIcon className="w-4 h-4" />
           </div>
         </div>
-        <span className="block mt-3 text-neutral-6000 dark:text-neutral-300">
-          {data.comment}
-        </span>
+        <span className="block mt-3 text-neutral-6000 dark:text-neutral-300">{data.comment}</span>
       </div>
     </div>
   );

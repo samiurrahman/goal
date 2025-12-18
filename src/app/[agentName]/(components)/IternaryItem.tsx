@@ -1,6 +1,6 @@
-import React from "react";
-import Image from "next/image";
-import carUtilities8 from "@/images/HIW1.png";
+import React from 'react';
+import Image from 'next/image';
+import carUtilities8 from '@/images/HIW1.png';
 
 export interface IternaryItemProps {
   fromDate: string;
@@ -24,14 +24,7 @@ const IternaryItem: React.FC<IternaryItemProps> = ({
     <div>
       <div className="flex flex-col md:flex-row ">
         <div className="w-24 md:w-20 lg:w-24 flex-shrink-0 md:pt-7">
-          <Image
-            src={carUtilities8}
-            className="w-10"
-            alt=""
-            sizes="40px"
-            width={40}
-            height={40}
-          />
+          <Image src={carUtilities8} className="w-10" alt="" sizes="40px" width={40} height={40} />
         </div>
         <div className="flex my-5 md:my-0">
           <div className="flex-shrink-0 flex flex-col items-center py-2">
@@ -41,15 +34,11 @@ const IternaryItem: React.FC<IternaryItemProps> = ({
           </div>
           <div className="ml-4 space-y-10 text-sm">
             <div className="flex flex-col space-y-1">
-              <span className=" text-neutral-500 dark:text-neutral-400">
-                {fromDate}
-              </span>
+              <span className=" text-neutral-500 dark:text-neutral-400">{fromDate}</span>
               <span className=" font-semibold">{fromLocation}</span>
             </div>
             <div className="flex flex-col space-y-1">
-              <span className=" text-neutral-500 dark:text-neutral-400">
-                {toDate}
-              </span>
+              <span className=" text-neutral-500 dark:text-neutral-400">{toDate}</span>
               <span className=" font-semibold">{toLocation}</span>
             </div>
           </div>

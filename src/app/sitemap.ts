@@ -1,8 +1,8 @@
-import { MetadataRoute } from "next";
-import { supabase } from "@/utils/supabaseClient";
+import { MetadataRoute } from 'next';
+import { supabase } from '@/utils/supabaseClient';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://hajjscanner.com";
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hajjscanner.com';
 
   // Static routes
   const staticRoutes: MetadataRoute.Sitemap = [
@@ -18,9 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let dynamicRoutes: MetadataRoute.Sitemap = [];
 
   try {
-    const { data: packages, error } = await supabase
-      .from("packages")
-      .select("*");
+    const { data: packages, error } = await supabase.from('packages').select('*');
 
     if (!error && packages) {
       dynamicRoutes = packages.map((pkg) => ({
@@ -29,7 +27,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }));
     }
   } catch (error) {
-    console.error("Error fetching packages for sitemap:", error);
+    console.error('Error fetching packages for sitemap:', error);
   }
 
   return [...staticRoutes, ...dynamicRoutes];
