@@ -45,13 +45,7 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
     } else {
       // Store access token in cookie (secure, sameSite strict)
       if (data?.session?.access_token) {
-<<<<<<< HEAD
         storeAccessToken(data.session.access_token);
-=======
-        Cookies.set('sb-access-token', data.session.access_token, {
-          path: '/',
-        });
->>>>>>> 37e2d09add345ee5b112941e22010919aec97b36
       }
       router.push('/');
     }
@@ -71,26 +65,12 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
               onClick={async () => {
                 setLoading(true);
                 setError(null);
-<<<<<<< HEAD
-                const { error } = await supabase.auth.signInWithOAuth({
-                  provider: "google",
-=======
-                const { data, error } = await supabase.auth.signInWithOAuth({
-                  provider: 'google',
->>>>>>> 37e2d09add345ee5b112941e22010919aec97b36
-                  options: {
-                    redirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
-                  },
-                });
-                setLoading(false);
-<<<<<<< HEAD
-=======
-                localStorage.setItem('oauth-redirect', stringify(data));
-                console.log('social', data);
-
->>>>>>> 37e2d09add345ee5b112941e22010919aec97b36
-                if (error) setError(error.message);
                 // For OAuth, Supabase will handle the redirect and set the cookie on callback page
+                const { error } = await supabase.auth.signInWithOAuth({ provider: "google" });
+                if (error) {
+                  setError(error.message);
+                  setLoading(false);
+                }
               }}
               disabled={loading}
             >
