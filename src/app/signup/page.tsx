@@ -2,6 +2,7 @@
 import React, { FC, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
+import { storeAccessToken } from "@/utils/authToken";
 import facebookSvg from "@/images/Facebook.svg";
 import twitterSvg from "@/images/Twitter.svg";
 import googleSvg from "@/images/Google.svg";
@@ -41,7 +42,7 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -49,6 +50,10 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
     if (error) {
       setError(error.message);
     } else {
+      // Store session token in cookie if available
+      if (data && data.session && data.session.access_token) {
+        storeAccessToken(data.session.access_token);
+      }
       router.push("/login");
     }
   };
@@ -63,7 +68,9 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
       },
     });
     setLoading(false);
-    if (error) setError(error.message);
+    if (error) {
+      setError(error.message);
+    }
   };
 
   return (

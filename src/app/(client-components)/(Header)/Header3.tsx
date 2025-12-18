@@ -5,8 +5,7 @@ import Logo from "@/shared/Logo";
 import useOutsideAlerter from "@/hooks/useOutsideAlerter";
 import NotifyDropdown from "./NotifyDropdown";
 import AvatarDropdown from "./AvatarDropdown";
-import MenuBar from "@/shared/MenuBar";
-import SearchTab from "../(HeroSearchForm)/HeroSearchForm";
+import { supabase } from "@/utils/supabaseClient";
 import HeroSearchForm2MobileFactory from "../(HeroSearchForm2Mobile)/HeroSearchForm2MobileFactory";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -29,12 +28,12 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
   const [showHeroSearch, setShowHeroSearch] =
     useState<StaySearchFormFields | null>();
   //
-  // const [currentTab, setCurrentTab] = useState<SearchTab>("Stays");
+  const [currentTab, setCurrentTab] = useState<any>("Umrah");
 
   //
   useOutsideAlerter(headerInnerRef, () => {
     setShowHeroSearch(null);
-    // setCurrentTab("Stays");
+    setCurrentTab("Stays");
   });
 
   let pathname = usePathname();
@@ -75,6 +74,18 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
   };
 
   //
+  // Robust: check Supabase session for login state
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  useEffect(() => {
+    let mounted = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (mounted) setIsLoggedIn(!!data?.session);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
   const renderHeroSearch = () => {
     return (
       <div
@@ -85,11 +96,11 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
         }`}
       >
         <div className={`w-full max-w-4xl mx-auto pb-6`}>
-          {/* <HeroSearchFormSmall
+          <HeroSearchFormSmall
             defaultFieldFocus={showHeroSearch || undefined}
             onTabChange={setCurrentTab}
             defaultTab={currentTab}
-          /> */}
+          />
         </div>
       </div>
     );
@@ -150,7 +161,7 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
       ></div>
       {showHeroSearch && <div id="nc-Header-3-anchor"></div>}
       <header ref={headerInnerRef} className={`sticky top-0 z-40 ${className}`}>
-        {/* <div
+        <div
           className={`bg-white dark:bg-neutral-900 absolute h-full inset-x-0 top-0 transition-transform will-change-[transform,opacity]
           ${showHeroSearch ? "duration-75" : ""} 
           ${
@@ -160,7 +171,7 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
                 : "scale-y-[3.4]"
               : ""
           }`}
-        ></div> */}
+        ></div>
         <div className="relative px-4 lg:container h-[88px] flex">
           <div className="flex-1 flex justify-between">
             {/* Logo (lg+) */}
@@ -185,12 +196,12 @@ const Header3: FC<Header3Props> = ({ className = "" }) => {
                   href={"/add-listing/1"}
                   className="self-center hidden xl:inline-flex px-4 py-2 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-700 rounded-full items-center text-sm text-gray-700 dark:text-neutral-300 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
                 >
-                  List your property
+                  Offers
                 </Link>
 
-                <NotifyDropdown />
-                <AvatarDropdown />
-                <MenuBar />
+                {isLoggedIn && <NotifyDropdown />}
+                {isLoggedIn && <AvatarDropdown />}
+                {/* <MenuBar /> */}
               </div>
             </div>
           </div>

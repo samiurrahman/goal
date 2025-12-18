@@ -64,7 +64,7 @@ const LocationInput: FC<LocationInputProps> = ({
         </h3>
         <div className="mt-2">
           {[
-            "Hamptons, Suffolk County, NY",
+            "Hamptons sami, Suffolk County, NY",
             "Las Vegas, NV, United States",
             "Ueno, Taito, Tokyo",
             "Ikebukuro, Toshima, Tokyo",

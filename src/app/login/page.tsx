@@ -2,7 +2,7 @@
 import React, { FC, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
-import Cookies from "js-cookie";
+import { storeAccessToken } from "@/utils/authToken";
 import facebookSvg from "@/images/Facebook.svg";
 import twitterSvg from "@/images/Twitter.svg";
 import googleSvg from "@/images/Google.svg";
@@ -43,11 +43,9 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
     if (error) {
       setError(error.message);
     } else {
-      // Store access token in cookie
+      // Store access token in cookie (secure, sameSite strict)
       if (data?.session?.access_token) {
-        Cookies.set("sb-access-token", data.session.access_token, {
-          path: "/",
-        });
+        storeAccessToken(data.session.access_token);
       }
       router.push("/");
     }
@@ -67,7 +65,7 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
               onClick={async () => {
                 setLoading(true);
                 setError(null);
-                const { data, error } = await supabase.auth.signInWithOAuth({
+                const { error } = await supabase.auth.signInWithOAuth({
                   provider: "google",
                   options: {
                     redirectTo:
@@ -77,9 +75,6 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
                   },
                 });
                 setLoading(false);
-                localStorage.setItem("oauth-redirect", stringify(data));
-                console.log("social", data);
-
                 if (error) setError(error.message);
                 // For OAuth, Supabase will handle the redirect and set the cookie on callback page
               }}
