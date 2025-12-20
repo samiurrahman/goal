@@ -6,12 +6,12 @@ import useOutsideAlerter from "@/hooks/useOutsideAlerter";
 import NotifyDropdown from "./NotifyDropdown";
 import AvatarDropdown from "./AvatarDropdown";
 import { useSupabaseIsLoggedIn } from "@/hooks/useSupabaseIsLoggedIn";
-import HeroSearchForm2MobileFactory from "../(HeroSearchForm2Mobile)/HeroSearchForm2MobileFactory";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import HeroSearchFormSmall from "../(HeroSearchFormSmall)/HeroSearchFormSmall";
 import { StaySearchFormFields } from "../type";
 import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
+import HeroSearchForm2Mobile from "../(HeroSearchForm2Mobile)/HeroSearchForm2Mobile";
 
 interface Header3Props {
   className?: string;
@@ -171,7 +171,7 @@ const Header3: FC<Header3Props> = ({ className = '' }) => {
                 {renderButtonOpenHeroSearch()}
               </div>
               <div className="self-center flex-1 lg:hidden w-full max-w-lg mx-auto">
-                <HeroSearchForm2MobileFactory />
+                <HeroSearchForm2Mobile />
               </div>
               {renderHeroSearch()}
             </div>
