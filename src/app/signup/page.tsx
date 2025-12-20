@@ -89,7 +89,7 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
             >
               <Image className="flex-shrink-0" src={googleSvg} alt="Continue with Google" />
               <h3 className="flex-grow text-center text-sm font-medium text-neutral-700 dark:text-neutral-300 sm:text-sm">
-                Signup with Google
+                Sign up with Google
               </h3>
             </button>
           </div>
