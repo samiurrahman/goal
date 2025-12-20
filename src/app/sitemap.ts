@@ -14,20 +14,30 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/signup`, lastModified: new Date() },
   ];
 
-  // Fetch all packages from Supabase
+  // Fetch all packages and agents from Supabase
   let dynamicRoutes: MetadataRoute.Sitemap = [];
 
   try {
-    const { data: packages, error } = await supabase.from('packages').select('*');
-
-    if (!error && packages) {
+    // Packages
+    const { data: packages, error: packagesError } = await supabase.from('packages').select('*');
+    if (!packagesError && packages) {
       dynamicRoutes = packages.map((pkg) => ({
         url: `${baseUrl}/${pkg.agent_name}/${pkg.slug}`,
         lastModified: pkg.updated_at ? new Date(pkg.updated_at) : new Date(),
       }));
     }
+
+    // Agents for /domain/agentName
+    const { data: agents, error: agentsError } = await supabase.from('agents').select('*');
+    if (!agentsError && agents) {
+      const agentRoutes = agents.map((agent) => ({
+        url: `${baseUrl}/${agent.slug}`,
+        lastModified: agent.updated_at ? new Date(agent.updated_at) : new Date(),
+      }));
+      dynamicRoutes = [...dynamicRoutes, ...agentRoutes];
+    }
   } catch (error) {
-    console.error('Error fetching packages for sitemap:', error);
+    console.error('Error fetching data for sitemap:', error);
   }
 
   return [...staticRoutes, ...dynamicRoutes];
