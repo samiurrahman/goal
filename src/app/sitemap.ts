@@ -27,13 +27,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       }));
     }
 
-    // Agents for /domain/agentName
+    // Agents for /domain/agentName and /agentName
     const { data: agents, error: agentsError } = await supabase.from('agents').select('*');
     if (!agentsError && agents) {
-      const agentRoutes = agents.map((agent) => ({
-        url: `${baseUrl}/${agent.slug}`,
-        lastModified: agent.updated_at ? new Date(agent.updated_at) : new Date(),
-      }));
+      const agentRoutes = agents.flatMap((agent) => [
+        {
+          url: `${baseUrl}/${agent.slug}`,
+          lastModified: agent.updated_at ? new Date(agent.updated_at) : new Date(),
+        },
+      ]);
       dynamicRoutes = [...dynamicRoutes, ...agentRoutes];
     }
   } catch (error) {

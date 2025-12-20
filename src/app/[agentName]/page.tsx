@@ -19,7 +19,9 @@ import SectionStatistic from './(components)/SectionStatistic';
 import SectionHero from './(components)/SectionHero';
 import BgGlassmorphism from '@/components/BgGlassmorphism';
 import { supabase } from '@/utils/supabaseClient';
-import type { Agent } from '@/data/types';
+import type { Agent, Package } from '@/data/types';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import PackageCard from '@/components/package';
 
 export interface AgentDetailsProps {
   params: { agentName: string };
@@ -45,12 +47,29 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
     },
   });
 
-  
-   const renderSection1 = () => {
+  // Fetch all packages for this agent
+  const {
+    data: agentPackages,
+    error: packagesError,
+    isLoading: packagesLoading,
+  } = useQuery<Package[]>({
+    queryKey: ['agentPackages', agentDetails?.id],
+    enabled: !!agentDetails?.id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('packages')
+        .select('*')
+        .eq('agent_id', agentDetails?.id);
+      if (error) throw error;
+      return data as Package[];
+    },
+  });
+
+  const renderSection1 = () => {
     return (
       <div className="listingSection__wrap">
         <div>
-          <h2 className="text-2xl font-semibold">{`${agentDetails?.known_as} listings`}</h2>
+      <h2 className="text-2xl font-semibold">{`${agentDetails?.known_as} listings`}</h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
             {`Iqra Group's listings is very rich, 5 star reviews help them to be
             more branded.`}
@@ -80,28 +99,31 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
             <Tab.Panels>
               <Tab.Panel className="">
                 <div className="mt-8 grid grid-cols-1 gap-6 md:gap-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                  {packagesError && (
+                    <div className="flex justify-center items-center py-12 text-red-500">
+                      Error: {packagesError.message}
+                    </div>
+                  )}
+                  {packagesLoading ? (
+                    <div className="flex justify-center items-center py-12">
+                      <ButtonPrimary loading>Loading Packages</ButtonPrimary>
+                    </div>
+                  ) : (
+                    <>
+                      {agentPackages?.map((item, index) => (
+                        <PackageCard key={item.id || index} data={item} />
+                      ))}
+                    </>
+                  )}
+                </div>
+                <div className="flex mt-11 justify-center items-center">
+                  <ButtonSecondary>Show me more</ButtonSecondary>
+                </div>
+              </Tab.Panel>
+              <Tab.Panel className="">
+                <div className="mt-8 grid grid-cols-1 gap-6 md:gap-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                   {DEMO_STAY_LISTINGS.filter((_, i) => i < 4).map((stay) => (
                     <StayCard key={stay.id} data={stay} />
-                  ))}
-                </div>
-                <div className="flex mt-11 justify-center items-center">
-                  <ButtonSecondary>Show me more</ButtonSecondary>
-                </div>
-              </Tab.Panel>
-              <Tab.Panel className="">
-                <div className="mt-8 grid grid-cols-1 gap-6 md:gap-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {DEMO_EXPERIENCES_LISTINGS.filter((_, i) => i < 4).map((stay) => (
-                    <ExperiencesCard key={stay.id} data={stay} />
-                  ))}
-                </div>
-                <div className="flex mt-11 justify-center items-center">
-                  <ButtonSecondary>Show me more</ButtonSecondary>
-                </div>
-              </Tab.Panel>
-              <Tab.Panel className="">
-                <div className="mt-8 grid grid-cols-1 gap-6 md:gap-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {DEMO_CAR_LISTINGS.filter((_, i) => i < 4).map((stay) => (
-                    <CarCard key={stay.id} data={stay} />
                   ))}
                 </div>
                 <div className="flex mt-11 justify-center items-center">
@@ -143,10 +165,7 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
       {/* BREADCRUMB */}
       <div className="relative z-20 mt-6">
         <Breadcrumb
-          items={[
-            { label: 'Home', href: '/' },
-            { label: agentName },
-          ]}
+          items={[{ label: 'Home', href: '/' }, { label: agentDetails?.known_as ?? '' }]}
         />
       </div>
       <div className="py-6 lg:py-10 space-y-16 lg:space-y-28">
@@ -161,12 +180,11 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
 
         <SectionStatistic />
 
-         {renderSection1()}
-          {/* {renderSection2()} */}
+        {renderSection1()}
+        {/* {renderSection2()} */}
       </div>
     </div>
   );
 };
 
 export default AgentDetails;
-

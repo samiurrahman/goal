@@ -1,4 +1,4 @@
-import Cookies from "js-cookie";
+import Cookies from 'js-cookie';
 
 /**
  * Stores the access token in a secure cookie.
@@ -6,9 +6,9 @@ import Cookies from "js-cookie";
  */
 export function storeAccessToken(token: string) {
   if (!token) return;
-  Cookies.set("access_token", token, {
+  Cookies.set('access_token', token, {
     secure: true,
-    sameSite: "strict",
-    path: "/",
+    sameSite: 'strict',
+    path: '/',
   });
 }

@@ -1,16 +1,16 @@
-"use client";
-import React, { FC, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/utils/supabaseClient";
-import { storeAccessToken } from "@/utils/authToken";
-import facebookSvg from "@/images/Facebook.svg";
-import twitterSvg from "@/images/Twitter.svg";
-import googleSvg from "@/images/Google.svg";
-import Input from "@/shared/Input";
-import ButtonPrimary from "@/shared/ButtonPrimary";
-import Image from "next/image";
-import Link from "next/link";
-import { stringify } from "querystring";
+'use client';
+import React, { FC, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/utils/supabaseClient';
+import { storeAccessToken } from '@/utils/authToken';
+import facebookSvg from '@/images/Facebook.svg';
+import twitterSvg from '@/images/Twitter.svg';
+import googleSvg from '@/images/Google.svg';
+import Input from '@/shared/Input';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import Image from 'next/image';
+import Link from 'next/link';
+import { stringify } from 'querystring';
 
 export interface PageLoginProps {}
 
@@ -66,7 +66,7 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
                 setLoading(true);
                 setError(null);
                 // For OAuth, Supabase will handle the redirect and set the cookie on callback page
-                const { error } = await supabase.auth.signInWithOAuth({ provider: "google" });
+                const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
                 if (error) {
                   setError(error.message);
                   setLoading(false);

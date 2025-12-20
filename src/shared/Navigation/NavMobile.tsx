@@ -99,7 +99,6 @@ const NavMobile: React.FC<NavMobileProps> = ({ data = NAVIGATION_DEMO, onClickCl
         >
           <ButtonPrimary>Get Template</ButtonPrimary>
         </a>
-
       </div>
     </div>
   );

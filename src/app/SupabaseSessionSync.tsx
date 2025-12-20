@@ -1,7 +1,7 @@
-"use client";
-import { useEffect } from "react";
-import { supabase } from "@/utils/supabaseClient";
-import { storeAccessToken } from "@/utils/authToken";
+'use client';
+import { useEffect } from 'react';
+import { supabase } from '@/utils/supabaseClient';
+import { storeAccessToken } from '@/utils/authToken';
 
 /**
  * This component checks for a Supabase session on mount and stores the access token in a cookie if available.

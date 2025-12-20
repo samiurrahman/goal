@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/utils/supabaseClient";
+import { useEffect, useState } from 'react';
+import { supabase } from '@/utils/supabaseClient';
 
 /**
  * Custom hook to check if a user is logged in via Supabase session.

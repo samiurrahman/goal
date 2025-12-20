@@ -4,6 +4,8 @@ client_secret_244391185334-ajae4isl9h8903l3ul3ph83ttqllkmms.apps.googleuserconte
 .yarn/
 # Build directories
 build/
+pnpm-lock.yaml
+yarn.lock
 
 # Next.js build output
 .next/

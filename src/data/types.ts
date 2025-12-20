@@ -2,7 +2,7 @@
 export interface Agent {
   id: number;
   created_at: string;
-name: string;
+  name: string;
   city: string;
   Address: string;
   is_gov_authorised: string;

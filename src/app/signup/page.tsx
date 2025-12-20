@@ -1,15 +1,15 @@
-"use client";
-import React, { FC, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/utils/supabaseClient";
-import { storeAccessToken } from "@/utils/authToken";
-import facebookSvg from "@/images/Facebook.svg";
-import twitterSvg from "@/images/Twitter.svg";
-import googleSvg from "@/images/Google.svg";
-import Input from "@/shared/Input";
-import ButtonPrimary from "@/shared/ButtonPrimary";
-import Image from "next/image";
-import Link from "next/link";
+'use client';
+import React, { FC, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/utils/supabaseClient';
+import { storeAccessToken } from '@/utils/authToken';
+import facebookSvg from '@/images/Facebook.svg';
+import twitterSvg from '@/images/Twitter.svg';
+import googleSvg from '@/images/Google.svg';
+import Input from '@/shared/Input';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import Image from 'next/image';
+import Link from 'next/link';
 
 export interface PageSignUpProps {}
 
@@ -54,7 +54,7 @@ const PageSignUp: FC<PageSignUpProps> = ({}) => {
       if (data && data.session && data.session.access_token) {
         storeAccessToken(data.session.access_token);
       }
-      router.push("/login");
+      router.push('/login');
     }
   };
 

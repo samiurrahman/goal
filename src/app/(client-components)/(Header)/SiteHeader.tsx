@@ -12,7 +12,7 @@ import Header from './Header';
 import { usePathname } from 'next/navigation';
 import { useThemeMode } from '@/utils/useThemeMode';
 
-export type SiteHeaders = "Header 3";
+export type SiteHeaders = 'Header 3';
 
 interface HomePageItem {
   name: string;
@@ -23,9 +23,7 @@ const SiteHeader = () => {
   useThemeMode();
 
   const renderHeader = () => {
-    return (
-      <Header className={"shadow-sm dark:border-b dark:border-neutral-700"} />
-    );
+    return <Header className={'shadow-sm dark:border-b dark:border-neutral-700'} />;
   };
 
   return (

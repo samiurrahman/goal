@@ -61,7 +61,7 @@ const HeroSearchFormSmall: FC<HeroSearchFormSmallProps> = ({
     switch (tabActive) {
       case 'Umrah':
         return <StaySearchForm defaultFieldFocus={defaultFieldFocus} />;
-        case 'Hajj':
+      case 'Hajj':
         return <StaySearchForm defaultFieldFocus={defaultFieldFocus} />;
 
       default:

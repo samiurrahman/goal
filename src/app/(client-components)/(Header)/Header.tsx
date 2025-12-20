@@ -1,17 +1,17 @@
 'use client';
 
-import React, { FC, useEffect, useRef, useState } from "react";
-import Logo from "@/shared/Logo";
-import useOutsideAlerter from "@/hooks/useOutsideAlerter";
-import NotifyDropdown from "./NotifyDropdown";
-import AvatarDropdown from "./AvatarDropdown";
-import { useSupabaseIsLoggedIn } from "@/hooks/useSupabaseIsLoggedIn";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import HeroSearchFormSmall from "../(HeroSearchFormSmall)/HeroSearchFormSmall";
-import { StaySearchFormFields } from "../type";
-import { MagnifyingGlassIcon } from "@heroicons/react/24/outline";
-import HeroSearchForm2Mobile from "../(HeroSearchForm2Mobile)/HeroSearchForm2Mobile";
+import React, { FC, useEffect, useRef, useState } from 'react';
+import Logo from '@/shared/Logo';
+import useOutsideAlerter from '@/hooks/useOutsideAlerter';
+import NotifyDropdown from './NotifyDropdown';
+import AvatarDropdown from './AvatarDropdown';
+import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import HeroSearchFormSmall from '../(HeroSearchFormSmall)/HeroSearchFormSmall';
+import { StaySearchFormFields } from '../type';
+import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import HeroSearchForm2Mobile from '../(HeroSearchForm2Mobile)/HeroSearchForm2Mobile';
 
 interface Header3Props {
   className?: string;
@@ -27,12 +27,12 @@ const Header3: FC<Header3Props> = ({ className = '' }) => {
   //
   const [showHeroSearch, setShowHeroSearch] = useState<StaySearchFormFields | null>();
   //
-  const [currentTab, setCurrentTab] = useState<any>("Umrah");
+  const [currentTab, setCurrentTab] = useState<any>('Umrah');
 
   //
   useOutsideAlerter(headerInnerRef, () => {
     setShowHeroSearch(null);
-    setCurrentTab("Stays");
+    setCurrentTab('Stays');
   });
 
   let pathname = usePathname();
@@ -150,13 +150,13 @@ const Header3: FC<Header3Props> = ({ className = '' }) => {
       <header ref={headerInnerRef} className={`sticky top-0 z-40 ${className}`}>
         <div
           className={`bg-white dark:bg-neutral-900 absolute h-full inset-x-0 top-0 transition-transform will-change-[transform,opacity]
-          ${showHeroSearch ? "duration-75" : ""} 
+          ${showHeroSearch ? 'duration-75' : ''} 
           ${
             showHeroSearch
-              ? currentTab === "Cars" || currentTab === "Flights"
-                ? "scale-y-[4.4]"
-                : "scale-y-[3.4]"
-              : ""
+              ? currentTab === 'Cars' || currentTab === 'Flights'
+                ? 'scale-y-[4.4]'
+                : 'scale-y-[3.4]'
+              : ''
           }`}
         ></div>
         <div className="relative px-4 lg:container h-[88px] flex">
