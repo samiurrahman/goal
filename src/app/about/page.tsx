@@ -4,9 +4,6 @@ import SectionFounder from './SectionFounder';
 import SectionStatistic from './SectionStatistic';
 import SectionHero from './SectionHero';
 import BgGlassmorphism from '@/components/BgGlassmorphism';
-import BackgroundSection from '@/components/BackgroundSection';
-import SectionClientSay from '@/components/SectionClientSay';
-import SectionSubscribe2 from '@/components/SectionSubscribe2';
 
 export interface PageAboutProps {}
 
@@ -25,14 +22,8 @@ const PageAbout: FC<PageAboutProps> = ({}) => {
         />
 
         <SectionFounder />
-        <div className="relative py-16">
-          <BackgroundSection />
-          <SectionClientSay />
-        </div>
 
         <SectionStatistic />
-
-        <SectionSubscribe2 />
       </div>
     </div>
   );
