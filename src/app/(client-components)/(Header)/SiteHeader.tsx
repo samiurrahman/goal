@@ -9,7 +9,6 @@ import { Popover, Transition } from '@headlessui/react';
 import { PathName } from '@/routers/types';
 import Link from 'next/link';
 import Header from './Header';
-import Header3 from './Header3';
 import { usePathname } from 'next/navigation';
 import { useThemeMode } from '@/utils/useThemeMode';
 
@@ -25,7 +24,7 @@ const SiteHeader = () => {
 
   const renderHeader = () => {
     return (
-      <Header3 className={"shadow-sm dark:border-b dark:border-neutral-700"} />
+      <Header className={"shadow-sm dark:border-b dark:border-neutral-700"} />
     );
   };
 

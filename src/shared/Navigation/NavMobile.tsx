@@ -11,7 +11,6 @@ import SocialsList from '@/shared/SocialsList';
 import { ChevronDownIcon } from '@heroicons/react/24/solid';
 import SwitchDarkMode from '@/shared/SwitchDarkMode';
 import Link from 'next/link';
-import LangDropdown from '@/app/(client-components)/(Header)/LangDropdown';
 
 export interface NavMobileProps {
   data?: NavItemType[];
@@ -101,10 +100,6 @@ const NavMobile: React.FC<NavMobileProps> = ({ data = NAVIGATION_DEMO, onClickCl
           <ButtonPrimary>Get Template</ButtonPrimary>
         </a>
 
-        <LangDropdown
-          className="flex"
-          panelClassName="z-10 w-screen max-w-[280px] px-4 mb-3 right-3 bottom-full sm:px-0"
-        />
       </div>
     </div>
   );
