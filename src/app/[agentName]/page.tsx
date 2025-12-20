@@ -8,30 +8,49 @@ import StartRating from '@/components/StartRating';
 import StayCard from '@/components/StayCard2';
 import { DEMO_CAR_LISTINGS, DEMO_EXPERIENCES_LISTINGS, DEMO_STAY_LISTINGS } from '@/data/listings';
 import React, { FC, Fragment, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import Avatar from '@/shared/Avatar';
 import ButtonSecondary from '@/shared/ButtonSecondary';
 import SocialsList from '@/shared/SocialsList';
 import Breadcrumb from '@/components/Breadcrumb';
-import { PageAboutProps } from '../about/page';
 import rightImg from '@/images/about-hero-right.png';
 import SectionFounder from './(components)/SectionFounder';
 import SectionStatistic from './(components)/SectionStatistic';
 import SectionHero from './(components)/SectionHero';
 import BgGlassmorphism from '@/components/BgGlassmorphism';
+import { supabase } from '@/utils/supabaseClient';
+import type { Agent } from '@/data/types';
 
 export interface AgentDetailsProps {
   params: { agentName: string };
 }
 const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
   const { agentName } = params;
-  console.log(agentName);
   let [categories] = useState(['Umrah', 'Hajj']);
 
+  const {
+    data: agentDetails,
+    error,
+    isLoading,
+  } = useQuery<Agent | null>({
+    queryKey: ['agentDetails', agentName],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agents')
+        .select('*')
+        .eq('slug', agentName)
+        .single();
+      if (error) throw error;
+      return data as Agent;
+    },
+  });
+
+  
    const renderSection1 = () => {
     return (
       <div className="listingSection__wrap">
         <div>
-          <h2 className="text-2xl font-semibold">{`Iqra Group's listings`}</h2>
+          <h2 className="text-2xl font-semibold">{`${agentDetails?.known_as} listings`}</h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
             {`Iqra Group's listings is very rich, 5 star reviews help them to be
             more branded.`}
@@ -121,13 +140,21 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
     <div className={`nc-AgentDetails overflow-hidden relative`}>
       {/* ======== BG GLASS ======== */}
       <BgGlassmorphism />
-
-      <div className="py-16 lg:py-28 space-y-16 lg:space-y-28">
+      {/* BREADCRUMB */}
+      <div className="relative z-20 mt-6">
+        <Breadcrumb
+          items={[
+            { label: 'Home', href: '/' },
+            { label: agentName },
+          ]}
+        />
+      </div>
+      <div className="py-6 lg:py-10 space-y-16 lg:space-y-28">
         <SectionHero
           rightImg={rightImg}
-          heading="👋 Iqra Hajj Tours."
+          heading={` 👋 ${agentDetails?.known_as}`}
           btnText=""
-          subHeading="At IQRA HAJJ & UMRAH TOURS. We take massive pride in being recognized as one of the best companies in India for providing reliable professional and high-quality Hajj and Umrah services. Our expertise doesn’t just stop at Hajj and Umrah. We also study offering Iraq Ziarat tour packages Islamic tours international holiday packages and Umrah combined with a holiday experience. Also. we provide visa services to make your journey seamless and stress-free."
+          subHeading={agentDetails?.about_us || ''}
         />
 
         <SectionFounder />

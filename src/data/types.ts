@@ -1,3 +1,24 @@
+// Agent interface for agents table
+export interface Agent {
+  id: number;
+  created_at: string;
+name: string;
+  city: string;
+  Address: string;
+  is_gov_authorised: string;
+  listing_id: string;
+  is_agent_authorized: string;
+  known_as: string;
+  state: string;
+  country: string;
+  slug: string;
+  contact_number: string;
+  lat_lang: string | null;
+  email_id: string;
+  email_isVerified: string;
+  alternate_number: string;
+  about_us: string;
+}
 export interface Package {
   id: number;
   slug: string | null;
