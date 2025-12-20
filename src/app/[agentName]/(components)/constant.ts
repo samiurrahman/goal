@@ -1,4 +1,3 @@
-import { People } from '../../about/SectionFounder';
 import {
   fivePeopleIcon,
   fourPeopleIcon,
