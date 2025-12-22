@@ -36,7 +36,7 @@ const SectionStatistic: FC<SectionStatisticProps> = ({ className = '' }) => {
         desc=" We’re impartial and independent, and every day we create distinctive,
           world-class programmes and content"
       >
-        🚀 Fast Facts
+        🚀 Why choose us?
       </Heading>
       <div className="grid md:grid-cols-2 gap-6 lg:grid-cols-3 xl:gap-8">
         {FOUNDER_DEMO.map((item) => (
