@@ -1,3 +1,5 @@
+import { Route } from '@/routers/types';
+import { StaticImageData } from 'next/image';
 // Agent interface for agents table
 export interface Agent {
   id: number;
@@ -15,9 +17,16 @@ export interface Agent {
   contact_number: string;
   lat_lang: string | null;
   email_id: string;
-  email_isVerified: string;
+  email_isVerified: string | null;
   alternate_number: string;
   about_us: string;
+  founders: People[];
+}
+export interface People {
+  id: string;
+  name: string;
+  job: string;
+  avatar: string;
 }
 export interface Package {
   id: number;
@@ -49,8 +58,6 @@ export interface Package {
   location: string | null;
   agent_id: number | null;
 }
-import { Route } from '@/routers/types';
-import { StaticImageData } from 'next/image';
 
 //  ######  CustomLink  ######## //
 export interface CustomLink {

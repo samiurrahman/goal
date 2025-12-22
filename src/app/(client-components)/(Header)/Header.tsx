@@ -32,7 +32,7 @@ const Header3: FC<Header3Props> = ({ className = '' }) => {
   //
   useOutsideAlerter(headerInnerRef, () => {
     setShowHeroSearch(null);
-    setCurrentTab('Stays');
+    // Do not reset currentTab here; keep the last selected tab
   });
 
   let pathname = usePathname();
@@ -153,7 +153,7 @@ const Header3: FC<Header3Props> = ({ className = '' }) => {
           ${showHeroSearch ? 'duration-75' : ''} 
           ${
             showHeroSearch
-              ? currentTab === 'Cars' || currentTab === 'Flights'
+              ? currentTab === 'Umrah' || currentTab === 'Hajj'
                 ? 'scale-y-[4.4]'
                 : 'scale-y-[3.4]'
               : ''

@@ -1,10 +1,7 @@
 'use client';
 
 import { Tab } from '@headlessui/react';
-import CarCard from '@/components/CarCard';
 import CommentListing from '@/components/CommentListing';
-import ExperiencesCard from '@/components/ExperiencesCard';
-import StartRating from '@/components/StartRating';
 import StayCard from '@/components/StayCard2';
 import { DEMO_CAR_LISTINGS, DEMO_EXPERIENCES_LISTINGS, DEMO_STAY_LISTINGS } from '@/data/listings';
 import React, { FC, Fragment, useState } from 'react';
@@ -41,8 +38,16 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
         .from('agents')
         .select('*')
         .eq('slug', agentName)
-        .single();
+        .single(); // console.log(data.founders);
+
       if (error) throw error;
+      if (typeof data?.founders === 'string') {
+        try {
+          data.founders = JSON.parse(data.founders);
+        } catch (e) {
+          data.founders = [];
+        }
+      }
       return data as Agent;
     },
   });
@@ -69,7 +74,7 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
     return (
       <div className="listingSection__wrap">
         <div>
-      <h2 className="text-2xl font-semibold">{`${agentDetails?.known_as} listings`}</h2>
+          <h2 className="text-2xl font-semibold">{`${agentDetails?.known_as} listings`}</h2>
           <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
             {`Iqra Group's listings is very rich, 5 star reviews help them to be
             more branded.`}
@@ -175,13 +180,14 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
           btnText=""
           subHeading={agentDetails?.about_us || ''}
         />
-
-        <SectionFounder />
+        {Array.isArray(agentDetails?.founders) && agentDetails.founders.length > 0 && (
+          <SectionFounder founders={agentDetails.founders} />
+        )}
 
         <SectionStatistic />
 
         {renderSection1()}
-        {/* {renderSection2()} */}
+        {renderSection2()}
       </div>
     </div>
   );

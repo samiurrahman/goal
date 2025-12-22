@@ -62,7 +62,7 @@ const HeroSearchFormSmall: FC<HeroSearchFormSmallProps> = ({
       case 'Umrah':
         return <StaySearchForm defaultFieldFocus={defaultFieldFocus} />;
       case 'Hajj':
-        return <StaySearchForm defaultFieldFocus={defaultFieldFocus} />;
+        return <StaySearchForm />;
 
       default:
         return null;
