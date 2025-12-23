@@ -51,7 +51,7 @@ const AnyReactComponent: FC<AnyReactComponentProps> = ({
         leaveTo="opacity-0"
       >
         <div className="absolute z-50 bottom-full pb-3 -left-12 w-[260px] aspect-w-1">
-          {listing && <StayCard size="small" data={listing} className="shadow-2xl" />}
+          {/* {listing && <StayCard size="small" data={listing} className="shadow-2xl" />} */}
           {experiences && (
             <ExperiencesCard
               size="small"
