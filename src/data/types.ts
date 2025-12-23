@@ -21,6 +21,7 @@ export interface Agent {
   alternate_number: string;
   about_us: string;
   founders: People[];
+  profile_image: string | null;
 }
 export interface People {
   id: string;

@@ -21,6 +21,7 @@ import ButtonPrimary from '@/shared/ButtonPrimary';
 import PackageCard from '@/components/package';
 import SectionSliderNewCategories from '@/components/SectionSliderNewCategories';
 import BackgroundSection from '@/components/BackgroundSection';
+import Head from 'next/head';
 
 export interface AgentDetailsProps {
   params: { agentName: string };
@@ -231,6 +232,16 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
     );
   };
 
+  const agentSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Person', // or "Organization" if more appropriate
+    name: agentDetails?.known_as,
+    url: `https://www.hajjscanner.com/${agentDetails?.slug}`,
+    description: agentDetails?.about_us,
+    image: agentDetails?.profile_image, // URL to agent's image
+    // Add more fields as needed
+  };
+
   return (
     <div className={`nc-AgentDetails overflow-hidden relative`}>
       {/* ======== BG GLASS ======== */}
@@ -262,6 +273,12 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
         {renderSection1()}
         {renderSection2()}
       </div>
+      <Head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
+        />
+      </Head>
     </div>
   );
 };
