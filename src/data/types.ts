@@ -6,7 +6,7 @@ export interface Agent {
   created_at: string;
   name: string;
   city: string;
-  Address: string;
+  address: string;
   is_gov_authorised: string;
   listing_id: string;
   is_agent_authorized: string;

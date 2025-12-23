@@ -2,7 +2,7 @@
 
 import { Tab } from '@headlessui/react';
 import CommentListing from '@/components/CommentListing';
-import StayCard from '@/components/StayCard2';
+import StayCard from '@/components/StayCard';
 import { DEMO_CAR_LISTINGS, DEMO_EXPERIENCES_LISTINGS, DEMO_STAY_LISTINGS } from '@/data/listings';
 import React, { FC, Fragment, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -22,75 +22,13 @@ import PackageCard from '@/components/package';
 import SectionSliderNewCategories from '@/components/SectionSliderNewCategories';
 import BackgroundSection from '@/components/BackgroundSection';
 import Head from 'next/head';
+import ExperiencesCard from '@/components/ExperiencesCard';
+import CarCard from '@/components/CarCard';
+import StartRating from '@/components/StartRating';
 
 export interface AgentDetailsProps {
   params: { agentName: string };
 }
-const DEMO_CATS_2: any[] = [
-  {
-    id: '1',
-    href: '/listing-stay-map',
-    name: 'Enjoy the great cold',
-    taxonomy: 'category',
-    count: 188288,
-    thumbnail:
-      'https://images.pexels.com/photos/5764100/pexels-photo-5764100.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260',
-  },
-  {
-    id: '2',
-    href: '/listing-stay-map',
-    name: 'Sleep in a floating way',
-    taxonomy: 'category',
-    count: 188288,
-    thumbnail:
-      'https://images.pexels.com/photos/2869499/pexels-photo-2869499.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-  },
-  {
-    id: '3',
-    href: '/listing-stay-map',
-    name: "In the billionaire's house",
-    taxonomy: 'category',
-    count: 188288,
-    thumbnail:
-      'https://images.pexels.com/photos/7031413/pexels-photo-7031413.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-  },
-  {
-    id: '4',
-    href: '/listing-stay-map',
-    name: 'Cool in the deep forest',
-    taxonomy: 'category',
-    count: 188288,
-    thumbnail:
-      'https://images.pexels.com/photos/247532/pexels-photo-247532.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-  },
-  {
-    id: '5',
-    href: '/listing-stay-map',
-    name: "In the billionaire's house",
-    taxonomy: 'category',
-    count: 188288,
-    thumbnail:
-      'https://images.pexels.com/photos/7031413/pexels-photo-7031413.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-  },
-  {
-    id: '6',
-    href: '/listing-stay-map',
-    name: "In the billionaire's house",
-    taxonomy: 'category',
-    count: 188288,
-    thumbnail:
-      'https://images.pexels.com/photos/9828170/pexels-photo-9828170.jpeg?auto=compress&cs=tinysrgb&w=1600&lazy=load',
-  },
-  {
-    id: '7',
-    href: '/listing-stay-map',
-    name: 'Cool in the deep forest',
-    taxonomy: 'category',
-    count: 188288,
-    thumbnail:
-      'https://images.pexels.com/photos/247532/pexels-photo-247532.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260',
-  },
-];
 
 const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
   const { agentName } = params;
@@ -120,6 +58,15 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
       return data as Agent;
     },
   });
+  const agentSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Person', // or "Organization" if more appropriate
+    name: agentDetails?.known_as,
+    url: `https://www.hajjscanner.com/${agentDetails?.slug}`,
+    description: agentDetails?.about_us,
+    image: agentDetails?.profile_image, // URL to agent's image
+    // Add more fields as needed
+  };
 
   // Fetch all packages for this agent
   const {
@@ -139,75 +86,157 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
     },
   });
 
-  const renderSection1 = () => {
+  const renderSidebar = () => {
     return (
-      <div className="listingSection__wrap">
-        <div>
-          <h2 className="text-2xl font-semibold">{`${agentDetails?.known_as} listings`}</h2>
-          <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-            {`Iqra Group's listings is very rich, 5 star reviews help them to be
-            more branded.`}
-          </span>
-        </div>
-        <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
+      <div className=" w-full flex flex-col items-center text-center sm:rounded-2xl sm:border border-neutral-200 dark:border-neutral-900 space-y-6 sm:space-y-7 px-0 sm:p-6 xl:p-8">
+        <Avatar hasChecked hasCheckedClass="w-6 h-6 -top-0.5 right-2" sizeClass="w-28 h-28" />
 
-        <div>
-          <Tab.Group>
-            <Tab.List className="flex space-x-1 overflow-x-auto">
-              {categories.map((item) => (
-                <Tab key={item} as={Fragment}>
-                  {({ selected }) => (
-                    <button
-                      className={`flex-shrink-0 block !leading-none font-medium px-5 py-2.5 text-sm sm:text-base sm:px-6 sm:py-3 capitalize rounded-full focus:outline-none ${
-                        selected
-                          ? 'bg-secondary-900 text-secondary-50 '
-                          : 'text-neutral-500 dark:text-neutral-400 dark:hover:text-neutral-100 hover:text-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                      } `}
-                    >
-                      {item}
-                    </button>
-                  )}
-                </Tab>
-              ))}
-            </Tab.List>
-            <Tab.Panels>
-              <Tab.Panel className="">
-                <div className="mt-8 grid grid-cols-1 gap-6 md:gap-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {packagesError && (
-                    <div className="flex justify-center items-center py-12 text-red-500">
-                      Error: {packagesError.message}
-                    </div>
-                  )}
-                  {packagesLoading ? (
-                    <div className="flex justify-center items-center py-12">
-                      <ButtonPrimary loading>Loading Packages</ButtonPrimary>
-                    </div>
-                  ) : (
-                    <>
-                      {agentPackages?.map((item, index) => (
-                        <PackageCard key={item.id || index} data={item} />
-                      ))}
-                    </>
-                  )}
-                </div>
-                <div className="flex mt-11 justify-center items-center">
-                  <ButtonSecondary>Show me more</ButtonSecondary>
-                </div>
-              </Tab.Panel>
-              <Tab.Panel className="">
-                <div className="mt-8 grid grid-cols-1 gap-6 md:gap-7 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {DEMO_STAY_LISTINGS.filter((_, i) => i < 4).map((stay) => (
-                    <StayCard key={stay.id} data={stay} />
-                  ))}
-                </div>
-                <div className="flex mt-11 justify-center items-center">
-                  <ButtonSecondary>Show me more</ButtonSecondary>
-                </div>
-              </Tab.Panel>
-            </Tab.Panels>
-          </Tab.Group>
+        {/* ---- */}
+        <div className="space-y-3 text-center flex flex-col items-center">
+          <h2 className="text-3xl font-semibold">{agentDetails?.known_as}</h2>
+          <StartRating className="!text-base" />
+        </div>
+
+        {/* ---- */}
+        <p className="text-neutral-500 dark:text-neutral-400">{agentDetails?.about_us}</p>
+
+        {/* ---- */}
+        <SocialsList
+          className="!space-x-3"
+          itemClass="flex items-center justify-center w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xl"
+        />
+
+        {/* ---- */}
+        <div className="border-b border-neutral-200 dark:border-neutral-700 w-14"></div>
+
+        {/* ---- */}
+        <div className="space-y-4">
+          <div className="flex items-center space-x-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-neutral-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+            <span className="text-neutral-6000 dark:text-neutral-300">{agentDetails?.address}</span>
+          </div>
+          <div className="flex items-center space-x-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-neutral-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
+              />
+            </svg>
+            <span className="text-neutral-6000 dark:text-neutral-300">
+              {agentDetails?.contact_number}
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-4">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-6 w-6 text-neutral-400"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              />
+            </svg>
+            <span className="text-neutral-6000 dark:text-neutral-300">
+              {agentDetails?.email_id}
+            </span>
+          </div>
         </div>
       </div>
+    );
+  };
+
+  const renderSection1 = () => {
+    return (
+      <>
+        <SectionStatistic />
+        <div className="listingSection__wrap">
+          <div>
+            <h2 className="text-2xl font-semibold">{`${agentDetails?.known_as}'s listings`}</h2>
+            <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
+              {`Kevin Francis's listings is very rich, 5 star reviews help him to be
+            more branded.`}
+            </span>
+          </div>
+          <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
+
+          <div>
+            <Tab.Group>
+              <Tab.List className="flex space-x-1 overflow-x-auto">
+                {categories.map((item) => (
+                  <Tab key={item} as={Fragment}>
+                    {({ selected }) => (
+                      <button
+                        className={`flex-shrink-0 block !leading-none font-medium px-5 py-2.5 text-sm sm:text-base sm:px-6 sm:py-3 capitalize rounded-full focus:outline-none ${
+                          selected
+                            ? 'bg-secondary-900 text-secondary-50 '
+                            : 'text-neutral-500 dark:text-neutral-400 dark:hover:text-neutral-100 hover:text-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                        } `}
+                      >
+                        {item}
+                      </button>
+                    )}
+                  </Tab>
+                ))}
+              </Tab.List>
+              <Tab.Panels>
+                <Tab.Panel className="">
+                  <div className="mt-8 grid grid-cols-1 gap-6 md:gap-7 sm:grid-cols-2">
+                    {agentPackages &&
+                      Array.isArray(agentPackages) &&
+                      agentPackages.length > 0 &&
+                      agentPackages
+                        .filter((_, i) => i < 4)
+                        .map((stay) => <StayCard key={stay.id} data={stay} />)}
+                  </div>
+                  <div className="flex mt-11 justify-center items-center">
+                    <ButtonSecondary>Show me more</ButtonSecondary>
+                  </div>
+                </Tab.Panel>
+                <Tab.Panel className="">
+                  <div className="mt-8 grid grid-cols-1 gap-6 md:gap-7 sm:grid-cols-2">
+                    {agentPackages &&
+                      Array.isArray(agentPackages) &&
+                      agentPackages.length > 0 &&
+                      agentPackages
+                        .filter((_, i) => i < 4)
+                        .map((stay) => <StayCard key={stay.id} data={stay} />)}
+                  </div>
+                  <div className="flex mt-11 justify-center items-center">
+                    <ButtonSecondary>Show me more</ButtonSecondary>
+                  </div>
+                </Tab.Panel>
+              </Tab.Panels>
+            </Tab.Group>
+          </div>
+        </div>
+      </>
     );
   };
 
@@ -232,22 +261,15 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
     );
   };
 
-  const agentSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'Person', // or "Organization" if more appropriate
-    name: agentDetails?.known_as,
-    url: `https://www.hajjscanner.com/${agentDetails?.slug}`,
-    description: agentDetails?.about_us,
-    image: agentDetails?.profile_image, // URL to agent's image
-    // Add more fields as needed
-  };
-
   return (
-    <div className={`nc-AgentDetails overflow-hidden relative`}>
-      {/* ======== BG GLASS ======== */}
-      <BgGlassmorphism />
-      {/* BREADCRUMB */}
-      <div className="relative z-20 mt-6">
+    <>
+      <Head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
+        />
+      </Head>
+      <div className="relative z-20 mt-4">
         <Breadcrumb
           items={[
             { label: 'https://www.hajjscanner.com', href: '/' },
@@ -255,31 +277,18 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
           ]}
         />
       </div>
-      <div className="py-6 lg:py-10 space-y-16 lg:space-y-28">
-        <SectionHero
-          rightImg={rightImg}
-          heading={` 👋 ${agentDetails?.known_as}`}
-          btnText=""
-          subHeading={agentDetails?.about_us || ''}
-        />
-        {agentDetails &&
-          Array.isArray(agentDetails.founders) &&
-          agentDetails.founders.length > 0 && <SectionFounder founders={agentDetails.founders} />}
-
-        <SectionStatistic />
-        {/* <div className="relative py-16">
-          <BackgroundSection className="bg-orange-50 dark:bg-black/20" />
-        </div> */}
-        {renderSection1()}
-        {renderSection2()}
+      <div className={`nc-AuthorPage `}>
+        <main className="mt-4 mb-24 lg:mb-32 flex flex-col lg:flex-row">
+          <div className="block flex-grow mb-24 lg:mb-0">
+            <div className="lg:sticky lg:top-24">{renderSidebar()}</div>
+          </div>
+          <div className="w-full lg:w-3/5 xl:w-2/3 space-y-8 lg:space-y-10 lg:pl-10 flex-shrink-0">
+            {renderSection1()}
+            {renderSection2()}
+          </div>
+        </main>
       </div>
-      <Head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
-        />
-      </Head>
-    </div>
+    </>
   );
 };
 
