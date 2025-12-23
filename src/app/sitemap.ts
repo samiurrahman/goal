@@ -19,13 +19,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   try {
     // Packages
-    const { data: packages, error: packagesError } = await supabase.from('packages').select('*');
-    if (!packagesError && packages) {
-      dynamicRoutes = packages.map((pkg) => ({
-        url: `${baseUrl}/${pkg.agent_name}/${pkg.slug}`,
-        lastModified: pkg.updated_at ? new Date(pkg.updated_at) : new Date(),
-      }));
-    }
+    // const { data: packages, error: packagesError } = await supabase.from('packages').select('*');
+    // if (!packagesError && packages) {
+    //   dynamicRoutes = packages.map((pkg) => ({
+    //     url: `${baseUrl}/${pkg.agent_name}/${pkg.slug}`,
+    //     lastModified: pkg.updated_at ? new Date(pkg.updated_at) : new Date(),
+    //   }));
+    // }
 
     // Agents for /domain/agentName and /agentName
     const { data: agents, error: agentsError } = await supabase.from('agents').select('*');

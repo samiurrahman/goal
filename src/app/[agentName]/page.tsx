@@ -251,9 +251,9 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
           btnText=""
           subHeading={agentDetails?.about_us || ''}
         />
-        {Array.isArray(agentDetails?.founders) && agentDetails.founders.length > 0 && (
-          <SectionFounder founders={agentDetails.founders} />
-        )}
+        {agentDetails &&
+          Array.isArray(agentDetails.founders) &&
+          agentDetails.founders.length > 0 && <SectionFounder founders={agentDetails.founders} />}
 
         <SectionStatistic />
         {/* <div className="relative py-16">
