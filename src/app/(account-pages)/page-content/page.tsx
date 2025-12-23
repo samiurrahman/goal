@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from '@/utils/supabaseClient';
 import Label from '@/components/Label';
 import Input from '@/shared/Input';
@@ -38,25 +39,21 @@ const PageContent = () => {
       })
       .eq('id', agentId);
     if (error) {
-      alert('Failed to update agent: ' + error.message);
+      toast.error('Failed to update agent: ' + error.message);
     } else {
-      alert('Agent updated successfully!');
+      toast.success('Agent updated successfully!');
     }
   };
 
   return (
     <div className="space-y-6 sm:space-y-8 max-w-2xl mx-auto">
+      <Toaster position="top-center" />
       <h2 className="text-3xl font-semibold">Edit Page Content</h2>
       <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <Label>Name</Label>
-          <Input
-            name="known_as"
-            className="mt-1.5"
-            defaultValue={form.known_as}
-            onChange={handleChange}
-          />
+          <Input name="known_as" className="mt-1.5" value={form.known_as} onChange={handleChange} />
         </div>
         <div>
           <Label>About Us</Label>
@@ -69,12 +66,7 @@ const PageContent = () => {
         </div>
         <div>
           <Label>Address</Label>
-          <Input
-            name="address"
-            className="mt-1.5"
-            defaultValue={form.address}
-            onChange={handleChange}
-          />
+          <Input name="address" className="mt-1.5" value={form.address} onChange={handleChange} />
         </div>
         <div>
           <Label>Contact Number</Label>
@@ -87,19 +79,14 @@ const PageContent = () => {
         </div>
         <div>
           <Label>Email</Label>
-          <Input
-            name="email_id"
-            className="mt-1.5"
-            defaultValue={form.email_id}
-            onChange={handleChange}
-          />
+          <Input name="email_id" className="mt-1.5" value={form.email_id} onChange={handleChange} />
         </div>
         <div>
           <Label>Profile Image URL</Label>
           <Input
             name="profile_image"
             className="mt-1.5"
-            defaultValue={form.profile_image}
+            value={form.profile_image}
             onChange={handleChange}
           />
         </div>
