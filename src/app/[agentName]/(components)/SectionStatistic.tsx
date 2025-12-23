@@ -38,16 +38,16 @@ const SectionStatistic: FC<SectionStatisticProps> = ({ className = '' }) => {
       >
         🚀 Why choose us?
       </Heading>
-      <div className="grid md:grid-cols-2 gap-6 lg:grid-cols-3 xl:gap-8">
+      <div className="grid md:grid-cols-2 gap-3 lg:grid-cols-3 xl:gap-6">
         {FOUNDER_DEMO.map((item) => (
           <div
             key={item.id}
             className="p-6 bg-neutral-50 dark:bg-neutral-800 rounded-2xl dark:border-neutral-800"
           >
-            <h3 className="text-2xl font-semibold leading-none text-neutral-900 md:text-3xl dark:text-neutral-200">
+            <h3 className="text-1xl font-semibold leading-none text-neutral-900 md:text-2xl dark:text-neutral-200">
               {item.heading}
             </h3>
-            <span className="block text-sm text-neutral-500 mt-3 sm:text-base dark:text-neutral-400">
+            <span className="block text-sm text-neutral-500 mt-3 sm:text-sm dark:text-neutral-400">
               {item.subHeading}
             </span>
           </div>

@@ -41,9 +41,9 @@ const AccountSavelists = () => {
             <Tab.Panels>
               <Tab.Panel className="mt-8">
                 <div className="grid grid-cols-1 gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {DEMO_STAY_LISTINGS.filter((_, i) => i < 8).map((stay) => (
+                  {/* {DEMO_STAY_LISTINGS.filter((_, i) => i < 8).map((stay) => (
                     <StayCard key={stay.id} data={stay} />
-                  ))}
+                  ))} */}
                 </div>
                 <div className="flex mt-11 justify-center items-center">
                   <ButtonSecondary>Show me more</ButtonSecondary>

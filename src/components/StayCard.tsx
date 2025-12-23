@@ -1,50 +1,50 @@
 import React, { FC } from 'react';
 import { DEMO_STAY_LISTINGS } from '@/data/listings';
-import { StayDataType } from '@/data/types';
+import { Package, StayDataType } from '@/data/types';
 import StartRating from '@/components/StartRating';
 import BtnLikeIcon from '@/components/BtnLikeIcon';
 import SaleOffBadge from '@/components/SaleOffBadge';
 import Badge from '@/shared/Badge';
 import Link from 'next/link';
+import Image from 'next/image';
 import GallerySlider from './GallerySlider';
 
 export interface StayCardProps {
   className?: string;
-  data?: StayDataType;
+  data?: Package;
   size?: 'default' | 'small';
 }
 
-const DEMO_DATA = DEMO_STAY_LISTINGS[0];
-
-const StayCard: FC<StayCardProps> = ({ size = 'default', className = '', data = DEMO_DATA }) => {
+const StayCard: FC<StayCardProps> = ({
+  size = 'default',
+  className = '',
+  data = {} as Package,
+}) => {
   const {
-    galleryImgs,
-    listingCategory,
-    address,
     title,
-    bedrooms,
-    href,
-    like,
-    saleOff,
-    isAds,
-    price,
-    reviewStart,
-    reviewCount,
-    id,
-  } = data;
+    price_per_person,
+    total_duration_days,
+    currency,
+    location,
+    thumbnail_url,
+    slug,
+    agent_name,
+  } = data as Package;
 
   const renderSliderGallery = () => {
     return (
       <div className="relative w-full">
-        <GallerySlider
-          uniqueID={`StayCard_${id}`}
-          ratioClass="aspect-w-4 aspect-h-3 "
-          galleryImgs={galleryImgs}
-          href={href}
-          galleryClass={size === 'default' ? undefined : ''}
-        />
-        <BtnLikeIcon isLiked={like} className="absolute right-3 top-3 z-[1]" />
-        {saleOff && <SaleOffBadge className="absolute left-3 top-3" />}
+        <div className="aspect-w-4 aspect-h-3 w-full overflow-hidden rounded-2xl relative">
+          <Image
+            src={thumbnail_url || '/default-image.jpg'}
+            alt={title}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          />
+        </div>
+        <BtnLikeIcon isLiked={true} className="absolute right-3 top-3 z-[1]" />
+        {true && <SaleOffBadge className="absolute left-3 top-3" />}
       </div>
     );
   };
@@ -54,10 +54,10 @@ const StayCard: FC<StayCardProps> = ({ size = 'default', className = '', data = 
       <div className={size === 'default' ? 'p-4 space-y-4' : 'p-3 space-y-1'}>
         <div className={size === 'default' ? 'space-y-2' : 'space-y-1'}>
           <span className="text-sm text-neutral-500 dark:text-neutral-400">
-            {listingCategory.name} · {bedrooms} beds
+            {location} · {total_duration_days} days
           </span>
           <div className="flex items-center space-x-2">
-            {isAds && <Badge name="ADS" color="green" />}
+            {true && <Badge name="ADS" color="green" />}
             <h2
               className={`font-semibold capitalize text-neutral-900 dark:text-white ${
                 size === 'default' ? 'text-base' : 'text-base'
@@ -83,13 +83,13 @@ const StayCard: FC<StayCardProps> = ({ size = 'default', className = '', data = 
                 />
               </svg>
             )}
-            <span className="">{address}</span>
+            <span className="">{location}</span>
           </div>
         </div>
         <div className="w-14 border-b border-neutral-100 dark:border-neutral-800"></div>
         <div className="flex justify-between items-center">
           <span className="text-base font-semibold">
-            {price}
+            {price_per_person} {currency}
             {` `}
             {size === 'default' && (
               <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
@@ -97,7 +97,7 @@ const StayCard: FC<StayCardProps> = ({ size = 'default', className = '', data = 
               </span>
             )}
           </span>
-          {!!reviewStart && <StartRating reviewCount={reviewCount} point={reviewStart} />}
+          {!!true && <StartRating reviewCount={12} point={50} />}
         </div>
       </div>
     );
@@ -106,12 +106,12 @@ const StayCard: FC<StayCardProps> = ({ size = 'default', className = '', data = 
   return (
     <div
       className={`nc-StayCard group relative bg-white dark:bg-neutral-900 ${
-        size === 'default' ? 'border border-neutral-100 dark:border-neutral-800 ' : ''
+        size === 'default' ? 'border border-neutral-200 dark:border-neutral-900 ' : ''
       } rounded-2xl overflow-hidden hover:shadow-xl transition-shadow ${className}`}
       data-nc-id="StayCard"
     >
       {renderSliderGallery()}
-      <Link href={href}>{renderContent()}</Link>
+      <Link href={`/${slug}`}>{renderContent()}</Link>
     </div>
   );
 };
