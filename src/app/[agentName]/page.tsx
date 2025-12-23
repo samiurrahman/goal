@@ -15,6 +15,7 @@ import SectionFounder from './(components)/SectionFounder';
 import SectionStatistic from './(components)/SectionStatistic';
 import SectionHero from './(components)/SectionHero';
 import BgGlassmorphism from '@/components/BgGlassmorphism';
+import Image from 'next/image';
 import { supabase } from '@/utils/supabaseClient';
 import type { Agent, Package } from '@/data/types';
 import ButtonPrimary from '@/shared/ButtonPrimary';
@@ -88,8 +89,24 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
 
   const renderSidebar = () => {
     return (
-      <div className=" w-full flex flex-col items-center text-center sm:rounded-2xl sm:border border-neutral-200 dark:border-neutral-900 space-y-6 sm:space-y-7 px-0 sm:p-6 xl:p-8">
-        <Avatar hasChecked hasCheckedClass="w-6 h-6 -top-0.5 right-2" sizeClass="w-28 h-28" />
+      <div className="w-full flex flex-col items-center text-center sm:rounded-2xl sm:border border-neutral-200 dark:border-neutral-900 space-y-6 sm:space-y-7 px-0 sm:p-6 xl:p-8">
+        {/* Profile Image using Next.js Image */}
+        {agentDetails?.profile_image ? (
+          <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-neutral-200 dark:border-neutral-800">
+            <Image
+              src={agentDetails.profile_image}
+              alt={agentDetails.known_as || 'Agent profile'}
+              fill
+              style={{ objectFit: 'cover' }}
+              sizes="112px"
+              priority
+            />
+          </div>
+        ) : (
+          <div className="w-28 h-28 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-4xl font-bold text-neutral-500">
+            {agentDetails?.known_as?.[0] || '?'}
+          </div>
+        )}
 
         {/* ---- */}
         <div className="space-y-3 text-center flex flex-col items-center">
