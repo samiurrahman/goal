@@ -180,7 +180,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       <div className="relative z-20 mt-4">
         <Breadcrumb
           items={[
-            { label: 'Home', href: '/' },
+            { label: 'https://www.hajjscanner.com', href: '/' },
             { label: 'Packages', href: '/packages' },
             { label: slug },
           ]}

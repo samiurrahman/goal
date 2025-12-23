@@ -57,7 +57,10 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
 
   return (
     <div className={`nc-SectionGridFilterCard ${className}`} data-nc-id="SectionGridFilterCard">
-      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Packages' }]} className="mt-6" />
+      <Breadcrumb
+        items={[{ label: 'https://www.hajjscanner.com', href: '/' }, { label: 'Packages' }]}
+        className="mt-6"
+      />
       <div className="mb-4 lg:mb-6 mt-6">
         <TabFilters />
       </div>

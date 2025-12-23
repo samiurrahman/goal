@@ -238,7 +238,10 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
       {/* BREADCRUMB */}
       <div className="relative z-20 mt-6">
         <Breadcrumb
-          items={[{ label: 'Home', href: '/' }, { label: agentDetails?.known_as ?? '' }]}
+          items={[
+            { label: 'https://www.hajjscanner.com', href: '/' },
+            { label: agentDetails?.known_as ?? '' },
+          ]}
         />
       </div>
       <div className="py-6 lg:py-10 space-y-16 lg:space-y-28">
