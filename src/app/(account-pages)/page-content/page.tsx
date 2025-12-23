@@ -52,7 +52,7 @@ const PageContent = () => {
         <div>
           <Label>Name</Label>
           <Input
-            name="name"
+            name="known_as"
             className="mt-1.5"
             defaultValue={form.known_as}
             onChange={handleChange}
