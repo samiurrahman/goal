@@ -8,6 +8,7 @@ import { supabase } from '@/utils/supabaseClient';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Package } from '@/data/types';
 import PackageCard from '@/components/package';
+import PropertyCardH from '@/components/PropertyCardH';
 
 export interface SectionGridFilterCardProps {
   className?: string;
@@ -59,9 +60,9 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
     <div className={`nc-SectionGridFilterCard ${className}`} data-nc-id="SectionGridFilterCard">
       <Breadcrumb
         items={[{ label: 'https://www.hajjscanner.com', href: '/' }, { label: 'Packages' }]}
-        className="mt-6"
+        className="mt-4"
       />
-      <div className="mb-4 lg:mb-6 mt-6">
+      <div className="mb-4 lg:mb-6 mt-4">
         <TabFilters />
       </div>
       <div className="lg:p-10 lg:bg-neutral-50 lg:dark:bg-black/20 grid grid-cols-1 gap-6 rounded-3xl">
@@ -77,7 +78,8 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
         ) : (
           <>
             {packages.map((item, index) => (
-              <PackageCard key={item.id || index} data={item} />
+              // <PackageCard key={item.id || index} data={item} />
+              <PropertyCardH key={item.id || index} data={item} />
             ))}
             <div ref={loaderRef} className="flex mt-12 justify-center items-center">
               {isFetchingNextPage && <ButtonPrimary loading>Loading more Packages</ButtonPrimary>}

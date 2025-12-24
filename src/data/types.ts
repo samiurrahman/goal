@@ -58,6 +58,8 @@ export interface Package {
   agent_name: string | null;
   location: string | null;
   agent_id: number | null;
+  arrival_city: string | null;
+  sharing_rate: string | null;
 }
 
 //  ######  CustomLink  ######## //

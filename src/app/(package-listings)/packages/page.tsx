@@ -74,12 +74,12 @@ const ListingPackagesPage = () => {
 
       <div className="container relative">
         {/* SEO: A visible H1 is crucial for search engines */}
-        <div className="pt-10 pb-6 lg:pt-16 lg:pb-10">
+        {/* <div className="pt-10 pb-6 lg:pt-16 lg:pb-10">
           <h1 className="text-3xl md:text-4xl font-semibold">Hajj & Umrah Packages</h1>
           <span className="mt-2 block text-neutral-500 dark:text-neutral-400 text-base md:text-lg">
             Compare prices, hotels, and services from verified agents.
           </span>
-        </div>
+        </div> */}
 
         <SectionGridFilterCard className="pb-24 lg:pb-28" />
       </div>
