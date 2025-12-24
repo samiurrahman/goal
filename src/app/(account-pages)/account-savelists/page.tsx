@@ -10,9 +10,12 @@ import ButtonSecondary from '@/shared/ButtonSecondary';
 import { useQuery } from '@tanstack/react-query';
 import { Package } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
+import { useRouter } from 'next/navigation';
 
 const AccountSavelists = () => {
   let [categories] = useState(['Umrah', 'Hajj']);
+  const router = useRouter();
+
   // Fetch all packages for this agent
   const {
     data: agentPackages,
@@ -27,6 +30,10 @@ const AccountSavelists = () => {
       return data as Package[];
     },
   });
+
+  const handleEdit = (id: number) => {
+    router.push(`/edit-packages?id=${id}`);
+  };
 
   const renderSection1 = () => {
     return (
@@ -61,7 +68,18 @@ const AccountSavelists = () => {
                   {agentPackages &&
                     Array.isArray(agentPackages) &&
                     agentPackages.length > 0 &&
-                    agentPackages.map((stay) => <StayCard key={stay.id} data={stay} />)}
+                    agentPackages.map((stay) => (
+                      <div key={stay.id} className="relative">
+                        <StayCard data={stay} />
+                        <button
+                          className="absolute top-2 right-2 z-10 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                          onClick={() => handleEdit(stay.id)}
+                          type="button"
+                        >
+                          Edit
+                        </button>
+                      </div>
+                    ))}
                 </div>
                 <div className="flex mt-11 justify-center items-center">
                   <ButtonSecondary>Show me more</ButtonSecondary>

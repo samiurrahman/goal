@@ -14,6 +14,7 @@ export const Nav = () => {
     '/account-password',
     '/account-billing',
     '/page-content',
+    '/edit-packages',
   ];
 
   return (
