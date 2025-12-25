@@ -7,14 +7,17 @@ import StayCard from '@/components/StayCard';
 import { DEMO_CAR_LISTINGS, DEMO_EXPERIENCES_LISTINGS, DEMO_STAY_LISTINGS } from '@/data/listings';
 import React, { Fragment, useState } from 'react';
 import ButtonSecondary from '@/shared/ButtonSecondary';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 import { useRouter } from 'next/navigation';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import toast from 'react-hot-toast';
 
 const AccountSavelists = () => {
   let [categories] = useState(['Umrah', 'Hajj']);
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Fetch all packages for this agent
   const {
@@ -32,14 +35,28 @@ const AccountSavelists = () => {
   });
 
   const handleEdit = (id: number) => {
-    router.push(`/edit-packages?id=${id}`);
+    router.push(`/listing?id=${id}`);
+  };
+
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure you want to delete this package?')) return;
+    const { error } = await supabase.from('packages').delete().eq('id', id);
+    if (error) {
+      toast.error('Failed to delete package: ' + error.message);
+    } else {
+      toast.success('Package deleted successfully!');
+      queryClient.invalidateQueries({ queryKey: ['agentPackages', 1] });
+    }
   };
 
   const renderSection1 = () => {
     return (
       <div className="space-y-6 sm:space-y-8">
-        <div>
+        <div className="flex justify-between">
           <h2 className="text-3xl font-semibold">Save lists</h2>
+          <ButtonPrimary type="submit" className="ml-4" onClick={() => router.push('/listing')}>
+            Add New Package
+          </ButtonPrimary>
         </div>
         <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
@@ -71,13 +88,22 @@ const AccountSavelists = () => {
                     agentPackages.map((stay) => (
                       <div key={stay.id} className="relative">
                         <StayCard data={stay} />
-                        <button
-                          className="absolute top-2 right-2 z-10 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                          onClick={() => handleEdit(stay.id)}
-                          type="button"
-                        >
-                          Edit
-                        </button>
+                        <div className="absolute top-2 right-2 z-10 flex flex-col space-y-1">
+                          <button
+                            className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                            onClick={() => handleEdit(stay.id)}
+                            type="button"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
+                            onClick={() => handleDelete(stay.id)}
+                            type="button"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                     ))}
                 </div>

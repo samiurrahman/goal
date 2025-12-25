@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from '@/utils/supabaseClient';
 import Label from '@/components/Label';
@@ -27,22 +27,28 @@ const initialState: Partial<Package> = {
   location: '',
 };
 
-export default function AccountPackagesPage() {
+export default function ListingPage() {
   const [form, setForm] = useState<Partial<Package>>(initialState);
   const [loading, setLoading] = useState(false);
   const searchParams = useSearchParams();
-  const id = Number(searchParams.get('id'));
+  const router = useRouter();
+  const id = searchParams.get('id');
 
   useEffect(() => {
-    if (!id) return;
-    const fetchPackage = async () => {
-      setLoading(true);
-      const { data, error } = await supabase.from('packages').select('*').eq('id', id).single();
-      if (data) setForm(data);
-      setLoading(false);
-      if (error) toast.error('Failed to fetch package: ' + error.message);
-    };
-    fetchPackage();
+    if (id) {
+      // Edit mode: fetch existing package
+      const fetchPackage = async () => {
+        setLoading(true);
+        const { data, error } = await supabase.from('packages').select('*').eq('id', id).single();
+        if (data) setForm(data);
+        setLoading(false);
+        if (error) toast.error('Failed to fetch package: ' + error.message);
+      };
+      fetchPackage();
+    } else {
+      // Add mode: reset form
+      setForm(initialState);
+    }
   }, [id]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -56,19 +62,35 @@ export default function AccountPackagesPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.from('packages').update(form).eq('id', id);
-    setLoading(false);
-    if (error) {
-      toast.error('Failed to update package: ' + error.message);
+    if (id) {
+      // Edit existing
+      const { error } = await supabase.from('packages').update(form).eq('id', id);
+      setLoading(false);
+      if (error) {
+        toast.error('Failed to update package: ' + error.message);
+      } else {
+        toast.success('Package updated successfully!');
+        router.push('/account-savelists');
+      }
     } else {
-      toast.success('Package updated successfully!');
+      // Add new
+      const { id, ...formWithoutId } = form;
+      const { error } = await supabase.from('packages').insert([{ ...formWithoutId, agent_id: 1 }]);
+      setLoading(false);
+      if (error) {
+        toast.error('Failed to add package: ' + error.message);
+      } else {
+        toast.success('Package added successfully!');
+        setForm(initialState); // Reset form after add
+        router.push('/account-savelists');
+      }
     }
   };
 
   return (
     <div className="space-y-6 sm:space-y-8 max-w-2xl mx-auto">
       <Toaster position="top-center" />
-      <h2 className="text-3xl font-semibold">Edit Package</h2>
+      <h2 className="text-3xl font-semibold">{id ? 'Edit Package' : 'Add New Package'}</h2>
       <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
@@ -203,7 +225,7 @@ export default function AccountPackagesPage() {
         </div>
         <div className="pt-2">
           <ButtonPrimary type="submit" disabled={loading}>
-            {loading ? 'Saving...' : 'Save Changes'}
+            {loading ? (id ? 'Saving...' : 'Adding...') : id ? 'Save Changes' : 'Add Package'}
           </ButtonPrimary>
         </div>
       </form>
