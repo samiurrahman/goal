@@ -16,14 +16,14 @@ export const MakkahIcon = (props: React.SVGProps<SVGSVGElement>) => (
       height="16"
       rx="1"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
       d="M4 9H20"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -33,7 +33,7 @@ export const MakkahIcon = (props: React.SVGProps<SVGSVGElement>) => (
       width="4"
       height="7"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
@@ -55,28 +55,28 @@ export const MadinaIcon = (props: React.SVGProps<SVGSVGElement>) => (
       width="20"
       height="5"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
       d="M7 16V13C7 9 9 6 12 6C15 6 17 9 17 13V16"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
       d="M19 16V5L21 3L23 5V16"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
     <path
       d="M12 6V4"
       stroke="currentColor"
-      strokeWidth="2"
+      strokeWidth="1.5"
       strokeLinecap="round"
       strokeLinejoin="round"
     />

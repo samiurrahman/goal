@@ -67,7 +67,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
   const renderTienIch = () => {
     return (
       <div className="flex items-center justify-start space-x-4 text-neutral-700 dark:text-neutral-300">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center">
           <span className="hidden sm:inline-block">
             <i className="las la-calendar-week text-2xl"></i>
           </span>
@@ -75,27 +75,27 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
         </div>
 
         {/* ---- */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center">
           <span className="hidden sm:inline-block">
             <MakkahIcon />
           </span>
           <span className="ml-1 text-sm max-w-[90px] truncate overflow-hidden whitespace-nowrap inline-block align-bottom">
             {makkah_hotel_name}
           </span>
-          <span className="ml-1 text-sm">(~{makkah_hotel_distance_m})</span>
+          <span className="ml-1 text-sm">(~{makkah_hotel_distance_m}m)</span>
         </div>
 
         {/* ---- */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center">
           <span className="hidden sm:inline-block">
             <MadinaIcon />
           </span>
           <span className="ml-1.5 text-sm max-w-[90px] truncate overflow-hidden whitespace-nowrap inline-block align-bottom">
             {madinah_hotel_name}
           </span>
-          <span className="ml-1 text-sm">(~{madinah_hotel_distance_m})</span>
+          <span className="ml-1 text-sm">(~{madinah_hotel_distance_m}m)</span>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center">
           <span className="hidden sm:inline-block">
             <i className="las la-plane-departure text-2xl"></i>
           </span>
@@ -155,10 +155,18 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
               </span>
               <StartRating reviewCount={12} point={4.5} />
             </div>
-            <span className="flex items-center justify-center px-2.5 py-1.5 border-2 border-secondary-500 rounded-lg leading-none text-sm font-medium text-secondary-500">
+            {/* <span className="flex items-center justify-center px-2.5 py-1.5 border-2 border-secondary-500 rounded-lg leading-none text-sm font-medium text-secondary-500">
               {currency}
               {formatPrice(price_per_person)}
+            </span> */}
+            <span className="text-lg font-semibold text-secondary-700">
+            {currency}
+            {` `}
+            {price_per_person}
+            <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
+              /Person
             </span>
+          </span>
           </div>
           {/* <div className="flex items-center">
             <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />

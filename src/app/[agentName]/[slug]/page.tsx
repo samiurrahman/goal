@@ -117,8 +117,8 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         <div className="flex justify-between">
           <span className="text-3xl font-semibold">
             INR {formattedPrice}
-            <span className="ml-1 text-base font-normal text-neutral-500 dark:text-neutral-400">
-              / person x {numberOfGuests} guests
+            <span className="text-base font-normal text-neutral-500 dark:text-neutral-400">
+              /person
             </span>
           </span>
         </div>
@@ -134,7 +134,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         <div className="flex flex-col space-y-4">
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
             <span>
-              INR {formattedPrice} x {numberOfGuests} guests
+              No of Guest ({numberOfGuests} x INR {formattedPrice})
             </span>
             <span>INR {formattedTotal}</span>
           </div>
@@ -142,6 +142,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
             <span>GST (5%)</span>
             <span>INR {formattedGst}</span>
           </div>
+          
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
           <div className="flex justify-between font-semibold">
             <span>Total</span>
@@ -158,7 +159,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   return (
     <div className="nc-ListingStayDetailPage">
       {/* BANNER IMAGE WITH FADE-OUT */}
-      <header className="relative h-64 sm:h-80 md:h-96 w-full rounded-md sm:rounded-xl overflow-hidden">
+      {/* <header className="relative h-64 sm:h-80 md:h-96 w-full rounded-md sm:rounded-xl overflow-hidden">
         <Image
           src={PHOTOS[0]}
           alt="Banner"
@@ -174,7 +175,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
               'linear-gradient(to bottom, rgba(0,0,0,0.25) 60%, rgba(255,255,255,1) 100%)',
           }}
         />
-      </header>
+      </header> */}
 
       {/* BREADCRUMB */}
       <div className="relative z-20 mt-4">
