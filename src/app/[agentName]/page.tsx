@@ -3,28 +3,16 @@
 import { Tab } from '@headlessui/react';
 import CommentListing from '@/components/CommentListing';
 import StayCard from '@/components/StayCard';
-import { DEMO_CAR_LISTINGS, DEMO_EXPERIENCES_LISTINGS, DEMO_STAY_LISTINGS } from '@/data/listings';
 import React, { FC, Fragment, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import Avatar from '@/shared/Avatar';
 import ButtonSecondary from '@/shared/ButtonSecondary';
 import SocialsList from '@/shared/SocialsList';
 import Breadcrumb from '@/components/Breadcrumb';
-import rightImg from '@/images/about-hero-right.png';
-import SectionFounder from './(components)/SectionFounder';
 import SectionStatistic from './(components)/SectionStatistic';
-import SectionHero from './(components)/SectionHero';
-import BgGlassmorphism from '@/components/BgGlassmorphism';
 import Image from 'next/image';
 import { supabase } from '@/utils/supabaseClient';
 import type { Agent, Package } from '@/data/types';
-import ButtonPrimary from '@/shared/ButtonPrimary';
-import PackageCard from '@/components/package';
-import SectionSliderNewCategories from '@/components/SectionSliderNewCategories';
-import BackgroundSection from '@/components/BackgroundSection';
 import Head from 'next/head';
-import ExperiencesCard from '@/components/ExperiencesCard';
-import CarCard from '@/components/CarCard';
 import StartRating from '@/components/StartRating';
 
 export interface AgentDetailsProps {

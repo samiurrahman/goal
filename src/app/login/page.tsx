@@ -14,14 +14,6 @@ import { stringify } from 'querystring';
 
 export interface PageLoginProps {}
 
-const loginSocials = [
-  {
-    name: 'Continue with Google',
-    href: '#',
-    icon: googleSvg,
-  },
-];
-
 const PageLogin: FC<PageLoginProps> = ({}) => {
   const router = useRouter();
   const [email, setEmail] = useState('');
@@ -37,7 +29,6 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
       email,
       password,
     });
-    console.log(data);
 
     setLoading(false);
     if (error) {

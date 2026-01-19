@@ -1,16 +1,67 @@
+"use client";
 import { Popover, Transition } from '@headlessui/react';
-import { Fragment } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Avatar from '@/shared/Avatar';
 import SwitchDarkMode2 from '@/shared/SwitchDarkMode2';
 import Link from 'next/link';
+// Import supabase client from your utils
+import { supabase } from '@/utils/supabaseClient';
 interface Props {
   className?: string;
 }
 
 export default function AvatarDropdown({ className = '' }: Props) {
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+
+  // Add a key to force re-render on auth change
+  const [authKey, setAuthKey] = useState(0);
+  useEffect(() => {
+    let listener: any;
+    // Initial fetch
+    const fetchUserAndProfile = async () => {
+      const { data } = await supabase.auth.getUser();
+      console.log(data);
+      
+      setUser(data.user);
+      if (data.user) {
+        await loadProfile(data.user.id);
+      } else {
+        setProfile(null);
+      }
+    };
+    fetchUserAndProfile();
+
+    listener = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setUser(session.user);
+        await loadProfile(session.user.id);
+      } else {
+        setUser(null);
+        setProfile(null);
+      }
+      setAuthKey((k) => k + 1); // force re-render
+    });
+    return () => {
+      if (listener && listener.subscription) listener.subscription.unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  
+
+  const loadProfile = async (userId: string) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('full_name, avatar_url')
+      .eq('id', userId)
+      .single();
+    setProfile(data);
+  };
+
   return (
     <>
-      <Popover className={`AvatarDropdown relative flex ${className}`}>
+      <Popover key={authKey} className={`AvatarDropdown relative flex ${className}`}>
         {({ open, close }) => (
           <>
             <Popover.Button
@@ -34,7 +85,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
                       <Avatar sizeClass="w-12 h-12" />
 
                       <div className="flex-grow">
-                        <h4 className="font-semibold">Eden Smith</h4>
+                        <h4 className="font-semibold">{profile?.full_name || "Guest"}</h4>
                         <p className="text-xs mt-0.5">Los Angeles, CA</p>
                       </div>
                     </div>
@@ -252,10 +303,13 @@ export default function AvatarDropdown({ className = '' }: Props) {
                     </Link>
 
                     {/* ------------------ 2 --------------------- */}
-                    <Link
-                      href={'/#'}
-                      className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
-                      onClick={() => close()}
+                    <button
+                      type="button"
+                      className="flex items-center w-full p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
+                      onClick={async () => {
+                        await supabase.auth.signOut();
+                        close();
+                      }}
                     >
                       <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
                         <svg
@@ -291,7 +345,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
                       <div className="ml-4">
                         <p className="text-sm font-medium ">{'Log out'}</p>
                       </div>
-                    </Link>
+                    </button>
                   </div>
                 </div>
               </Popover.Panel>

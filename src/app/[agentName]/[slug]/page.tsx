@@ -157,9 +157,9 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   };
 
   return (
-    <div className="nc-ListingStayDetailPage">
+    <div className="nc-ListingStayDetailPage px-2 sm:px-4 md:px-8 max-w-screen-2xl mx-auto w-full min-h-screen">
       {/* BANNER IMAGE WITH FADE-OUT */}
-      {/* <header className="relative h-64 sm:h-80 md:h-96 w-full rounded-md sm:rounded-xl overflow-hidden">
+      {/* <header className="relative h-48 sm:h-64 md:h-80 lg:h-96 w-full rounded-md sm:rounded-xl overflow-hidden">
         <Image
           src={PHOTOS[0]}
           alt="Banner"
@@ -189,9 +189,9 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       </div>
 
       {/* MAIN */}
-      <main className="relative z-10  flex flex-col lg:flex-row ">
+      <main className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-0 w-full">
         {/* CONTENT */}
-        <div className="w-full lg:w-3/5 xl:w-2/3 space-y-8 lg:space-y-10 lg:pr-10">
+        <div className="w-full lg:w-3/5 xl:w-2/3 space-y-6 sm:space-y-8 lg:space-y-10 lg:pr-10">
           <PackageMeta
             title="Luxury umrah package from Mumbai to Mumbai"
             duration="5 Days, 4 Nights"
@@ -234,10 +234,14 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           <HostInformation {...hostData} />
         </div>
 
-        <div className="hidden lg:block flex-grow mt-14 lg:mt-0">
-          <div className="sticky top-28">{purchaseSummary()}</div>
+        {/* SIDEBAR: Purchase summary, visible on all devices, sticky on lg+ */}
+        <div className="w-full lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0 flex flex-col items-stretch">
+          <div className="sticky top-28 hidden lg:block max-w-md mx-auto w-full">{purchaseSummary()}</div>
+          {/* Mobile/Tablet: show purchase summary below content */}
+          <div className="block lg:hidden mb-8 w-full max-w-lg mx-auto">{purchaseSummary()}</div>
         </div>
       </main>
+      <div className="block lg:hidden h-8" />
       <MobileFooterSticky />
     </div>
   );

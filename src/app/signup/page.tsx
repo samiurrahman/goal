@@ -13,24 +13,6 @@ import Link from 'next/link';
 
 export interface PageSignUpProps {}
 
-const loginSocials = [
-  {
-    name: 'Continue with Facebook',
-    href: '#',
-    icon: facebookSvg,
-  },
-  {
-    name: 'Continue with Twitter',
-    href: '#',
-    icon: twitterSvg,
-  },
-  {
-    name: 'Continue with Google',
-    href: '#',
-    icon: googleSvg,
-  },
-];
-
 const PageSignUp: FC<PageSignUpProps> = ({}) => {
   const router = useRouter();
   const [email, setEmail] = useState('');
