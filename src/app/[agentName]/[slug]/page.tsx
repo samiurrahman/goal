@@ -6,6 +6,8 @@ import CommentListing from '@/components/CommentListing';
 import FiveStartIconForRate from '@/components/FiveStartIconForRate';
 import ButtonCircle from '@/shared/ButtonCircle';
 import ButtonPrimary from '@/shared/ButtonPrimary';
+import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
+import { useRouter } from 'next/navigation';
 import ButtonSecondary from '@/shared/ButtonSecondary';
 import Input from '@/shared/Input';
 import Image from 'next/image';
@@ -32,6 +34,8 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   const { agentName, slug } = params;
   // Room rate selection state
   const [selectedRate, setSelectedRate] = useState(roomRates[0]);
+  const isLoggedIn = useSupabaseIsLoggedIn();
+  const router = useRouter();
 
   // Dummy data for policies
   const policiesData = {
@@ -151,7 +155,19 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         </div>
 
         {/* SUBMIT */}
-        <ButtonPrimary href={'/checkout'}>Reserve</ButtonPrimary>
+        <ButtonPrimary
+          onClick={() => {
+            if (isLoggedIn) {
+              router.push('/checkout');
+            } else {
+              // Save current path for redirect after login
+              const currentPath = window.location.pathname;
+              router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
+            }
+          }}
+        >
+          Reserve
+        </ButtonPrimary>
       </div>
     );
   };

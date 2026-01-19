@@ -1,6 +1,6 @@
 'use client';
 import React, { FC, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken } from '@/utils/authToken';
 import facebookSvg from '@/images/Facebook.svg';
@@ -16,6 +16,7 @@ export interface PageLoginProps {}
 
 const PageLogin: FC<PageLoginProps> = ({}) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +39,9 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
       if (data?.session?.access_token) {
         storeAccessToken(data.session.access_token);
       }
-      router.push('/');
+      // Redirect after login
+      const redirectPath = searchParams.get('redirect') || '/';
+      router.push(redirectPath);
     }
   };
 
