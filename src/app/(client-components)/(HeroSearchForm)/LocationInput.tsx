@@ -106,37 +106,38 @@ const LocationInput: FC<LocationInputProps> = ({
     setFocusedIndex(-1);
   }, [value, showPopover]);
 
-  const renderRecentSearches = () => {
-    return (
-      <>
-        <h3 className="block mt-2 sm:mt-0 px-4 sm:px-8 font-semibold text-base sm:text-lg text-neutral-800 dark:text-neutral-100">
-          Locations
-        </h3>
-        <div className="mt-2">
-          {filteredCities?.map((item, idx) => (
-            <span
-              onClick={() => handleSelectLocation(item)}
-              key={item.id}
-              className={`flex px-4 sm:px-8 items-center space-x-3 sm:space-x-4 py-4 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer ${
-                focusedIndex === idx ? 'bg-blue-100 dark:bg-blue-900' : ''
-              }`}
-            >
-              <span className="block text-neutral-400">
-                <ClockIcon className="h-4 sm:h-6 w-4 sm:w-6" />
-              </span>
-              <span className=" block font-medium text-neutral-700 dark:text-neutral-200">
-                {item.name}, {item.state}
-              </span>
-            </span>
-          ))}
-        </div>
-      </>
-    );
-  };
+  // const renderRecentSearches = () => {
+  //   return (
+  //     <>
+  //       <h3 className="block mt-2 sm:mt-0 px-4 sm:px-8 font-semibold text-base sm:text-lg text-neutral-800 dark:text-neutral-100">
+  //         Locations
+  //       </h3>
+  //       <div className="mt-2">
+  //         {filteredCities?.map((item, idx) => (
+  //           <span
+  //             onClick={() => handleSelectLocation(item)}
+  //             key={item.id}
+  //             className={`flex px-4 sm:px-8 items-center space-x-3 sm:space-x-4 py-4 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer ${
+  //               focusedIndex === idx ? 'bg-blue-100 dark:bg-blue-900' : ''
+  //             }`}
+  //           >
+  //             {/* <span className="block text-neutral-400">
+  //               <ClockIcon className="h-4 sm:h-6 w-4 sm:w-6" />
+  //             </span> */}
+  //             <span className=" block font-medium text-neutral-700 dark:text-neutral-200">
+  //               {item.name}, {item.state}
+  //             </span>
+  //           </span>
+  //         ))}
+  //       </div>
+  //     </>
+  //   );
+  // };
 
   const renderSearchValue = () => {
     return (
       <>
+       
         {filteredCities?.map((item, idx) => (
           <span
             onClick={() => handleSelectLocation(item)}
@@ -145,9 +146,9 @@ const LocationInput: FC<LocationInputProps> = ({
               focusedIndex === idx ? 'bg-blue-100 dark:bg-blue-900' : ''
             }`}
           >
-            <span className="block text-neutral-400">
+            {/* <span className="block text-neutral-400">
               <ClockIcon className="h-4 w-4 sm:h-6 sm:w-6" />
-            </span>
+            </span> */}
             <span className="block font-medium text-neutral-700 dark:text-neutral-200">
               {item.name}, {item.state}
             </span>
@@ -203,7 +204,8 @@ const LocationInput: FC<LocationInputProps> = ({
 
       {showPopover && (
         <div className="absolute left-0 z-40 w-full min-w-[300px] sm:min-w-[500px] bg-white dark:bg-neutral-800 top-full mt-3 py-3 sm:py-6 rounded-3xl shadow-xl max-h-[35vh] overflow-y-auto">
-          {value ? renderSearchValue() : renderRecentSearches()}
+          {/* {value ? renderSearchValue() : renderRecentSearches()} */}
+          {renderSearchValue()}
         </div>
       )}
     </div>

@@ -3,6 +3,7 @@ import React, { FC, useState, useRef } from 'react';
 import LocationInput from '../LocationInput';
 import GuestsInput from '../GuestsInput';
 import StayDatesRangeInput from './StayDatesRangeInput';
+import ButtonSubmit from '../ButtonSubmit';
 
 const StaySearchForm: FC<{}> = ({}) => {
   const [dropOffLocationType, setDropOffLocationType] = useState<'Umrah' | 'Hajj'>('Umrah');
@@ -48,12 +49,16 @@ const StaySearchForm: FC<{}> = ({}) => {
     return (
       <form className="w-full relative rounded-[40px] xl:rounded-[49px] rounded-t-2xl xl:rounded-t-3xl shadow-xl dark:shadow-2xl bg-white dark:bg-neutral-800 ">
         {renderRadioBtn()}
-        <div className={`relative flex flex-row`}>
+        <div className={`relative flex flex-row items-center self-center`}>
           <LocationInput className="flex-[1.5]" onLocationSelect={handleLocationSelect} />
           <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
           <StayDatesRangeInput className="flex-1" />
-          <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
-          <GuestsInput className="flex-1" />
+          {/* <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
+          <GuestsInput className="flex-1" /> */}
+          
+          <div className="pl-1 pr-2 xl:pr-4">
+            <ButtonSubmit href={'/packages'} />
+          </div>
         </div>
       </form>
     );
