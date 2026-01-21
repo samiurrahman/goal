@@ -12,6 +12,7 @@ import HeroSearchFormSmall from '../(HeroSearchFormSmall)/HeroSearchFormSmall';
 import { StaySearchFormFields } from '../type';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import HeroSearchForm2Mobile from '../(HeroSearchForm2Mobile)/HeroSearchForm2Mobile';
+import ButtonPrimary from '@/shared/ButtonPrimary';
 
 interface Header3Props {
   className?: string;
@@ -189,9 +190,12 @@ const Header3: FC<Header3Props> = ({ className = '' }) => {
                   Offers
                 </Link>
 
-                {isLoggedIn && <NotifyDropdown />}
-                {isLoggedIn && <AvatarDropdown />}
-                {/* <MenuBar /> */}
+                {/* {isLoggedIn && <NotifyDropdown />}
+                {isLoggedIn && <AvatarDropdown />} */}
+                {isLoggedIn ? <> <NotifyDropdown /><AvatarDropdown /></> : <><div className="px-1" />
+                <ButtonPrimary className="self-center" href="/login?redirect=/">
+                  log in
+                </ButtonPrimary></>}
               </div>
             </div>
           </div>
