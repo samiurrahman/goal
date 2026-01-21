@@ -8,15 +8,23 @@ import ButtonSubmit from '../ButtonSubmit';
 const StaySearchForm: FC<{}> = ({}) => {
   const [dropOffLocationType, setDropOffLocationType] = useState<'Umrah' | 'Hajj'>('Umrah');
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
+  const [selectedDates, setSelectedDates] = useState<any>(null);
   const dateRangeRef = useRef<HTMLButtonElement>(null);
 
-  const handleLocationSelect = (value: any) => {
+  const handleLocationSelect = (value: any) => {    
     setSelectedLocation(value);
+    console.log(selectedLocation);
+    
     // Focus the StayDatesRangeInput when location is selected
     if (dateRangeRef.current) {
       dateRangeRef.current.focus();
     }
   };
+
+  const handleDateSelect = (value: any) => {
+    setSelectedDates(value);
+  };
+
 
   const renderRadioBtn = () => {
     return (
@@ -52,7 +60,7 @@ const StaySearchForm: FC<{}> = ({}) => {
         <div className={`relative flex flex-row items-center self-center`}>
           <LocationInput className="flex-[1.5]" onLocationSelect={handleLocationSelect} />
           <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
-          <StayDatesRangeInput className="flex-1" />
+          <StayDatesRangeInput className="flex-1" onDateSelect={handleDateSelect} />
           {/* <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
           <GuestsInput className="flex-1" /> */}
           

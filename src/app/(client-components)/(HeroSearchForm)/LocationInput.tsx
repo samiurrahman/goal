@@ -60,12 +60,13 @@ const LocationInput: FC<LocationInputProps> = ({
     setShowPopover(false);
   };
 
-  const handleSelectLocation = (item: any) => {
+  const handleSelectLocation = (item: any) => {   
+    
     setValue(item.name + (item.state ? ', ' + item.state : ''));
     setShowPopover(false); // Close the popover after selection
     setFocusedIndex(-1);
-    if (inputRef.current) inputRef.current.blur(); // Remove focus from input
     if (onLocationSelect) onLocationSelect(item);
+    if (inputRef.current) inputRef.current.blur(); // Remove focus from input
   };
 
   const { data: cities, error, isLoading } = useCities();

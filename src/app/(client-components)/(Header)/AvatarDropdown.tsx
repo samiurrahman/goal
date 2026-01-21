@@ -82,10 +82,10 @@ export default function AvatarDropdown({ className = '' }: Props) {
                 <div className="overflow-hidden rounded-3xl shadow-lg ring-1 ring-black ring-opacity-5">
                   <div className="relative grid grid-cols-1 gap-6 bg-white dark:bg-neutral-800 py-7 px-6">
                     <div className="flex items-center space-x-3">
-                      <Avatar sizeClass="w-12 h-12" />
+                      <Avatar sizeClass="w-12 h-12" imgUrl={user?.user_metadata?.picture} />
 
                       <div className="flex-grow">
-                        <h4 className="font-semibold">{profile?.full_name || "Guest"}</h4>
+                        <h4 className="font-semibold">{user?.user_metadata?.full_name || "Guest"}</h4>
                         <p className="text-xs mt-0.5">Los Angeles, CA</p>
                       </div>
                     </div>
