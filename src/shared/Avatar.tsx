@@ -17,13 +17,13 @@ const Avatar: FC<AvatarProps> = ({
   containerClassName = 'ring-1 ring-white dark:ring-neutral-900',
   sizeClass = 'h-6 w-6 text-sm',
   radius = 'rounded-full',
-  imgUrl = avatar1,
+  imgUrl,
   userName,
   hasChecked,
   hasCheckedClass = 'w-4 h-4 -top-0.5 -right-0.5',
 }) => {
   const url = imgUrl || '';
-  const name = userName || 'John Doe';
+  const name = userName || '';
   const _setBgColor = (name: string) => {
     const backgroundIndex = Math.floor(name.charCodeAt(0) % avatarColors.length);
     return avatarColors[backgroundIndex];
