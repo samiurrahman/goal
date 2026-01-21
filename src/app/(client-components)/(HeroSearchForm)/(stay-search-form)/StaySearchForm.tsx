@@ -1,5 +1,6 @@
 'use client';
-import React, { FC, useState, useRef } from 'react';
+import React, { FC, useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import LocationInput from '../LocationInput';
 import GuestsInput from '../GuestsInput';
 import StayDatesRangeInput from './StayDatesRangeInput';
@@ -9,12 +10,43 @@ const StaySearchForm: FC<{}> = ({}) => {
   const [dropOffLocationType, setDropOffLocationType] = useState<'Umrah' | 'Hajj'>('Umrah');
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [selectedDates, setSelectedDates] = useState<any>(null);
+  const [packagesUrl, setPackagesUrl] = useState<string>("/packages");
   const dateRangeRef = useRef<HTMLButtonElement>(null);
 
-  const handleLocationSelect = (value: any) => {    
+  const buildPackagesUrl = (locationObj: any, datesObj: any) => {
+    // Try to extract location string from common shapes
+    let location = '';
+    if (locationObj) {
+      if (typeof locationObj === 'string') {
+        location = locationObj;
+      } else if (locationObj.label) {
+        location = locationObj.label;
+      } else if (locationObj.name) {
+        location = locationObj.name;
+      }
+    }
+    let dateStart = '';
+    let dateEnd = '';
+    // Helper to format date as YYYY-MM-DD
+    const formatDate = (d: any) => {
+      if (!d) return '';
+      const date = typeof d === 'string' ? new Date(d) : d;
+      if (isNaN(date.getTime())) return '';
+      return date.toISOString().slice(0, 10);
+    };
+    if (datesObj && datesObj.startDate && datesObj.endDate) {
+      dateStart = formatDate(datesObj.startDate);
+      dateEnd = formatDate(datesObj.endDate);
+    }
+    const params = new URLSearchParams();
+    if (location) params.append('location', location);
+    if (dateStart) params.append('datestart', dateStart);
+    if (dateEnd) params.append('dateend', dateEnd);
+    return params.toString() ? `/packages?${params.toString()}` : '/packages';
+  };
+
+  const handleLocationSelect = (value: any) => {
     setSelectedLocation(value);
-    console.log(selectedLocation);
-    
     // Focus the StayDatesRangeInput when location is selected
     if (dateRangeRef.current) {
       dateRangeRef.current.focus();
@@ -23,6 +55,15 @@ const StaySearchForm: FC<{}> = ({}) => {
 
   const handleDateSelect = (value: any) => {
     setSelectedDates(value);
+  };
+
+  useEffect(() => {
+    setPackagesUrl(buildPackagesUrl(selectedLocation, selectedDates));
+  }, [selectedLocation, selectedDates]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // No need to update packagesUrl here, it's already updated in the handlers
   };
 
 
@@ -52,20 +93,19 @@ const StaySearchForm: FC<{}> = ({}) => {
       </div>
     );
   };
-
-  const renderForm = () => {
+  
+  const renderForm = () => {    
     return (
-      <form className="w-full relative rounded-[40px] xl:rounded-[49px] rounded-t-2xl xl:rounded-t-3xl shadow-xl dark:shadow-2xl bg-white dark:bg-neutral-800 ">
+      <form className="w-full relative rounded-[40px] xl:rounded-[49px] rounded-t-2xl xl:rounded-t-3xl shadow-xl dark:shadow-2xl bg-white dark:bg-neutral-800 " onSubmit={handleSubmit}>
         {renderRadioBtn()}
         <div className={`relative flex flex-row items-center self-center`}>
           <LocationInput className="flex-[1.5]" onLocationSelect={handleLocationSelect} />
           <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
-          <StayDatesRangeInput className="flex-1" onDateSelect={handleDateSelect} />
+          <StayDatesRangeInput className="flex-1" onDateSelect={handleDateSelect}  />
           {/* <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
           <GuestsInput className="flex-1" /> */}
-          
           <div className="pl-1 pr-2 xl:pr-4">
-            <ButtonSubmit href={'/packages'} />
+            <ButtonSubmit href={packagesUrl} />
           </div>
         </div>
       </form>

@@ -94,82 +94,82 @@ const TabFilters = () => {
   };
 
   // Sync filters to URL and fetch data on filter change
-  React.useEffect(() => {
-    // Build SEO/user-friendly query params
-    const params = new URLSearchParams();
+  // React.useEffect(() => {
+  //   // Build SEO/user-friendly query params
+  //   const params = new URLSearchParams();
 
-    if (isOnSale) params.set('sale', '1');
-    if (rangePrices[0] !== 100 || rangePrices[1] !== 5000)
-      params.set('price', `${rangePrices[0]}-${rangePrices[1]}`);
-    if (tripTimes !== 10) params.set('trip', `<${tripTimes}h`);
-    if (stopPontsStates.length)
-      params.set(
-        'stops',
-        stopPontsStates.map((s) => s.replace(/\s+/g, '-').toLowerCase()).join(',')
-      );
-    if (airlinesStates.length)
-      params.set(
-        'airlines',
-        airlinesStates.map((a) => a.replace(/\s+/g, '-').toLowerCase()).join(',')
-      );
-    // Flight times
-    Object.entries(catTimes).forEach(([key, val]) => {
-      params.set(
-        key.replace(/\s+/g, '').toLowerCase(),
-        `dep${val.Departure[0]}-${val.Departure[1]}_arr${val.Arrival[0]}-${val.Arrival[1]}`
-      );
-    });
+  //   if (isOnSale) params.set('sale', '1');
+  //   if (rangePrices[0] !== 100 || rangePrices[1] !== 5000)
+  //     params.set('price', `${rangePrices[0]}-${rangePrices[1]}`);
+  //   if (tripTimes !== 10) params.set('trip', `<${tripTimes}h`);
+  //   if (stopPontsStates.length)
+  //     params.set(
+  //       'stops',
+  //       stopPontsStates.map((s) => s.replace(/\s+/g, '-').toLowerCase()).join(',')
+  //     );
+  //   if (airlinesStates.length)
+  //     params.set(
+  //       'airlines',
+  //       airlinesStates.map((a) => a.replace(/\s+/g, '-').toLowerCase()).join(',')
+  //     );
+  //   // Flight times
+  //   Object.entries(catTimes).forEach(([key, val]) => {
+  //     params.set(
+  //       key.replace(/\s+/g, '').toLowerCase(),
+  //       `dep${val.Departure[0]}-${val.Departure[1]}_arr${val.Arrival[0]}-${val.Arrival[1]}`
+  //     );
+  //   });
 
-    // Update URL (without reload)
-    const url = `${window.location.pathname}?${params.toString()}`;
-    window.history.replaceState({}, '', url);
+  //   // Update URL (without reload)
+  //   const url = `${window.location.pathname}?${params.toString()}`;
+  //   window.history.replaceState({}, '', url);
 
-    // Fetch API with filters
-    fetch(`/api/flights?${params.toString()}`)
-      .then((res) => res.json())
-      .then((data) => {
-        // handle data (e.g. set state)
-        // console.log("API data:", data);
-      });
-  }, [isOnSale, rangePrices, tripTimes, stopPontsStates, airlinesStates, catTimes]);
+  //   // Fetch API with filters
+  //   fetch(`/api/flights?${params.toString()}`)
+  //     .then((res) => res.json())
+  //     .then((data) => {
+  //       // handle data (e.g. set state)
+  //       // console.log("API data:", data);
+  //     });
+  // }, [isOnSale, rangePrices, tripTimes, stopPontsStates, airlinesStates, catTimes]);
 
   // On mount and when URL changes, update filter state from URL
-  React.useEffect(() => {
-    const syncFiltersFromUrl = () => {
-      const params = new URLSearchParams(window.location.search);
-      setIsOnSale(params.get('sale') === '1');
-      const price = params.get('price');
-      if (price) {
-        const [min, max] = price.split('-').map(Number);
-        if (!isNaN(min) && !isNaN(max)) setRangePrices([min, max]);
-      }
-      const trip = params.get('trip');
-      if (trip && /^<\d+h$/.test(trip)) {
-        setTripTimes(Number(trip.replace(/[^\d]/g, '')));
-      }
-      Object.entries(catTimes).forEach(([key]) => {
-        const val = params.get(key.replace(/\s+/g, '').toLowerCase());
-        if (val) {
-          const depMatch = val.match(/dep(\d+)-(\d+)/);
-          const arrMatch = val.match(/arr(\d+)-(\d+)/);
-          setCatTimes((prev) => ({
-            ...prev,
-            [key as CatTimeKey]: {
-              Departure: depMatch
-                ? [Number(depMatch[1]), Number(depMatch[2])]
-                : prev[key as CatTimeKey].Departure,
-              Arrival: arrMatch
-                ? [Number(arrMatch[1]), Number(arrMatch[2])]
-                : prev[key as CatTimeKey].Arrival,
-            },
-          }));
-        }
-      });
-    };
-    syncFiltersFromUrl();
-    window.addEventListener('popstate', syncFiltersFromUrl);
-    return () => window.removeEventListener('popstate', syncFiltersFromUrl);
-  }, []);
+  // React.useEffect(() => {
+  //   const syncFiltersFromUrl = () => {
+  //     const params = new URLSearchParams(window.location.search);
+  //     setIsOnSale(params.get('sale') === '1');
+  //     const price = params.get('price');
+  //     if (price) {
+  //       const [min, max] = price.split('-').map(Number);
+  //       if (!isNaN(min) && !isNaN(max)) setRangePrices([min, max]);
+  //     }
+  //     const trip = params.get('trip');
+  //     if (trip && /^<\d+h$/.test(trip)) {
+  //       setTripTimes(Number(trip.replace(/[^\d]/g, '')));
+  //     }
+  //     Object.entries(catTimes).forEach(([key]) => {
+  //       const val = params.get(key.replace(/\s+/g, '').toLowerCase());
+  //       if (val) {
+  //         const depMatch = val.match(/dep(\d+)-(\d+)/);
+  //         const arrMatch = val.match(/arr(\d+)-(\d+)/);
+  //         setCatTimes((prev) => ({
+  //           ...prev,
+  //           [key as CatTimeKey]: {
+  //             Departure: depMatch
+  //               ? [Number(depMatch[1]), Number(depMatch[2])]
+  //               : prev[key as CatTimeKey].Departure,
+  //             Arrival: arrMatch
+  //               ? [Number(arrMatch[1]), Number(arrMatch[2])]
+  //               : prev[key as CatTimeKey].Arrival,
+  //           },
+  //         }));
+  //       }
+  //     });
+  //   };
+  //   syncFiltersFromUrl();
+  //   window.addEventListener('popstate', syncFiltersFromUrl);
+  //   return () => window.removeEventListener('popstate', syncFiltersFromUrl);
+  // }, []);
   const renderXClear = () => {
     return (
       <span className="w-4 h-4 rounded-full bg-primary-500 text-white flex items-center justify-center ml-3 cursor-pointer">

@@ -1,5 +1,6 @@
 'use client';
 import React, { FC, useRef, useEffect, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import Breadcrumb from '@/components/Breadcrumb';
 import TabFilters from './TabFilters';
@@ -17,15 +18,31 @@ export interface SectionGridFilterCardProps {
 const PAGE_SIZE = 20;
 
 const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' }) => {
+  const searchParams = useSearchParams();
+  // Read params and create payload
+  const payload = {
+    location: searchParams.get('location') || '',
+    datestart: searchParams.get('datestart') || '',
+    dateend: searchParams.get('dateend') || '',
+  };
+
   const { data, error, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery<Package[], Error>({
-      queryKey: ['packages'],
+      queryKey: ['packages', payload],
       queryFn: async ({ pageParam = 0 }) => {
         const page = typeof pageParam === 'number' ? pageParam : 0;
-        const { data, error } = await supabase
-          .from('packages')
-          .select('*')
-          .range(page, page + PAGE_SIZE - 1);
+        let query = supabase.from('packages').select('*');
+        if (payload.location) {
+          query = query.ilike('departure_city', `%${payload.location}%`);
+        }
+        if (payload.datestart) {
+          query = query.gte('departure_date', payload.datestart);
+        }
+        if (payload.dateend) {
+          query = query.lte('arrival_date', payload.dateend);
+        }
+        // Add more filters here as needed, e.g. .eq, .gt, .lt, .like, .in, etc.
+        const { data, error } = await query.range(page, page + PAGE_SIZE - 1);
         if (error) throw error;
         return data as Package[];
       },
