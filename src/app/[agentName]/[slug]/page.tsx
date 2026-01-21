@@ -1,17 +1,10 @@
 'use client';
 
 import React, { FC, useState } from 'react';
-import { ArrowRightIcon } from '@heroicons/react/24/outline';
-import CommentListing from '@/components/CommentListing';
-import FiveStartIconForRate from '@/components/FiveStartIconForRate';
-import ButtonCircle from '@/shared/ButtonCircle';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
 import { useRouter } from 'next/navigation';
-import ButtonSecondary from '@/shared/ButtonSecondary';
-import Input from '@/shared/Input';
-import Image from 'next/image';
-import { Amenities_demos, PHOTOS } from '../(components)/constant';
+import { Amenities_demos } from '../(components)/constant';
 import { roomRates } from '../(components)/constant';
 import StayDatesRangeInput from '../(components)/StayDatesRangeInput';
 import GuestsInput from '../(components)/GuestsInput';
@@ -24,7 +17,6 @@ import HostInformation from '../(components)/HostInformation';
 import AmenitiesSection from '../(components)/AmenitiesSection';
 import PackageInfo from '../(components)/PackageInfo';
 import MobileFooterSticky from '../(components)/MobileFooterSticky';
-// import LocationSection from "./LocationSection";
 
 export interface PackageDetailProps {
   params: { agentName: string; slug: string };

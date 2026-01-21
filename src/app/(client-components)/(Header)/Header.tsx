@@ -193,7 +193,7 @@ const Header3: FC<Header3Props> = ({ className = '' }) => {
                 {/* {isLoggedIn && <NotifyDropdown />}
                 {isLoggedIn && <AvatarDropdown />} */}
                 {isLoggedIn ? <> <NotifyDropdown /><AvatarDropdown /></> : <><div className="px-1" />
-                <ButtonPrimary className="self-center" href="/login?redirect=/">
+                <ButtonPrimary className="self-center" href="/login">
                   log in
                 </ButtonPrimary></>}
               </div>
