@@ -20,8 +20,11 @@ const PAGE_SIZE = 20;
 const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' }) => {
   const searchParams = useSearchParams();
   // Read params and create payload
+  // Support multiple locations as comma-separated
+  const locationParam = searchParams.get('location') || '';
+  const locationList = locationParam ? locationParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
   const payload = {
-    location: searchParams.get('location') || '',
+    location: locationList,
     datestart: searchParams.get('datestart') || '',
     dateend: searchParams.get('dateend') || '',
   };
@@ -32,8 +35,13 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
       queryFn: async ({ pageParam = 0 }) => {
         const page = typeof pageParam === 'number' ? pageParam : 0;
         let query = supabase.from('packages').select('*');
-        if (payload.location) {
-          query = query.ilike('departure_city', `%${payload.location}%`);
+        if (payload.location && payload.location.length > 0) {
+          // Use .in for multiple cities, .ilike for single
+          if (payload.location.length === 1) {
+            query = query.ilike('departure_city', `%${payload.location[0]}%`);
+          } else {
+            query = query.in('departure_city', payload.location);
+          }
         }
         if (payload.datestart) {
           query = query.gte('departure_date', payload.datestart);
