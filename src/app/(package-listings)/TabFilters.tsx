@@ -245,7 +245,11 @@ const TabFilters = () => {
                         min={1}
                         max={60}
                         value={sliderValue}
-                        onChange={setSliderValue}
+                        onChange={(value) => {
+                          if (typeof value === 'number') {
+                            setSliderValue(value);
+                          }
+                        }}
                       />
                     </div>
                   </div>
