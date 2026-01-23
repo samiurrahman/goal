@@ -9,28 +9,10 @@ import Checkbox from '@/shared/Checkbox';
 import convertNumbThousand from '@/utils/convertNumbThousand';
 import Slider from 'rc-slider';
 import { XMarkIcon } from '@heroicons/react/24/outline';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useCities } from '@/hooks/useCities';
 
 // DEMO DATA
-const typeOfAirlines = [
-  {
-    name: 'Star Alliance',
-  },
-  {
-    name: 'Air China',
-  },
-  {
-    name: 'Air India',
-  },
-  {
-    name: 'Air New Zealand',
-  },
-  {
-    name: 'Asiana',
-  },
-  {
-    name: 'Bangkok Airways',
-  },
-];
 const stopPoints = [
   {
     name: 'Nonstop',
@@ -49,12 +31,14 @@ const stopPoints = [
 //
 const TabFilters = () => {
   const [isOpenMoreFilter, setisOpenMoreFilter] = useState(false);
-  //
   const [isOnSale, setIsOnSale] = useState(true);
   const [rangePrices, setRangePrices] = useState([100, 5000]);
   const [tripTimes, setTripTimes] = useState(10);
   const [stopPontsStates, setStopPontsStates] = useState<string[]>([]);
-  const [airlinesStates, setAirlinesStates] = useState<string[]>([]);
+  const [locationStates, setLocationStates] = useState<string[]>([]);
+
+  // Fetch locations (cities)
+  const { data: cities, error: citiesError, isLoading: citiesLoading } = useCities();
 
   //
   type CatTimeKey = 'Take Off' | 'Landing';
@@ -76,6 +60,20 @@ const TabFilters = () => {
     },
   });
 
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Sync locationStates with URL 'location' param
+  React.useEffect(() => {
+    const urlValue = searchParams.get('location');
+    if (urlValue) {
+      // Support multiple locations as comma-separated
+      setLocationStates(urlValue.split(','));
+    } else {
+      setLocationStates([]);
+    }
+  }, [searchParams]);
+
   //
   const closeModalMoreFilter = () => setisOpenMoreFilter(false);
   const openModalMoreFilter = () => setisOpenMoreFilter(true);
@@ -87,89 +85,25 @@ const TabFilters = () => {
       : setStopPontsStates(stopPontsStates.filter((i) => i !== name));
   };
 
-  const handleChangeAirlines = (checked: boolean, name: string) => {
-    checked
-      ? setAirlinesStates([...airlinesStates, name])
-      : setAirlinesStates(airlinesStates.filter((i) => i !== name));
+  const handleChangeLocation = (checked: boolean, name: string) => {
+    let newStates;
+    if (checked) {
+      newStates = [...locationStates, name];
+    } else {
+      newStates = locationStates.filter((i) => i !== name);
+    }
+    setLocationStates(newStates);
+    // Update URL
+    const params = new URLSearchParams(searchParams.toString());
+    if (newStates.length > 0) {
+      params.set('location', newStates.join(','));
+    } else {
+      params.delete('location');
+    }
+    router.replace('?' + params.toString(), { scroll: false });
   };
 
-  // Sync filters to URL and fetch data on filter change
-  // React.useEffect(() => {
-  //   // Build SEO/user-friendly query params
-  //   const params = new URLSearchParams();
-
-  //   if (isOnSale) params.set('sale', '1');
-  //   if (rangePrices[0] !== 100 || rangePrices[1] !== 5000)
-  //     params.set('price', `${rangePrices[0]}-${rangePrices[1]}`);
-  //   if (tripTimes !== 10) params.set('trip', `<${tripTimes}h`);
-  //   if (stopPontsStates.length)
-  //     params.set(
-  //       'stops',
-  //       stopPontsStates.map((s) => s.replace(/\s+/g, '-').toLowerCase()).join(',')
-  //     );
-  //   if (airlinesStates.length)
-  //     params.set(
-  //       'airlines',
-  //       airlinesStates.map((a) => a.replace(/\s+/g, '-').toLowerCase()).join(',')
-  //     );
-  //   // Flight times
-  //   Object.entries(catTimes).forEach(([key, val]) => {
-  //     params.set(
-  //       key.replace(/\s+/g, '').toLowerCase(),
-  //       `dep${val.Departure[0]}-${val.Departure[1]}_arr${val.Arrival[0]}-${val.Arrival[1]}`
-  //     );
-  //   });
-
-  //   // Update URL (without reload)
-  //   const url = `${window.location.pathname}?${params.toString()}`;
-  //   window.history.replaceState({}, '', url);
-
-  //   // Fetch API with filters
-  //   fetch(`/api/flights?${params.toString()}`)
-  //     .then((res) => res.json())
-  //     .then((data) => {
-  //       // handle data (e.g. set state)
-  //       // console.log("API data:", data);
-  //     });
-  // }, [isOnSale, rangePrices, tripTimes, stopPontsStates, airlinesStates, catTimes]);
-
-  // On mount and when URL changes, update filter state from URL
-  // React.useEffect(() => {
-  //   const syncFiltersFromUrl = () => {
-  //     const params = new URLSearchParams(window.location.search);
-  //     setIsOnSale(params.get('sale') === '1');
-  //     const price = params.get('price');
-  //     if (price) {
-  //       const [min, max] = price.split('-').map(Number);
-  //       if (!isNaN(min) && !isNaN(max)) setRangePrices([min, max]);
-  //     }
-  //     const trip = params.get('trip');
-  //     if (trip && /^<\d+h$/.test(trip)) {
-  //       setTripTimes(Number(trip.replace(/[^\d]/g, '')));
-  //     }
-  //     Object.entries(catTimes).forEach(([key]) => {
-  //       const val = params.get(key.replace(/\s+/g, '').toLowerCase());
-  //       if (val) {
-  //         const depMatch = val.match(/dep(\d+)-(\d+)/);
-  //         const arrMatch = val.match(/arr(\d+)-(\d+)/);
-  //         setCatTimes((prev) => ({
-  //           ...prev,
-  //           [key as CatTimeKey]: {
-  //             Departure: depMatch
-  //               ? [Number(depMatch[1]), Number(depMatch[2])]
-  //               : prev[key as CatTimeKey].Departure,
-  //             Arrival: arrMatch
-  //               ? [Number(arrMatch[1]), Number(arrMatch[2])]
-  //               : prev[key as CatTimeKey].Arrival,
-  //           },
-  //         }));
-  //       }
-  //     });
-  //   };
-  //   syncFiltersFromUrl();
-  //   window.addEventListener('popstate', syncFiltersFromUrl);
-  //   return () => window.removeEventListener('popstate', syncFiltersFromUrl);
-  // }, []);
+  
   const renderXClear = () => {
     return (
       <span className="w-4 h-4 rounded-full bg-primary-500 text-white flex items-center justify-center ml-3 cursor-pointer">
@@ -203,7 +137,7 @@ const TabFilters = () => {
     );
   };
 
-  const renderTabsTypeOfAirlines = () => {
+  const renderTabsLocation = () => {
     return (
       <Popover className="relative">
         {({ open, close }) => (
@@ -211,14 +145,14 @@ const TabFilters = () => {
             <Popover.Button
               className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 focus:outline-none
                ${open ? '!border-primary-500 ' : ''}
-                ${!!airlinesStates.length ? '!border-primary-500 bg-primary-50' : ''}
+                ${!!locationStates.length ? '!border-primary-500 bg-primary-50' : ''}
                 `}
             >
               <span>Location</span>
-              {!airlinesStates.length ? (
+              {!locationStates.length ? (
                 <i className="las la-angle-down ml-2"></i>
               ) : (
-                <span onClick={() => setAirlinesStates([])}>{renderXClear()}</span>
+                <span onClick={() => setLocationStates([])}>{renderXClear()}</span>
               )}
             </Popover.Button>
             <Transition
@@ -232,30 +166,22 @@ const TabFilters = () => {
             >
               <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
                 <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
-                  <div className="relative flex flex-col px-5 py-6 space-y-5">
-                    <Checkbox
-                      name="All Airlines"
-                      label="All Airlines"
-                      defaultChecked={airlinesStates.includes('All Airlines')}
-                      onChange={(checked) => handleChangeAirlines(checked, 'All Airlines')}
-                    />
-                    <hr />
-                    {typeOfAirlines.map((item) => (
-                      <div key={item.name} className="">
-                        <Checkbox
-                          name={item.name}
-                          label={item.name}
-                          defaultChecked={airlinesStates.includes(item.name)}
-                          onChange={(checked) => handleChangeAirlines(checked, item.name)}
-                        />
-                      </div>
+                  <div className="relative flex flex-col px-5 py-6 space-y-5 max-h-72 overflow-y-auto">
+                    {cities && cities.map((item: any) => (
+                      <Checkbox
+                        key={item.id}
+                        name={item.name}
+                        label={item.name + (item.state ? ', ' + item.state : '')}
+                        defaultChecked={locationStates.includes(item.name)}
+                        onChange={(checked) => handleChangeLocation(checked, item.name)}
+                      />
                     ))}
                   </div>
                   <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                     <ButtonThird
                       onClick={() => {
                         close();
-                        setAirlinesStates([]);
+                        setLocationStates([]);
                       }}
                       sizeClass="px-4 py-2 sm:px-5"
                     >
@@ -302,7 +228,7 @@ const TabFilters = () => {
               leaveTo="opacity-0 translate-y-1"
             >
               <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
-                <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
+                <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900   border border-neutral-200 dark:border-neutral-700">
                   <div className="relative flex flex-col px-5 py-6 space-y-5">
                     {stopPoints.map((item) => (
                       <div key={item.name} className="">
@@ -361,7 +287,7 @@ const TabFilters = () => {
               leaveTo="opacity-0 translate-y-1"
             >
               <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
-                <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900   border border-neutral-200 dark:border-neutral-700">
+                <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
                   <div className="relative flex flex-col px-5 py-6 space-y-5">
                     {renderTabsTimeFlightTab()}
                   </div>
@@ -652,7 +578,7 @@ const TabFilters = () => {
                       {/* ---- */}
                       <div className="py-7">
                         <h3 className="text-xl font-medium">Airlines</h3>
-                        <div className="mt-6 relative ">{renderMoreFilterItem(typeOfAirlines)}</div>
+                        {/* <div className="mt-6 relative ">{renderMoreFilterItem(locationStates)}</div> */}
                       </div>
                       {/* --------- */}
                       {/* ---- */}
@@ -776,7 +702,7 @@ const TabFilters = () => {
     <div className="flex lg:space-x-4">
       {/* FOR DESKTOP */}
       <div className="hidden lg:flex space-x-4">
-        {renderTabsTypeOfAirlines()}
+        {renderTabsLocation()}
         {renderTabsTripTime()}
         {renderTabsStopPoints()}
         {renderTabsPriceRage()}
