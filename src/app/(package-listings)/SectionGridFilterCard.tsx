@@ -38,9 +38,9 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
         if (payload.location && payload.location.length > 0) {
           // Use .in for multiple cities, .ilike for single
           if (payload.location.length === 1) {
-            query = query.ilike('departure_city', `%${payload.location[0]}%`);
+            query = query.ilike('package_location', `%${payload.location[0]}%`);
           } else {
-            query = query.in('departure_city', payload.location);
+            query = query.in('package_location', payload.location);
           }
         }
         if (payload.datestart) {
