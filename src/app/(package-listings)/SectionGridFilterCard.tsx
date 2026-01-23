@@ -27,6 +27,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
     location: locationList,
     datestart: searchParams.get('datestart') || '',
     dateend: searchParams.get('dateend') || '',
+    total_duration_days: searchParams.get('total_duration_days') || '',
   };
 
   const { data, error, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -48,6 +49,9 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
         }
         if (payload.dateend) {
           query = query.lte('arrival_date', payload.dateend);
+        }
+        if (payload.total_duration_days) {
+          query = query.eq('total_duration_days', payload.total_duration_days);
         }
         // Add more filters here as needed, e.g. .eq, .gt, .lt, .like, .in, etc.
         const { data, error } = await query.range(page, page + PAGE_SIZE - 1);

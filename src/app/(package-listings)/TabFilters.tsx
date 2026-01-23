@@ -34,6 +34,7 @@ const TabFilters = () => {
   const [isOnSale, setIsOnSale] = useState(true);
   const [rangePrices, setRangePrices] = useState([100, 5000]);
   const [tripTimes, setTripTimes] = useState(10);
+  const [sliderValue, setSliderValue] = useState(10);
   const [stopPontsStates, setStopPontsStates] = useState<string[]>([]);
   const [locationStates, setLocationStates] = useState<string[]>([]);
 
@@ -93,14 +94,17 @@ const TabFilters = () => {
       newStates = locationStates.filter((i) => i !== name);
     }
     setLocationStates(newStates);
-    // Update URL
+    // Do not update URL here; only on Apply
+  };
+
+  const handleApplyLocation = () => {
     const params = new URLSearchParams(searchParams.toString());
-    if (newStates.length > 0) {
-      params.set('location', newStates.join(','));
+    if (locationStates.length > 0) {
+      params.set('location', locationStates.join(','));
     } else {
       params.delete('location');
     }
-    router.replace('?' + params.toString(), { scroll: false });
+    router.replace('?' + params.toString());
   };
 
   
@@ -162,7 +166,13 @@ const TabFilters = () => {
                     >
                       Clear
                     </ButtonThird>
-                    <ButtonPrimary onClick={close} sizeClass="px-4 py-2 sm:px-5">
+                    <ButtonPrimary
+                      onClick={() => {
+                        handleApplyLocation();
+                        close();
+                      }}
+                      sizeClass="px-4 py-2 sm:px-5"
+                    >
                       Apply
                     </ButtonPrimary>
                   </div>
@@ -175,7 +185,35 @@ const TabFilters = () => {
     );
   };
 
+  const handleApplyTripTime = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (sliderValue) {
+      params.set('total_duration_days', sliderValue.toString());
+    } else {
+      params.delete('total_duration_days');
+    }
+    router.replace('?' + params.toString());
+    setTripTimes(sliderValue);
+  };
+
   const renderTabsTripTime = () => {
+    // Format display text for days/months
+    let tripTimeText = `${sliderValue} days`;
+    if (sliderValue === 30) {
+      tripTimeText = '1 month';
+    } else if (sliderValue > 30) {
+      tripTimeText = `1 month ${sliderValue - 30} days`;
+    }
+
+    // Sync sliderValue with tripTimes when URL changes
+    React.useEffect(() => {
+      const urlValue = searchParams.get('total_duration_days');
+      if (urlValue) {
+        setSliderValue(Number(urlValue));
+        setTripTimes(Number(urlValue));
+      }
+    }, [searchParams]);
+
     return (
       <Popover className="relative">
         {({ open, close }) => (
@@ -183,7 +221,7 @@ const TabFilters = () => {
             <Popover.Button
               className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-primary-500 bg-primary-50 text-primary-700 focus:outline-none `}
             >
-              <span>No of days</span>
+              <span>Package Duration</span>
               {renderXClear()}
             </Popover.Button>
             <Transition
@@ -200,15 +238,14 @@ const TabFilters = () => {
                   <div className="relative flex flex-col px-5 py-6 space-y-8">
                     <div className="space-y-5">
                       <div className="font-medium">
-                        Trip time:
-                        <span className="text-sm font-normal ml-1 text-primary-500">{` <${tripTimes} hours`}</span>
+                        Package Duration
+                        <span className="text-sm font-normal ml-1 text-primary-500">{tripTimeText}</span>
                       </div>
-
                       <Slider
                         min={1}
-                        max={72}
-                        defaultValue={tripTimes}
-                        onChange={(e) => setTripTimes(e as number)}
+                        max={60}
+                        value={sliderValue}
+                        onChange={setSliderValue}
                       />
                     </div>
                   </div>
@@ -216,7 +253,13 @@ const TabFilters = () => {
                     <ButtonThird onClick={close} sizeClass="px-4 py-2 sm:px-5">
                       Clear
                     </ButtonThird>
-                    <ButtonPrimary onClick={close} sizeClass="px-4 py-2 sm:px-5">
+                    <ButtonPrimary
+                      onClick={() => {
+                        handleApplyTripTime();
+                        close();
+                      }}
+                      sizeClass="px-4 py-2 sm:px-5"
+                    >
                       Apply
                     </ButtonPrimary>
                   </div>
