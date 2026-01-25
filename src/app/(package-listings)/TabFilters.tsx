@@ -137,7 +137,9 @@ const TabFilters = () => {
     } else {
       params.delete('month');
     }
-    router.replace('?' + params.toString());
+    // Preserve the current pathname (e.g., /packages) when updating the URL
+    const pathname = window.location.pathname;
+    router.replace(pathname + '?' + params.toString());
   };
   // Hardcoded months list
   const monthsList = [
@@ -299,7 +301,9 @@ const TabFilters = () => {
     } else {
       params.delete('total_duration_days');
     }
-    router.replace('?' + params.toString());
+    // Preserve the current pathname (e.g., /packages) when updating the URL
+    const pathname = window.location.pathname;
+    router.replace(pathname + '?' + params.toString());
     setTripTimes(sliderValue);
   };
 
@@ -524,7 +528,9 @@ const TabFilters = () => {
     } else {
       params.delete('price');
     }
-    router.replace('?' + params.toString());
+    // Preserve the current pathname (e.g., /packages) when updating the URL
+    const pathname = window.location.pathname;
+    router.replace(pathname + '?' + params.toString());
     close();
   };
 
