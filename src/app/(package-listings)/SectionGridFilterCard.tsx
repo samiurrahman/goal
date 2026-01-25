@@ -44,6 +44,10 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
   const makkahHotelDistance = makkahHotelDistanceParam ? Number(makkahHotelDistanceParam) : undefined;
   const madinahHotelDistance = madinahHotelDistanceParam ? Number(madinahHotelDistanceParam) : undefined;
 
+  // Agent name filter
+  const agentNameParam = searchParams.get('agent_name') || '';
+  const agentNameList = agentNameParam ? agentNameParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
+
   const payload = {
     location: locationList,
     datestart: searchParams.get('datestart') || '',
@@ -54,6 +58,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
     price,
     makkahHotelDistance,
     madinahHotelDistance,
+    agentNameList,
   };
 
   const { data, error, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -103,6 +108,14 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
         }
         if (payload.madinahHotelDistance !== undefined) {
           query = query.lte('madinah_hotel_distance_m', payload.madinahHotelDistance);
+        }
+        // Agent name filter
+        if (payload.agentNameList && payload.agentNameList.length > 0) {
+          if (payload.agentNameList.length === 1) {
+            query = query.eq('agent_name', payload.agentNameList[0]);
+          } else {
+            query = query.in('agent_name', payload.agentNameList);
+          }
         }
         // Add more filters here as needed, e.g. .eq, .gt, .lt, .like, .in, etc.
         const { data, error } = await query.range(page, page + PAGE_SIZE - 1);

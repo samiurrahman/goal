@@ -95,9 +95,9 @@ const TabFilters = () => {
   const handleApplyAgent = () => {
     const params = new URLSearchParams(searchParams.toString());
     if (agentStates.length > 0) {
-      params.set('agent', agentStates.join(','));
+      params.set('agent_name', agentStates.join(','));
     } else {
-      params.delete('agent');
+      params.delete('agent_name');
     }
     const pathname = window.location.pathname;
     router.replace(pathname + '?' + params.toString());
