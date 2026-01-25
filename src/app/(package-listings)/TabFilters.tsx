@@ -11,6 +11,8 @@ import Slider from 'rc-slider';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCities } from '@/hooks/useCities';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/utils/supabaseClient';
 
 // DEMO DATA
 const stopPoints = [
@@ -63,6 +65,123 @@ const TabFilters = () => {
   const [stopPontsStates, setStopPontsStates] = useState<string[]>([]);
   const [locationStates, setLocationStates] = useState<string[]>([]);
   const [monthStates, setMonthStates] = useState<string[]>([]);
+  // Agent filter state
+  const [agentStates, setAgentStates] = useState<string[]>([]);
+  const [agentSearch, setAgentSearch] = useState('');
+
+  // Fetch agents from Supabase
+  const { data: agents, isLoading: agentsLoading, error: agentsError } = useQuery({
+    queryKey: ['agents'],
+    queryFn: async () => {
+      let { data, error } = await supabase.from('agents').select('id, known_as');
+      if (error) throw error;
+      return data;
+    },
+  });
+  // Agent filter logic
+  const handleChangeAgent = (checked: boolean, name: string) => {
+    let newStates;
+    if (checked) {
+      newStates = [...agentStates, name];
+    } else {
+      newStates = agentStates.filter((i) => i !== name);
+    }
+    setAgentStates(newStates);
+    // Do not update URL here; only on Apply
+  };
+
+  const handleApplyAgent = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (agentStates.length > 0) {
+      params.set('agent', agentStates.join(','));
+    } else {
+      params.delete('agent');
+    }
+    const pathname = window.location.pathname;
+    router.replace(pathname + '?' + params.toString());
+  };
+
+  const renderTabsAgents = () => {
+    // Filter agents by search
+    const filteredAgents = agents?.filter((a: any) =>
+      a.known_as?.toLowerCase().includes(agentSearch.toLowerCase())
+    ) || [];
+    return (
+      <Popover className="relative">
+        {({ open, close }) => (
+          <>
+            <Popover.Button
+              className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 focus:outline-none
+               ${open ? '!border-primary-500 ' : ''}
+                ${!!agentStates.length ? '!border-primary-500 bg-primary-50' : ''}
+                `}
+            >
+              <span>Agent</span>
+              {!agentStates.length ? (
+                <i className="las la-angle-down ml-2"></i>
+              ) : (
+                <span onClick={() => setAgentStates([])}>{renderXClear()}</span>
+              )}
+            </Popover.Button>
+            <Transition
+              as={Fragment}
+              enter="transition ease-out duration-200"
+              enterFrom="opacity-0 translate-y-1"
+              enterTo="opacity-100 translate-y-0"
+              leave="transition ease-in duration-150"
+              leaveFrom="opacity-100 translate-y-0"
+              leaveTo="opacity-0 translate-y-1"
+            >
+              <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
+                <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
+                  <div className="relative flex flex-col px-5 py-6 space-y-3 max-h-72 overflow-y-auto">
+                    <input
+                      type="text"
+                      placeholder="Search agent..."
+                      className="mb-3 px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring focus:border-primary-500"
+                      value={agentSearch}
+                      onChange={e => setAgentSearch(e.target.value)}
+                    />
+                    {agentsLoading && <div>Loading...</div>}
+                    {agentsError && <div>Error loading agents</div>}
+                    {filteredAgents.map((item: any) => (
+                      <Checkbox
+                        key={item.id}
+                        name={item.known_as}
+                        label={item.known_as}
+                        defaultChecked={agentStates.includes(item.known_as)}
+                        onChange={(checked) => handleChangeAgent(checked, item.known_as)}
+                      />
+                    ))}
+                  </div>
+                  <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
+                    <ButtonThird
+                      onClick={() => {
+                        close();
+                        setAgentStates([]);
+                      }}
+                      sizeClass="px-4 py-2 sm:px-5"
+                    >
+                      Clear
+                    </ButtonThird>
+                    <ButtonPrimary
+                      onClick={() => {
+                        handleApplyAgent();
+                        close();
+                      }}
+                      sizeClass="px-4 py-2 sm:px-5"
+                    >
+                      Apply
+                    </ButtonPrimary>
+                  </div>
+                </div>
+              </Popover.Panel>
+            </Transition>
+          </>
+        )}
+      </Popover>
+    );
+  };
 
   // Fetch locations (cities)
   const { data: cities, error: citiesError, isLoading: citiesLoading } = useCities();
@@ -854,6 +973,7 @@ const TabFilters = () => {
       {/* FOR DESKTOP */}
       <div className="hidden lg:flex space-x-4">
         {renderTabsLocation()}
+        {renderTabsAgents()}
         {renderTabsMonth()}
         {renderTabsPackageDuration()}
         {renderTabsPriceRage()}
