@@ -168,10 +168,10 @@ const Header3: FC<Header3Props> = ({ className = '' }) => {
             </div>
 
             <div className="flex flex-[2] lg:flex-none mx-auto">
-              <div className="flex-1 hidden lg:flex self-center">
+              {/* <div className="flex-1 hidden lg:flex self-center">
                 {(pathname.startsWith('/packages') || /^\/[\w-]+\/[\w-]+/.test(pathname)) &&
                   renderButtonOpenHeroSearch()}
-              </div>
+              </div> */}
               {/* for mobile */}
               <div className="self-center flex-1 lg:hidden w-full max-w-lg mx-auto">
                 <HeroSearchForm2Mobile />

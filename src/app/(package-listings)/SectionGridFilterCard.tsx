@@ -23,11 +23,24 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
   // Support multiple locations as comma-separated
   const locationParam = searchParams.get('location') || '';
   const locationList = locationParam ? locationParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  // Month filter logic
+  const monthParam = searchParams.get('month') || '';
+  const monthList = monthParam ? monthParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  // Map month names to numbers (Jan=1, Feb=2, ...)
+  const monthNameToNumber: Record<string, number> = {
+    Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+    Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12
+  };
+  const selectedMonthNumbers = monthList.map((m) => monthNameToNumber[m]).filter(Boolean);
+  const currentYear = new Date().getFullYear();
+
   const payload = {
     location: locationList,
     datestart: searchParams.get('datestart') || '',
     dateend: searchParams.get('dateend') || '',
     total_duration_days: searchParams.get('total_duration_days') || '',
+    months: selectedMonthNumbers,
+    year: currentYear,
   };
 
   const { data, error, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -43,6 +56,20 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
           } else {
             query = query.in('package_location', payload.location);
           }
+        }
+        // Month filter: filter by departure_date in selected months of current year
+        if (payload.months && payload.months.length > 0) {
+          // Build an array of date ranges for each selected month
+          const monthRanges = payload.months.map((monthNum: number) => {
+            const start = `${payload.year}-${monthNum.toString().padStart(2, '0')}-01`;
+            // Get last day of month
+            const endDate = new Date(payload.year, monthNum, 0).getDate();
+            const end = `${payload.year}-${monthNum.toString().padStart(2, '0')}-${endDate}`;
+            return { start, end };
+          });
+          // For one or more months, use .or to combine ranges
+          const orFilters = monthRanges.map(({ start, end }) => `and(departure_date.gte.${start},departure_date.lte.${end})`);
+          query = query.or(orFilters.join(','));
         }
         if (payload.datestart) {
           query = query.gte('departure_date', payload.datestart);
