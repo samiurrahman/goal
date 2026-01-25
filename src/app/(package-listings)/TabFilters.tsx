@@ -65,6 +65,8 @@ const TabFilters = () => {
   const [stopPontsStates, setStopPontsStates] = useState<string[]>([]);
   const [locationStates, setLocationStates] = useState<string[]>([]);
   const [monthStates, setMonthStates] = useState<string[]>([]);
+  // Location search state
+  const [locationSearch, setLocationSearch] = useState('');
   // Agent filter state
   const [agentStates, setAgentStates] = useState<string[]>([]);
   const [agentSearch, setAgentSearch] = useState('');
@@ -134,14 +136,16 @@ const TabFilters = () => {
             >
               <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
                 <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
-                  <div className="relative flex flex-col px-5 py-6 space-y-3 max-h-72 overflow-y-auto">
+                  <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 px-5 pt-6 pb-2">
                     <input
                       type="text"
                       placeholder="Search agent..."
-                      className="mb-3 px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring focus:border-primary-500"
+                      className="mb-3 px-3 py-2 border border-neutral-300 rounded-md w-full focus:outline-none focus:ring focus:border-primary-500"
                       value={agentSearch}
                       onChange={e => setAgentSearch(e.target.value)}
                     />
+                  </div>
+                  <div className="relative flex flex-col px-5 py-2 space-y-3 max-h-72 overflow-y-auto">
                     {agentsLoading && <div>Loading...</div>}
                     {agentsError && <div>Error loading agents</div>}
                     {filteredAgents.map((item: any) => (
@@ -359,6 +363,14 @@ const TabFilters = () => {
   };
 
   const renderTabsLocation = () => {
+    // Filter cities by search
+    const filteredCities = cities?.filter((item: any) => {
+      const search = locationSearch.toLowerCase();
+      return (
+        item.name?.toLowerCase().includes(search) ||
+        (item.state && item.state.toLowerCase().includes(search))
+      );
+    }) || [];
     return (
       <Popover className="relative">
         {({ open, close }) => (
@@ -387,8 +399,17 @@ const TabFilters = () => {
             >
               <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
                 <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
-                  <div className="relative flex flex-col px-5 py-6 space-y-5 max-h-72 overflow-y-auto">
-                    {cities && cities.map((item: any) => (
+                  <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 px-5 pt-6 pb-2">
+                    <input
+                      type="text"
+                      placeholder="Search location..."
+                      className="mb-3 px-3 py-2 border border-neutral-300 rounded-md w-full focus:outline-none focus:ring focus:border-primary-500"
+                      value={locationSearch}
+                      onChange={e => setLocationSearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="relative flex flex-col px-5 py-2 space-y-5 max-h-72 overflow-y-auto">
+                    {filteredCities.map((item: any) => (
                       <Checkbox
                         key={item.id}
                         name={item.name}
