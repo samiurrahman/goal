@@ -38,6 +38,12 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
   const priceParam = searchParams.get('price') || '';
   const price = priceParam ? Number(priceParam) : 40000;
 
+  // Hotel distance filters
+  const makkahHotelDistanceParam = searchParams.get('makkah_hotel_distance_m');
+  const madinahHotelDistanceParam = searchParams.get('madinah_hotel_distance_m');
+  const makkahHotelDistance = makkahHotelDistanceParam ? Number(makkahHotelDistanceParam) : undefined;
+  const madinahHotelDistance = madinahHotelDistanceParam ? Number(madinahHotelDistanceParam) : undefined;
+
   const payload = {
     location: locationList,
     datestart: searchParams.get('datestart') || '',
@@ -46,6 +52,8 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
     months: selectedMonthNumbers,
     year: currentYear,
     price,
+    makkahHotelDistance,
+    madinahHotelDistance,
   };
 
   const { data, error, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -88,6 +96,13 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
         // Price filter: only show packages with price <= selected price
         if (payload.price) {
           query = query.lte('price_per_person', payload.price);
+        }
+        // Hotel distance filters (range: less than or equal to selected value)
+        if (payload.makkahHotelDistance !== undefined) {
+          query = query.lte('makkah_hotel_distance_m', payload.makkahHotelDistance);
+        }
+        if (payload.madinahHotelDistance !== undefined) {
+          query = query.lte('madinah_hotel_distance_m', payload.madinahHotelDistance);
         }
         // Add more filters here as needed, e.g. .eq, .gt, .lt, .like, .in, etc.
         const { data, error } = await query.range(page, page + PAGE_SIZE - 1);
