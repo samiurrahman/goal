@@ -51,7 +51,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
           query = query.lte('arrival_date', payload.dateend);
         }
         if (payload.total_duration_days) {
-          query = query.eq('total_duration_days', payload.total_duration_days);
+          query = query.lte('total_duration_days', payload.total_duration_days);
         }
         // Add more filters here as needed, e.g. .eq, .gt, .lt, .like, .in, etc.
         const { data, error } = await query.range(page, page + PAGE_SIZE - 1);

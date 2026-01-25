@@ -41,7 +41,8 @@ export interface Package {
   price_per_person: number | null;
   currency: string | null;
   departure_city: string | null;
-  departure_date: string | null;
+  departure_date: Date;
+  arrival_date: Date;
   includes_breakfast: boolean | null;
   includes_airport_transfer: boolean | null;
   includes_visa: boolean | null;
@@ -60,6 +61,7 @@ export interface Package {
   agent_id: number | null;
   arrival_city: string | null;
   sharing_rate: string | null;
+  package_location: string | null;
 }
 
 //  ######  CustomLink  ######## //

@@ -185,7 +185,7 @@ const TabFilters = () => {
     );
   };
 
-  const handleApplyTripTime = () => {
+  const handleApplyPackageDuration = () => {
     const params = new URLSearchParams(searchParams.toString());
     if (sliderValue) {
       params.set('total_duration_days', sliderValue.toString());
@@ -196,7 +196,7 @@ const TabFilters = () => {
     setTripTimes(sliderValue);
   };
 
-  const renderTabsTripTime = () => {
+  const renderTabsPackageDuration = () => {
     // Format display text for days/months
     let tripTimeText = `${sliderValue} days`;
     if (sliderValue === 30) {
@@ -259,7 +259,7 @@ const TabFilters = () => {
                     </ButtonThird>
                     <ButtonPrimary
                       onClick={() => {
-                        handleApplyTripTime();
+                        handleApplyPackageDuration();
                         close();
                       }}
                       sizeClass="px-4 py-2 sm:px-5"
@@ -751,7 +751,7 @@ const TabFilters = () => {
       {/* FOR DESKTOP */}
       <div className="hidden lg:flex space-x-4">
         {renderTabsLocation()}
-        {renderTabsTripTime()}
+        {renderTabsPackageDuration()}
         {renderTabsStopPoints()}
         {renderTabsPriceRage()}
         {renderTabsTimeFlight()}

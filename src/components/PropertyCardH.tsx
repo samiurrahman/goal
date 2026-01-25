@@ -42,10 +42,24 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
     departure_city,
     arrival_city,
     sharing_rate,
+    departure_date,
+    arrival_date,
+    package_location,
     id,
   } = data as Package;
 
   const sharingRateArray: SharingRateItem[] = sharing_rate ? JSON.parse(sharing_rate) : [];
+
+  // Helper to format date as '14-Feb-2026'
+  function formatDateDMY(dateInput?: string | Date) {
+    if (!dateInput) return '';
+    const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+    if (isNaN(date.getTime())) return typeof dateInput === 'string' ? dateInput : '';
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = date.toLocaleString('en-US', { month: 'short' });
+    const year = date.getFullYear();
+    return `${day} ${month} ${year}`;
+  }
 
   const renderSliderGallery = () => {
     return (
@@ -67,14 +81,6 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
   const renderTienIch = () => {
     return (
       <div className="flex items-center justify-start space-x-4 text-neutral-700 dark:text-neutral-300">
-        <div className="flex items-center">
-          <span className="hidden sm:inline-block">
-            <i className="las la-calendar-week text-2xl"></i>
-          </span>
-          <span className="ml-1 text-sm"> {total_duration_days} Days</span>
-        </div>
-
-        {/* ---- */}
         <div className="flex items-center">
           <span className="hidden sm:inline-block">
             <MakkahIcon />
@@ -102,7 +108,18 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
           <span className="ml-1.5 text-sm">
             <span className="ml-1 text-sm">
               {' '}
-              {departure_city}-{arrival_city}
+              {departure_city} - {arrival_city}
+            </span>
+          </span>
+        </div>
+        <div className="flex items-center">
+          <span className="hidden sm:inline-block">
+            <i className="las la-calendar-alt text-2xl"></i>
+          </span>
+          <span className="ml-1.5 text-sm">
+            <span className="ml-1 text-sm">
+              {' '}
+              {formatDateDMY(departure_date)} - {formatDateDMY(arrival_date)}
             </span>
           </span>
         </div>
@@ -124,15 +141,22 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
                 </div>
               }
             />
-            {/* <Badge
+            <Badge
               name={
                 <div className="flex items-center">
-                  <i className="text-sm las la-user-friends"></i>
-                  <span className="ml-1">Family</span>
+                  <i className="text-sm las la-clock"></i>
+                  <span className="ml-1">{total_duration_days} Days</span>
                 </div>
               }
-              color="yellow"
-            /> */}
+            />
+            <Badge
+              name={
+                <div className="flex items-center">
+                  <i className="text-sm las la-map-marker"></i>
+                  <span className="ml-1">{package_location}</span>
+                </div>
+              }
+            />
           </div>
           <div className="flex items-center space-x-2">
             {true && <Badge name="ADS" color="green" />}
