@@ -34,6 +34,10 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
   const selectedMonthNumbers = monthList.map((m) => monthNameToNumber[m]).filter(Boolean);
   const currentYear = new Date().getFullYear();
 
+  // Price filter
+  const priceParam = searchParams.get('price') || '';
+  const price = priceParam ? Number(priceParam) : 40000;
+
   const payload = {
     location: locationList,
     datestart: searchParams.get('datestart') || '',
@@ -41,6 +45,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
     total_duration_days: searchParams.get('total_duration_days') || '',
     months: selectedMonthNumbers,
     year: currentYear,
+    price,
   };
 
   const { data, error, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
@@ -79,6 +84,10 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
         }
         if (payload.total_duration_days) {
           query = query.lte('total_duration_days', payload.total_duration_days);
+        }
+        // Price filter: only show packages with price <= selected price
+        if (payload.price) {
+          query = query.lte('price_per_person', payload.price);
         }
         // Add more filters here as needed, e.g. .eq, .gt, .lt, .like, .in, etc.
         const { data, error } = await query.range(page, page + PAGE_SIZE - 1);

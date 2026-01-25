@@ -32,7 +32,18 @@ const stopPoints = [
 const TabFilters = () => {
   const [isOpenMoreFilter, setisOpenMoreFilter] = useState(false);
   const [isOnSale, setIsOnSale] = useState(true);
-  const [rangePrices, setRangePrices] = useState([100, 5000]);
+  // Price slider: [min, value], min=30000, max=5000000, default=40000
+  const [rangePrices, setRangePrices] = useState([30000, 40000]);
+    // Format price in Indian style (e.g., 40K, 1 Lakh 10K)
+    function formatIndianPrice(val: number) {
+      if (val < 100000) {
+        return `${Math.round(val / 1000)}K`;
+      } else {
+        const lakhs = Math.floor(val / 100000);
+        const thousands = Math.round((val % 100000) / 1000);
+        return `${lakhs} Lakh${thousands > 0 ? ` ${thousands}K` : ''}`;
+      }
+    }
   const [tripTimes, setTripTimes] = useState(10);
   const [sliderValue, setSliderValue] = useState(10);
   const [stopPontsStates, setStopPontsStates] = useState<string[]>([]);
@@ -506,6 +517,17 @@ const TabFilters = () => {
     );
   };
   
+  const handleApplyPrice = (close: () => void) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (rangePrices[1]) {
+      params.set('price', rangePrices[1].toString());
+    } else {
+      params.delete('price');
+    }
+    router.replace('?' + params.toString());
+    close();
+  };
+
   const renderTabsPriceRage = () => {
     return (
       <Popover className="relative">
@@ -515,9 +537,7 @@ const TabFilters = () => {
               className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-primary-500 bg-primary-50 text-primary-700 focus:outline-none `}
             >
               <span>
-                {`$${convertNumbThousand(
-                  rangePrices[0]
-                )} - $${convertNumbThousand(rangePrices[1])}`}{' '}
+                Price
               </span>
               {renderXClear()}
             </Popover.Button>
@@ -534,67 +554,21 @@ const TabFilters = () => {
                 <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
                   <div className="relative flex flex-col px-5 py-6 space-y-8">
                     <div className="space-y-5">
-                      <span className="font-medium">Price per person</span>
+                      <span className="font-medium">Price per person <span className="text-sm font-normal ml-1 text-primary-500">₹ {formatIndianPrice(rangePrices[1])}</span></span>
                       <Slider
-                        range
-                        min={100}
-                        max={5000}
-                        defaultValue={[rangePrices[0], rangePrices[1]]}
-                        allowCross={false}
-                        onChange={(e) => setRangePrices(e as number[])}
+                        min={30000}
+                        max={300000}
+                        step={5000}
+                        value={rangePrices[1]}
+                        onChange={(val) => setRangePrices([30000, val as number])}
                       />
-                    </div>
-
-                    <div className="flex justify-between space-x-5">
-                      <div>
-                        <label
-                          htmlFor="minPrice"
-                          className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-                        >
-                          Min price
-                        </label>
-                        <div className="mt-1 relative rounded-md">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-neutral-500 sm:text-sm">$</span>
-                          </div>
-                          <input
-                            type="text"
-                            name="minPrice"
-                            disabled
-                            id="minPrice"
-                            className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-3 sm:text-sm border-neutral-200 rounded-full text-neutral-900"
-                            value={rangePrices[0]}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label
-                          htmlFor="maxPrice"
-                          className="block text-sm font-medium text-neutral-700 dark:text-neutral-300"
-                        >
-                          Max price
-                        </label>
-                        <div className="mt-1 relative rounded-md">
-                          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <span className="text-neutral-500 sm:text-sm">$</span>
-                          </div>
-                          <input
-                            type="text"
-                            disabled
-                            name="maxPrice"
-                            id="maxPrice"
-                            className="focus:ring-indigo-500 focus:border-indigo-500 block w-full pl-7 pr-3 sm:text-sm border-neutral-200 rounded-full text-neutral-900"
-                            value={rangePrices[1]}
-                          />
-                        </div>
-                      </div>
                     </div>
                   </div>
                   <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                     <ButtonThird onClick={close} sizeClass="px-4 py-2 sm:px-5">
                       Clear
                     </ButtonThird>
-                    <ButtonPrimary onClick={close} sizeClass="px-4 py-2 sm:px-5">
+                    <ButtonPrimary onClick={() => handleApplyPrice(close)} sizeClass="px-4 py-2 sm:px-5">
                       Apply
                     </ButtonPrimary>
                   </div>
@@ -849,8 +823,8 @@ const TabFilters = () => {
         {renderTabsLocation()}
         {renderTabsMonth()}
         {renderTabsPackageDuration()}
-        {renderTabsStopPoints()}
         {renderTabsPriceRage()}
+        {renderTabsStopPoints()}
         {renderTabsTimeFlight()}
         {renderTabOnSale()}
       </div>
