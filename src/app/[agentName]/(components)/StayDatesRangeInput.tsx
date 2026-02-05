@@ -43,7 +43,7 @@ const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({ className = 'flex-1
                 })
               : ''}
           </span>
-          <span className="block mt-1 text-sm text-neutral-400 leading-none font-light">
+          <span className="block mt-1 text-xs text-neutral-400 leading-none font-light">
             {'Check in - Check out'}
           </span>
         </div>
