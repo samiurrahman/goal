@@ -24,7 +24,7 @@ const HostInformation: React.FC<HostInformationProps> = ({
   profileUrl,
 }) => (
   <div className="listingSection__wrap">
-    <h2 className="text-2xl font-semibold">Host Information</h2>
+    <h2 className="text-2xl font-medium">Host Information</h2>
     <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
     <div className="flex items-center space-x-4">
       <Avatar
@@ -44,7 +44,7 @@ const HostInformation: React.FC<HostInformationProps> = ({
         </div>
       </div>
     </div>
-    <span className="block text-neutral-6000 dark:text-neutral-300">{description}</span>
+    <span className="block text-neutral-600 dark:text-neutral-300">{description}</span>
     <div className="block text-neutral-500 dark:text-neutral-400 space-y-2.5">
       <div className="flex items-center space-x-3">
         <svg className="h-6 w-6" /* ...svg props... */>

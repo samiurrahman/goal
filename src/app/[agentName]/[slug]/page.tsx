@@ -111,7 +111,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       <div className="listingSectionSidebar__wrap shadow-xl">
         {/* PRICE */}
         <div className="flex justify-between">
-          <span className="text-3xl font-semibold">
+          <span className="text-2xl font-medium">
             INR {formattedPrice}
             <span className="text-base font-normal text-neutral-500 dark:text-neutral-400">
               /person
@@ -128,7 +128,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
 
         {/* SUM */}
         <div className="flex flex-col space-y-4">
-          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
+          <div className="flex justify-between text-neutral-600 dark:text-neutral-300">
             <span>
               No of Guest ({numberOfGuests} x INR {formattedPrice})
             </span>

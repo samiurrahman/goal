@@ -15,7 +15,7 @@ interface AmenitiesSectionProps {
 const AmenitiesSection: FC<AmenitiesSectionProps> = ({ amenities }) => (
   <div className="listingSection__wrap">
     <div>
-      <h2 className="text-2xl font-semibold">Amenities </h2>
+      <h2 className="text-2xl font-medium">Amenities </h2>
       <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
         {` About the property's amenities and services`}
       </span>

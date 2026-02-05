@@ -78,13 +78,13 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
               <div className="flex items-center space-x-3">
                 <span className="flex items-center">
                   <MakkahIcon />
-                  <span className="ml-1 text-sm"> {makkahHotel}</span>
+                  <span className="ml-1 text-sm text-gray-900">{makkahHotel}</span>
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <span className="flex items-center">
                   <MadinaIcon />
-                  <span className="ml-1 text-sm"> {madinaHotel}</span>
+                  <span className="ml-1 text-sm text-gray-900">{madinaHotel}</span>
                 </span>
               </div>
             </div>

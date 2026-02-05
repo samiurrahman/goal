@@ -19,7 +19,7 @@ const RoomRates: React.FC<RoomRatesProps> = ({ rates, selectedRate, onSelect }) 
     <div className="listingSection__wrap">
       {/* HEADING */}
       <div>
-        <h2 className="text-2xl font-semibold">Room Rates </h2>
+        <h2 className="text-2xl font-medium">Room Rates </h2>
         <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
           Prices by room type
         </span>
