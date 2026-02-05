@@ -34,17 +34,17 @@ const IternaryItem: React.FC<IternaryItemProps> = ({
           </div>
           <div className="ml-4 space-y-10 text-sm">
             <div className="flex flex-col space-y-1">
-              <span className=" text-neutral-500 dark:text-neutral-400">{fromDate}</span>
-              <span className=" font-semibold">{fromLocation}</span>
+              <span className="text-neutral-500 dark:text-neutral-400 text-xs">{fromDate}</span>
+              <span className="text-md font-medium">{fromLocation}</span>
             </div>
             <div className="flex flex-col space-y-1">
-              <span className=" text-neutral-500 dark:text-neutral-400">{toDate}</span>
-              <span className=" font-semibold">{toLocation}</span>
+              <span className="text-neutral-500 dark:text-neutral-400 text-xs">{toDate}</span>
+              <span className="text-md font-medium">{toLocation}</span>
             </div>
           </div>
         </div>
         <div className="border-l border-neutral-200 dark:border-neutral-700 md:mx-6 lg:mx-10"></div>
-        <ul className="text-sm text-neutral-500 dark:text-neutral-400 space-y-1 md:space-y-2">
+        <ul className="text-xs text-neutral-500 dark:text-neutral-400 space-y-1 md:space-y-2">
           <li>Trip time: {tripTime}</li>
           <li>{flightInfo}</li>
         </ul>

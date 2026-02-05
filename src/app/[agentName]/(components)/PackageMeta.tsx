@@ -29,7 +29,7 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
   url,
 }) => {
   return (
-    <div className="listingSection__wrap !space-y-6">
+    <div className="listingSection__wrap !space-y-4">
        <h1 className="text-2xl font-light text-gray-900">
         {title}
       </h1>
@@ -73,18 +73,18 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
         <div className="flex items-center gap-4">
           <span className="text-xl">🏆</span>
           <div>
-            <p className="text-sm text-gray-600">Makkah and Madina Hotels</p>
+            <p className="text-xs text-gray-600">Makkah and Madina Hotels</p>
             <div className='flex items-center space-x-6'>
               <div className="flex items-center space-x-3">
                 <span className="flex items-center">
                   <MakkahIcon />
-                  <span className="ml-1 text-sm text-gray-900">{makkahHotel}</span>
+                  <span className="ml-1 text-sm text-gray-900 font-medium">{makkahHotel}</span>
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <span className="flex items-center">
                   <MadinaIcon />
-                  <span className="ml-1 text-sm text-gray-900">{madinaHotel}</span>
+                  <span className="ml-1 text-sm text-gray-900 font-medium">{madinaHotel}</span>
                 </span>
               </div>
             </div>
@@ -95,8 +95,8 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
         <div className="flex items-center gap-4">
           <span className="text-xl">❄️</span>
           <div>
-            <p className="text-sm text-gray-600">Designed for staying cool</p>
-            <p className="text-sm text-gray-900">
+            <p className="text-xs text-gray-600">Designed for staying cool</p>
+            <p className="text-sm text-gray-900 font-medium">
               Beat the heat with the A/C and ceiling fan.
             </p>
           </div>
@@ -104,10 +104,10 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
         <div className="flex items-center gap-4">
           <i className="las la-plane-departure text-2xl"></i>
           <div>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs text-gray-600">
               Flight Departure & Arrival Details
             </p>
-            <p className="text-sm text-gray-900">
+            <p className="text-sm text-gray-900 font-medium">
               {route}
             </p>
           </div>
@@ -115,21 +115,21 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
         <div className="flex items-center gap-4">
           <i className="las la-calendar-week text-2xl"></i>
           <div>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs text-gray-600">
               Package Duration Details
             </p>
-            <p className="text-sm text-gray-900">
-              1-Mar-2026 to 15-Mar-2026
+            <p className="text-sm text-gray-900 font-medium">
+              1 Mar 2026 to 15 Mar 2026
             </p>
           </div>
         </div>
         <div className="flex items-center gap-4">
           <i className="las la-calendar-week text-2xl"></i>
           <div>
-            <p className="text-sm text-gray-600">
+            <p className="text-xs text-gray-600">
               Free cancellation before 8 March
             </p>
-            <p className="text-sm text-gray-900">
+            <p className="text-sm text-gray-900 font-medium">
               Get a full refund if you change your mind.
             </p>
           </div>

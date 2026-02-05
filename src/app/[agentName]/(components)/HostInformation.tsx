@@ -23,8 +23,8 @@ const HostInformation: React.FC<HostInformationProps> = ({
   responseTime,
   profileUrl,
 }) => (
-  <div className="listingSection__wrap">
-    <h2 className="text-2xl font-medium">Host Information</h2>
+  <div className="listingSection__wrap !space-y-4">
+    <h2 className="text-xl font-light">Host Information</h2>
     <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
     <div className="flex items-center space-x-4">
       <Avatar
@@ -34,7 +34,7 @@ const HostInformation: React.FC<HostInformationProps> = ({
         radius="rounded-full"
       />
       <div>
-        <Link href={`/${profileUrl}`} className="block text-xl font-medium hover:underline">
+        <Link href={`/${profileUrl}`} className="block text-md font-medium hover:underline">
           {name}
         </Link>
         <div className="mt-1.5 flex items-center text-sm text-neutral-500 dark:text-neutral-400">
@@ -44,8 +44,8 @@ const HostInformation: React.FC<HostInformationProps> = ({
         </div>
       </div>
     </div>
-    <span className="block text-neutral-600 dark:text-neutral-300">{description}</span>
-    <div className="block text-neutral-500 dark:text-neutral-400 space-y-2.5">
+    <span className="block text-neutral-600 dark:text-neutral-300 text-sm">{description}</span>
+    <div className="block text-neutral-500 dark:text-neutral-400 gap-3 text-sm">
       <div className="flex items-center space-x-3">
         <svg className="h-6 w-6" /* ...svg props... */>
           <path /* ... */ />

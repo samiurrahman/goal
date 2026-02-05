@@ -30,7 +30,7 @@ const StayDatesRangeInput: FC<StayDatesRangeInputProps> = ({ className = 'flex-1
           <CalendarIcon className="w-5 h-5 lg:w-7 lg:h-7" />
         </div>
         <div className="flex-grow text-left">
-          <span className="block xl:text-lg font-medium">
+          <span className="block xl:text-lg font-light">
             {startDate?.toLocaleDateString('en-US', {
               month: 'short',
               day: '2-digit',

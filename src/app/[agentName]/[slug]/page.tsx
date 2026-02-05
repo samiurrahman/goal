@@ -108,10 +108,10 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     const formattedGst = gstAmount.toLocaleString('en-IN');
     const formattedGrandTotal = grandTotal.toLocaleString('en-IN');
     return (
-      <div className="listingSectionSidebar__wrap shadow-xl">
+      <div className="listingSectionSidebar__wrap shadow-xl !space-y-4">
         {/* PRICE */}
         <div className="flex justify-between">
-          <span className="text-2xl font-medium">
+          <span className="text-2xl font-light">
             INR {formattedPrice}
             <span className="text-base font-normal text-neutral-500 dark:text-neutral-400">
               /person
@@ -199,7 +199,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       {/* MAIN */}
       <main className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-0 w-full">
         {/* CONTENT */}
-        <div className="w-full lg:w-3/5 xl:w-2/3 space-y-6 sm:space-y-8 lg:space-y-10 lg:pr-10">
+        <div className="w-full lg:w-3/5 xl:w-2/3 space-y-6 sm:space-y-8 lg:space-y-10 lg:pr-10 mb-6">
           <PackageMeta
             title="Luxury umrah package from Mumbai to Mumbai"
             duration="5 Days, 4 Nights"
@@ -214,7 +214,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
 
           <Iternary data={iternaryData} />
 
-          <RoomRates
+          {/* <RoomRates
             rates={roomRates}
             selectedRate={selectedRate}
             onSelect={(rate) =>
@@ -227,7 +227,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
                 },
               })
             }
-          />
+          /> */}
 
           <PackageInfo {...packageInfoData} />
 
