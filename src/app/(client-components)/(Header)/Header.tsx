@@ -7,21 +7,8 @@ import NotifyDropdown from './NotifyDropdown';
 import AvatarDropdown from './AvatarDropdown';
 import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import HeroSearchFormSmall from '../(HeroSearchFormSmall)/HeroSearchFormSmall';
-import { StaySearchFormFields } from '../type';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import HeroSearchForm2Mobile from '../(HeroSearchForm2Mobile)/HeroSearchForm2Mobile';
 import ButtonPrimary from '@/shared/ButtonPrimary';
-
-interface Header3Props {
-  className?: string;
-}
-
-let WIN_PREV_POSITION = 0;
-if (typeof window !== 'undefined') {
-  WIN_PREV_POSITION = (window as any).pageYOffset;
-}
 
 const Header3 = () => {  //
   
