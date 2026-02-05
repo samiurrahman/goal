@@ -111,7 +111,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       <div className="listingSectionSidebar__wrap shadow-xl !space-y-4">
         {/* PRICE */}
         <div className="flex justify-between">
-          <span className="text-2xl font-light">
+          <span className="text-2xl font-normal">
             INR {formattedPrice}
             <span className="text-base font-normal text-neutral-500 dark:text-neutral-400">
               /person
