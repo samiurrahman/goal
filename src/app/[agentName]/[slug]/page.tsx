@@ -126,7 +126,15 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
           <GuestsInput className="flex-1" />
           <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
-          <NcInputNumber label="Sharing" defaultValue={5} className='p-3'/>
+          <NcInputNumber 
+            label="Sharing" 
+            defaultValue={5} 
+            className='p-3' 
+            min={2} 
+            max={5} 
+            onChange={(value) => { 
+              roomRates.filter(rate => rate.people === value).map
+            }} />
         </form>
 
         {/* SUM */}
