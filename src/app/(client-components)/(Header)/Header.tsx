@@ -15,7 +15,7 @@ const Header3 = () => {  //
   const isLoggedIn = useSupabaseIsLoggedIn();
   return (
     <>
-    <div className={`nc-Header sticky top-0 w-full left-0 right-0 z-40 nc-header-bg`}>
+    <div className={`nc-Header sticky top-0 w-full left-0 right-0 z-40 nc-header-bg shadow-sm dark:border-b dark:border-neutral-700`}>
         <div className={`nc-MainNav1 relative z-10`}>
           <div className="px-4 lg:container h-20 relative flex justify-between">
             <div className="hidden md:flex justify-start flex-1 space-x-4 sm:space-x-10">

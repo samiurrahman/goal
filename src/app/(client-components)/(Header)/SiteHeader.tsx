@@ -20,16 +20,11 @@ interface HomePageItem {
 }
 
 const SiteHeader = () => {
-  useThemeMode();
-
-  const renderHeader = () => {
-    return <Header className={'shadow-sm dark:border-b dark:border-neutral-700'} />;
-  };
+  useThemeMode(); 
 
   return (
     <>
-      {/* {renderControlSelections()} */}
-      {renderHeader()}
+      <Header />
       <div className="h-1 absolute invisible"></div>
     </>
   );
