@@ -133,7 +133,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
             min={2} 
             max={5} 
             onChange={(value) => { 
-              roomRates.filter(rate => rate.people === value).map
+              roomRates.filter(rate => rate.people === value).map(rate => setSelectedRate(rate))
             }} />
         </form>
 
