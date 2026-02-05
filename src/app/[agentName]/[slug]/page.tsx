@@ -17,6 +17,7 @@ import HostInformation from '../(components)/HostInformation';
 import AmenitiesSection from '../(components)/AmenitiesSection';
 import PackageInfo from '../(components)/PackageInfo';
 import MobileFooterSticky from '../(components)/MobileFooterSticky';
+import NcInputNumber from '@/components/NcInputNumber';
 
 export interface PackageDetailProps {
   params: { agentName: string; slug: string };
@@ -124,23 +125,27 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           <StayDatesRangeInput className="flex-1 z-[11]" />
           <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
           <GuestsInput className="flex-1" />
+          <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
+          <div className='p-3'>
+            <NcInputNumber label="Sharing" defaultValue={5}/>
+          </div>
         </form>
 
         {/* SUM */}
         <div className="flex flex-col space-y-4">
-          <div className="flex justify-between text-neutral-600 dark:text-neutral-300">
+          <div className="flex justify-between text-neutral-600 dark:text-neutral-300 text-sm">
             <span>
-              No of Guest ({numberOfGuests} x INR {formattedPrice})
+              No of Guest ({numberOfGuests} x {formattedPrice})
             </span>
             <span>INR {formattedTotal}</span>
           </div>
-          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
+          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300 text-sm">
             <span>GST (5%)</span>
             <span>INR {formattedGst}</span>
           </div>
           
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
-          <div className="flex justify-between font-semibold">
+          <div className="flex justify-between font-semibold text-md">
             <span>Total</span>
             <span>INR {formattedGrandTotal}</span>
           </div>
