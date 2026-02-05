@@ -75,7 +75,7 @@ const TabFilters = () => {
   const { data: agents, isLoading: agentsLoading, error: agentsError } = useQuery({
     queryKey: ['agents'],
     queryFn: async () => {
-      let { data, error } = await supabase.from('agents').select('id, known_as');
+      let { data, error } = await supabase.from('agents').select('id, known_as, slug');
       if (error) throw error;
       return data;
     },
@@ -153,8 +153,8 @@ const TabFilters = () => {
                         key={item.id}
                         name={item.known_as}
                         label={item.known_as}
-                        defaultChecked={agentStates.includes(item.known_as)}
-                        onChange={(checked) => handleChangeAgent(checked, item.known_as)}
+                        defaultChecked={agentStates.includes(item.slug)}
+                        onChange={(checked) => handleChangeAgent(checked, item.slug)}
                       />
                     ))}
                   </div>

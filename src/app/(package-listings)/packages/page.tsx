@@ -65,14 +65,14 @@ const ListingPackagesPage = () => {
   };
 
   return (
-    <div className={`nc-ListingPackagesPage relative overflow-hidden `}>
+      <div className={`nc-ListingPackagesPage relative overflow-hidden`}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <BgGlassmorphism />
 
-      <div className="container relative">
+        <div className="container relative min-h-screen">
         {/* SEO: A visible H1 is crucial for search engines */}
         {/* <div className="pt-10 pb-6 lg:pt-16 lg:pb-10">
           <h1 className="text-3xl md:text-4xl font-semibold">Hajj & Umrah Packages</h1>
