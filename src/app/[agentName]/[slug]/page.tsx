@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, useState } from 'react';
+import React, { FC, useState, useEffect } from 'react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
 import { useRouter } from 'next/navigation';
@@ -25,11 +25,29 @@ export interface PackageDetailProps {
 
 const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   const { agentName, slug } = params;
+    useEffect(() => {
+      if (typeof window !== 'undefined') {
+        document.title = `Hajj & Umrah Packages | ${packageMetaData.title}`;
+      }
+    }, []);
   // Room rate selection state
   const [selectedRate, setSelectedRate] = useState(roomRates[0]);
   const isLoggedIn = useSupabaseIsLoggedIn();
   const router = useRouter();
 
+  // Data for PackageMeta
+  const packageMetaData = {
+    title: "Luxury umrah package from Mumbai to Mumbai",
+    duration: "5 Days, 4 Nights",
+    makkahHotel: "Makkah Hotel (~500m)",
+    madinaHotel: "Madina Hotel (~300m)",
+    route: "Mumbai to Mumbai",
+    provider: "Iqra Hajj Tours",
+    url: agentName,
+    providerVerified: true,
+    providerLocation: "Akola, Maharashtra",
+  };
+  
   // Dummy data for policies
   const policiesData = {
     cancellation:
@@ -211,17 +229,8 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       <main className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-0 w-full">
         {/* CONTENT */}
         <div className="w-full lg:w-3/5 xl:w-2/3 space-y-6 sm:space-y-8 lg:space-y-10 lg:pr-10 mb-6">
-          <PackageMeta
-            title="Luxury umrah package from Mumbai to Mumbai"
-            duration="5 Days, 4 Nights"
-            makkahHotel="Makkah Hotel (~500m)"
-            madinaHotel="Madina Hotel (~300m)"
-            route="Mumbai to Mumbai"
-            provider="Iqra Hajj Tours"
-            url={agentName}
-            providerVerified={true}
-            providerLocation="Akola, Maharashtra"
-          />
+          {/** PackageMeta data extracted to variable */}
+          <PackageMeta {...packageMetaData} />  
 
           <Iternary data={iternaryData} />
 
