@@ -126,9 +126,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
           <GuestsInput className="flex-1" />
           <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
-          <div className='p-3'>
-            <NcInputNumber label="Sharing" defaultValue={5}/>
-          </div>
+          <NcInputNumber label="Sharing" defaultValue={5} className='p-3'/>
         </form>
 
         {/* SUM */}
