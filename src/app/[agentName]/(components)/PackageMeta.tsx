@@ -30,23 +30,15 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
 }) => {
   return (
     <div className="listingSection__wrap !space-y-4">
-       <h1 className="text-2xl font-light text-gray-900">
+       <h1 className="text-2xl font-normal text-gray-900">
         {title}
       </h1>
       <div className="inline-flex space-x-3">
         <Badge
           name={
             <div className="flex items-center">
-              <i className="text-sm las la-share-alt"></i>
-              <span className="ml-1">5 Share</span>
-            </div>
-          }
-        />
-        <Badge
-          name={
-            <div className="flex items-center">
               <i className="text-sm las la-clock"></i>
-              <span className="ml-1">15 Days</span>
+              <span className="ml-1">{duration}</span>
             </div>
           }
         />
@@ -54,7 +46,15 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
           name={
             <div className="flex items-center">
               <i className="text-sm las la-map-marker"></i>
-              <span className="ml-1">Mumbai</span>
+              <span className="ml-1">{providerLocation}</span>
+            </div>
+          }
+        />
+        <Badge
+          name={
+            <div className="flex items-center">
+              <i className="text-sm las la-share-alt"></i>
+              <span className="ml-1">5 Sharing</span>
             </div>
           }
         />
@@ -71,19 +71,21 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
 
       <div className="space-y-5">        
         <div className="flex items-center gap-4">
-          <span className="text-xl">🏆</span>
+          <i className="text-3xl las la-city"></i>
           <div>
-            <p className="text-xs text-gray-600">Makkah and Madina Hotels</p>
+            <p className="text-xs text-gray-600">Makkah and Madina Hotels & Distance</p>
             <div className='flex items-center space-x-6'>
               <div className="flex items-center space-x-3">
                 <span className="flex items-center">
-                  <MakkahIcon />
+                  <i className="text-2xl las la-kaaba"></i>
+                  {/* <MakkahIcon /> */}
                   <span className="ml-1 text-sm text-gray-900 font-medium">{makkahHotel}</span>
                 </span>
               </div>
               <div className="flex items-center space-x-3">
                 <span className="flex items-center">
-                  <MadinaIcon />
+                  <i className="text-2xl las la-mosque"></i>
+                  {/* <MadinaIcon /> */}
                   <span className="ml-1 text-sm text-gray-900 font-medium">{madinaHotel}</span>
                 </span>
               </div>
@@ -92,15 +94,6 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
         </div>
 
         
-        <div className="flex items-center gap-4">
-          <span className="text-xl">❄️</span>
-          <div>
-            <p className="text-xs text-gray-600">Designed for staying cool</p>
-            <p className="text-sm text-gray-900 font-medium">
-              Beat the heat with the A/C and ceiling fan.
-            </p>
-          </div>
-        </div>        
         <div className="flex items-center gap-4">
           <i className="las la-plane-departure text-2xl"></i>
           <div>
@@ -116,18 +109,18 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
           <i className="las la-calendar-week text-2xl"></i>
           <div>
             <p className="text-xs text-gray-600">
-              Package Duration Details
+              Package Start & End Dates
             </p>
             <p className="text-sm text-gray-900 font-medium">
               1 Mar 2026 to 15 Mar 2026
             </p>
           </div>
-        </div>
+        </div>       
         <div className="flex items-center gap-4">
-          <i className="las la-calendar-week text-2xl"></i>
+          <i className="text-3xl las la-bell"></i>
           <div>
             <p className="text-xs text-gray-600">
-              Free cancellation before 8 March
+              Free cancellation before 10 days of departure
             </p>
             <p className="text-sm text-gray-900 font-medium">
               Get a full refund if you change your mind.

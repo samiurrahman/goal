@@ -86,7 +86,7 @@ export const roomRates = [
   },
   {
     label: '5 People sharing',
-    value: '850000',
+    value: '85000',
     people: 5,
     highlight: true,
     icon: twoPeopleIcon,

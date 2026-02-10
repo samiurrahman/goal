@@ -10,7 +10,7 @@ interface PoliciesProps {
 const Policies: FC<PoliciesProps> = ({ cancellation, checkIn, checkOut, notes }) => (
   <div className="listingSection__wrap !space-y-4">
     {/* HEADING */}
-    <h2 className="text-xl font-light">Things to know</h2>
+    <h2 className="text-xl font-normal text-gray-900">Things to know</h2>
     <div className="w-14 border-b border-neutral-200 dark:border-neutral-700" />
 
     {/* Cancellation policy */}

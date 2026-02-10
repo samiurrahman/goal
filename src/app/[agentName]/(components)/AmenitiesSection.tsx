@@ -15,7 +15,7 @@ interface AmenitiesSectionProps {
 const AmenitiesSection: FC<AmenitiesSectionProps> = ({ amenities }) => (
   <div className="listingSection__wrap !space-y-4">
     <div>
-      <h2 className="text-xl font-light">Amenities </h2>
+      <h2 className="text-xl font-normal text-gray-900">Amenities </h2>
     </div>
     <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
     <div className="grid grid-cols-1 xl:grid-cols-3 gap-3 text-sm text-neutral-700 dark:text-neutral-300 ">
