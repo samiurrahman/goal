@@ -74,11 +74,20 @@ export default function ListingPage() {
       }
     } else {
       // Add new
-      const { id, ...formWithoutId } = form;
-      const { error } = await supabase.from('packages').insert([{ ...formWithoutId, agent_id: 1 }]);
+      const { ...formWithoutId } = form;
+      const { data: newPackage, error } = await supabase
+        .from('packages')
+        .insert([{ ...formWithoutId, agent_id: 4 }])
+        .select()
+        .single();
+      if (error) throw error;
+
+      await supabase.from('package_details').insert({
+        package_id: newPackage?.id,
+      });
       setLoading(false);
       if (error) {
-        toast.error('Failed to add package: ' + error.message);
+        toast.error('Failed to add package: ' + error);
       } else {
         toast.success('Package added successfully!');
         setForm(initialState); // Reset form after add
@@ -224,7 +233,7 @@ export default function ListingPage() {
           />
         </div>
         <div className="pt-2">
-          <ButtonPrimary type="submit" disabled={loading}>
+          <ButtonPrimary type="submit">
             {loading ? (id ? 'Saving...' : 'Adding...') : id ? 'Save Changes' : 'Add Package'}
           </ButtonPrimary>
         </div>

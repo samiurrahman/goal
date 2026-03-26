@@ -18,6 +18,11 @@ import AmenitiesSection from '../(components)/AmenitiesSection';
 import PackageInfo from '../(components)/PackageInfo';
 import MobileFooterSticky from '../(components)/MobileFooterSticky';
 import NcInputNumber from '@/components/NcInputNumber';
+import { Agent } from '@/data/types';
+import type { PackageDetails } from '@/data/types';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/utils/supabaseClient';
+
 
 export interface PackageDetailProps {
   params: { agentName: string; slug: string };
@@ -25,27 +30,73 @@ export interface PackageDetailProps {
 
 const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   const { agentName, slug } = params;
-    useEffect(() => {
-      if (typeof window !== 'undefined') {
-        document.title = `Hajj & Umrah Packages | ${packageMetaData.title}`;
-      }
-    }, []);
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      document.title = `Hajj & Umrah Packages | ${packageMetaData.title}`;
+    }
+  }, []);
+
+  // Fetch package details by slug, agent by agentName, join agent and details
+  const {
+    data: package_details,
+    error,
+    isLoading,
+  } = useQuery<PackageDetails | null>({
+      queryKey: ['package_details', slug],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('packages')
+          .select('*')
+          .eq('slug', slug)
+          .eq('agent_name', agentName)
+          .single();
+
+        if (error) throw error;
+       
+        // Fetch package_details by package_id
+        if (data?.id) {
+          const { data: details, error: detailsError } = await supabase
+            .from('package_details')
+            .select('*')
+            .eq('package_id', data.id)
+            .single();
+          if (detailsError) throw detailsError;
+          data.details = details;
+        }
+        return data;
+      },
+    });
   // Room rate selection state
   const [selectedRate, setSelectedRate] = useState(roomRates[0]);
   const isLoggedIn = useSupabaseIsLoggedIn();
   const router = useRouter();
 
   // Data for PackageMeta
+  const departureDateText = package_details?.departure_date
+    ? new Date(package_details.departure_date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      })
+    : 'TBD';
+
+  const arrivalDateText = package_details?.arrival_date
+    ? new Date(package_details.arrival_date).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+      })
+    : 'TBD';
+
   const packageMetaData = {
-    title: "Luxury umrah package from Mumbai to Mumbai",
+    title: package_details?.title ?? 'Untitled Package',
     duration: "5 Days, 4 Nights",
     makkahHotel: "Makkah Hotel (~500m)",
     madinaHotel: "Madina Hotel (~300m)",
-    route: "Mumbai to Mumbai",
-    provider: "Iqra Hajj Tours",
+    route: `${package_details?.departure_city?.toUpperCase()} - ${package_details?.arrival_city?.toUpperCase()}`,
+    dates: `${departureDateText} - ${arrivalDateText}`,
+    provider: package_details?.agent_name ?? 'Unknown Provider',
     url: agentName,
     providerVerified: true,
-    providerLocation: "Akola, Maharashtra",
+    providerLocation: package_details?.package_location ?? 'Unknown Location',
   };
   
   // Dummy data for policies
@@ -195,6 +246,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
 
   return (
     <div className="nc-ListingStayDetailPage px-2 sm:px-4 md:px-8 max-w-screen-2xl mx-auto w-full min-h-screen">
+      {/* <p>Package Details: {package_details ? JSON.stringify(package_details) : 'Loading...'}</p> */}
       {/* BANNER IMAGE WITH FADE-OUT */}
       {/* <header className="relative h-48 sm:h-64 md:h-80 lg:h-96 w-full rounded-md sm:rounded-xl overflow-hidden">
         <Image

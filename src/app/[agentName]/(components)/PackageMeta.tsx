@@ -15,6 +15,7 @@ export interface PackageMetaProps {
   providerVerified?: boolean;
   providerLocation: string;
   url: string;
+  dates?: string;
 }
 
 const PackageMeta: React.FC<PackageMetaProps> = ({
@@ -27,6 +28,7 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
   providerVerified = true,
   providerLocation,
   url,
+  dates,  
 }) => {
   return (
     <div className="listingSection__wrap !space-y-4">
@@ -92,6 +94,29 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
             </div>
           </div>
         </div>
+        <div className="flex items-center gap-4">
+          <i className="text-3xl las la-city"></i>
+          <div>
+            <p className="text-xs text-gray-600">Makkah and Madina Days</p>
+            <div className='flex items-center space-x-6'>
+              <div className="flex items-center space-x-3">
+                <span className="flex items-center">
+                  {/* <i className="text-2xl las la-kaaba"></i> */}
+                  {/* <MakkahIcon /> */}
+                  <span className="text-sm text-gray-900 font-medium">5 Days - </span>
+                  <span className="ml-1 text-sm text-gray-900 font-medium">4 Days</span>
+                </span>
+              </div>
+              <div className="flex items-center space-x-3">
+                <span className="flex items-center">
+                  {/* <i className="text-2xl las la-mosque"></i> */}
+                  {/* <MadinaIcon /> */}
+                  <span className="text-sm text-gray-900 font-medium">4 Days</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
 
         
         <div className="flex items-center gap-4">
@@ -112,7 +137,7 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
               Package Start & End Dates
             </p>
             <p className="text-sm text-gray-900 font-medium">
-              1 Mar 2026 to 15 Mar 2026
+              {dates}
             </p>
           </div>
         </div>       
