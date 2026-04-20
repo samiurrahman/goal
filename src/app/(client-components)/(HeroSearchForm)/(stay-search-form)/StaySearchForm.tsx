@@ -1,6 +1,7 @@
 'use client';
 import React, { FC, Fragment, useState, useRef, useEffect } from 'react';
 import { Popover, Transition } from '@headlessui/react';
+import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import LocationInput from '../LocationInput';
 import ClearDataButton from '../ClearDataButton';
 import ButtonSubmit from '../ButtonSubmit';
@@ -71,13 +72,18 @@ const StaySearchForm: FC<{}> = ({}) => {
           <>
             <Popover.Button
               ref={monthRef}
-              className={`relative w-full h-full flex items-center justify-between text-left pl-10 pr-10 py-5 [ nc-hero-field-padding ] focus:outline-none
+              className={`relative w-full h-full flex items-center justify-between text-left pr-10 py-5 [ nc-hero-field-padding ] focus:outline-none
                 ${open ? 'nc-hero-field-focused' : ''}`}
             >
-              <div>
-                <div className="block w-full bg-transparent border-none focus:ring-0 p-0 focus:outline-none focus:placeholder-neutral-300 xl:text-lg font-semibold placeholder-neutral-800 dark:placeholder-neutral-200 truncate">Month</div>
-                <div className="dark:text-neutral-100 line-clamp-1 block mt-0.5 text-sm text-neutral-400 font-light">
-                  {monthStates.length > 0 ? monthStates.join(', ') : 'Select month'}
+              <div className="flex items-center space-x-3">
+                <div className="text-neutral-300 dark:text-neutral-400">
+                  <CalendarDaysIcon className="w-5 h-5 lg:w-7 lg:h-7" />
+                </div>
+                <div>
+                  <div className="block w-full bg-transparent border-none focus:ring-0 p-0 focus:outline-none focus:placeholder-neutral-300 xl:text-lg font-semibold placeholder-neutral-800 dark:placeholder-neutral-200 truncate">Month</div>
+                  <div className="dark:text-neutral-100 line-clamp-1 block mt-0.5 text-sm text-neutral-400 font-light">
+                    {monthStates.length > 0 ? monthStates.join(', ') : 'Select month'}
+                  </div>
                 </div>
               </div>
               {monthStates.length > 0 ? (
@@ -93,9 +99,7 @@ const StaySearchForm: FC<{}> = ({}) => {
                     }}
                   />
                 </span>
-              ) : (
-                <i className="las la-angle-down ml-2"></i>
-              )}
+              ) : null}
             </Popover.Button>
 
             <Transition
