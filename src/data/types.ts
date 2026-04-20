@@ -105,7 +105,10 @@ export interface PackageDetails {
       iternary: {
         name: string;
       };
-      stay_information: null | Record<string, unknown>;
+      stay_information: {
+        title: string;
+        details: string[];
+      };
       amenities: null | Record<string, unknown>;
       policies: null | Record<string, unknown>;
     };

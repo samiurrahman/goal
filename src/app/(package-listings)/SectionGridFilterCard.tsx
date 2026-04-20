@@ -36,7 +36,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
 
   // Price filter
   const priceParam = searchParams.get('price') || '';
-  const price = priceParam ? Number(priceParam) : 40000;
+  const price = priceParam ? Number(priceParam) : '';
 
   // Hotel distance filters
   const makkahHotelDistanceParam = searchParams.get('makkah_hotel_distance_m');

@@ -35,7 +35,6 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       document.title = `Hajj & Umrah Packages | ${packageMetaData.title}`;
     }
   }, []);
-
   // Fetch package details by slug, agent by agentName, join agent and details
   const {
     data: package_details,
@@ -100,51 +99,53 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   };
   
   // Dummy data for policies
-  const policiesData = {
-    cancellation:
-      'Refund 50% of the booking value when customers cancel the room within 48 hours after successful booking and 14 days before the check-in time. Then, cancel the room 14 days before the check-in time, get a 50% refund of the total amount paid (minus the service fee).',
-    checkIn: '08:00 am - 12:00 am',
-    checkOut: '02:00 pm - 04:00 pm',
-    notes: [
-      'Ban and I will work together to keep the landscape and environment green and clean by not littering, not using stimulants and respecting people around.',
-      'Do not sing karaoke past 11:30',
-    ],
-  };
-  // Dummy data for demonstration
-  const iternaryData = [
-    {
-      fromDate: 'Monday, August 12 · 10:00',
-      fromLocation: 'Tokyo International Airport (HND)',
-      toDate: 'Monday, August 16 · 10:00',
-      toLocation: 'Singapore International Airport (SIN)',
-      tripTime: '7 hours 45 minutes',
-      flightInfo: 'ANA · Business class · Boeing 787 · NH 847',
-    },
-    {
-      fromDate: 'Tuesday, August 17 · 09:00',
-      fromLocation: 'Singapore International Airport (SIN)',
-      toDate: 'Tuesday, August 17 · 15:00',
-      toLocation: 'Jeddah International Airport (JED)',
-      tripTime: '8 hours 00 minutes',
-      flightInfo: 'Emirates · Economy class · Boeing 777 · EK 123',
-    },
-    {
-      fromDate: 'Wednesday, August 18 · 08:00',
-      fromLocation: 'Jeddah International Airport (JED)',
-      toDate: 'Wednesday, August 18 · 12:00',
-      toLocation: 'Makkah Hotel',
-      tripTime: '4 hours 00 minutes',
-      flightInfo: 'Private Transfer',
-    },
-  ];
-  const packageInfoData = {
-    title: 'Stay information',
-    details: [
-      'Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides accommodation, an outdoor swimming pool, a bar, a shared lounge, a garden and barbecue facilities. Complimentary WiFi is provided.≠',
-      'There is a private bathroom with bidet in all units, along with a hairdryer and free toiletries.',
-      'The Symphony 9 Tam Coc offers a terrace. Both a bicycle rental service and a car rental service are available at the accommodation, while cycling can be enjoyed nearby.',
-    ],
-  };
+  // const policiesData = {
+  //   cancellation:
+  //     'Refund 50% of the booking value when customers cancel the room within 48 hours after successful booking and 14 days before the check-in time. Then, cancel the room 14 days before the check-in time, get a 50% refund of the total amount paid (minus the service fee).',
+  //   checkIn: '08:00 am - 12:00 am',
+  //   checkOut: '02:00 pm - 04:00 pm',
+  //   notes: [
+  //     'Ban and I will work together to keep the landscape and environment green and clean by not littering, not using stimulants and respecting people around.',
+  //     'Do not sing karaoke past 11:30',
+  //   ],
+  // };
+  // const packageInfoData: { details: string[] } = (() => {
+  //   const stayInformation = package_details?.details?.stay_information;
+
+  //   if (!stayInformation) return { details: [] };
+
+  //   if (Array.isArray(stayInformation)) {
+  //     return { details: stayInformation.map((item) => String(item)) };
+  //   }
+
+  //   if (typeof stayInformation === 'string') {
+  //     try {
+  //       const parsed = JSON.parse(stayInformation);
+
+  //       if (Array.isArray(parsed)) {
+  //         return { details: parsed.map((item) => String(item)) };
+  //       }
+
+  //       if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { details?: unknown }).details)) {
+  //         return {
+  //           details: ((parsed as { details: unknown[] }).details).map((item) => String(item)),
+  //         };
+  //       }
+  //     } catch {
+  //       return { details: [] };
+  //     }
+
+  //     return { details: [] };
+  //   }
+
+  //   if (typeof stayInformation === 'object' && Array.isArray((stayInformation as { details?: unknown }).details)) {
+  //     return {
+  //       details: ((stayInformation as { details: unknown[] }).details).map((item) => String(item)),
+  //     };
+  //   }
+
+  //   return { details: [] };
+  // })();
 
   const hostData = {
     name: 'Kevin Francis',
@@ -284,7 +285,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           {/** PackageMeta data extracted to variable */}
           <PackageMeta {...packageMetaData} />  
 
-          <Iternary data={iternaryData} />
+          <Iternary data={typeof package_details?.details?.iternary === 'string' ? JSON.parse(package_details.details.iternary) : (package_details?.details?.iternary ?? [])} />
 
           {/* <RoomRates
             rates={roomRates}
@@ -301,7 +302,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
             }
           /> */}
 
-          <PackageInfo {...packageInfoData} />
+          <PackageInfo data={typeof package_details?.details?.stay_information === 'string' ? JSON.parse(package_details.details.stay_information) : {title: 'Stay information', details: []}} />
 
           <AmenitiesSection
             amenities={Amenities_demos.map((item) => ({
@@ -309,9 +310,13 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
               icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
             }))}
           />
-          <Policies {...policiesData} />
+          
+          <Policies data={typeof package_details?.details?.policies === 'string' ? JSON.parse(package_details.details.policies) : {cancellation: '', checkIn: '', checkOut: '', notes: []}} />
+
           {/* <LocationSection {...locationData} /> */}
+
           <HostInformation {...hostData} />
+
         </div>
 
         {/* SIDEBAR: Purchase summary, visible on all devices, sticky on lg+ */}
