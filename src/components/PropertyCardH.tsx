@@ -212,7 +212,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
   return (
     <Link
       href={`/${agent_name}/${slug}`}
-      className={`nc-PropertyCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-3xl overflow-hidden block ${className}`}
+      className={`lg:p-4 shadow-xl nc-PropertyCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-3xl overflow-hidden block ${className}`}
       tabIndex={0}
       aria-label={title}
     >

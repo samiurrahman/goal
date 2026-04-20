@@ -158,7 +158,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
       <div className="mb-4 lg:mb-6 mt-4">
         <TabFilters />
       </div>
-      <div className="lg:p-10 lg:bg-neutral-50 lg:dark:bg-black/20 grid grid-cols-1 gap-6 rounded-3xl">
+      <div className="grid grid-cols-1 gap-6 rounded-3xl">
         {error && (
           <div className="flex justify-center items-center py-12 text-red-500">
             Error: {error.message}
