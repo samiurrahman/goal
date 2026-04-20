@@ -70,7 +70,9 @@ const ListingPackagesPage = () => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <BgGlassmorphism />
+      <div className="sticky top-0 z-0">
+        <BgGlassmorphism />
+      </div>
 
         <div className="container relative min-h-screen">
         {/* SEO: A visible H1 is crucial for search engines */}
