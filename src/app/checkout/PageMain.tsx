@@ -1,7 +1,7 @@
 'use client';
 
 import { Tab } from '@headlessui/react';
-import { PencilSquareIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, PencilSquareIcon, TrashIcon } from '@heroicons/react/24/outline';
 import React, { FC, Fragment, useEffect, useState } from 'react';
 import visaPng from '@/images/vis.png';
 import mastercardPng from '@/images/mastercard.svg';
@@ -57,6 +57,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       () => createEmptyGuestForm()
     )
   );
+  const [expandedGuestIndexes, setExpandedGuestIndexes] = useState<number[]>([0]);
 
   const totalGuests = (guests.guestAdults || 0) + (guests.guestChildren || 0);
 
@@ -83,7 +84,13 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   };
 
   const handleAddGuestForm = () => {
-    setGuestForms((prev) => [...prev, createEmptyGuestForm()]);
+    setGuestForms((prev) => {
+      const nextIndex = prev.length;
+      setExpandedGuestIndexes((expandedPrev) =>
+        expandedPrev.includes(nextIndex) ? expandedPrev : [...expandedPrev, nextIndex]
+      );
+      return [...prev, createEmptyGuestForm()];
+    });
   };
 
   const handleDeleteGuestForm = (index: number) => {
@@ -91,6 +98,21 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       if (prev.length <= 1) return prev;
       return prev.filter((_, i) => i !== index);
     });
+
+    setExpandedGuestIndexes((prev) => {
+      const reIndexed = prev
+        .filter((i) => i !== index)
+        .map((i) => (i > index ? i - 1 : i));
+
+      if (reIndexed.length > 0) return reIndexed;
+      return [0];
+    });
+  };
+
+  const toggleGuestCard = (index: number) => {
+    setExpandedGuestIndexes((prev) =>
+      prev.includes(index) ? prev.filter((i) => i !== index) : [...prev, index]
+    );
   };
 
   const renderSidebar = () => {
@@ -225,19 +247,45 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                 key={`guest-form-${index}`}
                 className="border border-neutral-200 dark:border-neutral-700 rounded-2xl p-4 sm:p-5 space-y-4"
               >
+                {(() => {
+                  const hasName = form.name.trim().length > 0;
+                  const cardTitle = hasName
+                    ? `${form.title} ${form.name.trim()}`
+                    : `Guest ${index + 1}`;
+                  const isExpanded = expandedGuestIndexes.includes(index);
+
+                  return (
+                    <>
                 <div className="flex items-center justify-between gap-3">
-                  <h4 className="text-lg font-semibold">Guest {index + 1}</h4>
-                  {guestForms.length > 1 && (
+                  <h4 className="text-lg font-semibold">{cardTitle}</h4>
+                  <div className="flex items-center gap-3">
                     <button
                       type="button"
-                      onClick={() => handleDeleteGuestForm(index)}
-                      className="text-sm font-medium text-red-600 hover:text-red-700"
+                      onClick={() => toggleGuestCard(index)}
+                      className="inline-flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                      aria-label={isExpanded ? 'Collapse guest details' : 'Expand guest details'}
                     >
-                      Delete
+                      {isExpanded ? (
+                        <ChevronUpIcon className="w-5 h-5" />
+                      ) : (
+                        <ChevronDownIcon className="w-5 h-5" />
+                      )}
                     </button>
-                  )}
+                    {guestForms.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteGuestForm(index)}
+                        className="inline-flex items-center justify-center text-red-600 hover:text-red-700"
+                        aria-label="Delete guest"
+                      >
+                        <TrashIcon className="w-5 h-5" />
+                      </button>
+                    )}
+                  </div>
                 </div>
 
+                {isExpanded && (
+                  <>
                 <div className="grid grid-cols-1 sm:grid-cols-[20%_80%] gap-4">
                   <div className="space-y-1">
                     <Label>Title</Label>
@@ -282,6 +330,11 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                     placeholder="Enter mobile number"
                   />
                 </div>
+                  </>
+                )}
+                    </>
+                  );
+                })()}
               </div>
             ))}
           </div>
