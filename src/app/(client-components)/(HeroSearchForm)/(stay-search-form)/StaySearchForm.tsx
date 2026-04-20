@@ -31,8 +31,9 @@ const StaySearchForm: FC<{}> = ({}) => {
 
     const params = new URLSearchParams();
     if (location) params.append('location', location);
-    if (selectedMonths.length > 0) {
-      params.append('month', selectedMonths.join(','));
+    const filteredMonths = selectedMonths.filter((month) => month !== 'Any');
+    if (filteredMonths.length > 0) {
+      params.append('month', filteredMonths.join(','));
     }
 
     return params.toString() ? `/packages?${params.toString()}` : '/packages';
@@ -49,7 +50,12 @@ const StaySearchForm: FC<{}> = ({}) => {
   const handleChangeMonth = (checked: boolean, name: string) => {
     setMonthStates((prev) => {
       if (checked) {
-        return [...prev, name];
+        if (name === 'Any') {
+          return ['Any'];
+        }
+
+        const withoutAny = prev.filter((item) => item !== 'Any');
+        return withoutAny.includes(name) ? withoutAny : [...withoutAny, name];
       }
 
       return prev.filter((item) => item !== name);
