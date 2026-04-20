@@ -72,7 +72,7 @@ const StaySearchForm: FC<{}> = ({}) => {
             <Popover.Button
               ref={monthRef}
               className={`relative w-full h-full flex items-center justify-between text-left pl-10 pr-10 py-5 [ nc-hero-field-padding ] focus:outline-none
-                ${open ? 'bg-neutral-50 dark:bg-neutral-700' : ''}`}
+                ${open ? 'nc-hero-field-focused' : ''}`}
             >
               <div>
                 <div className="block w-full bg-transparent border-none focus:ring-0 p-0 focus:outline-none focus:placeholder-neutral-300 xl:text-lg font-semibold placeholder-neutral-800 dark:placeholder-neutral-200 truncate">Month</div>
