@@ -244,6 +244,8 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
             }
             params.set('sharing', String(sharingCount));
             params.set('guests', String(numberOfGuests));
+            params.set('slug', slug);
+            params.set('agent_name', agentName);
 
             const checkoutUrl = `/checkout?${params.toString()}`;
 

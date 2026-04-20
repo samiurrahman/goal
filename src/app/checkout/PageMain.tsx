@@ -14,6 +14,7 @@ import NcModal from '@/shared/NcModal';
 import ModalSelectDate from '@/components/ModalSelectDate';
 import converSelectedDateToString from '@/utils/converSelectedDateToString';
 import ModalSelectGuests from '@/components/ModalSelectGuests';
+import Breadcrumb from '@/components/Breadcrumb';
 import Image from 'next/image';
 import { GuestsObject } from '../(client-components)/type';
 import { useSearchParams } from 'next/navigation';
@@ -25,6 +26,8 @@ export interface CheckOutPagePageMainProps {
 const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' }) => {
   const searchParams = useSearchParams();
   const guestsFromUrl = Number(searchParams.get('guests'));
+  const slugFromUrl = searchParams.get('slug');
+  const agentNameFromUrl = searchParams.get('agent_name');
 
   const initialAdults = Number.isFinite(guestsFromUrl) && guestsFromUrl > 0 ? guestsFromUrl : 2;
 
@@ -165,7 +168,25 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   };
 
   const renderMain = () => {
+    const packageDetailHref =
+      slugFromUrl && agentNameFromUrl ? `/${agentNameFromUrl}/${slugFromUrl}` : undefined;
+
     return (
+      <>
+      <Breadcrumb
+        items={[
+          { label: 'https://www.hajjscanner.com', href: '/' },
+          { label: 'Packages', href: '/packages' },
+          ...(slugFromUrl
+            ? [
+                packageDetailHref
+                  ? { label: slugFromUrl, href: packageDetailHref }
+                  : { label: slugFromUrl },
+              ]
+            : []),
+          { label: 'Checkout' },
+        ]}
+      />
       <div className="w-full flex flex-col sm:rounded-2xl sm:border border-neutral-200 dark:border-neutral-700 space-y-8 px-0 sm:p-6 xl:p-8">
         <h2 className="text-3xl lg:text-4xl font-semibold">Confirm and payment</h2>
         <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
@@ -350,6 +371,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           <ButtonPrimary href={'/pay-done'}>Confirm and pay</ButtonPrimary>
         </div>
       </div>
+    </>
     );
   };
 
