@@ -67,6 +67,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     });
   // Room rate selection state
   const [selectedRate, setSelectedRate] = useState(roomRates[0]);
+  const [sharingCount, setSharingCount] = useState(5);
   const isLoggedIn = useSupabaseIsLoggedIn();
   const router = useRouter();
 
@@ -198,12 +199,18 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
           <NcInputNumber 
             label="Sharing" 
-            defaultValue={5} 
+            defaultValue={sharingCount} 
             className='p-3' 
             min={2} 
             max={5} 
             onChange={(value) => { 
-              roomRates.filter(rate => rate.people === value).map(rate => setSelectedRate(rate))
+              const nextSharingCount = Number(value);
+              setSharingCount(nextSharingCount);
+
+              const matchedRate = roomRates.find((rate) => rate.people === nextSharingCount);
+              if (matchedRate) {
+                setSelectedRate(matchedRate);
+              }
             }} />
         </form>
 
@@ -230,8 +237,18 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         {/* SUBMIT */}
         <ButtonPrimary
           onClick={() => {
+            const params = new URLSearchParams();
+
+            if (package_details?.id) {
+              params.set('package_id', String(package_details.id));
+            }
+            params.set('sharing', String(sharingCount));
+            params.set('guests', String(numberOfGuests));
+
+            const checkoutUrl = `/checkout?${params.toString()}`;
+
             if (isLoggedIn) {
-              router.push('/checkout');
+              router.push(checkoutUrl);
             } else {
               // Save current path for redirect after login
               const currentPath = window.location.pathname;
