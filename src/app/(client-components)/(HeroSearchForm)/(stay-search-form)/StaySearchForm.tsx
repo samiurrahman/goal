@@ -113,7 +113,7 @@ const StaySearchForm: FC<{}> = ({}) => {
                     {monthsList.map((month) => (
                       <span
                         key={`${month}-${monthStates.includes(month)}`}
-                        className="flex px-4 sm:px-6 items-center py-3 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-2xl"
+                        className="flex px-1 sm:px-2 items-center py-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-2xl"
                       >
                         <Checkbox
                           name={month}
