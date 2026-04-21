@@ -320,15 +320,15 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
               })
             }
           /> */}
-
-          <PackageInfo data={typeof package_details?.details?.stay_information === 'string' ? JSON.parse(package_details.details.stay_information) : {title: 'Stay information', details: []}} />
-
           <AmenitiesSection
             amenities={Amenities_demos.map((item) => ({
               ...item,
               icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
             }))}
           />
+
+          <PackageInfo data={typeof package_details?.details?.stay_information === 'string' ? JSON.parse(package_details.details.stay_information) : {title: 'Stay information', details: []}} />
+
           
           <Policies data={typeof package_details?.details?.policies === 'string' ? JSON.parse(package_details.details.policies) : {cancellation: '', checkIn: '', checkOut: '', notes: []}} />
 
