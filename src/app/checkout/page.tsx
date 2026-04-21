@@ -1,8 +1,8 @@
 import React from 'react';
 import CheckOutPagePageMain from './PageMain';
 
-export const page = () => {
+const Page = () => {
   return <CheckOutPagePageMain />;
 };
 
-export default page;
+export default Page;
