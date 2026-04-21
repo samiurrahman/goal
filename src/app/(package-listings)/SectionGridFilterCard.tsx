@@ -159,7 +159,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
         <TabFilters />
       </div>
       <div className="grid grid-cols-1 gap-6 rounded-3xl">
-        {error && (
+        {/* {error && (
           <div className="flex justify-center items-center py-12 text-red-500">
             Error: {error.message}
           </div>
@@ -179,7 +179,15 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
               {!hasNextPage && <span>No more Packages to load.</span>}
             </div>
           </>
-        )}
+        )} */}
+        {packages.map((item, index) => (
+              // <PackageCard key={item.id || index} data={item} />
+              <PropertyCardH key={item.id || index} data={item} />
+        ))}
+        <div ref={loaderRef} className="flex mt-12 justify-center items-center">
+          {isFetchingNextPage && <ButtonPrimary loading>Loading more Packages</ButtonPrimary>}
+          {!hasNextPage && <span>No more Packages to load.</span>}
+        </div>
       </div>
     </div>
   );
