@@ -6,7 +6,6 @@ import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
 import { useRouter } from 'next/navigation';
 import { Amenities_demos } from '../(components)/constant';
 import { roomRates } from '../(components)/constant';
-import StayDatesRangeInput from '../(components)/StayDatesRangeInput';
 import GuestsInput from '../(components)/GuestsInput';
 import Breadcrumb from '@/components/Breadcrumb';
 import Iternary from '../(components)/Iternary';
@@ -18,6 +17,7 @@ import AmenitiesSection from '../(components)/AmenitiesSection';
 import PackageInfo from '../(components)/PackageInfo';
 import MobileFooterSticky from '../(components)/MobileFooterSticky';
 import NcInputNumber from '@/components/NcInputNumber';
+import { GuestsObject } from '@/app/(client-components)/type';
 import { Agent } from '@/data/types';
 import type { PackageDetails } from '@/data/types';
 import { useQuery } from '@tanstack/react-query';
@@ -68,6 +68,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   // Room rate selection state
   const [selectedRate, setSelectedRate] = useState(roomRates[0]);
   const [sharingCount, setSharingCount] = useState(5);
+  const [numberOfGuests, setNumberOfGuests] = useState(1);
   const isLoggedIn = useSupabaseIsLoggedIn();
   const router = useRouter();
 
@@ -169,8 +170,6 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   const purchaseSummary = () => {
     // Parse value as number
     const pricePerPerson = Number(selectedRate.value);
-    // number of guests from API (hardcoded for now)
-    const numberOfGuests = 4;
     const total = pricePerPerson * numberOfGuests;
     const gstRate = 0.05;
     const gstAmount = total * gstRate;
@@ -193,9 +192,13 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
 
         {/* FORM */}
         <form className="flex flex-col border border-neutral-200 dark:border-neutral-700 rounded-3xl ">
-          <StayDatesRangeInput className="flex-1 z-[11]" />
-          <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
-          <GuestsInput className="flex-1" />
+          <GuestsInput
+            className="flex-1"
+            defaultValue={{ guestAdults: 1, guestChildren: 0, guestInfants: 0 } as GuestsObject}
+            onChange={(_, totalGuests) => {
+              setNumberOfGuests(totalGuests);
+            }}
+          />
           <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
           <NcInputNumber 
             label="Sharing" 

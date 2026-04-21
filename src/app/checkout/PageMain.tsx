@@ -3,7 +3,6 @@
 import {
   ChevronDownIcon,
   ChevronUpIcon,
-  PencilSquareIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
 import React, { FC, useEffect, useState } from 'react';
@@ -12,12 +11,8 @@ import Label from '@/components/Label';
 import Textarea from '@/shared/Textarea';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import StartRating from '@/components/StartRating';
-import ModalSelectDate from '@/components/ModalSelectDate';
-import converSelectedDateToString from '@/utils/converSelectedDateToString';
-import ModalSelectGuests from '@/components/ModalSelectGuests';
 import Breadcrumb from '@/components/Breadcrumb';
 import Image from 'next/image';
-import { GuestsObject } from '../(client-components)/type';
 import { useRouter, useSearchParams } from 'next/navigation';
 
 export interface CheckOutPagePageMainProps {
@@ -49,15 +44,6 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   const agentNameFromUrl = searchParams.get('agent_name');
   const initialAdults = Number.isFinite(guestsFromUrl) && guestsFromUrl > 0 ? guestsFromUrl : 2;
 
-  const [startDate, setStartDate] = useState<Date | null>(new Date('2023/02/06'));
-  const [endDate, setEndDate] = useState<Date | null>(new Date('2023/02/23'));
-
-  const [guests, setGuests] = useState<GuestsObject>({
-    guestAdults: initialAdults,
-    guestChildren: 0,
-    guestInfants: 0,
-  });
-
   const [guestForms, setGuestForms] = useState<GuestForm[]>(() =>
     Array.from({ length: Math.max(1, initialAdults) }, () => createEmptyGuestForm())
   );
@@ -66,7 +52,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   const [bookingMobile, setBookingMobile] = useState('');
   const [bookingMobileError, setBookingMobileError] = useState('');
 
-  const totalGuests = (guests.guestAdults || 0) + (guests.guestChildren || 0);
+  const totalGuests = initialAdults;
 
   useEffect(() => {
     const requiredCount = Math.max(1, totalGuests);
@@ -215,52 +201,6 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
         <div className="listingSection__wrap">
           <h2 className="text-3xl lg:text-4xl font-semibold">Confirm and payment</h2>
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
-
-          <div>
-            <h3 className="text-2xl font-semibold">Your trip</h3>
-            <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
-            <div className="mt-6 border border-neutral-200 dark:border-neutral-700 rounded-3xl flex flex-col sm:flex-row divide-y sm:divide-x sm:divide-y-0 divide-neutral-200 dark:divide-neutral-700 overflow-hidden z-10">
-              <ModalSelectDate
-                renderChildren={({ openModal }) => (
-                  <button
-                    onClick={openModal}
-                    className="text-left flex-1 p-5 flex justify-between space-x-5 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                    type="button"
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-sm text-neutral-400">Date</span>
-                      <span className="mt-1.5 text-lg font-semibold">
-                        {converSelectedDateToString([startDate, endDate])}
-                      </span>
-                    </div>
-                    <PencilSquareIcon className="w-6 h-6 text-neutral-6000 dark:text-neutral-400" />
-                  </button>
-                )}
-              />
-
-              <ModalSelectGuests
-                renderChildren={({ openModal }) => (
-                  <button
-                    type="button"
-                    onClick={openModal}
-                    className="text-left flex-1 p-5 flex justify-between space-x-5 hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                  >
-                    <div className="flex flex-col">
-                      <span className="text-sm text-neutral-400">Guests</span>
-                      <span className="mt-1.5 text-lg font-semibold">
-                        <span className="line-clamp-1">
-                          {`${(guests.guestAdults || 0) + (guests.guestChildren || 0)} Guests, ${
-                            guests.guestInfants || 0
-                          } Infants`}
-                        </span>
-                      </span>
-                    </div>
-                    <PencilSquareIcon className="w-6 h-6 text-neutral-6000 dark:text-neutral-400" />
-                  </button>
-                )}
-              />
-            </div>
-          </div>
 
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">

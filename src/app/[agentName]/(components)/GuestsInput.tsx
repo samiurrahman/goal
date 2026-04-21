@@ -9,12 +9,18 @@ import { GuestsObject } from '@/app/(client-components)/type';
 
 export interface GuestsInputProps {
   className?: string;
+  defaultValue?: GuestsObject;
+  onChange?: (value: GuestsObject, totalGuests: number) => void;
 }
 
-const GuestsInput: FC<GuestsInputProps> = ({ className = 'flex-1' }) => {
-  const [guestAdultsInputValue, setGuestAdultsInputValue] = useState(2);
-  const [guestChildrenInputValue, setGuestChildrenInputValue] = useState(1);
-  const [guestInfantsInputValue, setGuestInfantsInputValue] = useState(1);
+const GuestsInput: FC<GuestsInputProps> = ({
+  className = 'flex-1',
+  defaultValue,
+  onChange,
+}) => {
+  const [guestAdultsInputValue, setGuestAdultsInputValue] = useState(defaultValue?.guestAdults ?? 2);
+  const [guestChildrenInputValue, setGuestChildrenInputValue] = useState(defaultValue?.guestChildren ?? 1);
+  const [guestInfantsInputValue, setGuestInfantsInputValue] = useState(defaultValue?.guestInfants ?? 1);
 
   const handleChangeData = (value: number, type: keyof GuestsObject) => {
     let newValue = {
@@ -34,6 +40,9 @@ const GuestsInput: FC<GuestsInputProps> = ({ className = 'flex-1' }) => {
       setGuestInfantsInputValue(value);
       newValue.guestInfants = value;
     }
+
+    const totalGuests = newValue.guestAdults + newValue.guestChildren + newValue.guestInfants;
+    onChange?.(newValue, totalGuests);
   };
 
   const totalGuests = guestChildrenInputValue + guestAdultsInputValue + guestInfantsInputValue;
