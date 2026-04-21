@@ -18,6 +18,8 @@ import Breadcrumb from '@/components/Breadcrumb';
 import Image from 'next/image';
 import { GuestsObject } from '../(client-components)/type';
 import { useSearchParams } from 'next/navigation';
+import BgGlassmorphism from '@/components/BgGlassmorphism';
+import { page } from './page';
 
 export interface CheckOutPagePageMainProps {
   className?: string;
@@ -120,7 +122,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
 
   const renderSidebar = () => {
     return (
-      <div className="w-full flex flex-col sm:rounded-2xl lg:border border-neutral-200 dark:border-neutral-700 space-y-6 sm:space-y-8 px-0 sm:p-6 xl:p-8">
+      <div className="listingSection__wrap w-full flex flex-col sm:rounded-2xl lg:border border-neutral-200 dark:border-neutral-700 space-y-6 sm:space-y-8 px-0 sm:p-6 xl:p-8 mt-8">
         <div className="flex flex-col sm:flex-row sm:items-center">
           <div className="flex-shrink-0 w-full sm:w-40">
             <div className=" aspect-w-4 aspect-h-3 sm:aspect-h-4 rounded-2xl overflow-hidden">
@@ -187,25 +189,14 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           { label: 'Checkout' },
         ]}
       />
-      <div className="w-full flex flex-col sm:rounded-2xl sm:border border-neutral-200 dark:border-neutral-700 space-y-8 px-0 sm:p-6 xl:p-8">
+      
+      <div className="listingSection__wrap">        
         <h2 className="text-3xl lg:text-4xl font-semibold">Confirm and payment</h2>
         <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
         <div>
           <div>
             <h3 className="text-2xl font-semibold">Your trip</h3>
-            <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
-            <NcModal
-              renderTrigger={(openModal) => (
-                <span
-                  onClick={() => openModal()}
-                  className="block lg:hidden underline  mt-1 cursor-pointer"
-                >
-                  View booking details
-                </span>
-              )}
-              renderContent={renderSidebar}
-              modalTitle="Booking details"
-            />
+            <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>            
           </div>
           <div className="mt-6 border border-neutral-200 dark:border-neutral-700 rounded-3xl flex flex-col sm:flex-row divide-y sm:divide-x sm:divide-y-0 divide-neutral-200 dark:divide-neutral-700 overflow-hidden z-10">
             <ModalSelectDate

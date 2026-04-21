@@ -165,7 +165,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
             </h2>
           </div>
           {renderTienIch()}
-          <div className="w-14 border-b border-neutral-200/80 dark:border-neutral-700 "></div>
+          {/* <div className="w-14 border-b border-neutral-200/80 dark:border-neutral-700 "></div> */}
           <div className="flex w-full justify-between items-end">
             <div className="flex items-center space-x-3 ">
               <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />
@@ -212,7 +212,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
   return (
     <Link
       href={`/${agent_name}/${slug}`}
-      className={`lg:p-4 shadow-xl nc-PropertyCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-3xl overflow-hidden block ${className}`}
+      className={`lg:px-4 lg:py-1 shadow-xl nc-PropertyCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-3xl overflow-hidden block ${className}`}
       tabIndex={0}
       aria-label={title}
     >
