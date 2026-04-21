@@ -199,9 +199,6 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
         />
 
         <div className="listingSection__wrap">
-          <h2 className="text-3xl lg:text-4xl font-semibold">Confirm and payment</h2>
-          <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
-
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-2xl font-semibold">Guest Details</h3>
