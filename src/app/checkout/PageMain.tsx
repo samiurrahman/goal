@@ -5,15 +5,17 @@ import {
   ChevronUpIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
-import React, { FC, useEffect, useState } from 'react';
+import React, { FC, useEffect, useMemo, useState } from 'react';
 import Input from '@/shared/Input';
 import Label from '@/components/Label';
 import Textarea from '@/shared/Textarea';
 import ButtonPrimary from '@/shared/ButtonPrimary';
-import StartRating from '@/components/StartRating';
 import Breadcrumb from '@/components/Breadcrumb';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import type { PackageDetails } from '@/data/types';
+import { supabase } from '@/utils/supabaseClient';
 
 export interface CheckOutPagePageMainProps {
   className?: string;
@@ -35,14 +37,49 @@ const createEmptyGuestForm = (): GuestForm => ({
   mobile: '',
 });
 
+type SharingRate = {
+  value: string;
+  people: number;
+  default: boolean;
+};
+
 const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const guestsFromUrl = Number(searchParams.get('guests'));
+  const sharingFromUrl = Number(searchParams.get('sharing'));
   const slugFromUrl = searchParams.get('slug');
   const agentNameFromUrl = searchParams.get('agent_name');
   const initialAdults = Number.isFinite(guestsFromUrl) && guestsFromUrl > 0 ? guestsFromUrl : 2;
+
+  const { data: packageDetails } = useQuery<PackageDetails | null>({
+    queryKey: ['package_details', slugFromUrl, agentNameFromUrl],
+    enabled: !!slugFromUrl && !!agentNameFromUrl,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('packages')
+        .select('*')
+        .eq('slug', slugFromUrl)
+        .eq('agent_name', agentNameFromUrl)
+        .single();
+
+      if (error) throw error;
+
+      if (data?.id) {
+        const { data: details, error: detailsError } = await supabase
+          .from('package_details')
+          .select('*')
+          .eq('package_id', data.id)
+          .single();
+
+        if (detailsError) throw detailsError;
+        data.details = details;
+      }
+
+      return data;
+    },
+  });
 
   const [guestForms, setGuestForms] = useState<GuestForm[]>(() =>
     Array.from({ length: Math.max(1, initialAdults) }, () => createEmptyGuestForm())
@@ -53,6 +90,54 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   const [bookingMobileError, setBookingMobileError] = useState('');
 
   const totalGuests = initialAdults;
+
+  const sharingRates = useMemo<SharingRate[]>(() => {
+    try {
+      const raw = packageDetails?.sharing_rate;
+      if (!raw) return [];
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      return parsed?.json?.rates ?? parsed?.rates ?? [];
+    } catch {
+      return [];
+    }
+  }, [packageDetails?.sharing_rate]);
+
+  const selectedRate = useMemo(() => {
+    const matchedRate = sharingRates.find((rate) => rate.people === sharingFromUrl);
+    return matchedRate ?? sharingRates.find((rate) => rate.default) ?? sharingRates[0];
+  }, [sharingFromUrl, sharingRates]);
+
+  const formattedTravelDates = useMemo(() => {
+    if (!packageDetails?.departure_date || !packageDetails?.arrival_date) return 'TBD';
+
+    const departure = new Date(packageDetails.departure_date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+    const arrival = new Date(packageDetails.arrival_date).toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+
+    return `${departure} - ${arrival}`;
+  }, [packageDetails?.arrival_date, packageDetails?.departure_date]);
+
+  const purchaseDetails = useMemo(() => {
+    const pricePerPerson = Number(selectedRate?.value ?? packageDetails?.price_per_person ?? 0);
+    const subtotal = pricePerPerson * totalGuests;
+    const gstAmount = subtotal * 0.05;
+    const total = subtotal + gstAmount;
+
+    return {
+      currency: packageDetails?.currency ?? 'INR',
+      pricePerPerson: pricePerPerson.toLocaleString('en-IN'),
+      subtotal: subtotal.toLocaleString('en-IN'),
+      gstAmount: gstAmount.toLocaleString('en-IN'),
+      total: total.toLocaleString('en-IN'),
+    };
+  }, [packageDetails?.currency, packageDetails?.price_per_person, selectedRate?.value, totalGuests]);
 
   useEffect(() => {
     const requiredCount = Math.max(1, totalGuests);
@@ -138,39 +223,70 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           <div className="flex-shrink-0 w-full sm:w-40">
             <div className="aspect-w-4 aspect-h-3 sm:aspect-h-4 rounded-2xl overflow-hidden">
               <Image
-                alt=""
+                alt={packageDetails?.title ?? 'Package image'}
                 fill
                 sizes="200px"
-                src="https://images.pexels.com/photos/6373478/pexels-photo-6373478.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+                src={packageDetails?.thumbnail_url || '/default-image.jpg'}
+                className="object-cover"
               />
             </div>
           </div>
           <div className="py-5 sm:px-5 space-y-3">
             <div>
               <span className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-1">
-                Hotel room in Tokyo, Jappan
+                {packageDetails?.agent_name ?? agentNameFromUrl ?? 'Package'}
               </span>
-              <span className="text-base font-medium mt-1 block">The Lounge & Bar</span>
+              <span className="text-base font-medium mt-1 block">{packageDetails?.title ?? 'Package details'}</span>
             </div>
-            <span className="block text-sm text-neutral-500 dark:text-neutral-400">2 beds · 2 baths</span>
+            <div className="space-y-2 text-sm text-neutral-500 dark:text-neutral-400">
+              <div className="flex justify-between gap-4">
+                <span>Route</span>
+                <span className="text-right text-neutral-900 dark:text-neutral-100">
+                  {packageDetails?.departure_city && packageDetails?.arrival_city
+                    ? `${packageDetails.departure_city} - ${packageDetails.arrival_city}`
+                    : 'TBD'}
+                </span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span>Travel Dates</span>
+                <span className="text-right text-neutral-900 dark:text-neutral-100">{formattedTravelDates}</span>
+              </div>
+              <div className="flex justify-between gap-4">
+                <span>Location</span>
+                <span className="text-right text-neutral-900 dark:text-neutral-100">
+                  {packageDetails?.package_location ?? 'TBD'}
+                </span>
+              </div>
+            </div>
             <div className="w-10 border-b border-neutral-200 dark:border-neutral-700"></div>
-            <StartRating />
           </div>
         </div>
         <div className="flex flex-col space-y-4">
           <h3 className="text-2xl font-semibold">Price detail</h3>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>$19 x 3 day</span>
-            <span>$57</span>
+            <span>Guests</span>
+            <span>{totalGuests}</span>
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>Service charge</span>
-            <span>$0</span>
+            <span>Sharing</span>
+            <span>{selectedRate?.people ?? sharingFromUrl ?? 'TBD'} Person</span>
+          </div>
+          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
+            <span>Price / Person</span>
+            <span>{purchaseDetails.currency} {purchaseDetails.pricePerPerson}</span>
+          </div>
+          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
+            <span>Subtotal</span>
+            <span>{purchaseDetails.currency} {purchaseDetails.subtotal}</span>
+          </div>
+          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
+            <span>GST (5%)</span>
+            <span>{purchaseDetails.currency} {purchaseDetails.gstAmount}</span>
           </div>
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
           <div className="flex justify-between font-semibold">
             <span>Total</span>
-            <span>$57</span>
+            <span>{purchaseDetails.currency} {purchaseDetails.total}</span>
           </div>
         </div>
       </div>
