@@ -80,7 +80,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
         <Image
           src={thumbnail_url || '/default-image.jpg'}
           alt={title}
-          className="w-full"
+          className="w-full rounded-2xl"
           width={400}
           height={300}
           objectFit="cover"
