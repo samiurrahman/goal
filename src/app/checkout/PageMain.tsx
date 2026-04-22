@@ -228,7 +228,21 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       return;
     }
 
-    router.push('/pay-done');
+    const params = new URLSearchParams();
+
+    if (slugFromUrl) {
+      params.set('slug', slugFromUrl);
+    }
+    if (agentNameFromUrl) {
+      params.set('agent_name', agentNameFromUrl);
+    }
+
+    params.set('guests', String(totalGuests));
+    params.set('sharing', String(sharingCount));
+    params.set('booking_mobile', bookingMobile.trim());
+    params.set('guest_forms', JSON.stringify(guestForms));
+
+    router.push(`/checkout/order?${params.toString()}`);
   };
 
   const renderSidebar = () => {
