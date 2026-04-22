@@ -16,6 +16,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type { PackageDetails } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
+import NcInputNumber from '@/components/NcInputNumber';
 
 export interface CheckOutPagePageMainProps {
   className?: string;
@@ -89,8 +90,6 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   const [bookingMobile, setBookingMobile] = useState('');
   const [bookingMobileError, setBookingMobileError] = useState('');
 
-  const totalGuests = initialAdults;
-
   const sharingRates = useMemo<SharingRate[]>(() => {
     try {
       const raw = packageDetails?.sharing_rate;
@@ -106,6 +105,23 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     const matchedRate = sharingRates.find((rate) => rate.people === sharingFromUrl);
     return matchedRate ?? sharingRates.find((rate) => rate.default) ?? sharingRates[0];
   }, [sharingFromUrl, sharingRates]);
+
+  const [sharingCount, setSharingCount] = useState<number>(
+    Number.isFinite(sharingFromUrl) && sharingFromUrl > 0 ? sharingFromUrl : 2
+  );
+
+  useEffect(() => {
+    if (selectedRate?.people) {
+      setSharingCount(selectedRate.people);
+    }
+  }, [selectedRate]);
+
+  const activeRate = useMemo(() => {
+    const matchedRate = sharingRates.find((rate) => rate.people === sharingCount);
+    return matchedRate ?? selectedRate;
+  }, [selectedRate, sharingCount, sharingRates]);
+
+  const totalGuests = guestForms.length;
 
   const formattedTravelDates = useMemo(() => {
     if (!packageDetails?.departure_date || !packageDetails?.arrival_date) return 'TBD';
@@ -125,7 +141,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   }, [packageDetails?.arrival_date, packageDetails?.departure_date]);
 
   const purchaseDetails = useMemo(() => {
-    const pricePerPerson = Number(selectedRate?.value ?? packageDetails?.price_per_person ?? 0);
+    const pricePerPerson = Number(activeRate?.value ?? packageDetails?.price_per_person ?? 0);
     const subtotal = pricePerPerson * totalGuests;
     const gstAmount = subtotal * 0.05;
     const total = subtotal + gstAmount;
@@ -137,18 +153,17 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       gstAmount: gstAmount.toLocaleString('en-IN'),
       total: total.toLocaleString('en-IN'),
     };
-  }, [packageDetails?.currency, packageDetails?.price_per_person, selectedRate?.value, totalGuests]);
+  }, [activeRate?.value, packageDetails?.currency, packageDetails?.price_per_person, totalGuests]);
 
-  useEffect(() => {
-    const requiredCount = Math.max(1, totalGuests);
-    setGuestForms((prev) => {
-      if (prev.length >= requiredCount) return prev;
-      return [
-        ...prev,
-        ...Array.from({ length: requiredCount - prev.length }, () => createEmptyGuestForm()),
-      ];
-    });
-  }, [totalGuests]);
+  const sharingMin = useMemo(() => {
+    if (sharingRates.length === 0) return 1;
+    return Math.min(...sharingRates.map((rate) => rate.people));
+  }, [sharingRates]);
+
+  const sharingMax = useMemo(() => {
+    if (sharingRates.length === 0) return 5;
+    return Math.max(...sharingRates.map((rate) => rate.people));
+  }, [sharingRates]);
 
   const handleGuestFormChange = (index: number, field: keyof GuestForm, value: string) => {
     if (field === 'name' || field === 'age') {
@@ -233,12 +248,16 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           </div>
           <div className="py-5 sm:px-5 space-y-3">
             <div>
-              <span className="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-1">
-                {packageDetails?.agent_name ?? agentNameFromUrl ?? 'Package'}
-              </span>
               <span className="text-base font-medium mt-1 block">{packageDetails?.title ?? 'Package details'}</span>
+              
             </div>
             <div className="space-y-2 text-sm text-neutral-500 dark:text-neutral-400">
+              <div className="flex justify-between gap-4">
+                <span>Agent Name</span>
+                <span className="text-right text-neutral-900 dark:text-neutral-100">
+                  {packageDetails?.agent_name ?? agentNameFromUrl ?? 'Package'}
+                </span>
+              </div>
               <div className="flex justify-between gap-4">
                 <span>Route</span>
                 <span className="text-right text-neutral-900 dark:text-neutral-100">
@@ -267,9 +286,15 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
             <span>Guests</span>
             <span>{totalGuests}</span>
           </div>
-          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>Sharing</span>
-            <span>{selectedRate?.people ?? sharingFromUrl ?? 'TBD'} Person</span>
+          <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
+            <NcInputNumber
+              label="Sharing"
+              desc="Adjust room sharing"
+              defaultValue={sharingCount}
+              min={sharingMin}
+              max={sharingMax}
+              onChange={(value) => setSharingCount(value)}
+            />
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
             <span>Price / Person</span>
