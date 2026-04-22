@@ -1,4 +1,4 @@
-import React, { FC } from 'react';
+import React, { FC, useMemo } from 'react';
 import GallerySlider from '@/components/GallerySlider';
 import { DEMO_STAY_LISTINGS } from '@/data/listings';
 import StartRating from '@/components/StartRating';
@@ -13,14 +13,12 @@ import { MadinaIcon, MakkahIcon } from './icons/icons';
 import Avatar from '@/shared/Avatar';
 import { formatPrice } from '@/utils/formatPrice';
 import { m } from 'framer-motion';
+
+type SharingRateItem = { value: string; people: number; default: boolean };
+
 export interface PropertyCardHProps {
   className?: string;
   data?: Package;
-}
-
-interface SharingRateItem {
-  people: number;
-  rate: number;
 }
 
 const DEMO_DATA = DEMO_STAY_LISTINGS[0];
@@ -48,7 +46,22 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
     id,
   } = data as Package;
 
-  const sharingRateArray: SharingRateItem[] = sharing_rate ? JSON.parse(sharing_rate) : [];
+  // Parse sharing rates from API data (handles both new format: {"json":{"rates":[...]}} and legacy)
+  const sharingRateArray = useMemo<SharingRateItem[]>(() => {
+    try {
+      if (!sharing_rate) return [];
+      const parsed = typeof sharing_rate === 'string' ? JSON.parse(sharing_rate) : sharing_rate;
+      return parsed?.json?.rates ?? parsed?.rates ?? [];
+    } catch {
+      return [];
+    }
+  }, [sharing_rate]);
+
+  // Get the default rate or the first one
+  const defaultSharingRate = useMemo(
+    () => sharingRateArray.find((r) => r.default) ?? sharingRateArray[0],
+    [sharingRateArray],
+  );
 
   // Helper to format date as '14-Feb-2026'
   function formatDateDMY(dateInput?: string | Date) {
@@ -137,7 +150,7 @@ const PropertyCardH: FC<PropertyCardHProps> = ({ className = '', data = {} as Pa
               name={
                 <div className="flex items-center">
                   <i className="text-sm las la-share-alt"></i>
-                  <span className="ml-1">{sharingRateArray[0]?.people} Share</span>
+                  <span className="ml-1">{defaultSharingRate?.people} Share</span>
                 </div>
               }
             />

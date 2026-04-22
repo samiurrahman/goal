@@ -62,33 +62,6 @@ export const Amenities_demos = [
   { name: 'Madina stay 8 Days', icon: carUtilities8 },
 ];
 
-export const roomRates = [
-  {
-    
-    value: '95000',
-    people: 2,
-    
-  },
-  {
-    
-    value: '105000',
-    people: 3,
-    
-  },
-  {
-    
-    value: '95000',
-    people: 4,
-    
-  },
-  {
-    
-    value: '85000',
-    people: 5,
-   
-  },
-];
-
 export const imageGallery: ListingGalleryImage[] = [...PHOTOS].map(
   (item, index): ListingGalleryImage => {
     return {

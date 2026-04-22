@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, useState, useEffect } from 'react';
+import React, { FC, useState, useEffect, useMemo, useCallback } from 'react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
 import { useRouter } from 'next/navigation';
@@ -9,7 +9,6 @@ import GuestsInput from '../(components)/GuestsInput';
 import Breadcrumb from '@/components/Breadcrumb';
 import Iternary from '../(components)/Iternary';
 import PackageMeta from '../(components)/PackageMeta';
-import RoomRates from '../(components)/RoomRates';
 import Policies from '../(components)/Policies';
 import HostInformation from '../(components)/HostInformation';
 import AmenitiesSection from '../(components)/AmenitiesSection';
@@ -17,10 +16,27 @@ import PackageInfo from '../(components)/PackageInfo';
 import MobileFooterSticky from '../(components)/MobileFooterSticky';
 import NcInputNumber from '@/components/NcInputNumber';
 import { GuestsObject } from '@/app/(client-components)/type';
-import { Agent } from '@/data/types';
 import type { PackageDetails } from '@/data/types';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabaseClient';
+
+type RoomRate = { value: string; people: number; default: boolean };
+
+const GUESTS_DEFAULT: GuestsObject = {
+  guestAdults: 1,
+  guestChildren: 0,
+  guestInfants: 0,
+};
+
+const HOST_DATA = {
+  name: 'Kevin Francis',
+  places: 12,
+  description:
+    'Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides accommodation, an outdoor swimming pool, a bar, a shared lounge, a garden and barbecue facilities...',
+  joined: 'Joined in March 2016',
+  responseRate: '100%',
+  responseTime: 'Fast response - within a few hours',
+};
 
 
 export interface PackageDetailProps {
@@ -29,16 +45,9 @@ export interface PackageDetailProps {
 
 const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   const { agentName, slug } = params;
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      document.title = `Hajj & Umrah Packages | ${packageMetaData.title}`;
-    }
-  }, []);
   // Fetch package details by slug, agent by agentName, join agent and details
   const {
     data: package_details,
-    error,
-    isLoading,
   } = useQuery<PackageDetails | null>({
       queryKey: ['package_details', slug],
       queryFn: async () => {
@@ -65,8 +74,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       },
     });
   // Parse sharing rates from API data
-  type RoomRate = { value: string; people: number; default: boolean };
-  const sharingRates: RoomRate[] = React.useMemo(() => {
+  const sharingRates = useMemo<RoomRate[]>(() => {
     try {
       const raw = package_details?.sharing_rate;
       if (!raw) return [];
@@ -76,7 +84,10 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       return [];
     }
   }, [package_details?.sharing_rate]);
-  const defaultRate = sharingRates.find((r) => r.default) ?? sharingRates[0];
+  const defaultRate = useMemo(
+    () => sharingRates.find((rate) => rate.default) ?? sharingRates[0],
+    [sharingRates],
+  );
 
   // Room rate selection state
   const [selectedRate, setSelectedRate] = useState<RoomRate | undefined>(undefined);
@@ -88,53 +99,123 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       setSelectedRate(defaultRate);
       setSharingCount(defaultRate.people);
     }
-  }, [defaultRate?.value, defaultRate?.people]);
+  }, [defaultRate]);
   const [numberOfGuests, setNumberOfGuests] = useState(1);
   const isLoggedIn = useSupabaseIsLoggedIn();
   const router = useRouter();
 
-  // Data for PackageMeta
-  const departureDateText = package_details?.departure_date
-    ? new Date(package_details.departure_date).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-      })
-    : 'TBD';
+  const packageMetaData = useMemo(() => {
+    const departureDateText = package_details?.departure_date
+      ? new Date(package_details.departure_date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+        })
+      : 'TBD';
 
-  const arrivalDateText = package_details?.arrival_date
-    ? new Date(package_details.arrival_date).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-      })
-    : 'TBD';
+    const arrivalDateText = package_details?.arrival_date
+      ? new Date(package_details.arrival_date).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+        })
+      : 'TBD';
 
-  const packageMetaData = {
-    title: package_details?.title ?? 'Untitled Package',
-    duration: "5 Days, 4 Nights",
-    makkahHotel: "Makkah Hotel (~500m)",
-    madinaHotel: "Madina Hotel (~300m)",
-    route: `${package_details?.departure_city?.toUpperCase()} - ${package_details?.arrival_city?.toUpperCase()}`,
-    dates: `${departureDateText} - ${arrivalDateText}`,
-    provider: package_details?.agent_name ?? 'Unknown Provider',
-    url: agentName,
-    providerVerified: true,
-    providerLocation: package_details?.package_location ?? 'Unknown Location',
-  };  
-  
+    return {
+      title: package_details?.title ?? 'Untitled Package',
+      duration: '5 Days, 4 Nights',
+      makkahHotel: 'Makkah Hotel (~500m)',
+      madinaHotel: 'Madina Hotel (~300m)',
+      route: `${package_details?.departure_city?.toUpperCase() ?? ''} - ${package_details?.arrival_city?.toUpperCase() ?? ''}`,
+      dates: `${departureDateText} - ${arrivalDateText}`,
+      provider: package_details?.agent_name ?? 'Unknown Provider',
+      url: agentName,
+      providerVerified: true,
+      providerLocation: package_details?.package_location ?? 'Unknown Location',
+    };
+  }, [
+    agentName,
+    package_details?.agent_name,
+    package_details?.arrival_city,
+    package_details?.arrival_date,
+    package_details?.departure_city,
+    package_details?.departure_date,
+    package_details?.package_location,
+    package_details?.title,
+  ]);
 
-  const hostData = {
-    name: 'Kevin Francis',
-    places: 12,
-    description:
-      'Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides accommodation, an outdoor swimming pool, a bar, a shared lounge, a garden and barbecue facilities...',
-    joined: 'Joined in March 2016',
-    responseRate: '100%',
-    responseTime: 'Fast response - within a few hours',
-    profileUrl: agentName,
-  };
+  useEffect(() => {
+    document.title = `Hajj & Umrah Packages | ${packageMetaData.title}`;
+  }, [packageMetaData.title]);
 
-  const purchaseSummary = () => {
-    // Parse value as number
+  const hostData = useMemo(
+    () => ({ ...HOST_DATA, profileUrl: agentName }),
+    [agentName],
+  );
+
+  const iternaryData = useMemo(() => {
+    const raw = package_details?.details?.iternary;
+    if (!raw) return [];
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+  }, [package_details?.details?.iternary]);
+
+  const stayInfoData = useMemo(() => {
+    const raw = package_details?.details?.stay_information;
+    if (!raw) return { title: 'Stay information', details: [] };
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+  }, [package_details?.details?.stay_information]);
+
+  const policiesData = useMemo(() => {
+    const raw = package_details?.details?.policies;
+    if (!raw) return { cancellation: '', checkIn: '', checkOut: '', notes: [] };
+    return typeof raw === 'string' ? JSON.parse(raw) : raw;
+  }, [package_details?.details?.policies]);
+
+  const amenitiesData = useMemo(
+    () =>
+      Amenities_demos.map((item) => ({
+        ...item,
+        icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
+      })),
+    [],
+  );
+
+  const handleGuestsChange = useCallback((_: GuestsObject, totalGuests: number) => {
+    setNumberOfGuests(totalGuests);
+  }, []);
+
+  const handleSharingChange = useCallback(
+    (value: number) => {
+      const nextSharingCount = Number(value);
+      setSharingCount(nextSharingCount);
+
+      const matchedRate = sharingRates.find((rate) => rate.people === nextSharingCount);
+      if (matchedRate) {
+        setSelectedRate(matchedRate);
+      }
+    },
+    [sharingRates],
+  );
+
+  const handleReserve = useCallback(() => {
+    const params = new URLSearchParams();
+
+    if (package_details?.id) {
+      params.set('package_id', String(package_details.id));
+    }
+    params.set('sharing', String(sharingCount));
+    params.set('guests', String(numberOfGuests));
+    params.set('slug', slug);
+    params.set('agent_name', agentName);
+
+    const checkoutUrl = `/checkout?${params.toString()}`;
+
+    if (isLoggedIn) {
+      router.push(checkoutUrl);
+    } else {
+      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
+    }
+  }, [agentName, isLoggedIn, numberOfGuests, package_details?.id, router, sharingCount, slug]);
+
+  const purchaseSummary = useMemo(() => {
     const pricePerPerson = Number(selectedRate?.value ?? 0);
     const total = pricePerPerson * numberOfGuests;
     const gstRate = 0.05;
@@ -162,10 +243,8 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         <form className="flex flex-col border border-neutral-200 dark:border-neutral-700 rounded-3xl ">
           <GuestsInput
             className="flex-1"
-            defaultValue={{ guestAdults: 1, guestChildren: 0, guestInfants: 0 } as GuestsObject}
-            onChange={(_, totalGuests) => {
-              setNumberOfGuests(totalGuests);
-            }}
+            defaultValue={GUESTS_DEFAULT}
+            onChange={handleGuestsChange}
           />
           <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
           <NcInputNumber 
@@ -174,15 +253,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
             className='p-3' 
             min={2} 
             max={5} 
-            onChange={(value) => { 
-              const nextSharingCount = Number(value);
-              setSharingCount(nextSharingCount);
-
-              const matchedRate = sharingRates.find((rate) => rate.people === nextSharingCount);
-              if (matchedRate) {
-                setSelectedRate(matchedRate);
-              }
-            }} />
+            onChange={handleSharingChange} />
         </form>
 
         {/* SUM */}
@@ -206,34 +277,12 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         </div>
 
         {/* SUBMIT */}
-        <ButtonPrimary
-          onClick={() => {
-            const params = new URLSearchParams();
-
-            if (package_details?.id) {
-              params.set('package_id', String(package_details.id));
-            }
-            params.set('sharing', String(sharingCount));
-            params.set('guests', String(numberOfGuests));
-            params.set('slug', slug);
-            params.set('agent_name', agentName);
-
-            const checkoutUrl = `/checkout?${params.toString()}`;
-
-            if (isLoggedIn) {
-              router.push(checkoutUrl);
-            } else {
-              // Save current path for redirect after login
-              const currentPath = window.location.pathname;
-              router.push(`/login?redirect=${encodeURIComponent(currentPath)}`);
-            }
-          }}
-        >
+        <ButtonPrimary onClick={handleReserve}>
           Reserve
         </ButtonPrimary>
       </div>
     );
-  };
+  }, [handleGuestsChange, handleReserve, handleSharingChange, numberOfGuests, selectedRate, sharingCount]);
 
   return (
     <div className="nc-ListingStayDetailPage px-2 sm:px-4 md:px-8 max-w-screen-2xl mx-auto w-full min-h-screen">
@@ -275,7 +324,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
           {/** PackageMeta data extracted to variable */}
           <PackageMeta {...packageMetaData} />  
 
-          <Iternary data={typeof package_details?.details?.iternary === 'string' ? JSON.parse(package_details.details.iternary) : (package_details?.details?.iternary ?? [])} />
+          <Iternary data={iternaryData} />
 
           {/* <RoomRates
             rates={roomRates}
@@ -291,17 +340,12 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
               })
             }
           /> */}
-          <AmenitiesSection
-            amenities={Amenities_demos.map((item) => ({
-              ...item,
-              icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
-            }))}
-          />
+          <AmenitiesSection amenities={amenitiesData} />
 
-          <PackageInfo data={typeof package_details?.details?.stay_information === 'string' ? JSON.parse(package_details.details.stay_information) : {title: 'Stay information', details: []}} />
+          <PackageInfo data={stayInfoData} />
 
           
-          <Policies data={typeof package_details?.details?.policies === 'string' ? JSON.parse(package_details.details.policies) : {cancellation: '', checkIn: '', checkOut: '', notes: []}} />
+          <Policies data={policiesData} />
 
           {/* <LocationSection {...locationData} /> */}
 
@@ -311,9 +355,9 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
 
         {/* SIDEBAR: Purchase summary, visible on all devices, sticky on lg+ */}
         <div className="w-full lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0 flex flex-col items-stretch">
-          <div className="sticky top-28 hidden lg:block max-w-md mx-auto w-full">{purchaseSummary()}</div>
+          <div className="sticky top-28 hidden lg:block max-w-md mx-auto w-full">{purchaseSummary}</div>
           {/* Mobile/Tablet: show purchase summary below content */}
-          <div className="block lg:hidden mb-8 w-full max-w-lg mx-auto">{purchaseSummary()}</div>
+          <div className="block lg:hidden mb-8 w-full max-w-lg mx-auto">{purchaseSummary}</div>
         </div>
       </main>
       <div className="block lg:hidden h-8" />
