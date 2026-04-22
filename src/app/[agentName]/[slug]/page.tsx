@@ -5,7 +5,6 @@ import ButtonPrimary from '@/shared/ButtonPrimary';
 import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
 import { useRouter } from 'next/navigation';
 import { Amenities_demos } from '../(components)/constant';
-import { roomRates } from '../(components)/constant';
 import GuestsInput from '../(components)/GuestsInput';
 import Breadcrumb from '@/components/Breadcrumb';
 import Iternary from '../(components)/Iternary';
@@ -65,9 +64,31 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         return data;
       },
     });
+  // Parse sharing rates from API data
+  type RoomRate = { value: string; people: number; default: boolean };
+  const sharingRates: RoomRate[] = React.useMemo(() => {
+    try {
+      const raw = package_details?.sharing_rate;
+      if (!raw) return [];
+      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      return parsed?.json?.rates ?? parsed?.rates ?? [];
+    } catch {
+      return [];
+    }
+  }, [package_details?.sharing_rate]);
+  const defaultRate = sharingRates.find((r) => r.default) ?? sharingRates[0];
+
   // Room rate selection state
-  const [selectedRate, setSelectedRate] = useState(roomRates[0]);
-  const [sharingCount, setSharingCount] = useState(5);
+  const [selectedRate, setSelectedRate] = useState<RoomRate | undefined>(undefined);
+  const [sharingCount, setSharingCount] = useState<number>(5);
+
+  // Sync selectedRate and sharingCount when API data arrives
+  useEffect(() => {
+    if (defaultRate) {
+      setSelectedRate(defaultRate);
+      setSharingCount(defaultRate.people);
+    }
+  }, [defaultRate?.value, defaultRate?.people]);
   const [numberOfGuests, setNumberOfGuests] = useState(1);
   const isLoggedIn = useSupabaseIsLoggedIn();
   const router = useRouter();
@@ -98,56 +119,8 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     url: agentName,
     providerVerified: true,
     providerLocation: package_details?.package_location ?? 'Unknown Location',
-  };
+  };  
   
-  // Dummy data for policies
-  // const policiesData = {
-  //   cancellation:
-  //     'Refund 50% of the booking value when customers cancel the room within 48 hours after successful booking and 14 days before the check-in time. Then, cancel the room 14 days before the check-in time, get a 50% refund of the total amount paid (minus the service fee).',
-  //   checkIn: '08:00 am - 12:00 am',
-  //   checkOut: '02:00 pm - 04:00 pm',
-  //   notes: [
-  //     'Ban and I will work together to keep the landscape and environment green and clean by not littering, not using stimulants and respecting people around.',
-  //     'Do not sing karaoke past 11:30',
-  //   ],
-  // };
-  // const packageInfoData: { details: string[] } = (() => {
-  //   const stayInformation = package_details?.details?.stay_information;
-
-  //   if (!stayInformation) return { details: [] };
-
-  //   if (Array.isArray(stayInformation)) {
-  //     return { details: stayInformation.map((item) => String(item)) };
-  //   }
-
-  //   if (typeof stayInformation === 'string') {
-  //     try {
-  //       const parsed = JSON.parse(stayInformation);
-
-  //       if (Array.isArray(parsed)) {
-  //         return { details: parsed.map((item) => String(item)) };
-  //       }
-
-  //       if (parsed && typeof parsed === 'object' && Array.isArray((parsed as { details?: unknown }).details)) {
-  //         return {
-  //           details: ((parsed as { details: unknown[] }).details).map((item) => String(item)),
-  //         };
-  //       }
-  //     } catch {
-  //       return { details: [] };
-  //     }
-
-  //     return { details: [] };
-  //   }
-
-  //   if (typeof stayInformation === 'object' && Array.isArray((stayInformation as { details?: unknown }).details)) {
-  //     return {
-  //       details: ((stayInformation as { details: unknown[] }).details).map((item) => String(item)),
-  //     };
-  //   }
-
-  //   return { details: [] };
-  // })();
 
   const hostData = {
     name: 'Kevin Francis',
@@ -159,17 +132,10 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     responseTime: 'Fast response - within a few hours',
     profileUrl: agentName,
   };
-  // Dummy data for location
-  // const locationData = {
-  //   title: "Location",
-  //   address: "San Diego, CA, United States of America (SAN-San Diego Intl.)",
-  //   mapSrc:
-  //     "https://www.google.com/maps/embed/v1/place?key=AIzaSyAGVJfZMAKYfZ71nzL_v5i3LjTTWnCYwTY&q=Eiffel+Tower,Paris+France",
-  // };
 
   const purchaseSummary = () => {
     // Parse value as number
-    const pricePerPerson = Number(selectedRate.value);
+    const pricePerPerson = Number(selectedRate?.value ?? 0);
     const total = pricePerPerson * numberOfGuests;
     const gstRate = 0.05;
     const gstAmount = total * gstRate;
@@ -178,6 +144,8 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     const formattedTotal = total.toLocaleString('en-IN');
     const formattedGst = gstAmount.toLocaleString('en-IN');
     const formattedGrandTotal = grandTotal.toLocaleString('en-IN');
+   
+
     return (
       <div className="listingSectionSidebar__wrap shadow-xl !space-y-4">
         {/* PRICE */}
@@ -210,7 +178,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
               const nextSharingCount = Number(value);
               setSharingCount(nextSharingCount);
 
-              const matchedRate = roomRates.find((rate) => rate.people === nextSharingCount);
+              const matchedRate = sharingRates.find((rate) => rate.people === nextSharingCount);
               if (matchedRate) {
                 setSelectedRate(matchedRate);
               }
