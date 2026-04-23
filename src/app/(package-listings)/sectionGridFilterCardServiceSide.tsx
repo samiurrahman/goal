@@ -13,7 +13,7 @@ export default async function SectionGridFilterCard({ className = '' }: { classN
   return (
     <div className={`nc-SectionGridFilterCard ${className}`} data-nc-id="SectionGridFilterCard">
       <Breadcrumb
-        items={[{ label: 'https://www.hajjscanner.com', href: '/' }, { label: 'Packages' }]}
+        items={[{ label: 'Home', href: '/' }, { label: 'Packages' }]}
         className="mt-6"
       />
       <div className="mb-4 lg:mb-6 mt-6">
