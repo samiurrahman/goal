@@ -1,11 +1,10 @@
 "use client";
-import { Popover, Transition } from '@headlessui/react';
-import { Fragment, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Avatar from '@/shared/Avatar';
 import SwitchDarkMode2 from '@/shared/SwitchDarkMode2';
 import Link from 'next/link';
-// Import supabase client from your utils
 import { supabase } from '@/utils/supabaseClient';
+import useOutsideAlerter from '@/hooks/useOutsideAlerter';
 interface Props {
   className?: string;
 }
@@ -14,8 +13,10 @@ export default function AvatarDropdown({ className = '' }: Props) {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
 
-  // Add a key to force re-render on auth change
   const [authKey, setAuthKey] = useState(0);
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  useOutsideAlerter(containerRef, () => setOpen(false));
   useEffect(() => {
     let listener: any;
     // Initial fetch
@@ -60,25 +61,16 @@ export default function AvatarDropdown({ className = '' }: Props) {
   };
 
   return (
-    <>
-      <Popover key={authKey} className={`AvatarDropdown relative flex ${className}`}>
-        {({ open, close }) => (
-          <>
-            <Popover.Button
-              className={`self-center w-10 h-10 sm:w-12 sm:h-12 rounded-full text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none flex items-center justify-center`}
-            >
-              <Avatar sizeClass="w-8 h-8 sm:w-9 sm:h-9" imgUrl={user?.user_metadata?.picture}/>
-            </Popover.Button>
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-200"
-              enterFrom="opacity-0 translate-y-1"
-              enterTo="opacity-100 translate-y-0"
-              leave="transition ease-in duration-150"
-              leaveFrom="opacity-100 translate-y-0"
-              leaveTo="opacity-0 translate-y-1"
-            >
-              <Popover.Panel className="absolute z-10 w-screen max-w-[260px] px-4 top-full -right-10 sm:right-0 sm:px-0">
+    <div ref={containerRef} key={authKey} className={`AvatarDropdown relative flex ${className}`}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="self-center w-10 h-10 sm:w-12 sm:h-12 rounded-full text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none flex items-center justify-center"
+      >
+        <Avatar sizeClass="w-8 h-8 sm:w-9 sm:h-9" imgUrl={user?.user_metadata?.picture} />
+      </button>
+      {open && (
+              <div className="absolute z-50 w-screen max-w-[260px] px-4 top-full -right-10 sm:right-0 sm:px-0">
                 <div className="overflow-hidden rounded-3xl shadow-lg ring-1 ring-black ring-opacity-5">
                   <div className="relative grid grid-cols-1 gap-6 bg-white dark:bg-neutral-800 py-7 px-6">
                     <div className="flex items-center space-x-3">
@@ -96,7 +88,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
                     <Link
                       href={'/account'}
                       className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
-                      onClick={() => close()}
+                      onClick={() => setOpen(false)}
                     >
                       <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
                         <svg
@@ -131,7 +123,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
                     <Link
                       href={'/author'}
                       className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
-                      onClick={() => close()}
+                      onClick={() => setOpen(false)}
                     >
                       <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -178,7 +170,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
                     <Link
                       href={'/account-savelists'}
                       className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
-                      onClick={() => close()}
+                      onClick={() => setOpen(false)}
                     >
                       <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
                         <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -245,7 +237,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
                       className="flex items-center w-full p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
                       onClick={async () => {
                         await supabase.auth.signOut();
-                        close();
+                        setOpen(false);
                       }}
                     >
                       <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
@@ -285,11 +277,8 @@ export default function AvatarDropdown({ className = '' }: Props) {
                     </button>
                   </div>
                 </div>
-              </Popover.Panel>
-            </Transition>
-          </>
-        )}
-      </Popover>
-    </>
+              </div>
+      )}
+    </div>
   );
 }
