@@ -340,7 +340,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       <>
         <Breadcrumb
           items={[
-            { label: 'https://www.hajjscanner.com', href: '/' },
+            { label: 'Home', href: '/' },
             { label: 'Packages', href: '/packages' },
             ...(slugFromUrl
               ? [
