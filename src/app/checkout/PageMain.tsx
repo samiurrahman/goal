@@ -357,13 +357,10 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           <div className="space-y-4">
             <div className="flex items-center justify-between gap-3">
               <h3 className="text-2xl font-semibold">Guest Details</h3>
-              <button
-                type="button"
-                onClick={handleAddGuestForm}
-                className="px-4 py-2 rounded-xl border border-neutral-300 dark:border-neutral-700 text-sm font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800"
-              >
-                Add Members
-              </button>
+              <ButtonPrimary type="button" onClick={handleAddGuestForm} className="flex-shrink-0">
+                <i className="text-xl las la-plus"></i>
+                <span className="ml-3">Add Members</span>
+              </ButtonPrimary>
             </div>
             <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
