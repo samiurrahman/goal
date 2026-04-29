@@ -8,7 +8,6 @@ import ButtonPrimary from '@/shared/ButtonPrimary';
 import { supabase } from '@/utils/supabaseClient';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Package } from '@/data/types';
-import PackageCard from '@/components/package';
 import Packages from './components/packages';
 
 export interface SectionGridFilterCardProps {
@@ -95,63 +94,17 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
       queryKey: ['packages', payload],
       queryFn: async ({ pageParam = 0 }) => {
         const page = typeof pageParam === 'number' ? pageParam : 0;
-        let query = supabase.from('packages').select('*');
-        if (payload.location && payload.location.length > 0) {
-          // Use .in for multiple cities, .ilike for single
-          if (payload.location.length === 1) {
-            query = query.ilike('package_location', `%${payload.location[0]}%`);
-          } else {
-            query = query.in('package_location', payload.location);
-          }
-        }
-        // Month filter: filter by departure_date in selected months of current year
-        if (payload.months && payload.months.length > 0) {
-          // Build an array of date ranges for each selected month
-          const monthRanges = payload.months.map((monthNum: number) => {
-            const start = `${payload.year}-${monthNum.toString().padStart(2, '0')}-01`;
-            // Get last day of month
-            const endDate = new Date(payload.year, monthNum, 0).getDate();
-            const end = `${payload.year}-${monthNum.toString().padStart(2, '0')}-${endDate}`;
-            return { start, end };
-          });
-          // For one or more months, use .or to combine ranges
-          const orFilters = monthRanges.map(
-            ({ start, end }) => `and(departure_date.gte.${start},departure_date.lte.${end})`
-          );
-          query = query.or(orFilters.join(','));
-        }
-        if (payload.datestart) {
-          query = query.gte('departure_date', payload.datestart);
-        }
-        if (payload.dateend) {
-          query = query.lte('arrival_date', payload.dateend);
-        }
-        if (payload.total_duration_days) {
-          query = query.lte('total_duration_days', payload.total_duration_days);
-        }
-        // Price filter: only show packages with price <= selected price
-        if (payload.price) {
-          query = query.lte('price_per_person', payload.price);
-        }
-        // Hotel distance filters (range: less than or equal to selected value)
-        if (payload.makkahHotelDistance !== undefined) {
-          query = query.lte('makkah_hotel_distance_m', payload.makkahHotelDistance);
-        }
-        if (payload.madinahHotelDistance !== undefined) {
-          query = query.lte('madinah_hotel_distance_m', payload.madinahHotelDistance);
-        }
-        // Agent name filter
-        if (payload.agentNameList && payload.agentNameList.length > 0) {
-          if (payload.agentNameList.length === 1) {
-            query = query.eq('agent_name', payload.agentNameList[0]);
-          } else {
-            query = query.in('agent_name', payload.agentNameList);
-          }
-        }
-        // Add more filters here as needed, e.g. .eq, .gt, .lt, .like, .in, etc.
-        const { data, error } = await query.range(page, page + PAGE_SIZE - 1);
-        if (error) throw error;
-        return data as Package[];
+
+        const { data, error } = await supabase.functions.invoke('packages', {
+          body: {
+            payload,
+            page,
+            pageSize: PAGE_SIZE,
+          },
+        });
+
+        if (error) throw new Error(error.message || 'Failed to fetch packages');
+        return (data?.data ?? []) as Package[];
       },
       getNextPageParam: (lastPage, allPages) => {
         if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
