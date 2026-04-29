@@ -27,4 +27,28 @@ const avatarColors = [
   '#E208A7',
 ];
 
-export { avatarColors };
+const MONTHS_LIST = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+const MONTHS_LIST_WITH_ANY = ['Any', ...MONTHS_LIST];
+
+const STOP_POINTS = [
+  { name: 'Nonstop' },
+  { name: 'Up to 1 stops' },
+  { name: 'Up to 2 stops' },
+  { name: 'Any number of stops' },
+];
+
+export { avatarColors, MONTHS_LIST, MONTHS_LIST_WITH_ANY, STOP_POINTS };

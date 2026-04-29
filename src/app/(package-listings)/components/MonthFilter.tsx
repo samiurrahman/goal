@@ -6,22 +6,8 @@ import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import Checkbox from '@/shared/Checkbox';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { MONTHS_LIST } from '@/contains/contants';
 import XClearIcon from './XClearIcon';
-
-const MONTHS_LIST = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'May',
-  'Jun',
-  'Jul',
-  'Aug',
-  'Sep',
-  'Oct',
-  'Nov',
-  'Dec',
-];
 
 const MonthFilter = () => {
   const [monthStates, setMonthStates] = useState<string[]>([]);

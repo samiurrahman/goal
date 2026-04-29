@@ -9,7 +9,7 @@ import { supabase } from '@/utils/supabaseClient';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Package } from '@/data/types';
 import PackageCard from '@/components/package';
-import PropertyCardH from '@/components/PropertyCardH';
+import Packages from './components/packages';
 
 export interface SectionGridFilterCardProps {
   className?: string;
@@ -189,7 +189,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
       </div>
       <div className="grid grid-cols-1 gap-6 rounded-3xl">
         {packages.map((item, index) => (
-          <PropertyCardH key={item.id || index} data={item} />
+          <Packages key={item.id || index} data={item} />
         ))}
         <div ref={loaderRef} className="flex mt-12 justify-center items-center">
           {isFetchingNextPage && <ButtonPrimary loading>Loading more Packages</ButtonPrimary>}

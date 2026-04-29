@@ -6,15 +6,14 @@ import LocationInput from '../LocationInput';
 import ClearDataButton from '../ClearDataButton';
 import ButtonSubmit from '../ButtonSubmit';
 import Checkbox from '@/shared/Checkbox';
+import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
 
 const StaySearchForm: FC<{}> = ({}) => {
   const [dropOffLocationType, setDropOffLocationType] = useState<'Umrah' | 'Hajj'>('Umrah');
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [monthStates, setMonthStates] = useState<string[]>([]);
-  const [packagesUrl, setPackagesUrl] = useState<string>("/packages");
+  const [packagesUrl, setPackagesUrl] = useState<string>('/packages');
   const monthRef = useRef<HTMLButtonElement>(null);
-
-  const monthsList = ['Any', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
   const buildPackagesUrl = (locationObj: any, selectedMonths: string[]) => {
     // Try to extract location string from common shapes
@@ -86,7 +85,9 @@ const StaySearchForm: FC<{}> = ({}) => {
                   <CalendarDaysIcon className="w-5 h-5 lg:w-7 lg:h-7" />
                 </div>
                 <div>
-                  <div className="block w-full bg-transparent border-none focus:ring-0 p-0 focus:outline-none focus:placeholder-neutral-300 xl:text-lg font-semibold placeholder-neutral-800 dark:placeholder-neutral-200 truncate">Month</div>
+                  <div className="block w-full bg-transparent border-none focus:ring-0 p-0 focus:outline-none focus:placeholder-neutral-300 xl:text-lg font-semibold placeholder-neutral-800 dark:placeholder-neutral-200 truncate">
+                    Month
+                  </div>
                   <div className="dark:text-neutral-100 line-clamp-1 block mt-0.5 text-sm text-neutral-400 font-light">
                     {monthStates.length > 0 ? monthStates.join(', ') : 'Select month'}
                   </div>
@@ -120,7 +121,7 @@ const StaySearchForm: FC<{}> = ({}) => {
               <Popover.Panel className="absolute z-20 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
                 <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
                   <div className="relative flex flex-col px-5 py-6 space-y-5 max-h-72 overflow-y-auto">
-                    {monthsList.map((month) => (
+                    {MONTHS_LIST_WITH_ANY.map((month) => (
                       <span
                         key={`${month}-${monthStates.includes(month)}`}
                         className="flex px-1 sm:px-2 items-center py-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-2xl"
@@ -142,7 +143,6 @@ const StaySearchForm: FC<{}> = ({}) => {
       </Popover>
     );
   };
-
 
   const renderRadioBtn = () => {
     return (
@@ -170,10 +170,13 @@ const StaySearchForm: FC<{}> = ({}) => {
       </div>
     );
   };
-  
-  const renderForm = () => {    
+
+  const renderForm = () => {
     return (
-      <form className="w-full relative rounded-[40px] xl:rounded-[49px] rounded-t-2xl xl:rounded-t-3xl shadow-xl dark:shadow-2xl bg-white dark:bg-neutral-800 " onSubmit={handleSubmit}>
+      <form
+        className="w-full relative rounded-[40px] xl:rounded-[49px] rounded-t-2xl xl:rounded-t-3xl shadow-xl dark:shadow-2xl bg-white dark:bg-neutral-800 "
+        onSubmit={handleSubmit}
+      >
         {renderRadioBtn()}
         <div className={`relative flex flex-row items-center self-center`}>
           <LocationInput className="flex-[1.5]" onLocationSelect={handleLocationSelect} />

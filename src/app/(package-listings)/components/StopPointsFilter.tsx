@@ -5,14 +5,8 @@ import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import Checkbox from '@/shared/Checkbox';
+import { STOP_POINTS } from '@/contains/contants';
 import XClearIcon from './XClearIcon';
-
-const stopPoints = [
-  { name: 'Nonstop' },
-  { name: 'Up to 1 stops' },
-  { name: 'Up to 2 stops' },
-  { name: 'Any number of stops' },
-];
 
 const StopPointsFilter = () => {
   const [stopPontsStates, setStopPontsStates] = useState<string[]>([]);
@@ -56,7 +50,7 @@ const StopPointsFilter = () => {
             <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
               <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
                 <div className="relative flex flex-col px-5 py-6 space-y-5">
-                  {stopPoints.map((item) => (
+                  {STOP_POINTS.map((item) => (
                     <div key={item.name} className="">
                       <Checkbox
                         name={item.name}
