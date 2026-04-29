@@ -1,7 +1,7 @@
 'use client';
 
 import { ClockIcon, MapPinIcon } from '@heroicons/react/24/outline';
-import React, { useState, useRef, useEffect, FC } from 'react';
+import React, { useState, useRef, useEffect, useCallback, FC } from 'react';
 import ClearDataButton from './ClearDataButton';
 import { useCities } from '@/hooks/useCities';
 
@@ -60,14 +60,13 @@ const LocationInput: FC<LocationInputProps> = ({
     setShowPopover(false);
   };
 
-  const handleSelectLocation = (item: any) => {   
-    
+  const handleSelectLocation = useCallback((item: any) => {
     setValue(item.name + (item.state ? ', ' + item.state : ''));
     setShowPopover(false); // Close the popover after selection
     setFocusedIndex(-1);
     if (onLocationSelect) onLocationSelect(item);
     if (inputRef.current) inputRef.current.blur(); // Remove focus from input
-  };
+  }, [onLocationSelect]);
 
   const { data: cities, error, isLoading } = useCities();
 
@@ -100,7 +99,7 @@ const LocationInput: FC<LocationInputProps> = ({
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [showPopover, filteredCities, focusedIndex]);
+  }, [showPopover, filteredCities, focusedIndex, handleSelectLocation]);
 
   // Reset focus index when value or popover changes
   useEffect(() => {

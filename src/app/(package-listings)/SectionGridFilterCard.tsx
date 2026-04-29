@@ -22,14 +22,34 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
   // Read params and create payload
   // Support multiple locations as comma-separated
   const locationParam = searchParams.get('location') || '';
-  const locationList = locationParam ? locationParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const locationList = locationParam
+    ? locationParam
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
   // Month filter logic
   const monthParam = searchParams.get('month') || '';
-  const monthList = monthParam ? monthParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const monthList = monthParam
+    ? monthParam
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
   // Map month names to numbers (Jan=1, Feb=2, ...)
   const monthNameToNumber: Record<string, number> = {
-    Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
-    Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12
+    Jan: 1,
+    Feb: 2,
+    Mar: 3,
+    Apr: 4,
+    May: 5,
+    Jun: 6,
+    Jul: 7,
+    Aug: 8,
+    Sep: 9,
+    Oct: 10,
+    Nov: 11,
+    Dec: 12,
   };
   const selectedMonthNumbers = monthList.map((m) => monthNameToNumber[m]).filter(Boolean);
   const currentYear = new Date().getFullYear();
@@ -41,12 +61,21 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
   // Hotel distance filters
   const makkahHotelDistanceParam = searchParams.get('makkah_hotel_distance_m');
   const madinahHotelDistanceParam = searchParams.get('madinah_hotel_distance_m');
-  const makkahHotelDistance = makkahHotelDistanceParam ? Number(makkahHotelDistanceParam) : undefined;
-  const madinahHotelDistance = madinahHotelDistanceParam ? Number(madinahHotelDistanceParam) : undefined;
+  const makkahHotelDistance = makkahHotelDistanceParam
+    ? Number(makkahHotelDistanceParam)
+    : undefined;
+  const madinahHotelDistance = madinahHotelDistanceParam
+    ? Number(madinahHotelDistanceParam)
+    : undefined;
 
   // Agent name filter
   const agentNameParam = searchParams.get('agent_name') || '';
-  const agentNameList = agentNameParam ? agentNameParam.split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const agentNameList = agentNameParam
+    ? agentNameParam
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+    : [];
 
   const payload = {
     location: locationList,
@@ -86,7 +115,9 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
             return { start, end };
           });
           // For one or more months, use .or to combine ranges
-          const orFilters = monthRanges.map(({ start, end }) => `and(departure_date.gte.${start},departure_date.lte.${end})`);
+          const orFilters = monthRanges.map(
+            ({ start, end }) => `and(departure_date.gte.${start},departure_date.lte.${end})`
+          );
           query = query.or(orFilters.join(','));
         }
         if (payload.datestart) {
@@ -133,14 +164,15 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
   const loaderRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!hasNextPage || isFetchingNextPage) return;
+    const loaderElement = loaderRef.current;
     const observer = new IntersectionObserver((entries) => {
       if (entries[0].isIntersecting) {
         fetchNextPage();
       }
     });
-    if (loaderRef.current) observer.observe(loaderRef.current);
+    if (loaderElement) observer.observe(loaderElement);
     return () => {
-      if (loaderRef.current) observer.unobserve(loaderRef.current);
+      if (loaderElement) observer.unobserve(loaderElement);
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
@@ -151,38 +183,13 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
 
   return (
     <div className={`nc-SectionGridFilterCard ${className}`} data-nc-id="SectionGridFilterCard">
-      <Breadcrumb
-        items={[{ label: 'Home', href: '/' }, { label: 'Packages' }]}
-        className="mt-4"
-      />
+      <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Packages' }]} className="mt-4" />
       <div className="mb-4 lg:mb-6 mt-4">
         <TabFilters />
       </div>
       <div className="grid grid-cols-1 gap-6 rounded-3xl">
-        {/* {error && (
-          <div className="flex justify-center items-center py-12 text-red-500">
-            Error: {error.message}
-          </div>
-        )}
-        {isLoading ? (
-          <div className="flex justify-center items-center py-12">
-            <ButtonPrimary loading>Loading Packages</ButtonPrimary>
-          </div>
-        ) : (
-          <>
-            {packages.map((item, index) => (
-              // <PackageCard key={item.id || index} data={item} />
-              <PropertyCardH key={item.id || index} data={item} />
-            ))}
-            <div ref={loaderRef} className="flex mt-12 justify-center items-center">
-              {isFetchingNextPage && <ButtonPrimary loading>Loading more Packages</ButtonPrimary>}
-              {!hasNextPage && <span>No more Packages to load.</span>}
-            </div>
-          </>
-        )} */}
         {packages.map((item, index) => (
-              // <PackageCard key={item.id || index} data={item} />
-              <PropertyCardH key={item.id || index} data={item} />
+          <PropertyCardH key={item.id || index} data={item} />
         ))}
         <div ref={loaderRef} className="flex mt-12 justify-center items-center">
           {isFetchingNextPage && <ButtonPrimary loading>Loading more Packages</ButtonPrimary>}
