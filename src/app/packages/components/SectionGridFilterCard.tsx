@@ -15,6 +15,7 @@ export interface SectionGridFilterCardProps {
 }
 
 const PAGE_SIZE = 20;
+const INITIAL_SKELETON_COUNT = 8;
 
 const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' }) => {
   const searchParams = useSearchParams();
@@ -141,13 +142,52 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
         <TabFilters />
       </div>
       <div className="grid grid-cols-1 gap-6 rounded-3xl">
-        {packages.map((item, index) => (
-          <Packages key={item.id || index} data={item} />
-        ))}
-        <div ref={loaderRef} className="flex mt-12 justify-center items-center">
-          {isFetchingNextPage && <ButtonPrimary loading>Loading more Packages</ButtonPrimary>}
-          {!hasNextPage && <span>No more Packages to load.</span>}
-        </div>
+        {isLoading ? (
+          Array.from({ length: INITIAL_SKELETON_COUNT }).map((_, index) => (
+            <div
+              key={`package-skeleton-${index}`}
+              className="lg:px-2 lg:py-1 shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-3xl overflow-hidden"
+            >
+              <div className="h-full w-full flex flex-col sm:flex-row sm:items-center animate-pulse">
+                <div className="flex-shrink-0 p-3 w-full sm:w-64">
+                  <div className="w-full h-44 sm:h-36 rounded-2xl bg-neutral-200 dark:bg-neutral-700" />
+                </div>
+
+                <div className="flex-grow p-3 sm:pr-6 space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    <div className="h-6 w-24 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="h-6 w-20 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="h-6 w-20 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                  </div>
+
+                  <div className="h-6 w-3/4 rounded bg-neutral-200 dark:bg-neutral-700" />
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2">
+                    <div className="h-5 w-40 rounded bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="h-6 w-28 rounded bg-neutral-200 dark:bg-neutral-700" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <>
+            {packages.map((item, index) => (
+              <Packages key={item.id || index} data={item} />
+            ))}
+            <div ref={loaderRef} className="flex mt-12 justify-center items-center">
+              {isFetchingNextPage && <ButtonPrimary loading>Loading more Packages</ButtonPrimary>}
+              {!hasNextPage && <span>No more Packages to load.</span>}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

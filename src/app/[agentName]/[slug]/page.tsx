@@ -285,27 +285,6 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
 
   return (
     <div className="nc-ListingStayDetailPage px-2 sm:px-4 md:px-8 max-w-screen-2xl mx-auto w-full min-h-screen">
-      {/* <p>Package Details: {package_details ? JSON.stringify(package_details) : 'Loading...'}</p> */}
-      {/* BANNER IMAGE WITH FADE-OUT */}
-      {/* <header className="relative h-48 sm:h-64 md:h-80 lg:h-96 w-full rounded-md sm:rounded-xl overflow-hidden">
-        <Image
-          src={PHOTOS[0]}
-          alt="Banner"
-          fill
-          className="object-cover w-full h-full"
-          priority
-          sizes="100vw"
-        />
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              'linear-gradient(to bottom, rgba(0,0,0,0.25) 60%, rgba(255,255,255,1) 100%)',
-          }}
-        />
-      </header> */}
-
-      {/* BREADCRUMB */}
       <div className="relative z-20 mt-4">
         <Breadcrumb
           items={[
@@ -320,33 +299,11 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
       <main className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-0 w-full">
         {/* CONTENT */}
         <div className="w-full lg:w-3/5 xl:w-2/3 space-y-6 sm:space-y-8 lg:space-y-10 lg:pr-10 mb-6">
-          {/** PackageMeta data extracted to variable */}
           <PackageMeta {...packageMetaData} />
-
           <Iternary data={iternaryData} />
-
-          {/* <RoomRates
-            rates={roomRates}
-            selectedRate={selectedRate}
-            onSelect={(rate) =>
-              setSelectedRate({
-                ...rate,
-                highlight: rate.highlight ?? false,
-                icon: (props: React.SVGProps<SVGSVGElement>) => {
-                  const Icon = rate.icon;
-                  return Icon ? <Icon {...props} /> : <></>;
-                },
-              })
-            }
-          /> */}
           <AmenitiesSection amenities={amenitiesData} />
-
           <PackageInfo data={stayInfoData} />
-
           <Policies data={policiesData} />
-
-          {/* <LocationSection {...locationData} /> */}
-
           <HostInformation {...hostData} />
         </div>
 
