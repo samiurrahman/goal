@@ -1,32 +1,22 @@
-'use client';
-
-import React, { FC, useState, useEffect, useMemo, useCallback } from 'react';
+import React from 'react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
-import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
-import { useRouter } from 'next/navigation';
 import { Amenities_demos } from '../(components)/constant';
-import GuestsInput from '../(components)/GuestsInput';
 import Breadcrumb from '@/components/Breadcrumb';
 import Iternary from '../(components)/Iternary';
+import type { IternaryItemProps } from '../(components)/IternaryItem';
 import PackageMeta from '../(components)/PackageMeta';
 import Policies from '../(components)/Policies';
 import HostInformation from '../(components)/HostInformation';
 import AmenitiesSection from '../(components)/AmenitiesSection';
 import PackageInfo from '../(components)/PackageInfo';
 import MobileFooterSticky from '../(components)/MobileFooterSticky';
-import NcInputNumber from '@/components/NcInputNumber';
-import { GuestsObject } from '@/app/(client-components)/type';
+import PurchaseSummary from '../(components)/PurchaseSummary';
 import type { PackageDetails } from '@/data/types';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabaseClient';
+import { cookies } from 'next/headers';
+import { notFound } from 'next/navigation';
 
 type RoomRate = { value: string; people: number; default: boolean };
-
-const GUESTS_DEFAULT: GuestsObject = {
-  guestAdults: 1,
-  guestChildren: 0,
-  guestInfants: 0,
-};
 
 const HOST_DATA = {
   name: 'Kevin Francis',
@@ -40,248 +30,121 @@ const HOST_DATA = {
 
 export interface PackageDetailProps {
   params: { agentName: string; slug: string };
+  searchParams?: {
+    guests?: string;
+    sharing?: string;
+  };
 }
 
-const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
-  const { agentName, slug } = params;
-  // Fetch package details by slug, agent by agentName, join agent and details
-  const { data: package_details } = useQuery<PackageDetails | null>({
-    queryKey: ['package_details', slug],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('packages')
-        .select('*')
-        .eq('slug', slug)
-        .eq('agent_name', agentName)
-        .single();
+const parseJson = <T,>(raw: unknown, fallback: T): T => {
+  try {
+    if (!raw) return fallback;
+    return typeof raw === 'string' ? (JSON.parse(raw) as T) : (raw as T);
+  } catch {
+    return fallback;
+  }
+};
 
-      if (error) throw error;
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-      // Fetch package_details by package_id
-      if (data?.id) {
-        const { data: details, error: detailsError } = await supabase
-          .from('package_details')
-          .select('*')
-          .eq('package_id', data.id)
-          .single();
-        if (detailsError) throw detailsError;
-        data.details = details;
-      }
-      return data;
-    },
+const formatDateRangePart = (dateInput?: string) => {
+  if (!dateInput) return 'TBD';
+  const date = new Date(dateInput);
+  if (Number.isNaN(date.getTime())) return 'TBD';
+  return date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
   });
-  // Parse sharing rates from API data
-  const sharingRates = useMemo<RoomRate[]>(() => {
-    try {
-      const raw = package_details?.sharing_rate;
-      if (!raw) return [];
-      const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-      return parsed?.json?.rates ?? parsed?.rates ?? [];
-    } catch {
-      return [];
-    }
-  }, [package_details?.sharing_rate]);
-  const defaultRate = useMemo(
-    () => sharingRates.find((rate) => rate.default) ?? sharingRates[0],
-    [sharingRates]
-  );
+};
 
-  // Room rate selection state
-  const [selectedRate, setSelectedRate] = useState<RoomRate | undefined>(undefined);
-  const [sharingCount, setSharingCount] = useState<number>(5);
+const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
+  const { agentName, slug } = params;
+  const { data: packageData, error } = await supabase
+    .from('packages')
+    .select('*')
+    .eq('slug', slug)
+    .eq('agent_name', agentName)
+    .single();
 
-  // Sync selectedRate and sharingCount when API data arrives
-  useEffect(() => {
-    if (defaultRate) {
-      setSelectedRate(defaultRate);
-      setSharingCount(defaultRate.people);
-    }
-  }, [defaultRate]);
-  const [numberOfGuests, setNumberOfGuests] = useState(1);
-  const isLoggedIn = useSupabaseIsLoggedIn();
-  const router = useRouter();
+  if (error || !packageData) {
+    notFound();
+  }
 
-  const packageMetaData = useMemo(() => {
-    const departureDateText = package_details?.departure_date
-      ? new Date(package_details.departure_date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        })
-      : 'TBD';
+  let package_details = packageData as PackageDetails;
 
-    const arrivalDateText = package_details?.arrival_date
-      ? new Date(package_details.arrival_date).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        })
-      : 'TBD';
+  if (packageData?.id) {
+    const { data: details } = await supabase
+      .from('package_details')
+      .select('*')
+      .eq('package_id', packageData.id)
+      .single();
 
-    return {
-      title: package_details?.title ?? 'Untitled Package',
-      duration: '5 Days, 4 Nights',
-      makkahHotel: 'Makkah Hotel (~500m)',
-      madinaHotel: 'Madina Hotel (~300m)',
-      route: `${package_details?.departure_city?.toUpperCase() ?? ''} - ${package_details?.arrival_city?.toUpperCase() ?? ''}`,
-      dates: `${departureDateText} - ${arrivalDateText}`,
-      provider: package_details?.agent_name ?? 'Unknown Provider',
-      url: agentName,
-      providerVerified: true,
-      providerLocation: package_details?.package_location ?? 'Unknown Location',
-    };
-  }, [
+    package_details = {
+      ...packageData,
+      details: details ?? null,
+    } as PackageDetails;
+  }
+
+  const sharingRates = parseJson<{
+    json?: { rates?: RoomRate[] };
+    rates?: RoomRate[];
+  }>(package_details?.sharing_rate, {});
+  const sharingRateList = sharingRates?.json?.rates ?? sharingRates?.rates ?? [];
+
+  const defaultRate = sharingRateList.find((rate) => rate.default) ?? sharingRateList[0];
+  const sharingFromQuery = Number(searchParams?.sharing ?? defaultRate?.people ?? 5);
+  const sharingCount = clamp(Number.isFinite(sharingFromQuery) ? sharingFromQuery : 5, 2, 5);
+  const selectedRate = sharingRateList.find((rate) => rate.people === sharingCount) ?? defaultRate;
+
+  const guestsFromQuery = Number(searchParams?.guests ?? 1);
+  const numberOfGuests = clamp(Number.isFinite(guestsFromQuery) ? guestsFromQuery : 1, 1, 20);
+
+  const departureDateText = formatDateRangePart(package_details?.departure_date);
+  const arrivalDateText = formatDateRangePart(package_details?.arrival_date);
+
+  const packageMetaData = {
+    title: package_details?.title ?? 'Untitled Package',
+    duration: '5 Days, 4 Nights',
+    makkahHotel: 'Makkah Hotel (~500m)',
+    madinaHotel: 'Madina Hotel (~300m)',
+    route: `${package_details?.departure_city?.toUpperCase() ?? ''} - ${package_details?.arrival_city?.toUpperCase() ?? ''}`,
+    dates: `${departureDateText} - ${arrivalDateText}`,
+    provider: package_details?.agent_name ?? 'Unknown Provider',
+    url: agentName,
+    providerVerified: true,
+    providerLocation: package_details?.package_location ?? 'Unknown Location',
+  };
+
+  const hostData = { ...HOST_DATA, profileUrl: agentName };
+
+  const iternaryData = parseJson<IternaryItemProps[]>(package_details?.details?.iternary, []);
+  const stayInfoData = parseJson(package_details?.details?.stay_information, {
+    title: 'Stay information',
+    details: [],
+  });
+  const policiesData = parseJson(package_details?.details?.policies, {
+    cancellation: '',
+    checkIn: '',
+    checkOut: '',
+    notes: [],
+  });
+
+  const amenitiesData = Amenities_demos.map((item) => ({
+    ...item,
+    icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
+  }));
+
+  const isLoggedIn = Boolean(cookies().get('access_token')?.value);
+
+  const purchaseSummaryProps = {
+    packageId: package_details?.id,
+    slug,
     agentName,
-    package_details?.agent_name,
-    package_details?.arrival_city,
-    package_details?.arrival_date,
-    package_details?.departure_city,
-    package_details?.departure_date,
-    package_details?.package_location,
-    package_details?.title,
-  ]);
-
-  useEffect(() => {
-    document.title = `Hajj & Umrah Packages | ${packageMetaData.title}`;
-  }, [packageMetaData.title]);
-
-  const hostData = useMemo(() => ({ ...HOST_DATA, profileUrl: agentName }), [agentName]);
-
-  const iternaryData = useMemo(() => {
-    const raw = package_details?.details?.iternary;
-    if (!raw) return [];
-    return typeof raw === 'string' ? JSON.parse(raw) : raw;
-  }, [package_details?.details?.iternary]);
-
-  const stayInfoData = useMemo(() => {
-    const raw = package_details?.details?.stay_information;
-    if (!raw) return { title: 'Stay information', details: [] };
-    return typeof raw === 'string' ? JSON.parse(raw) : raw;
-  }, [package_details?.details?.stay_information]);
-
-  const policiesData = useMemo(() => {
-    const raw = package_details?.details?.policies;
-    if (!raw) return { cancellation: '', checkIn: '', checkOut: '', notes: [] };
-    return typeof raw === 'string' ? JSON.parse(raw) : raw;
-  }, [package_details?.details?.policies]);
-
-  const amenitiesData = useMemo(
-    () =>
-      Amenities_demos.map((item) => ({
-        ...item,
-        icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
-      })),
-    []
-  );
-
-  const handleGuestsChange = useCallback((_: GuestsObject, totalGuests: number) => {
-    setNumberOfGuests(totalGuests);
-  }, []);
-
-  const handleSharingChange = useCallback(
-    (value: number) => {
-      const nextSharingCount = Number(value);
-      setSharingCount(nextSharingCount);
-
-      const matchedRate = sharingRates.find((rate) => rate.people === nextSharingCount);
-      if (matchedRate) {
-        setSelectedRate(matchedRate);
-      }
-    },
-    [sharingRates]
-  );
-
-  const handleReserve = useCallback(() => {
-    const params = new URLSearchParams();
-
-    if (package_details?.id) {
-      params.set('package_id', String(package_details.id));
-    }
-    params.set('sharing', String(sharingCount));
-    params.set('guests', String(numberOfGuests));
-    params.set('slug', slug);
-    params.set('agent_name', agentName);
-
-    const checkoutUrl = `/checkout?${params.toString()}`;
-
-    if (isLoggedIn) {
-      router.push(checkoutUrl);
-    } else {
-      router.push(`/login?redirect=${encodeURIComponent(window.location.pathname)}`);
-    }
-  }, [agentName, isLoggedIn, numberOfGuests, package_details?.id, router, sharingCount, slug]);
-
-  const purchaseSummary = useMemo(() => {
-    const pricePerPerson = Number(selectedRate?.value ?? 0);
-    const total = pricePerPerson * numberOfGuests;
-    const gstRate = 0.05;
-    const gstAmount = total * gstRate;
-    const grandTotal = total + gstAmount;
-    const formattedPrice = pricePerPerson.toLocaleString('en-IN');
-    const formattedTotal = total.toLocaleString('en-IN');
-    const formattedGst = gstAmount.toLocaleString('en-IN');
-    const formattedGrandTotal = grandTotal.toLocaleString('en-IN');
-
-    return (
-      <div className="listingSectionSidebar__wrap shadow-xl !space-y-4">
-        {/* PRICE */}
-        <div className="flex justify-between">
-          <span className="text-2xl font-normal">
-            INR {formattedPrice}
-            <span className="text-base font-normal text-neutral-500 dark:text-neutral-400">
-              /person
-            </span>
-          </span>
-        </div>
-
-        {/* FORM */}
-        <form className="flex flex-col border border-neutral-200 dark:border-neutral-700 rounded-3xl ">
-          <GuestsInput
-            className="flex-1"
-            defaultValue={GUESTS_DEFAULT}
-            onChange={handleGuestsChange}
-          />
-          <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
-          <NcInputNumber
-            label="Sharing"
-            defaultValue={sharingCount}
-            className="p-3"
-            min={2}
-            max={5}
-            onChange={handleSharingChange}
-          />
-        </form>
-
-        {/* SUM */}
-        <div className="flex flex-col space-y-4">
-          <div className="flex justify-between text-neutral-600 dark:text-neutral-300 text-sm">
-            <span>
-              No of Guest ({numberOfGuests} x {formattedPrice})
-            </span>
-            <span>INR {formattedTotal}</span>
-          </div>
-          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300 text-sm">
-            <span>GST (5%)</span>
-            <span>INR {formattedGst}</span>
-          </div>
-
-          <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
-          <div className="flex justify-between font-semibold text-md">
-            <span>Total</span>
-            <span>INR {formattedGrandTotal}</span>
-          </div>
-        </div>
-
-        {/* SUBMIT */}
-        <ButtonPrimary onClick={handleReserve}>Reserve</ButtonPrimary>
-      </div>
-    );
-  }, [
-    handleGuestsChange,
-    handleReserve,
-    handleSharingChange,
-    numberOfGuests,
-    selectedRate,
-    sharingCount,
-  ]);
+    isLoggedIn,
+    sharingRates: sharingRateList,
+    initialGuests: numberOfGuests,
+    initialSharing: sharingCount,
+  };
 
   return (
     <div className="nc-ListingStayDetailPage px-2 sm:px-4 md:px-8 max-w-screen-2xl mx-auto w-full min-h-screen">
@@ -310,10 +173,12 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         {/* SIDEBAR: Purchase summary, visible on all devices, sticky on lg+ */}
         <div className="w-full lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0 flex flex-col items-stretch">
           <div className="sticky top-28 hidden lg:block max-w-md mx-auto w-full">
-            {purchaseSummary}
+            <PurchaseSummary {...purchaseSummaryProps} />
           </div>
           {/* Mobile/Tablet: show purchase summary below content */}
-          <div className="block lg:hidden mb-8 w-full max-w-lg mx-auto">{purchaseSummary}</div>
+          <div className="block lg:hidden mb-8 w-full max-w-lg mx-auto">
+            <PurchaseSummary {...purchaseSummaryProps} />
+          </div>
         </div>
       </main>
       <div className="block lg:hidden h-8" />

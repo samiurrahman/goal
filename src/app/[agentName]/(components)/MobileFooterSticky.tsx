@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import ModalSelectDate from '@/components/ModalSelectDate';
 import ButtonPrimary from '@/shared/ButtonPrimary';
