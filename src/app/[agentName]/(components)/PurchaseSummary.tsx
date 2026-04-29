@@ -1,82 +1,30 @@
-'use client';
-
-import React, { useCallback, useMemo, useState } from 'react';
-import ButtonPrimary from '@/shared/ButtonPrimary';
-import GuestsInput from './GuestsInput';
-import NcInputNumber from '@/components/NcInputNumber';
-import { GuestsObject } from '@/app/(client-components)/type';
-import { useRouter } from 'next/navigation';
+import React from 'react';
+import Link from 'next/link';
 
 type RoomRate = { value: string; people: number; default: boolean };
 
-const GUESTS_DEFAULT: GuestsObject = {
-  guestAdults: 1,
-  guestChildren: 0,
-  guestInfants: 0,
-};
-
 export interface PurchaseSummaryProps {
-  packageId?: string | number;
-  slug: string;
-  agentName: string;
-  isLoggedIn: boolean;
   sharingRates: RoomRate[];
   initialGuests: number;
   initialSharing: number;
+  reserveHref: string;
 }
 
+const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
+
 const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
-  packageId,
-  slug,
-  agentName,
-  isLoggedIn,
   sharingRates,
   initialGuests,
   initialSharing,
+  reserveHref,
 }) => {
-  const router = useRouter();
-  const [numberOfGuests, setNumberOfGuests] = useState(initialGuests);
-  const [sharingCount, setSharingCount] = useState(initialSharing);
+  const numberOfGuests = clamp(initialGuests, 1, 20);
+  const sharingCount = clamp(initialSharing, 2, 5);
 
-  const selectedRate = useMemo(() => {
-    const matched = sharingRates.find((rate) => rate.people === sharingCount);
-    return matched ?? sharingRates.find((rate) => rate.default) ?? sharingRates[0];
-  }, [sharingCount, sharingRates]);
-
-  const handleGuestsChange = useCallback((_: GuestsObject, totalGuests: number) => {
-    setNumberOfGuests(totalGuests);
-  }, []);
-
-  const handleSharingChange = useCallback((value: number) => {
-    setSharingCount(Number(value));
-  }, []);
-
-  const handleReserve = useCallback(() => {
-    const params = new URLSearchParams();
-
-    if (packageId) {
-      params.set('package_id', String(packageId));
-    }
-
-    params.set('sharing', String(sharingCount));
-    params.set('guests', String(numberOfGuests));
-    params.set('slug', slug);
-    params.set('agent_name', agentName);
-
-    const checkoutUrl = `/checkout?${params.toString()}`;
-
-    if (isLoggedIn) {
-      router.push(checkoutUrl);
-      return;
-    }
-
-    const redirectQuery = new URLSearchParams();
-    redirectQuery.set('guests', String(numberOfGuests));
-    redirectQuery.set('sharing', String(sharingCount));
-    const redirectPath = `/${agentName}/${slug}?${redirectQuery.toString()}`;
-
-    router.push(`/login?redirect=${encodeURIComponent(redirectPath)}`);
-  }, [agentName, isLoggedIn, numberOfGuests, packageId, router, sharingCount, slug]);
+  const selectedRate =
+    sharingRates.find((rate) => rate.people === sharingCount) ??
+    sharingRates.find((rate) => rate.default) ??
+    sharingRates[0];
 
   const pricePerPerson = Number(selectedRate?.value ?? 0);
   const total = pricePerPerson * numberOfGuests;
@@ -100,22 +48,67 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
         </span>
       </div>
 
-      <form className="flex flex-col border border-neutral-200 dark:border-neutral-700 rounded-3xl ">
-        <GuestsInput
-          className="flex-1"
-          defaultValue={GUESTS_DEFAULT}
-          onChange={handleGuestsChange}
-        />
-        <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
-        <NcInputNumber
-          label="Sharing"
-          defaultValue={sharingCount}
-          className="p-3"
-          min={2}
-          max={5}
-          onChange={handleSharingChange}
-        />
-      </form>
+      <div className="flex flex-col border border-neutral-200 dark:border-neutral-700 rounded-3xl overflow-hidden">
+        <div className="p-3 flex items-center justify-between">
+          <span className="font-medium text-neutral-800 dark:text-neutral-200">Guests</span>
+          <div className="flex items-center gap-2">
+            <form method="get">
+              <input type="hidden" name="sharing" value={sharingCount} />
+              <button
+                type="submit"
+                name="guests"
+                value={clamp(numberOfGuests - 1, 1, 20)}
+                className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+              >
+                -
+              </button>
+            </form>
+            <span className="w-8 text-center">{numberOfGuests}</span>
+            <form method="get">
+              <input type="hidden" name="sharing" value={sharingCount} />
+              <button
+                type="submit"
+                name="guests"
+                value={clamp(numberOfGuests + 1, 1, 20)}
+                className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+              >
+                +
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <div className="w-full border-b border-neutral-200 dark:border-neutral-700" />
+
+        <div className="p-3 flex items-center justify-between">
+          <span className="font-medium text-neutral-800 dark:text-neutral-200">Sharing</span>
+          <div className="flex items-center gap-2">
+            <form method="get">
+              <input type="hidden" name="guests" value={numberOfGuests} />
+              <button
+                type="submit"
+                name="sharing"
+                value={clamp(sharingCount - 1, 2, 5)}
+                className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+              >
+                -
+              </button>
+            </form>
+            <span className="w-8 text-center">{sharingCount}</span>
+            <form method="get">
+              <input type="hidden" name="guests" value={numberOfGuests} />
+              <button
+                type="submit"
+                name="sharing"
+                value={clamp(sharingCount + 1, 2, 5)}
+                className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+              >
+                +
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
 
       <div className="flex flex-col space-y-4">
         <div className="flex justify-between text-neutral-600 dark:text-neutral-300 text-sm">
@@ -136,7 +129,12 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
         </div>
       </div>
 
-      <ButtonPrimary onClick={handleReserve}>Reserve</ButtonPrimary>
+      <Link
+        href={reserveHref}
+        className="ttnc-ButtonPrimary disabled:bg-opacity-70 bg-primary-6000 hover:bg-primary-700 text-neutral-50 relative h-auto inline-flex items-center justify-center rounded-full transition-colors text-sm sm:text-base font-medium px-4 py-3 sm:px-6"
+      >
+        Reserve
+      </Link>
     </div>
   );
 };

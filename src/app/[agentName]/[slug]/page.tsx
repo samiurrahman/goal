@@ -1,5 +1,4 @@
 import React from 'react';
-import ButtonPrimary from '@/shared/ButtonPrimary';
 import { Amenities_demos } from '../(components)/constant';
 import Breadcrumb from '@/components/Breadcrumb';
 import Iternary from '../(components)/Iternary';
@@ -136,14 +135,31 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
 
   const isLoggedIn = Boolean(cookies().get('access_token')?.value);
 
+  const pricePerPerson = Number(selectedRate?.value ?? 0);
+  const formattedPrice = `INR ${pricePerPerson.toLocaleString('en-IN')}`;
+
+  const checkoutParams = new URLSearchParams();
+  if (package_details?.id) checkoutParams.set('package_id', String(package_details.id));
+  checkoutParams.set('sharing', String(sharingCount));
+  checkoutParams.set('guests', String(numberOfGuests));
+  checkoutParams.set('slug', slug);
+  checkoutParams.set('agent_name', agentName);
+  const checkoutUrl = `/checkout?${checkoutParams.toString()}`;
+
+  const redirectQuery = new URLSearchParams();
+  redirectQuery.set('guests', String(numberOfGuests));
+  redirectQuery.set('sharing', String(sharingCount));
+  const redirectPath = `/${agentName}/${slug}?${redirectQuery.toString()}`;
+
+  const reserveHref = isLoggedIn
+    ? checkoutUrl
+    : `/login?redirect=${encodeURIComponent(redirectPath)}`;
+
   const purchaseSummaryProps = {
-    packageId: package_details?.id,
-    slug,
-    agentName,
-    isLoggedIn,
     sharingRates: sharingRateList,
     initialGuests: numberOfGuests,
     initialSharing: sharingCount,
+    reserveHref,
   };
 
   return (
@@ -182,7 +198,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
         </div>
       </main>
       <div className="block lg:hidden h-8" />
-      <MobileFooterSticky />
+      <MobileFooterSticky reserveHref={reserveHref} priceLabel={formattedPrice} />
     </div>
   );
 };
