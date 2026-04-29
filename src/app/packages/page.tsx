@@ -1,6 +1,6 @@
 import BgGlassmorphism from '@/components/BgGlassmorphism';
 import React from 'react';
-import SectionGridFilterCard from '../SectionGridFilterCard';
+import SectionGridFilterCard from './components/SectionGridFilterCard';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {

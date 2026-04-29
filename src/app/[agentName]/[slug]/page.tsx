@@ -38,7 +38,6 @@ const HOST_DATA = {
   responseTime: 'Fast response - within a few hours',
 };
 
-
 export interface PackageDetailProps {
   params: { agentName: string; slug: string };
 }
@@ -46,33 +45,31 @@ export interface PackageDetailProps {
 const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   const { agentName, slug } = params;
   // Fetch package details by slug, agent by agentName, join agent and details
-  const {
-    data: package_details,
-  } = useQuery<PackageDetails | null>({
-      queryKey: ['package_details', slug],
-      queryFn: async () => {
-        const { data, error } = await supabase
-          .from('packages')
-          .select('*')
-          .eq('slug', slug)
-          .eq('agent_name', agentName)
-          .single();
+  const { data: package_details } = useQuery<PackageDetails | null>({
+    queryKey: ['package_details', slug],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('packages')
+        .select('*')
+        .eq('slug', slug)
+        .eq('agent_name', agentName)
+        .single();
 
-        if (error) throw error;
-       
-        // Fetch package_details by package_id
-        if (data?.id) {
-          const { data: details, error: detailsError } = await supabase
-            .from('package_details')
-            .select('*')
-            .eq('package_id', data.id)
-            .single();
-          if (detailsError) throw detailsError;
-          data.details = details;
-        }
-        return data;
-      },
-    });
+      if (error) throw error;
+
+      // Fetch package_details by package_id
+      if (data?.id) {
+        const { data: details, error: detailsError } = await supabase
+          .from('package_details')
+          .select('*')
+          .eq('package_id', data.id)
+          .single();
+        if (detailsError) throw detailsError;
+        data.details = details;
+      }
+      return data;
+    },
+  });
   // Parse sharing rates from API data
   const sharingRates = useMemo<RoomRate[]>(() => {
     try {
@@ -86,7 +83,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
   }, [package_details?.sharing_rate]);
   const defaultRate = useMemo(
     () => sharingRates.find((rate) => rate.default) ?? sharingRates[0],
-    [sharingRates],
+    [sharingRates]
   );
 
   // Room rate selection state
@@ -146,10 +143,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     document.title = `Hajj & Umrah Packages | ${packageMetaData.title}`;
   }, [packageMetaData.title]);
 
-  const hostData = useMemo(
-    () => ({ ...HOST_DATA, profileUrl: agentName }),
-    [agentName],
-  );
+  const hostData = useMemo(() => ({ ...HOST_DATA, profileUrl: agentName }), [agentName]);
 
   const iternaryData = useMemo(() => {
     const raw = package_details?.details?.iternary;
@@ -175,7 +169,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         ...item,
         icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
       })),
-    [],
+    []
   );
 
   const handleGuestsChange = useCallback((_: GuestsObject, totalGuests: number) => {
@@ -192,7 +186,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         setSelectedRate(matchedRate);
       }
     },
-    [sharingRates],
+    [sharingRates]
   );
 
   const handleReserve = useCallback(() => {
@@ -225,7 +219,6 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
     const formattedTotal = total.toLocaleString('en-IN');
     const formattedGst = gstAmount.toLocaleString('en-IN');
     const formattedGrandTotal = grandTotal.toLocaleString('en-IN');
-   
 
     return (
       <div className="listingSectionSidebar__wrap shadow-xl !space-y-4">
@@ -247,13 +240,14 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
             onChange={handleGuestsChange}
           />
           <div className="w-full border-b border-neutral-200 dark:border-neutral-700"></div>
-          <NcInputNumber 
-            label="Sharing" 
-            defaultValue={sharingCount} 
-            className='p-3' 
-            min={2} 
-            max={5} 
-            onChange={handleSharingChange} />
+          <NcInputNumber
+            label="Sharing"
+            defaultValue={sharingCount}
+            className="p-3"
+            min={2}
+            max={5}
+            onChange={handleSharingChange}
+          />
         </form>
 
         {/* SUM */}
@@ -268,7 +262,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
             <span>GST (5%)</span>
             <span>INR {formattedGst}</span>
           </div>
-          
+
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
           <div className="flex justify-between font-semibold text-md">
             <span>Total</span>
@@ -277,12 +271,17 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         </div>
 
         {/* SUBMIT */}
-        <ButtonPrimary onClick={handleReserve}>
-          Reserve
-        </ButtonPrimary>
+        <ButtonPrimary onClick={handleReserve}>Reserve</ButtonPrimary>
       </div>
     );
-  }, [handleGuestsChange, handleReserve, handleSharingChange, numberOfGuests, selectedRate, sharingCount]);
+  }, [
+    handleGuestsChange,
+    handleReserve,
+    handleSharingChange,
+    numberOfGuests,
+    selectedRate,
+    sharingCount,
+  ]);
 
   return (
     <div className="nc-ListingStayDetailPage px-2 sm:px-4 md:px-8 max-w-screen-2xl mx-auto w-full min-h-screen">
@@ -322,7 +321,7 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
         {/* CONTENT */}
         <div className="w-full lg:w-3/5 xl:w-2/3 space-y-6 sm:space-y-8 lg:space-y-10 lg:pr-10 mb-6">
           {/** PackageMeta data extracted to variable */}
-          <PackageMeta {...packageMetaData} />  
+          <PackageMeta {...packageMetaData} />
 
           <Iternary data={iternaryData} />
 
@@ -344,18 +343,18 @@ const PackageDetail: FC<PackageDetailProps> = ({ params }) => {
 
           <PackageInfo data={stayInfoData} />
 
-          
           <Policies data={policiesData} />
 
           {/* <LocationSection {...locationData} /> */}
 
           <HostInformation {...hostData} />
-
         </div>
 
         {/* SIDEBAR: Purchase summary, visible on all devices, sticky on lg+ */}
         <div className="w-full lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0 flex flex-col items-stretch">
-          <div className="sticky top-28 hidden lg:block max-w-md mx-auto w-full">{purchaseSummary}</div>
+          <div className="sticky top-28 hidden lg:block max-w-md mx-auto w-full">
+            {purchaseSummary}
+          </div>
           {/* Mobile/Tablet: show purchase summary below content */}
           <div className="block lg:hidden mb-8 w-full max-w-lg mx-auto">{purchaseSummary}</div>
         </div>

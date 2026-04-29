@@ -1,10 +1,6 @@
 'use client';
 
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  TrashIcon,
-} from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, TrashIcon } from '@heroicons/react/24/outline';
 import React, { FC, useEffect, useMemo, useState } from 'react';
 import Input from '@/shared/Input';
 import Label from '@/components/Label';
@@ -86,7 +82,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     Array.from({ length: Math.max(1, initialAdults) }, () => createEmptyGuestForm())
   );
   const [expandedGuestIndexes, setExpandedGuestIndexes] = useState<number[]>([0]);
-  const [guestFormErrors, setGuestFormErrors] = useState<Array<{ name?: string; age?: string }>>([]);
+  const [guestFormErrors, setGuestFormErrors] = useState<Array<{ name?: string; age?: string }>>(
+    []
+  );
   const [bookingMobile, setBookingMobile] = useState('');
   const [bookingMobileError, setBookingMobileError] = useState('');
 
@@ -262,8 +260,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           </div>
           <div className="py-5 sm:px-5 space-y-3">
             <div>
-              <span className="text-base font-medium mt-1 block">{packageDetails?.title ?? 'Package details'}</span>
-              
+              <span className="text-base font-medium mt-1 block">
+                {packageDetails?.title ?? 'Package details'}
+              </span>
             </div>
             <div className="space-y-2 text-sm text-neutral-500 dark:text-neutral-400">
               <div className="flex justify-between gap-4">
@@ -282,7 +281,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
               </div>
               <div className="flex justify-between gap-4">
                 <span>Travel Dates</span>
-                <span className="text-right text-neutral-900 dark:text-neutral-100">{formattedTravelDates}</span>
+                <span className="text-right text-neutral-900 dark:text-neutral-100">
+                  {formattedTravelDates}
+                </span>
               </div>
               <div className="flex justify-between gap-4">
                 <span>Location</span>
@@ -312,20 +313,28 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
             <span>Price / Person</span>
-            <span>{purchaseDetails.currency} {purchaseDetails.pricePerPerson}</span>
+            <span>
+              {purchaseDetails.currency} {purchaseDetails.pricePerPerson}
+            </span>
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
             <span>Subtotal</span>
-            <span>{purchaseDetails.currency} {purchaseDetails.subtotal}</span>
+            <span>
+              {purchaseDetails.currency} {purchaseDetails.subtotal}
+            </span>
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
             <span>GST (5%)</span>
-            <span>{purchaseDetails.currency} {purchaseDetails.gstAmount}</span>
+            <span>
+              {purchaseDetails.currency} {purchaseDetails.gstAmount}
+            </span>
           </div>
           <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
           <div className="flex justify-between font-semibold">
             <span>Total</span>
-            <span>{purchaseDetails.currency} {purchaseDetails.total}</span>
+            <span>
+              {purchaseDetails.currency} {purchaseDetails.total}
+            </span>
           </div>
         </div>
       </div>
@@ -367,7 +376,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
             <div className="space-y-5">
               {guestForms.map((form, index) => {
                 const hasName = form.name.trim().length > 0;
-                const cardTitle = hasName ? `${form.title} ${form.name.trim()}` : `Guest ${index + 1}`;
+                const cardTitle = hasName
+                  ? `${form.title} ${form.name.trim()}`
+                  : `Guest ${index + 1}`;
                 const isExpanded = expandedGuestIndexes.includes(index);
                 const formError = guestFormErrors[index] ?? {};
 
@@ -383,7 +394,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                           type="button"
                           onClick={() => toggleGuestCard(index)}
                           className="inline-flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-                          aria-label={isExpanded ? 'Collapse guest details' : 'Expand guest details'}
+                          aria-label={
+                            isExpanded ? 'Collapse guest details' : 'Expand guest details'
+                          }
                         >
                           {isExpanded ? (
                             <ChevronUpIcon className="w-5 h-5" />
@@ -411,7 +424,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                             <Label>Title</Label>
                             <select
                               value={form.title}
-                              onChange={(e) => handleGuestFormChange(index, 'title', e.target.value)}
+                              onChange={(e) =>
+                                handleGuestFormChange(index, 'title', e.target.value)
+                              }
                               className="block w-full rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 py-3 text-sm"
                             >
                               <option value="Mr">Mr</option>
@@ -425,8 +440,14 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                             <Input
                               type="text"
                               value={form.name}
-                              onChange={(e) => handleGuestFormChange(index, 'name', e.currentTarget.value)}
-                              className={formError.name ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
+                              onChange={(e) =>
+                                handleGuestFormChange(index, 'name', e.currentTarget.value)
+                              }
+                              className={
+                                formError.name
+                                  ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                                  : ''
+                              }
                               placeholder="Enter full name"
                             />
                             {formError.name ? (
@@ -440,8 +461,14 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                               type="number"
                               min="0"
                               value={form.age}
-                              onChange={(e) => handleGuestFormChange(index, 'age', e.currentTarget.value)}
-                              className={formError.age ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
+                              onChange={(e) =>
+                                handleGuestFormChange(index, 'age', e.currentTarget.value)
+                              }
+                              className={
+                                formError.age
+                                  ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                                  : ''
+                              }
                               placeholder="Age"
                             />
                             {formError.age ? (
@@ -449,42 +476,44 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                             ) : null}
                           </div>
                         </div>
-
-                        
                       </>
                     )}
                   </div>
                 );
               })}
             </div>
-        </div>
-            <div className="space-y-1">
-                <Label>Mobile no</Label>
-                <Input
-                    type="tel"
-                    value={bookingMobile}
-                    onChange={(e) => {
-                      setBookingMobile(e.currentTarget.value);
-                      if (e.currentTarget.value.trim()) {
-                        setBookingMobileError('');
-                      }
-                    }}
-                    className={bookingMobileError ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
-                    placeholder="Enter mobile number"
-                    />
-                {bookingMobileError ? (
-                <span className="text-xs text-red-600">{bookingMobileError}</span>
-                ) : null}
-            </div>
-            <div className="space-y-1">
-                <Label>Messager for author </Label>
-                <Textarea placeholder="..." />
-                <span className="text-sm text-neutral-500 block">Write a few sentences about yourself.</span>
-            </div>
+          </div>
+          <div className="space-y-1">
+            <Label>Mobile no</Label>
+            <Input
+              type="tel"
+              value={bookingMobile}
+              onChange={(e) => {
+                setBookingMobile(e.currentTarget.value);
+                if (e.currentTarget.value.trim()) {
+                  setBookingMobileError('');
+                }
+              }}
+              className={
+                bookingMobileError ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''
+              }
+              placeholder="Enter mobile number"
+            />
+            {bookingMobileError ? (
+              <span className="text-xs text-red-600">{bookingMobileError}</span>
+            ) : null}
+          </div>
+          <div className="space-y-1">
+            <Label>Messager for author </Label>
+            <Textarea placeholder="..." />
+            <span className="text-sm text-neutral-500 block">
+              Write a few sentences about yourself.
+            </span>
+          </div>
 
-            <div className="pt-8">
+          <div className="pt-8">
             <ButtonPrimary onClick={handleConfirmAndPay}>Confirm and pay</ButtonPrimary>
-            </div>
+          </div>
         </div>
       </>
     );

@@ -8,7 +8,7 @@ import ButtonPrimary from '@/shared/ButtonPrimary';
 import { supabase } from '@/utils/supabaseClient';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Package } from '@/data/types';
-import Packages from './components/packages';
+import Packages from './packages';
 
 export interface SectionGridFilterCardProps {
   className?: string;

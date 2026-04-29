@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
-import LocationFilter from './components/LocationFilter';
-import AgentFilter from './components/AgentFilter';
-import MonthFilter from './components/MonthFilter';
-import PackageDurationFilter from './components/PackageDurationFilter';
-import PriceFilter from './components/PriceFilter';
-import HotelDistanceFilter from './components/HotelDistanceFilter';
-import StopPointsFilter from './components/StopPointsFilter';
-import MobileFiltersModal from './components/MobileFiltersModal';
+import LocationFilter from './LocationFilter';
+import AgentFilter from './AgentFilter';
+import MonthFilter from './MonthFilter';
+import PackageDurationFilter from './PackageDurationFilter';
+import PriceFilter from './PriceFilter';
+import HotelDistanceFilter from './HotelDistanceFilter';
+import StopPointsFilter from './StopPointsFilter';
+import MobileFiltersModal from './MobileFiltersModal';
 
 const TabFilters = () => {
   const [isOpenMoreFilter, setisOpenMoreFilter] = useState(false);
