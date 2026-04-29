@@ -8,8 +8,6 @@ import './globals.css';
 import '@/fonts/line-awesome-1.3.0/css/line-awesome.css';
 import '@/styles/index.scss';
 import 'rc-slider/assets/index.css';
-import Footer from '@/components/Footer';
-
 import FooterNav from '@/components/FooterNav';
 import { ReactQueryProvider } from './providers';
 import { Metadata } from 'next';
@@ -91,8 +89,6 @@ export const metadata: Metadata = {
   },
   verification: {
     google: 'your-google-verification-code',
-    // yandex: "your-yandex-verification-code",
-    // bing: "your-bing-verification-code"
   },
   alternates: {
     canonical: '/',
@@ -103,13 +99,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-  params,
-}: {
-  children: React.ReactNode;
-  params: any;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hajjscanner.com';
 
   return (
@@ -149,7 +139,6 @@ export default function RootLayout({
           {children}
           <FooterNav />
         </ReactQueryProvider>
-        {/* <Footer /> */}
       </body>
     </html>
   );

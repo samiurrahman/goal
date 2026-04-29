@@ -1,7 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: false,
-  experimental: {},
+  reactStrictMode: true,
   transpilePackages: ['@supabase/supabase-js'],
   images: {
     remotePatterns: [

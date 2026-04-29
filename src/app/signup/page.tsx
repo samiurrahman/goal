@@ -1,19 +1,15 @@
 'use client';
-import React, { FC, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken } from '@/utils/authToken';
-import facebookSvg from '@/images/Facebook.svg';
-import twitterSvg from '@/images/Twitter.svg';
 import googleSvg from '@/images/Google.svg';
 import Input from '@/shared/Input';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Image from 'next/image';
 import Link from 'next/link';
 
-export interface PageSignUpProps {}
-
-const PageSignUp: FC<PageSignUpProps> = ({}) => {
+const PageSignUp = () => {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

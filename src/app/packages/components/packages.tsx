@@ -1,3 +1,4 @@
+'use client';
 import React, { FC, useMemo } from 'react';
 import StartRating from '@/components/StartRating';
 import BtnLikeIcon from '@/components/BtnLikeIcon';

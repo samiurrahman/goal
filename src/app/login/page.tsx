@@ -1,20 +1,15 @@
 'use client';
-import React, { FC, useState } from 'react';
+import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken } from '@/utils/authToken';
-import facebookSvg from '@/images/Facebook.svg';
-import twitterSvg from '@/images/Twitter.svg';
 import googleSvg from '@/images/Google.svg';
 import Input from '@/shared/Input';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Image from 'next/image';
 import Link from 'next/link';
-import { stringify } from 'querystring';
 
-export interface PageLoginProps {}
-
-const PageLogin: FC<PageLoginProps> = ({}) => {
+const PageLogin = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
@@ -98,7 +93,7 @@ const PageLogin: FC<PageLoginProps> = ({}) => {
             <label className="block">
               <span className="flex justify-between items-center text-neutral-800 dark:text-neutral-200">
                 Password
-                <Link href="/login" className="text-sm underline font-medium">
+                <Link href="/forgot-password" className="text-sm underline font-medium">
                   Forgot password?
                 </Link>
               </span>

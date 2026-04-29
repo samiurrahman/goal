@@ -1,5 +1,5 @@
 'use client';
-import React, { FC, Fragment, useState, useRef, useEffect } from 'react';
+import React, { Fragment, useState, useRef, useEffect } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import LocationInput from '../LocationInput';
@@ -8,7 +8,7 @@ import ButtonSubmit from '../ButtonSubmit';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
 
-const StaySearchForm: FC<{}> = ({}) => {
+const StaySearchForm = () => {
   const [dropOffLocationType, setDropOffLocationType] = useState<'Umrah' | 'Hajj'>('Umrah');
   const [selectedLocation, setSelectedLocation] = useState<any>(null);
   const [monthStates, setMonthStates] = useState<string[]>([]);
