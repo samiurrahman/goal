@@ -197,7 +197,7 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
           {/* </div> */}
 
           {/* BOTTOM SECTION: LISTINGS FULL-WIDTH */}
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 gap-12 flex flex-col">
             <SectionOurFeatures />
             <SectionGridFeaturePlaces
               packages={agentPackages ?? []}
@@ -205,37 +205,11 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
               subHeading="enjoy hasseless package on one click"
               tabs={['Umrah', 'Hajj']}
             />
-            {/* <div className="listingSection__wrap !space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-normal text-gray-900">Listings</h2>
-                  <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                    All packages currently published by this agent.
-                  </p>
-                </div>
-                <Link
-                  href="/account/listing"
-                  className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-                >
-                  <i className="las la-pen text-2xl"></i>
-                </Link>
-              </div>
-              <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
-              <div className="grid grid-cols-1 gap-6 md:gap-7">
-                {agentPackages && agentPackages.length > 0 ? (
-                  agentPackages.map((stay) => <Packages key={stay.id} data={stay} />)
-                ) : (
-                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    No packages found.
-                  </p>
-                )}
-              </div>
-            </div> */}
             <SectionSubscribe2 />
           </div>
 
           {/* REVIEWS FULL-WIDTH */}
-          <div className="lg:col-span-5">
+          <div className="lg:col-span-5 mt-6">
             <div className="listingSection__wrap !space-y-4">
               <div className="flex items-center justify-between gap-4">
                 <h2 className="text-xl font-normal text-gray-900">Reviews</h2>
