@@ -10,7 +10,7 @@ import type { Agent, Package } from '@/data/types';
 import Head from 'next/head';
 import Link from 'next/link';
 import Image from 'next/image';
-import bannerImage from '@/images/banner_01.jpg';
+import bannerImage from '@/images/hero-right1.png';
 import Badge from '@/shared/Badge';
 import SocialsList from '@/shared/SocialsList';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
@@ -92,6 +92,11 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
   ].filter((item) => item.href);
 
   const listingCount = Array.isArray(agentPackages) ? agentPackages.length : 0;
+  const isGovVerified = ['true', '1', 'yes', 'y'].includes(
+    String(agentDetails?.is_gov_authorised ?? '')
+      .toLowerCase()
+      .trim()
+  );
 
   return (
     <>
@@ -109,124 +114,126 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
       <div className="nc-ListingStayDetailPage w-full min-h-screen">
         <main className="relative z-10 grid grid-cols-1 lg:grid-cols-5 gap-6 w-full mt-4 mb-24 lg:mb-32 lg:items-stretch">
           <div className="lg:col-span-5 mt-6">
-            <section className="relative overflow-hidden rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-xl">
-              <div className="relative h-44 md:h-56 lg:h-64 w-full">
+            <section className="overflow-hidden rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg">
+              <div className="relative h-44 md:h-56 w-full">
                 <Image
                   src={bannerImage}
-                  alt={agentDetails?.known_as || 'Agent banner'}
+                  alt={agentDetails?.known_as || 'Agent cover'}
                   fill
                   className="object-cover"
                   sizes="100vw"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent" />
-                <Link
-                  href="/account"
-                  className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/90 text-neutral-700 shadow-md hover:bg-white flex items-center justify-center"
-                >
-                  <i className="las la-pen text-xl"></i>
-                </Link>
-              </div>
-
-              <div className="relative px-5 pb-6 md:px-8 md:pb-8">
-                <div className="absolute -top-14 left-1/2 -translate-x-1/2">
+                <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
+                <div className="absolute top-3 right-3 md:top-4 md:right-4 z-20">
+                  <div className="flex items-center gap-2 rounded-2xl bg-white/95 px-2.5 py-2 shadow-md backdrop-blur-sm">
+                    {socialLinks.length > 0 && (
+                      <SocialsList
+                        socials={socialLinks}
+                        className="gap-2"
+                        itemClass="h-8 w-8 rounded-full border border-neutral-200 bg-white hover:bg-neutral-50 shadow-sm flex items-center justify-center text-neutral-700"
+                      />
+                    )}
+                    <Link
+                      href="/account"
+                      className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 border border-neutral-300 text-xs font-semibold text-neutral-700 hover:bg-neutral-50"
+                    >
+                      <i className="las la-pen"></i>
+                      Edit Profile
+                    </Link>
+                  </div>
+                </div>
+                <div className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 z-20">
                   {agentDetails?.profile_image ? (
-                    <div className="relative h-28 w-28 md:h-32 md:w-32 overflow-hidden rounded-full ring-4 ring-white dark:ring-neutral-900 shadow-lg">
+                    <div className="relative h-24 w-24 md:h-28 md:w-28 overflow-hidden rounded-full border-[5px] border-white dark:border-neutral-900 shadow-lg">
                       <Image
                         src={agentDetails.profile_image}
                         alt={agentDetails.known_as || 'Agent'}
                         fill
                         className="object-cover"
-                        sizes="128px"
+                        sizes="112px"
                       />
                     </div>
                   ) : (
-                    <div className="h-28 w-28 md:h-32 md:w-32 rounded-full ring-4 ring-white dark:ring-neutral-900 shadow-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 flex items-center justify-center text-3xl font-semibold">
+                    <div className="h-24 w-24 md:h-28 md:w-28 rounded-full border-[5px] border-white dark:border-neutral-900 shadow-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 flex items-center justify-center text-2xl font-semibold">
                       {agentDetails?.known_as?.[0] || '?'}
                     </div>
                   )}
                 </div>
+              </div>
 
-                <div className="pt-16 md:pt-20 text-center">
-                  <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-white">
-                    {agentDetails?.known_as}
-                  </h1>
-                  <div className="mt-3 inline-flex flex-wrap justify-center gap-3">
-                    <Badge
-                      name={
-                        <div className="flex items-center">
-                          <i className="text-sm las la-map-marker"></i>
-                          <span className="ml-1">{agentLocation || 'Location pending'}</span>
-                        </div>
-                      }
-                    />
-                    <Badge
-                      name={
-                        <div className="flex items-center">
-                          <i className="text-sm las la-briefcase"></i>
-                          <span className="ml-1">{listingCount} Listings</span>
-                        </div>
-                      }
-                    />
-                    {agentDetails?.is_gov_authorised === 'true' && (
-                      <Badge
-                        name={
-                          <div className="flex items-center">
-                            <i className="text-sm las la-certificate"></i>
-                            <span className="ml-1">Government Verified</span>
-                          </div>
-                        }
-                        color="green"
-                      />
-                    )}
-                  </div>
-                </div>
-
-                {socialLinks.length > 0 && (
-                  <div className="absolute right-5 md:right-8 top-3 md:top-4 z-20">
-                    <SocialsList
-                      socials={socialLinks}
-                      className="gap-3"
-                      itemClass="h-10 w-10 rounded-full border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm flex items-center justify-center hover:scale-105 transition-transform text-lg"
-                    />
-                  </div>
-                )}
-
-                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
-                    <p className="text-xs text-gray-600">Agent Name</p>
-                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1">
-                      {agentDetails?.known_as || 'Not available'}
-                    </p>
-                  </div>
-                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
-                    <p className="text-xs text-gray-600">Business Location</p>
-                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1">
+              <div className="px-5 md:px-8 pb-7">
+                <div className="pt-16 md:pt-20 flex flex-col items-center text-center gap-4">
+                  <div>
+                    <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
+                      <span aria-hidden="true" />
+                      <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-white leading-tight">
+                        {agentDetails?.known_as}
+                      </h1>
+                      <div className="justify-self-start">
+                        {isGovVerified && <Badge name="Government Verified" color="green" />}
+                      </div>
+                    </div>
+                    <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
                       {agentLocation || 'Location pending'}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
-                    <p className="text-xs text-gray-600">Listings Published</p>
-                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1">
-                      {listingCount} Packages
+                </div>
+
+                <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Listings</p>
+                    <div className="mt-2">
+                      <Badge name={`${listingCount} Listings`} color="blue" />
+                    </div>
+                  </div>
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Verification</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-900 dark:text-white">
+                      {isGovVerified ? 'Gov Verified' : 'Pending'}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
-                    <p className="text-xs text-gray-600">Primary Contact</p>
-                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1">
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Phone</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-900 dark:text-white">
                       {agentDetails?.contact_number || 'Not available'}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
-                    <p className="text-xs text-gray-600">Email Address</p>
-                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1 break-all">
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Email</p>
+                    <p className="mt-1 text-sm font-semibold text-neutral-900 dark:text-white truncate">
                       {agentDetails?.email_id || 'Not available'}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
-                    <p className="text-xs text-gray-600">Agency Overview</p>
-                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1 line-clamp-2">
+                </div>
+
+                <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-5">
+                    <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                      About
+                    </h3>
+                    <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300 leading-6">
                       {agentDetails?.about_us || 'Profile details pending.'}
                     </p>
+                  </div>
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-5">
+                    <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                      Contact & Location
+                    </h3>
+                    <div className="mt-2 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+                      <p>
+                        <span className="font-medium">Address:</span>{' '}
+                        {agentDetails?.address || 'Not available'}
+                      </p>
+                      <p>
+                        <span className="font-medium">City/State:</span>{' '}
+                        {[agentDetails?.city, agentDetails?.state].filter(Boolean).join(', ') ||
+                          'Not available'}
+                      </p>
+                      <p>
+                        <span className="font-medium">Country:</span>{' '}
+                        {agentDetails?.country || 'Not available'}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
