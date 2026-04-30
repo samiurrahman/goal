@@ -12,7 +12,7 @@ import SocialsList from '@/shared/SocialsList';
 import StartRating from '@/components/StartRating';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
 import SectionGridFeaturePlaces from './(components)/SectionGridFeaturePlaces';
-import AgentProfileEditModal from './(components)/AgentProfileEditModal';
+import AgentProfileEditModal from './AgentProfileEditModal';
 
 export interface AgentDetailsProps {
   params: { agentName: string };

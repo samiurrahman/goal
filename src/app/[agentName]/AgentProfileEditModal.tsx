@@ -79,10 +79,93 @@ const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) =
     onChange(editorRef.current.innerHTML);
   };
 
+  const extractLinesFromFragment = (root: Node) => {
+    const lines: string[] = [];
+    let currentLine = '';
+
+    const pushLine = () => {
+      const normalized = currentLine.replace(/\u00a0/g, ' ').trim();
+      if (normalized) {
+        lines.push(normalized);
+      }
+      currentLine = '';
+    };
+
+    const isBlockElement = (node: Node) => {
+      if (!(node instanceof HTMLElement)) return false;
+      return ['DIV', 'P', 'LI', 'UL', 'OL', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(
+        node.tagName
+      );
+    };
+
+    const walk = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        currentLine += node.textContent || '';
+        return;
+      }
+
+      if (!(node instanceof HTMLElement)) {
+        node.childNodes.forEach(walk);
+        return;
+      }
+
+      if (node.tagName === 'BR') {
+        pushLine();
+        return;
+      }
+
+      const treatAsBoundary = isBlockElement(node);
+      if (treatAsBoundary && currentLine.trim()) {
+        pushLine();
+      }
+
+      node.childNodes.forEach(walk);
+
+      if (treatAsBoundary) {
+        pushLine();
+      }
+    };
+
+    walk(root);
+    pushLine();
+    return lines;
+  };
+
   const insertBullets = () => {
     if (!editorRef.current) return;
     editorRef.current.focus();
     restoreSelection();
+
+    const selection = window.getSelection();
+    const range = selection && selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+    const fragmentContainer = document.createElement('div');
+    if (range && !range.collapsed) {
+      fragmentContainer.appendChild(range.cloneContents());
+    }
+
+    const lines = extractLinesFromFragment(fragmentContainer);
+
+    // Convert each selected newline item into one bullet list item.
+    if (range && !range.collapsed && lines.length > 0) {
+      const list = document.createElement('ul');
+      lines.forEach((line) => {
+        const li = document.createElement('li');
+        li.textContent = line;
+        list.appendChild(li);
+      });
+
+      range.deleteContents();
+      range.insertNode(list);
+
+      const afterListRange = document.createRange();
+      afterListRange.setStartAfter(list);
+      afterListRange.collapse(true);
+      selection?.removeAllRanges();
+      selection?.addRange(afterListRange);
+      lastSelectionRef.current = afterListRange.cloneRange();
+      onChange(editorRef.current.innerHTML);
+      return;
+    }
 
     document.execCommand('insertUnorderedList', false);
     saveSelection();
