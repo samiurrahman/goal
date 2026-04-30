@@ -115,7 +115,7 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
         <main className="relative z-10 grid grid-cols-1 lg:grid-cols-5 gap-6 w-full mt-4 mb-24 lg:mb-32 lg:items-stretch">
           <div className="lg:col-span-5 mt-6">
             <section className="overflow-hidden rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg">
-              <div className="relative h-44 md:h-56 w-full">
+              <div className="relative h-60 md:h-60 w-full">
                 <Image
                   src={bannerImage}
                   alt={agentDetails?.known_as || 'Agent cover'}
