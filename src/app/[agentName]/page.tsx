@@ -1,13 +1,10 @@
-'use client';
-
 import CommentListing from '@/components/CommentListing';
-import React, { FC } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import React from 'react';
 import Breadcrumb from '@/components/Breadcrumb';
 import SectionStatistic from './(components)/SectionStatistic';
 import { supabase } from '@/utils/supabaseClient';
 import type { Agent, Package } from '@/data/types';
-import Head from 'next/head';
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import bannerImage from '@/images/hero-right1.png';
@@ -22,29 +19,54 @@ export interface AgentDetailsProps {
   params: { agentName: string };
 }
 
-const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
-  const { agentName } = params;
+export const dynamic = 'force-dynamic';
 
-  const { data: agentDetails } = useQuery<Agent | null>({
-    queryKey: ['agentDetails', agentName],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('agents')
-        .select('*')
-        .eq('slug', agentName)
-        .single(); // console.log(data.founders);
+const getAgentBySlug = async (agentName: string): Promise<Agent | null> => {
+  const { data: agentData } = await supabase
+    .from('agents')
+    .select('*')
+    .eq('slug', agentName)
+    .single();
 
-      if (error) throw error;
-      if (typeof data?.founders === 'string') {
-        try {
-          data.founders = JSON.parse(data.founders);
-        } catch (e) {
-          data.founders = [];
-        }
-      }
-      return data as Agent;
+  const agentDetails = (agentData as Agent | null) ?? null;
+  if (!agentDetails) return null;
+
+  if (typeof agentDetails.founders === 'string') {
+    try {
+      agentDetails.founders = JSON.parse(agentDetails.founders);
+    } catch {
+      agentDetails.founders = [];
+    }
+  }
+
+  return agentDetails;
+};
+
+export const generateMetadata = async ({ params }: AgentDetailsProps): Promise<Metadata> => {
+  const agentDetails = await getAgentBySlug(params.agentName);
+  const title = agentDetails?.known_as
+    ? `${agentDetails.known_as} | HajjScanner`
+    : 'Agent Profile | HajjScanner';
+  const description =
+    agentDetails?.about_us || 'Explore trusted Hajj and Umrah packages from verified agents.';
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'profile',
+      url: `https://www.hajjscanner.com/${params.agentName}`,
+      images: agentDetails?.profile_image ? [{ url: agentDetails.profile_image }] : undefined,
     },
-  });
+  };
+};
+
+const AgentDetails = async ({ params }: AgentDetailsProps) => {
+  const { agentName } = params;
+  const agentDetails = await getAgentBySlug(agentName);
+
   const agentSchema = {
     '@context': 'https://schema.org',
     '@type': 'Person', // or "Organization" if more appropriate
@@ -56,18 +78,14 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
   };
 
   // Fetch all packages for this agent
-  const { data: agentPackages } = useQuery<Package[]>({
-    queryKey: ['agentPackages', agentDetails?.id],
-    enabled: !!agentDetails?.id,
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('packages')
-        .select('*')
-        .eq('agent_id', agentDetails?.id);
-      if (error) throw error;
-      return data as Package[];
-    },
-  });
+  let agentPackages: Package[] = [];
+  if (agentDetails?.id) {
+    const { data: packagesData } = await supabase
+      .from('packages')
+      .select('*')
+      .eq('agent_id', agentDetails.id);
+    agentPackages = (packagesData as Package[] | null) ?? [];
+  }
 
   const agentLocation = [agentDetails?.city, agentDetails?.state, agentDetails?.country]
     .filter(Boolean)
@@ -103,12 +121,10 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
 
   return (
     <>
-      <Head>
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
-        />
-      </Head>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
+      />
       <div className="relative z-20 mt-4">
         <Breadcrumb
           items={[{ label: 'Home', href: '/' }, { label: agentDetails?.known_as ?? '' }]}
