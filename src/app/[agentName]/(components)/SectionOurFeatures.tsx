@@ -31,7 +31,7 @@ const SectionOurFeatures: FC<SectionOurFeaturesProps> = ({
           type === 'type1' ? 'lg:pl-16' : 'lg:pr-16'
         }`}
       >
-        <span className="uppercase text-sm text-gray-400 tracking-widest">Bennefits of</span>
+        <span className="uppercase text-sm text-gray-400 tracking-widest">What We Provide</span>
         <h2 className="font-semibold text-4xl mt-5">{agentName}</h2>
 
         <ul className="space-y-10 mt-16">

@@ -155,7 +155,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                 <div className="absolute top-3 right-3 md:top-4 md:right-4 z-20">
                   <Link
                     href="/account"
-                    className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 border border-primary-6000 bg-primary-6000 text-xs font-semibold text-white hover:bg-primary-700 hover:border-primary-700 shadow-sm"
+                    className="inline-flex items-center gap-2 rounded-full px-4 py-2 border border-neutral-200 bg-white text-sm font-medium text-neutral-700 hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-300 dark:border-neutral-700 dark:hover:bg-neutral-800 shadow-sm"
                   >
                     <i className="las la-pen"></i>
                     Edit Profile
@@ -221,6 +221,14 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                         <span className="truncate">{agentLocation || 'Location pending'}</span>
                       </span>
                     </p>
+                    <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300 truncate">
+                      <span className="inline-flex items-center gap-1.5 max-w-full">
+                        <i className="las la-phone text-base" />
+                        <span className="truncate">
+                          {agentDetails?.contact_number || 'Not available'}
+                        </span>
+                      </span>
+                    </p>
                   </div>
                 </div>
               </div>
@@ -263,18 +271,16 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                   </div>
                 </div>
 
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
-                  <div className="flex items-start gap-4 p-1">
-                    <i className="las la-phone text-2xl flex-shrink-0 mt-0.5"></i>
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-[0.6fr_0.95fr_1.55fr] gap-4 md:gap-5">
+                  <div className="flex items-start gap-1.5 p-1">
+                    <i className="las la-user-clock text-[20px] flex-shrink-0 mt-0.5"></i>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-600">Phone</p>
-                      <p className="text-sm text-gray-900 font-medium">
-                        {agentDetails?.contact_number || 'Not available'}
-                      </p>
+                      <p className="text-xs text-gray-600">Experience</p>
+                      <p className="text-sm text-gray-900 font-medium">10 years</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-4 p-1">
-                    <i className="las la-envelope text-2xl flex-shrink-0 mt-0.5"></i>
+                    <i className="las la-envelope text-[30px] flex-shrink-0 mt-0.5"></i>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-gray-600">Email</p>
                       <p className="text-sm text-gray-900 font-medium truncate">
@@ -283,15 +289,17 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                     </div>
                   </div>
                   <div className="flex items-start gap-4 p-1">
-                    <i className="las la-business-time text-2xl flex-shrink-0 mt-0.5"></i>
+                    <i className="las la-map-marker-alt text-[30px] flex-shrink-0 mt-0.5"></i>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-600">Operating since</p>
-                      <p className="text-sm text-gray-900 font-medium">10</p>
+                      <p className="text-xs text-gray-600">Address</p>
+                      <p className="text-sm text-gray-900 font-medium line-clamp-1">
+                        {agentDetails?.address || 'Not available'}
+                      </p>
                     </div>
                   </div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="mt-6">
                   <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-5">
                     <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
                       About
@@ -300,26 +308,6 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                       {agentDetails?.about_us || 'Profile details pending.'}
                     </p>
                   </div>
-                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-5">
-                    <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                      Contact & Location
-                    </h3>
-                    <div className="mt-2 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
-                      <p>
-                        <span className="font-medium">Address:</span>{' '}
-                        {agentDetails?.address || 'Not available'}
-                      </p>
-                      <p>
-                        <span className="font-medium">City/State:</span>{' '}
-                        {[agentDetails?.city, agentDetails?.state].filter(Boolean).join(', ') ||
-                          'Not available'}
-                      </p>
-                      <p>
-                        <span className="font-medium">Country:</span>{' '}
-                        {agentDetails?.country || 'Not available'}
-                      </p>
-                    </div>
-                  </div>
                 </div>
               </div>
             </section>
@@ -327,11 +315,10 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
 
           {/* BOTTOM SECTION: LISTINGS FULL-WIDTH */}
           <div className="lg:col-span-5 gap-12 flex flex-col">
-            <SectionOurFeatures agentName={agentDetails?.known_as || 'Sarkar Travels'} />
+            <SectionOurFeatures agentName={agentDetails?.known_as} />
             <SectionGridFeaturePlaces
               packages={agentPackages ?? []}
               heading="Our Packages"
-              subHeading="enjoy hasseless package on one click"
               tabs={['Umrah', 'Hajj']}
             />
           </div>

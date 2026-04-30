@@ -13,7 +13,10 @@ const PackageInfo: React.FC<PackageInfoProps> = ({ data }) => (
         <span>No stay information available.</span>
       ) : (
         data.details?.map((text, idx) => (
-          <span key={idx}>{text}</span>
+          <div key={idx} className="flex items-start gap-2.5">
+            <i className="las la-check-circle text-base text-neutral-900 dark:text-neutral-100 mt-[1px]"></i>
+            <span>{text}</span>
+          </div>
         ))
       )}
     </div>
