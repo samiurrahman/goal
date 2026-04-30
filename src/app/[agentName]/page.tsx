@@ -9,8 +9,10 @@ import { supabase } from '@/utils/supabaseClient';
 import type { Agent, Package } from '@/data/types';
 import Head from 'next/head';
 import Link from 'next/link';
-import ContactSidebar from './(components)/ContactSidebar';
+import Image from 'next/image';
+import bannerImage from '@/images/banner_01.jpg';
 import Badge from '@/shared/Badge';
+import SocialsList from '@/shared/SocialsList';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
 import SectionSubscribe2 from './(components)/SectionSubscribe2';
 import SectionGridFeaturePlaces from './(components)/SectionGridFeaturePlaces';
@@ -70,6 +72,25 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
     .filter(Boolean)
     .join(', ');
 
+  const phoneDigits = (agentDetails?.contact_number || '').replace(/\D/g, '');
+  const socialLinks = [
+    {
+      href: phoneDigits ? `https://wa.me/${phoneDigits}` : '',
+      icon: 'lab la-whatsapp',
+      name: 'WhatsApp',
+    },
+    {
+      href: agentDetails?.contact_number ? `tel:${agentDetails.contact_number}` : '',
+      icon: 'las la-phone',
+      name: 'Call',
+    },
+    {
+      href: agentDetails?.email_id ? `mailto:${agentDetails.email_id}` : '',
+      icon: 'las la-envelope',
+      name: 'Email',
+    },
+  ].filter((item) => item.href);
+
   const listingCount = Array.isArray(agentPackages) ? agentPackages.length : 0;
 
   return (
@@ -87,114 +108,130 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
       </div>
       <div className="nc-ListingStayDetailPage w-full min-h-screen">
         <main className="relative z-10 grid grid-cols-1 lg:grid-cols-5 gap-6 w-full mt-4 mb-24 lg:mb-32 lg:items-stretch">
-          {/* TOP ROW: SIDEBAR (LEFT) + ABOUT BLOCK (RIGHT) WITH EQUAL HEIGHTS */}
-          {/* LEFT: Sidebar */}
-          <div className="lg:col-span-2 mt-8 lg:mt-0 flex flex-col z-20 lg:self-stretch">
-            <ContactSidebar agent={agentDetails} listingCount={listingCount} />
-          </div>
+          <div className="lg:col-span-5 mt-6">
+            <section className="relative overflow-hidden rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-xl">
+              <div className="relative h-44 md:h-56 lg:h-64 w-full">
+                <Image
+                  src={bannerImage}
+                  alt={agentDetails?.known_as || 'Agent banner'}
+                  fill
+                  className="object-cover"
+                  sizes="100vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/25 to-transparent" />
+                <Link
+                  href="/account"
+                  className="absolute top-4 right-4 h-10 w-10 rounded-full bg-white/90 text-neutral-700 shadow-md hover:bg-white flex items-center justify-center"
+                >
+                  <i className="las la-pen text-xl"></i>
+                </Link>
+              </div>
 
-          {/* RIGHT: ABOUT BLOCK */}
-          <div className="bg-white lg:col-span-3 dark:bg-neutral-900 z-10 relative flex flex-col lg:self-stretch rounded-lg shadow-md overflow-hidden p-6">
-            {/* <div className="listingSection__wrap !space-y-4 h-full flex flex-col"> */}
-            <div className="flex items-start justify-between gap-4 mb-4">
-              <div>
-                <h1 className="text-2xl font-normal text-gray-900">{agentDetails?.known_as}</h1>
-                <div className="mt-3 inline-flex flex-wrap gap-3">
-                  <Badge
-                    name={
-                      <div className="flex items-center">
-                        <i className="text-sm las la-map-marker"></i>
-                        <span className="ml-1">{agentLocation || 'Location pending'}</span>
-                      </div>
-                    }
-                  />
-                  <Badge
-                    name={
-                      <div className="flex items-center">
-                        <i className="text-sm las la-briefcase"></i>
-                        <span className="ml-1">{listingCount} Listings</span>
-                      </div>
-                    }
-                  />
-                  {agentDetails?.is_gov_authorised === 'true' && (
+              <div className="relative px-5 pb-6 md:px-8 md:pb-8">
+                <div className="absolute -top-14 left-1/2 -translate-x-1/2">
+                  {agentDetails?.profile_image ? (
+                    <div className="relative h-28 w-28 md:h-32 md:w-32 overflow-hidden rounded-full ring-4 ring-white dark:ring-neutral-900 shadow-lg">
+                      <Image
+                        src={agentDetails.profile_image}
+                        alt={agentDetails.known_as || 'Agent'}
+                        fill
+                        className="object-cover"
+                        sizes="128px"
+                      />
+                    </div>
+                  ) : (
+                    <div className="h-28 w-28 md:h-32 md:w-32 rounded-full ring-4 ring-white dark:ring-neutral-900 shadow-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 flex items-center justify-center text-3xl font-semibold">
+                      {agentDetails?.known_as?.[0] || '?'}
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-16 md:pt-20 text-center">
+                  <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-white">
+                    {agentDetails?.known_as}
+                  </h1>
+                  <div className="mt-3 inline-flex flex-wrap justify-center gap-3">
                     <Badge
                       name={
                         <div className="flex items-center">
-                          <i className="text-sm las la-certificate"></i>
-                          <span className="ml-1">Government Verified</span>
+                          <i className="text-sm las la-map-marker"></i>
+                          <span className="ml-1">{agentLocation || 'Location pending'}</span>
                         </div>
                       }
-                      color="green"
                     />
-                  )}
+                    <Badge
+                      name={
+                        <div className="flex items-center">
+                          <i className="text-sm las la-briefcase"></i>
+                          <span className="ml-1">{listingCount} Listings</span>
+                        </div>
+                      }
+                    />
+                    {agentDetails?.is_gov_authorised === 'true' && (
+                      <Badge
+                        name={
+                          <div className="flex items-center">
+                            <i className="text-sm las la-certificate"></i>
+                            <span className="ml-1">Government Verified</span>
+                          </div>
+                        }
+                        color="green"
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-              <Link
-                href="/account"
-                className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-              >
-                <i className="las la-pen text-2xl"></i>
-              </Link>
-            </div>
 
-            {/* <div className="w-full border-b border-neutral-100 dark:border-neutral-700" /> */}
+                {socialLinks.length > 0 && (
+                  <div className="absolute right-5 md:right-8 top-3 md:top-4 z-20">
+                    <SocialsList
+                      socials={socialLinks}
+                      className="gap-3"
+                      itemClass="h-10 w-10 rounded-full border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-sm flex items-center justify-center hover:scale-105 transition-transform text-lg"
+                    />
+                  </div>
+                )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <div className="flex items-start gap-4">
-                <i className="text-3xl las la-address-card flex-shrink-0 mt-0.5"></i>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-600">Agent Name</p>
-                  <span className="text-sm text-gray-900 font-medium">
-                    {agentDetails?.known_as}
-                  </span>
+                <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
+                    <p className="text-xs text-gray-600">Agent Name</p>
+                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1">
+                      {agentDetails?.known_as || 'Not available'}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
+                    <p className="text-xs text-gray-600">Business Location</p>
+                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1">
+                      {agentLocation || 'Location pending'}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
+                    <p className="text-xs text-gray-600">Listings Published</p>
+                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1">
+                      {listingCount} Packages
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
+                    <p className="text-xs text-gray-600">Primary Contact</p>
+                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1">
+                      {agentDetails?.contact_number || 'Not available'}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
+                    <p className="text-xs text-gray-600">Email Address</p>
+                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1 break-all">
+                      {agentDetails?.email_id || 'Not available'}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 bg-white/80 dark:bg-neutral-900/70 backdrop-blur">
+                    <p className="text-xs text-gray-600">Agency Overview</p>
+                    <p className="text-sm text-gray-900 dark:text-neutral-100 font-medium mt-1 line-clamp-2">
+                      {agentDetails?.about_us || 'Profile details pending.'}
+                    </p>
+                  </div>
                 </div>
               </div>
-              <div className="flex items-start gap-4">
-                <i className="text-3xl las la-map-marker-alt flex-shrink-0 mt-0.5"></i>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-600">Business Location</p>
-                  <span className="text-sm text-gray-900 font-medium">
-                    {agentLocation || 'Location pending'}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <i className="text-3xl las la-file-invoice flex-shrink-0 mt-0.5"></i>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-600">Listings Published</p>
-                  <span className="text-sm text-gray-900 font-medium">{listingCount} Packages</span>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <i className="text-3xl las la-phone-volume flex-shrink-0 mt-0.5"></i>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-600">Primary Contact</p>
-                  <span className="text-sm text-gray-900 font-medium">
-                    {agentDetails?.contact_number || 'Not available'}
-                  </span>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <i className="las la-envelope text-2xl flex-shrink-0 mt-0.5"></i>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-600">Email Address</p>
-                  <p className="text-sm text-gray-900 font-medium break-all">
-                    {agentDetails?.email_id || 'Not available'}
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-4">
-                <i className="las la-bell text-2xl flex-shrink-0 mt-0.5"></i>
-                <div className="flex-1">
-                  <p className="text-xs text-gray-600">Agency Overview</p>
-                  <p className="text-sm text-gray-900 font-medium line-clamp-2">
-                    {agentDetails?.about_us || 'Profile details pending.'}
-                  </p>
-                </div>
-              </div>
-            </div>
+            </section>
           </div>
-          {/* </div> */}
 
           {/* BOTTOM SECTION: LISTINGS FULL-WIDTH */}
           <div className="lg:col-span-5 gap-12 flex flex-col">
