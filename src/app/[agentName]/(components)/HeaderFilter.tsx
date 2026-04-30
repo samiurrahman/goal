@@ -1,16 +1,10 @@
-'use client';
-
-import React, { FC, useEffect, useState, ReactNode } from 'react';
-import Heading from '@/shared/Heading';
-import Nav from '@/shared/Nav';
-import NavItem from '@/shared/NavItem';
+import React, { FC, ReactNode } from 'react';
 
 export interface HeaderFilterProps {
   tabActive: string;
   tabs: string[];
   heading: ReactNode;
   subHeading?: ReactNode;
-  onClickTab?: (item: string) => void;
 }
 
 const HeaderFilter: FC<HeaderFilterProps> = ({
@@ -18,37 +12,33 @@ const HeaderFilter: FC<HeaderFilterProps> = ({
   tabs,
   subHeading = '',
   heading = 'Latest Articles 🎈',
-  onClickTab = () => {},
 }) => {
-  const [tabActiveState, setTabActiveState] = useState(tabActive);
-
-  useEffect(() => {
-    setTabActiveState(tabActive);
-  }, [tabActive]);
-
-  const handleClickTab = (item: string) => {
-    onClickTab(item);
-    setTabActiveState(item);
-  };
-
   return (
     <div className="flex flex-col mb-8 relative">
-      <Heading desc={subHeading}>{heading}</Heading>
-      <div className="flex items-center justify-between">
-        <Nav
-          className="sm:space-x-2"
-          containerClassName="relative flex w-full overflow-x-auto text-sm md:text-base hiddenScrollbar"
-        >
-          {tabs.map((item, index) => (
-            <NavItem
+      <div>
+        <h2 className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-neutral-100">
+          {heading}
+        </h2>
+        {subHeading ? (
+          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">{subHeading}</p>
+        ) : null}
+      </div>
+      <div className="mt-4 flex items-center gap-2 overflow-x-auto hiddenScrollbar">
+        {tabs.map((item, index) => {
+          const isActive = item === tabActive;
+          return (
+            <span
               key={index}
-              isActive={tabActiveState === item}
-              onClick={() => handleClickTab(item)}
+              className={`px-4 py-2 rounded-full border whitespace-nowrap text-sm ${
+                isActive
+                  ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white'
+                  : 'bg-white text-neutral-700 border-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:border-neutral-700'
+              }`}
             >
               {item}
-            </NavItem>
-          ))}
-        </Nav>
+            </span>
+          );
+        })}
       </div>
     </div>
   );

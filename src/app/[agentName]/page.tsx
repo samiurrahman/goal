@@ -163,7 +163,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                     Edit Profile
                   </Link>
                 </div>
-                <div className="absolute right-3 md:right-4 bottom-0 translate-y-1/2 z-20 max-w-[78vw] md:max-w-[62vw]">
+                <div className="hidden lg:block absolute right-3 lg:right-4 bottom-0 translate-y-1/2 z-20 max-w-[62vw]">
                   <div className="flex flex-wrap items-center justify-end gap-2 rounded-2xl bg-white/95 dark:bg-neutral-900/95 px-2.5 py-2 shadow-md border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm">
                     <Badge
                       name={
@@ -197,7 +197,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                     )}
                   </div>
                 </div>
-                <div className="absolute left-5 md:left-8 bottom-0 translate-y-1/2 z-20 flex items-center gap-4 md:gap-5 rounded-2xl bg-white/95 dark:bg-neutral-900/95 px-3 py-2 shadow-md border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm">
+                <div className="absolute left-4 right-4 md:right-auto md:left-8 bottom-0 translate-y-1/2 z-20 flex items-center gap-3 md:gap-5 rounded-2xl bg-white/95 dark:bg-neutral-900/95 px-3 py-2 shadow-md border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm lg:max-w-[58vw]">
                   {agentDetails?.profile_image ? (
                     <div className="relative h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-full border-[4px] border-white dark:border-neutral-900 shadow-lg shrink-0">
                       <Image
@@ -213,14 +213,14 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                       {agentDetails?.known_as?.[0] || '?'}
                     </div>
                   )}
-                  <div>
-                    <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-white leading-tight">
+                  <div className="min-w-0">
+                    <h1 className="text-xl md:text-3xl font-semibold text-neutral-900 dark:text-white leading-tight truncate">
                       {agentDetails?.known_as}
                     </h1>
-                    <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-                      <span className="inline-flex items-center gap-1.5">
+                    <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300 truncate">
+                      <span className="inline-flex items-center gap-1.5 max-w-full">
                         <i className="las la-map-marker-alt text-base" />
-                        {agentLocation || 'Location pending'}
+                        <span className="truncate">{agentLocation || 'Location pending'}</span>
                       </span>
                     </p>
                   </div>
@@ -228,7 +228,42 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
               </div>
 
               <div className="px-5 md:px-8 pb-7">
-                <div className="pt-16 md:pt-20" />
+                <div className="pt-16 lg:pt-20" />
+
+                <div className="lg:hidden mt-3">
+                  <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white dark:bg-neutral-900 px-2.5 py-2 shadow-sm border border-neutral-200 dark:border-neutral-700">
+                    <Badge
+                      name={
+                        <StartRating
+                          className="text-yellow-900"
+                          point={agentRatingPoint}
+                          reviewCount={agentReviewCount}
+                        />
+                      }
+                      color="yellow"
+                    />
+                    <Badge
+                      name={
+                        <span className="inline-flex items-center gap-1.5">
+                          <i className="las la-briefcase text-sm" />
+                          {listingCount} Packages
+                        </span>
+                      }
+                      color="blue"
+                    />
+                    {isGovVerified && (
+                      <Badge
+                        name={
+                          <span className="inline-flex items-center gap-1.5">
+                            <i className="las la-check-circle text-sm" />
+                            Government Verified
+                          </span>
+                        }
+                        color="green"
+                      />
+                    )}
+                  </div>
+                </div>
 
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                   <div className="flex items-start gap-4 p-1">
