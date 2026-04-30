@@ -12,12 +12,22 @@ import SocialsList from '@/shared/SocialsList';
 import StartRating from '@/components/StartRating';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
 import SectionGridFeaturePlaces from './(components)/SectionGridFeaturePlaces';
+import AgentProfileEditModal from './(components)/AgentProfileEditModal';
 
 export interface AgentDetailsProps {
   params: { agentName: string };
 }
 
 export const dynamic = 'force-dynamic';
+
+const sanitizeProfileMarkup = (markup: string) => {
+  if (!markup) return '';
+
+  return markup
+    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
+    .replace(/\son\w+=("[^"]*"|'[^']*')/gi, '')
+    .replace(/javascript:/gi, '');
+};
 
 const getAgentBySlug = async (agentName: string): Promise<Agent | null> => {
   const { data: agentData } = await supabase
@@ -111,11 +121,24 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
   const listingCount = Array.isArray(agentPackages) ? agentPackages.length : 0;
   const agentRatingPoint = 4.5;
   const agentReviewCount = 112;
+  const agentRecord = (agentDetails || {}) as Record<string, unknown>;
+  const experienceFieldCandidates = ['experience_years', 'years_of_experience', 'experience'];
+  const experienceField =
+    experienceFieldCandidates.find((field) => field in agentRecord) || undefined;
+  const experienceValue = experienceField ? agentRecord[experienceField] : undefined;
+  const experienceLabel =
+    experienceValue === null ||
+    experienceValue === undefined ||
+    String(experienceValue).trim() === ''
+      ? 'Not available'
+      : `${String(experienceValue).trim()} years`;
   const isGovVerified = ['true', '1', 'yes', 'y'].includes(
     String(agentDetails?.is_gov_authorised ?? '')
       .toLowerCase()
       .trim()
   );
+  const sanitizedAboutMarkup = sanitizeProfileMarkup(agentDetails?.about_us || '');
+  const bannerSrc = agentDetails?.banner_image || bannerImage;
 
   return (
     <>
@@ -134,7 +157,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
             <section className="overflow-hidden rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg">
               <div className="relative h-60 md:h-60 w-full">
                 <Image
-                  src={bannerImage}
+                  src={bannerSrc}
                   alt={agentDetails?.known_as || 'Agent cover'}
                   fill
                   className="object-cover"
@@ -153,13 +176,25 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                   </div>
                 )}
                 <div className="absolute top-3 right-3 md:top-4 md:right-4 z-20">
-                  <Link
-                    href="/account"
-                    className="inline-flex items-center gap-2 rounded-full px-4 py-2 border border-neutral-200 bg-white text-sm font-medium text-neutral-700 hover:bg-neutral-100 dark:bg-neutral-900 dark:text-neutral-300 dark:border-neutral-700 dark:hover:bg-neutral-800 shadow-sm"
-                  >
-                    <i className="las la-pen"></i>
-                    Edit Profile
-                  </Link>
+                  <AgentProfileEditModal
+                    agentId={agentDetails?.id}
+                    initialData={{
+                      name: agentDetails?.name,
+                      known_as: agentDetails?.known_as,
+                      contact_number: agentDetails?.contact_number,
+                      alternate_number: agentDetails?.alternate_number,
+                      email_id: agentDetails?.email_id,
+                      address: agentDetails?.address,
+                      city: agentDetails?.city,
+                      state: agentDetails?.state,
+                      country: agentDetails?.country,
+                      profile_image: agentDetails?.profile_image,
+                      banner_image: agentDetails?.banner_image,
+                      experience: experienceValue == null ? '' : String(experienceValue),
+                      experienceField,
+                      about_us: agentDetails?.about_us,
+                    }}
+                  />
                 </div>
                 <div className="hidden lg:block absolute right-3 lg:right-4 bottom-0 translate-y-1/2 z-20 max-w-[62vw]">
                   <div className="flex flex-wrap items-center justify-end gap-2 rounded-2xl bg-white/95 dark:bg-neutral-900/95 px-2.5 py-2 shadow-md border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm">
@@ -276,7 +311,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                     <i className="las la-user-clock text-[26px] flex-shrink-0 mt-0.5"></i>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-gray-600">Experience</p>
-                      <p className="text-sm text-gray-900 font-medium">10 years</p>
+                      <p className="text-sm text-gray-900 font-medium">{experienceLabel}</p>
                     </div>
                   </div>
                   <div className="flex items-start gap-3 p-1">
@@ -304,9 +339,16 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                     <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
                       About
                     </h3>
-                    <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300 leading-6">
-                      {agentDetails?.about_us || 'Profile details pending.'}
-                    </p>
+                    {sanitizedAboutMarkup ? (
+                      <div
+                        className="prose prose-sm max-w-none mt-2 text-neutral-700 dark:prose-invert dark:text-neutral-300 prose-headings:mb-2 prose-headings:mt-3 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
+                        dangerouslySetInnerHTML={{ __html: sanitizedAboutMarkup }}
+                      />
+                    ) : (
+                      <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300 leading-6">
+                        Profile details pending.
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>

@@ -22,6 +22,7 @@ export interface Agent {
   about_us: string;
   founders: People[];
   profile_image: string | null;
+  banner_image?: string | null;
 }
 export interface People {
   id: string;
@@ -66,52 +67,52 @@ export interface Package {
 
 // PackageDetails type for detailed package JSON structure
 export interface PackageDetails {
+  id: string;
+  slug: string;
+  type: 'UMRAH' | 'HAJJ';
+  title: string;
+  short_description: string;
+  total_duration_days: number;
+  makkah_days: number;
+  madinah_days: number;
+  price_per_person: number;
+  currency: string;
+  departure_city: string;
+  departure_date: string;
+  includes_breakfast: boolean;
+  includes_airport_transfer: boolean;
+  includes_visa: boolean;
+  includes_zamzam: boolean;
+  zamzam_liters: number;
+  total_seats: number;
+  booked_seats: number;
+  seats_left: number;
+  thumbnail_url: string;
+  makkah_hotel_name: string;
+  makkah_hotel_distance_m: number;
+  madinah_hotel_name: string;
+  madinah_hotel_distance_m: number;
+  agent_name: string;
+  agent_id: number;
+  location: string;
+  sharing_rate: number | null;
+  arrival_city: string;
+  arrival_date: string;
+  package_location: string;
+  details: {
     id: string;
-    slug: string;
-    type: "UMRAH" | "HAJJ";
-    title: string;
-    short_description: string;
-    total_duration_days: number;
-    makkah_days: number;
-    madinah_days: number;
-    price_per_person: number;
-    currency: string;
-    departure_city: string;
-    departure_date: string;
-    includes_breakfast: boolean;
-    includes_airport_transfer: boolean;
-    includes_visa: boolean;
-    includes_zamzam: boolean;
-    zamzam_liters: number;
-    total_seats: number;
-    booked_seats: number;
-    seats_left: number;
-    thumbnail_url: string;
-    makkah_hotel_name: string;
-    makkah_hotel_distance_m: number;
-    madinah_hotel_name: string;
-    madinah_hotel_distance_m: number;
-    agent_name: string;
-    agent_id: number;
-    location: string;
-    sharing_rate: number | null;
-    arrival_city: string;
-    arrival_date: string;
-    package_location: string;
-    details: {
-      id: string;
-      created_at: string;
-      package_id: string;
-      iternary: {
-        name: string;
-      };
-      stay_information: {
-        title: string;
-        details: string[];
-      };
-      amenities: null | Record<string, unknown>;
-      policies: null | Record<string, unknown>;
+    created_at: string;
+    package_id: string;
+    iternary: {
+      name: string;
     };
+    stay_information: {
+      title: string;
+      details: string[];
+    };
+    amenities: null | Record<string, unknown>;
+    policies: null | Record<string, unknown>;
+  };
 }
 
 //  ######  CustomLink  ######## //
