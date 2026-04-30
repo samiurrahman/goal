@@ -197,35 +197,26 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                     )}
                   </div>
                 </div>
-                <div className="absolute left-1/2 bottom-0 -translate-x-1/2 translate-y-1/2 z-20">
+                <div className="absolute left-5 md:left-8 bottom-0 translate-y-1/2 z-20 flex items-center gap-4 md:gap-5 rounded-2xl bg-white/95 dark:bg-neutral-900/95 px-3 py-2 shadow-md border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm">
                   {agentDetails?.profile_image ? (
-                    <div className="relative h-24 w-24 md:h-28 md:w-28 overflow-hidden rounded-full border-[5px] border-white dark:border-neutral-900 shadow-lg">
+                    <div className="relative h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-full border-[4px] border-white dark:border-neutral-900 shadow-lg shrink-0">
                       <Image
                         src={agentDetails.profile_image}
                         alt={agentDetails.known_as || 'Agent'}
                         fill
                         className="object-cover"
-                        sizes="112px"
+                        sizes="96px"
                       />
                     </div>
                   ) : (
-                    <div className="h-24 w-24 md:h-28 md:w-28 rounded-full border-[5px] border-white dark:border-neutral-900 shadow-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 flex items-center justify-center text-2xl font-semibold">
+                    <div className="h-20 w-20 md:h-24 md:w-24 rounded-full border-[4px] border-white dark:border-neutral-900 shadow-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 flex items-center justify-center text-2xl font-semibold shrink-0">
                       {agentDetails?.known_as?.[0] || '?'}
                     </div>
                   )}
-                </div>
-              </div>
-
-              <div className="px-5 md:px-8 pb-7">
-                <div className="pt-16 md:pt-20 flex flex-col items-center text-center gap-4">
                   <div>
-                    <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
-                      <span aria-hidden="true" />
-                      <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-white leading-tight">
-                        {agentDetails?.known_as}
-                      </h1>
-                      <span aria-hidden="true" />
-                    </div>
+                    <h1 className="text-2xl md:text-3xl font-semibold text-neutral-900 dark:text-white leading-tight">
+                      {agentDetails?.known_as}
+                    </h1>
                     <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
                       <span className="inline-flex items-center gap-1.5">
                         <i className="las la-map-marker-alt text-base" />
@@ -234,6 +225,10 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              <div className="px-5 md:px-8 pb-7">
+                <div className="pt-16 md:pt-20" />
 
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
                   <div className="flex items-start gap-4 p-1">
@@ -299,7 +294,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
 
           {/* BOTTOM SECTION: LISTINGS FULL-WIDTH */}
           <div className="lg:col-span-5 gap-12 flex flex-col">
-            <SectionOurFeatures />
+            <SectionOurFeatures agentName={agentDetails?.known_as || 'Sarkar Travels'} />
             <SectionGridFeaturePlaces
               packages={agentPackages ?? []}
               heading="Our Packages"
