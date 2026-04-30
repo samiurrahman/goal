@@ -13,6 +13,7 @@ import Image from 'next/image';
 import bannerImage from '@/images/hero-right1.png';
 import Badge from '@/shared/Badge';
 import SocialsList from '@/shared/SocialsList';
+import StartRating from '@/components/StartRating';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
 import SectionSubscribe2 from './(components)/SectionSubscribe2';
 import SectionGridFeaturePlaces from './(components)/SectionGridFeaturePlaces';
@@ -92,6 +93,8 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
   ].filter((item) => item.href);
 
   const listingCount = Array.isArray(agentPackages) ? agentPackages.length : 0;
+  const agentRatingPoint = 4.5;
+  const agentReviewCount = 112;
   const isGovVerified = ['true', '1', 'yes', 'y'].includes(
     String(agentDetails?.is_gov_authorised ?? '')
       .toLowerCase()
@@ -148,12 +151,13 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
                   <div className="flex flex-wrap items-center justify-end gap-2 rounded-2xl bg-white/95 dark:bg-neutral-900/95 px-2.5 py-2 shadow-md border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm">
                     <Badge
                       name={
-                        <span className="inline-flex items-center gap-1.5">
-                          <i className="las la-map-marker-alt text-sm" />
-                          {agentLocation || 'Location pending'}
-                        </span>
+                        <StartRating
+                          className="text-yellow-900"
+                          point={agentRatingPoint}
+                          reviewCount={agentReviewCount}
+                        />
                       }
-                      color="indigo"
+                      color="yellow"
                     />
                     <Badge
                       name={
@@ -207,23 +211,39 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
                       <span aria-hidden="true" />
                     </div>
                     <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-                      {agentLocation || 'Location pending'}
+                      <span className="inline-flex items-center gap-1.5">
+                        <i className="las la-map-marker-alt text-base" />
+                        {agentLocation || 'Location pending'}
+                      </span>
                     </p>
                   </div>
                 </div>
 
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Phone</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-900 dark:text-white">
-                      {agentDetails?.contact_number || 'Not available'}
-                    </p>
+                <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
+                  <div className="flex items-start gap-4 p-1">
+                    <i className="las la-phone text-2xl flex-shrink-0 mt-0.5"></i>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-600">Phone</p>
+                      <p className="text-sm text-gray-900 font-medium">
+                        {agentDetails?.contact_number || 'Not available'}
+                      </p>
+                    </div>
                   </div>
-                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">Email</p>
-                    <p className="mt-1 text-sm font-semibold text-neutral-900 dark:text-white truncate">
-                      {agentDetails?.email_id || 'Not available'}
-                    </p>
+                  <div className="flex items-start gap-4 p-1">
+                    <i className="las la-envelope text-2xl flex-shrink-0 mt-0.5"></i>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-600">Email</p>
+                      <p className="text-sm text-gray-900 font-medium truncate">
+                        {agentDetails?.email_id || 'Not available'}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4 p-1">
+                    <i className="las la-business-time text-2xl flex-shrink-0 mt-0.5"></i>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-600">Operating since</p>
+                      <p className="text-sm text-gray-900 font-medium">10</p>
+                    </div>
                   </div>
                 </div>
 
