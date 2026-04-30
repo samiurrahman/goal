@@ -272,14 +272,14 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                 </div>
 
                 <div className="mt-8 grid grid-cols-1 md:grid-cols-[0.6fr_0.95fr_1.55fr] gap-4 md:gap-5">
-                  <div className="flex items-start gap-1.5 p-1">
-                    <i className="las la-user-clock text-[20px] flex-shrink-0 mt-0.5"></i>
+                  <div className="flex items-start gap-3 p-1">
+                    <i className="las la-user-clock text-[26px] flex-shrink-0 mt-0.5"></i>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-gray-600">Experience</p>
                       <p className="text-sm text-gray-900 font-medium">10 years</p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4 p-1">
+                  <div className="flex items-start gap-3 p-1">
                     <i className="las la-envelope text-[30px] flex-shrink-0 mt-0.5"></i>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-gray-600">Email</p>
@@ -288,7 +288,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-4 p-1">
+                  <div className="flex items-start gap-3 p-1">
                     <i className="las la-map-marker-alt text-[30px] flex-shrink-0 mt-0.5"></i>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs text-gray-600">Address</p>
