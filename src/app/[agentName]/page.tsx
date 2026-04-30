@@ -1,7 +1,6 @@
 import CommentListing from '@/components/CommentListing';
 import React from 'react';
 import Breadcrumb from '@/components/Breadcrumb';
-import SectionStatistic from './(components)/SectionStatistic';
 import { supabase } from '@/utils/supabaseClient';
 import type { Agent, Package } from '@/data/types';
 import type { Metadata } from 'next';
@@ -12,7 +11,6 @@ import Badge from '@/shared/Badge';
 import SocialsList from '@/shared/SocialsList';
 import StartRating from '@/components/StartRating';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
-import SectionSubscribe2 from './(components)/SectionSubscribe2';
 import SectionGridFeaturePlaces from './(components)/SectionGridFeaturePlaces';
 
 export interface AgentDetailsProps {
@@ -336,7 +334,6 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
               subHeading="enjoy hasseless package on one click"
               tabs={['Umrah', 'Hajj']}
             />
-            <SectionSubscribe2 />
           </div>
 
           {/* REVIEWS FULL-WIDTH */}
