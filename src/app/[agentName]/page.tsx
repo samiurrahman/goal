@@ -1,19 +1,19 @@
 'use client';
 
-import { Tab } from '@headlessui/react';
 import CommentListing from '@/components/CommentListing';
-import StayCard from '@/components/StayCard';
-import React, { FC, Fragment, useState } from 'react';
+import React, { FC } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import ButtonSecondary from '@/shared/ButtonSecondary';
-import SocialsList from '@/shared/SocialsList';
 import Breadcrumb from '@/components/Breadcrumb';
 import SectionStatistic from './(components)/SectionStatistic';
-import Image from 'next/image';
 import { supabase } from '@/utils/supabaseClient';
 import type { Agent, Package } from '@/data/types';
 import Head from 'next/head';
-import StartRating from '@/components/StartRating';
+import Link from 'next/link';
+import ContactSidebar from './(components)/ContactSidebar';
+import Badge from '@/shared/Badge';
+import SectionOurFeatures from './(components)/SectionOurFeatures';
+import SectionSubscribe2 from './(components)/SectionSubscribe2';
+import SectionGridFeaturePlaces from './(components)/SectionGridFeaturePlaces';
 
 export interface AgentDetailsProps {
   params: { agentName: string };
@@ -21,13 +21,8 @@ export interface AgentDetailsProps {
 
 const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
   const { agentName } = params;
-  let [categories] = useState(['Umrah', 'Hajj']);
 
-  const {
-    data: agentDetails,
-    error,
-    isLoading,
-  } = useQuery<Agent | null>({
+  const { data: agentDetails } = useQuery<Agent | null>({
     queryKey: ['agentDetails', agentName],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -58,11 +53,7 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
   };
 
   // Fetch all packages for this agent
-  const {
-    data: agentPackages,
-    error: packagesError,
-    isLoading: packagesLoading,
-  } = useQuery<Package[]>({
+  const { data: agentPackages } = useQuery<Package[]>({
     queryKey: ['agentPackages', agentDetails?.id],
     enabled: !!agentDetails?.id,
     queryFn: async () => {
@@ -75,194 +66,11 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
     },
   });
 
-  const renderSidebar = () => {
-    return (
-      <div className="w-full flex flex-col items-center text-center sm:rounded-2xl sm:border border-neutral-200 dark:border-neutral-900 space-y-6 sm:space-y-7 px-0 sm:p-6 xl:p-8">
-        {/* Profile Image using Next.js Image */}
-        {agentDetails?.profile_image ? (
-          <div className="relative w-28 h-28 rounded-full overflow-hidden border-4 border-neutral-200 dark:border-neutral-800">
-            <Image
-              src={agentDetails.profile_image}
-              alt={agentDetails.known_as || 'Agent profile'}
-              fill
-              style={{ objectFit: 'cover' }}
-              sizes="112px"
-              priority
-            />
-          </div>
-        ) : (
-          <div className="w-28 h-28 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-4xl font-bold text-neutral-500">
-            {agentDetails?.known_as?.[0] || '?'}
-          </div>
-        )}
+  const agentLocation = [agentDetails?.city, agentDetails?.state, agentDetails?.country]
+    .filter(Boolean)
+    .join(', ');
 
-        {/* ---- */}
-        <div className="space-y-3 text-center flex flex-col items-center">
-          <h2 className="text-3xl font-semibold">{agentDetails?.known_as}</h2>
-          <StartRating className="!text-base" />
-        </div>
-
-        {/* ---- */}
-        <p className="text-neutral-500 dark:text-neutral-400">{agentDetails?.about_us}</p>
-
-        {/* ---- */}
-        <SocialsList
-          className="!space-x-3"
-          itemClass="flex items-center justify-center w-9 h-9 rounded-full bg-neutral-100 dark:bg-neutral-800 text-xl"
-        />
-
-        {/* ---- */}
-        <div className="border-b border-neutral-200 dark:border-neutral-700 w-14"></div>
-
-        {/* ---- */}
-        <div className="space-y-4">
-          <div className="flex items-center space-x-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-neutral-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-              />
-            </svg>
-            <span className="text-neutral-6000 dark:text-neutral-300">{agentDetails?.address}</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-neutral-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"
-              />
-            </svg>
-            <span className="text-neutral-6000 dark:text-neutral-300">
-              {agentDetails?.contact_number}
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-neutral-400"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-              />
-            </svg>
-            <span className="text-neutral-6000 dark:text-neutral-300">
-              {agentDetails?.email_id}
-            </span>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const renderSection1 = () => {
-    return (
-      <>
-        <SectionStatistic />
-        <div className="listingSection__wrap">
-          <div>
-            <h2 className="text-2xl font-semibold">{`${agentDetails?.known_as}'s listings`}</h2>
-            <span className="block mt-2 text-neutral-500 dark:text-neutral-400">
-              {`Kevin Francis's listings is very rich, 5 star reviews help him to be
-            more branded.`}
-            </span>
-          </div>
-          <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
-
-          <div>
-            <Tab.Group>
-              <Tab.List className="flex space-x-1 overflow-x-auto">
-                {categories.map((item) => (
-                  <Tab key={item} as={Fragment}>
-                    {({ selected }) => (
-                      <button
-                        className={`flex-shrink-0 block !leading-none font-medium px-5 py-2.5 text-sm sm:text-base sm:px-6 sm:py-3 capitalize rounded-full focus:outline-none ${
-                          selected
-                            ? 'bg-secondary-900 text-secondary-50 '
-                            : 'text-neutral-500 dark:text-neutral-400 dark:hover:text-neutral-100 hover:text-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                        } `}
-                      >
-                        {item}
-                      </button>
-                    )}
-                  </Tab>
-                ))}
-              </Tab.List>
-              <Tab.Panels>
-                <Tab.Panel className="">
-                  <div className="mt-8 grid grid-cols-1 gap-6 md:gap-7 sm:grid-cols-2">
-                    {agentPackages &&
-                      Array.isArray(agentPackages) &&
-                      agentPackages.length > 0 &&
-                      agentPackages.map((stay) => <StayCard key={stay.id} data={stay} />)}
-                  </div>
-                  <div className="flex mt-11 justify-center items-center">
-                    <ButtonSecondary>Show me more</ButtonSecondary>
-                  </div>
-                </Tab.Panel>
-                <Tab.Panel className="">
-                  <div className="mt-8 grid grid-cols-1 gap-6 md:gap-7 sm:grid-cols-2">
-                    {agentPackages &&
-                      Array.isArray(agentPackages) &&
-                      agentPackages.length > 0 &&
-                      agentPackages
-                        .filter((_, i) => i < 4)
-                        .map((stay) => <StayCard key={stay.id} data={stay} />)}
-                  </div>
-                  <div className="flex mt-11 justify-center items-center">
-                    <ButtonSecondary>Show me more</ButtonSecondary>
-                  </div>
-                </Tab.Panel>
-              </Tab.Panels>
-            </Tab.Group>
-          </div>
-        </div>
-      </>
-    );
-  };
-
-  const renderSection2 = () => {
-    return (
-      <div className="listingSection__wrap">
-        {/* HEADING */}
-        <h2 className="text-2xl font-semibold">Reviews (23 reviews)</h2>
-        <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
-
-        {/* comment */}
-        <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-          <CommentListing hasListingTitle className="pb-8" />
-          <CommentListing hasListingTitle className="py-8" />
-          <CommentListing hasListingTitle className="py-8" />
-          <CommentListing hasListingTitle className="py-8" />
-          <div className="pt-8">
-            <ButtonSecondary>View more 20 reviews</ButtonSecondary>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  const listingCount = Array.isArray(agentPackages) ? agentPackages.length : 0;
 
   return (
     <>
@@ -274,20 +82,177 @@ const AgentDetails: FC<AgentDetailsProps> = ({ params }) => {
       </Head>
       <div className="relative z-20 mt-4">
         <Breadcrumb
-          items={[
-            { label: 'Home', href: '/' },
-            { label: agentDetails?.known_as ?? '' },
-          ]}
+          items={[{ label: 'Home', href: '/' }, { label: agentDetails?.known_as ?? '' }]}
         />
       </div>
-      <div className={`nc-AuthorPage `}>
-        <main className="mt-4 mb-24 lg:mb-32 flex flex-col lg:flex-row">
-          <div className="block flex-grow mb-24 lg:mb-0">
-            <div className="lg:sticky lg:top-24">{renderSidebar()}</div>
+      <div className="nc-ListingStayDetailPage w-full min-h-screen">
+        <main className="relative z-10 grid grid-cols-1 lg:grid-cols-5 gap-6 w-full mt-4 mb-24 lg:mb-32 lg:items-stretch">
+          {/* TOP ROW: SIDEBAR (LEFT) + ABOUT BLOCK (RIGHT) WITH EQUAL HEIGHTS */}
+          {/* LEFT: Sidebar */}
+          <div className="lg:col-span-2 mt-8 lg:mt-0 flex flex-col z-20 lg:self-stretch">
+            <ContactSidebar agent={agentDetails} listingCount={listingCount} />
           </div>
-          <div className="w-full lg:w-3/5 xl:w-2/3 space-y-8 lg:space-y-10 lg:pl-10 flex-shrink-0">
-            {renderSection1()}
-            {renderSection2()}
+
+          {/* RIGHT: ABOUT BLOCK */}
+          <div className="bg-white lg:col-span-3 dark:bg-neutral-900 z-10 relative flex flex-col lg:self-stretch rounded-lg shadow-md overflow-hidden p-6">
+            {/* <div className="listingSection__wrap !space-y-4 h-full flex flex-col"> */}
+            <div className="flex items-start justify-between gap-4 mb-4">
+              <div>
+                <h1 className="text-2xl font-normal text-gray-900">{agentDetails?.known_as}</h1>
+                <div className="mt-3 inline-flex flex-wrap gap-3">
+                  <Badge
+                    name={
+                      <div className="flex items-center">
+                        <i className="text-sm las la-map-marker"></i>
+                        <span className="ml-1">{agentLocation || 'Location pending'}</span>
+                      </div>
+                    }
+                  />
+                  <Badge
+                    name={
+                      <div className="flex items-center">
+                        <i className="text-sm las la-briefcase"></i>
+                        <span className="ml-1">{listingCount} Listings</span>
+                      </div>
+                    }
+                  />
+                  {agentDetails?.is_gov_authorised === 'true' && (
+                    <Badge
+                      name={
+                        <div className="flex items-center">
+                          <i className="text-sm las la-certificate"></i>
+                          <span className="ml-1">Government Verified</span>
+                        </div>
+                      }
+                      color="green"
+                    />
+                  )}
+                </div>
+              </div>
+              <Link
+                href="/account"
+                className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+              >
+                <i className="las la-pen text-2xl"></i>
+              </Link>
+            </div>
+
+            {/* <div className="w-full border-b border-neutral-100 dark:border-neutral-700" /> */}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+              <div className="flex items-start gap-4">
+                <i className="text-3xl las la-address-card flex-shrink-0 mt-0.5"></i>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600">Agent Name</p>
+                  <span className="text-sm text-gray-900 font-medium">
+                    {agentDetails?.known_as}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <i className="text-3xl las la-map-marker-alt flex-shrink-0 mt-0.5"></i>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600">Business Location</p>
+                  <span className="text-sm text-gray-900 font-medium">
+                    {agentLocation || 'Location pending'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <i className="text-3xl las la-file-invoice flex-shrink-0 mt-0.5"></i>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600">Listings Published</p>
+                  <span className="text-sm text-gray-900 font-medium">{listingCount} Packages</span>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <i className="text-3xl las la-phone-volume flex-shrink-0 mt-0.5"></i>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600">Primary Contact</p>
+                  <span className="text-sm text-gray-900 font-medium">
+                    {agentDetails?.contact_number || 'Not available'}
+                  </span>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <i className="las la-envelope text-2xl flex-shrink-0 mt-0.5"></i>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600">Email Address</p>
+                  <p className="text-sm text-gray-900 font-medium break-all">
+                    {agentDetails?.email_id || 'Not available'}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start gap-4">
+                <i className="las la-bell text-2xl flex-shrink-0 mt-0.5"></i>
+                <div className="flex-1">
+                  <p className="text-xs text-gray-600">Agency Overview</p>
+                  <p className="text-sm text-gray-900 font-medium line-clamp-2">
+                    {agentDetails?.about_us || 'Profile details pending.'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* </div> */}
+
+          {/* BOTTOM SECTION: LISTINGS FULL-WIDTH */}
+          <div className="lg:col-span-5">
+            <SectionOurFeatures />
+            <SectionGridFeaturePlaces
+              packages={agentPackages ?? []}
+              heading="Our Packages"
+              subHeading="enjoy hasseless package on one click"
+              tabs={['Umrah', 'Hajj']}
+            />
+            {/* <div className="listingSection__wrap !space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-normal text-gray-900">Listings</h2>
+                  <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                    All packages currently published by this agent.
+                  </p>
+                </div>
+                <Link
+                  href="/account/listing"
+                  className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                >
+                  <i className="las la-pen text-2xl"></i>
+                </Link>
+              </div>
+              <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
+              <div className="grid grid-cols-1 gap-6 md:gap-7">
+                {agentPackages && agentPackages.length > 0 ? (
+                  agentPackages.map((stay) => <Packages key={stay.id} data={stay} />)
+                ) : (
+                  <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                    No packages found.
+                  </p>
+                )}
+              </div>
+            </div> */}
+            <SectionSubscribe2 />
+          </div>
+
+          {/* REVIEWS FULL-WIDTH */}
+          <div className="lg:col-span-5">
+            <div className="listingSection__wrap !space-y-4">
+              <div className="flex items-center justify-between gap-4">
+                <h2 className="text-xl font-normal text-gray-900">Reviews</h2>
+                <Link
+                  href="/account"
+                  className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
+                >
+                  <i className="las la-pen text-2xl"></i>
+                </Link>
+              </div>
+              <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
+              <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+                <CommentListing hasListingTitle className="pb-8" />
+                <CommentListing hasListingTitle className="py-8" />
+                <CommentListing hasListingTitle className="py-8" />
+              </div>
+            </div>
           </div>
         </main>
       </div>

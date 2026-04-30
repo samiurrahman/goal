@@ -163,7 +163,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   };
 
   return (
-    <div className="nc-ListingStayDetailPage px-2 sm:px-4 md:px-8 max-w-screen-2xl mx-auto w-full min-h-screen">
+    <div className="nc-ListingStayDetailPage w-full min-h-screen">
       <div className="relative z-20 mt-4">
         <Breadcrumb
           items={[
