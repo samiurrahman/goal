@@ -24,6 +24,16 @@ type GuestForm = {
   age: string;
   email: string;
   mobile: string;
+  save_for_future: boolean;
+};
+
+type SavedTraveler = {
+  id: string;
+  label: string | null;
+  first_name: string | null;
+  last_name: string | null;
+  age?: number | string | null;
+  date_of_birth: string | null;
 };
 
 const createEmptyGuestForm = (): GuestForm => ({
@@ -32,6 +42,7 @@ const createEmptyGuestForm = (): GuestForm => ({
   age: '',
   email: '',
   mobile: '',
+  save_for_future: false,
 });
 
 type SharingRate = {
@@ -87,6 +98,10 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   );
   const [bookingMobile, setBookingMobile] = useState('');
   const [bookingMobileError, setBookingMobileError] = useState('');
+  const [savedTravelers, setSavedTravelers] = useState<SavedTraveler[]>([]);
+  const [isTravelersLoading, setIsTravelersLoading] = useState(false);
+  const [selectedTravelerIds, setSelectedTravelerIds] = useState<string[]>([]);
+  const [travelerToGuestIndex, setTravelerToGuestIndex] = useState<Record<string, number>>({});
 
   const sharingRates = useMemo<SharingRate[]>(() => {
     try {
@@ -113,6 +128,62 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       setSharingCount(selectedRate.people);
     }
   }, [selectedRate]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadSavedTravelers = async () => {
+      setIsTravelersLoading(true);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!isMounted) return;
+
+      if (!user) {
+        setSavedTravelers([]);
+        setIsTravelersLoading(false);
+        return;
+      }
+
+      const [travelersResult, userDetailsResult] = await Promise.all([
+        supabase
+          .from('traveler_profiles')
+          .select('id, label, first_name, last_name, age, date_of_birth')
+          .eq('auth_user_id', user.id)
+          .order('is_default', { ascending: false })
+          .order('created_at', { ascending: true }),
+        supabase.from('user_details').select('phone').eq('auth_user_id', user.id).maybeSingle(),
+      ]);
+
+      if (!isMounted) return;
+
+      if (travelersResult.error) {
+        console.error('Failed to load saved travelers:', travelersResult.error.message);
+        setSavedTravelers([]);
+      } else {
+        setSavedTravelers((travelersResult.data || []) as SavedTraveler[]);
+      }
+
+      if (userDetailsResult.error) {
+        console.error('Failed to load user phone:', userDetailsResult.error.message);
+      } else {
+        const dbPhone = userDetailsResult.data?.phone?.trim() || '';
+        if (dbPhone) {
+          setBookingMobile((prev) => prev || dbPhone);
+        }
+      }
+
+      setIsTravelersLoading(false);
+    };
+
+    void loadSavedTravelers();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const activeRate = useMemo(() => {
     const matchedRate = sharingRates.find((rate) => rate.people === sharingCount);
@@ -163,6 +234,96 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     return Math.max(...sharingRates.map((rate) => rate.people));
   }, [sharingRates]);
 
+  const getTravelerDisplayName = (traveler: SavedTraveler) => {
+    const fullName = [traveler.first_name || '', traveler.last_name || ''].join(' ').trim();
+    if (fullName) return fullName;
+    if (traveler.label?.trim()) return traveler.label.trim();
+    return 'Unnamed traveler';
+  };
+
+  const getTravelerAge = (traveler: SavedTraveler) => {
+    const directAge = traveler.age;
+    if (directAge !== null && directAge !== undefined && String(directAge).trim() !== '') {
+      return String(directAge);
+    }
+
+    const dateOfBirth = traveler.date_of_birth;
+    if (!dateOfBirth) return '';
+    const dob = new Date(dateOfBirth);
+    if (Number.isNaN(dob.getTime())) return '';
+
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age -= 1;
+    }
+
+    if (age < 0) return '';
+    return String(age);
+  };
+
+  const handleTravelerToggle = (traveler: SavedTraveler, checked: boolean) => {
+    if (!checked) {
+      const mappedIndex = travelerToGuestIndex[traveler.id];
+
+      if (mappedIndex !== undefined) {
+        setGuestForms((prev) =>
+          prev.map((form, index) => (index === mappedIndex ? { ...form, name: '', age: '' } : form))
+        );
+
+        setGuestFormErrors((prev) =>
+          prev.map((error, index) =>
+            index === mappedIndex ? { ...error, name: undefined, age: undefined } : error
+          )
+        );
+
+        setTravelerToGuestIndex((prev) => {
+          const next = { ...prev };
+          delete next[traveler.id];
+          return next;
+        });
+      }
+
+      setSelectedTravelerIds((prev) => prev.filter((id) => id !== traveler.id));
+      return;
+    }
+
+    if (selectedTravelerIds.includes(traveler.id)) return;
+
+    const occupiedIndexes = new Set(Object.values(travelerToGuestIndex));
+    const travelerName = getTravelerDisplayName(traveler);
+    const travelerAge = getTravelerAge(traveler);
+
+    let targetIndex = guestForms.findIndex(
+      (form, index) => !occupiedIndexes.has(index) && !form.name.trim() && !form.age.trim()
+    );
+
+    let nextForms = [...guestForms];
+    if (targetIndex === -1) {
+      targetIndex = nextForms.length;
+      nextForms.push(createEmptyGuestForm());
+    }
+
+    nextForms[targetIndex] = {
+      ...nextForms[targetIndex],
+      name: travelerName,
+      age: travelerAge,
+    };
+
+    setGuestForms(nextForms);
+    setGuestFormErrors((prev) => {
+      const next = [...prev];
+      const existing = next[targetIndex] || {};
+      next[targetIndex] = { ...existing, name: undefined, age: undefined };
+      return next;
+    });
+    setExpandedGuestIndexes((prev) => (prev.includes(targetIndex) ? prev : [...prev, targetIndex]));
+    setSelectedTravelerIds((prev) => [...prev, traveler.id]);
+    setTravelerToGuestIndex((prev) => ({ ...prev, [traveler.id]: targetIndex }));
+  };
+
   const handleGuestFormChange = (index: number, field: keyof GuestForm, value: string) => {
     if (field === 'name' || field === 'age') {
       setGuestFormErrors((prev) =>
@@ -198,6 +359,27 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     });
 
     setGuestFormErrors((prev) => prev.filter((_, i) => i !== index));
+
+    setTravelerToGuestIndex((prev) => {
+      const next: Record<string, number> = {};
+      const removedTravelerIds: string[] = [];
+
+      Object.entries(prev).forEach(([travelerId, mappedIndex]) => {
+        if (mappedIndex === index) {
+          removedTravelerIds.push(travelerId);
+          return;
+        }
+        next[travelerId] = mappedIndex > index ? mappedIndex - 1 : mappedIndex;
+      });
+
+      if (removedTravelerIds.length > 0) {
+        setSelectedTravelerIds((current) =>
+          current.filter((travelerId) => !removedTravelerIds.includes(travelerId))
+        );
+      }
+
+      return next;
+    });
   };
 
   const toggleGuestCard = (index: number) => {
@@ -206,7 +388,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     );
   };
 
-  const handleConfirmAndPay = () => {
+  const handleConfirmAndPay = async () => {
     const nextErrors = guestForms.map((form) => ({
       name: form.name.trim() ? undefined : 'Name is required',
       age: form.age.trim() ? undefined : 'Age is required',
@@ -224,6 +406,44 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     if (invalidIndexes.length > 0 || !hasMobile) {
       setExpandedGuestIndexes((prev) => Array.from(new Set([...prev, ...invalidIndexes])));
       return;
+    }
+
+    const mappedGuestIndexes = new Set(Object.values(travelerToGuestIndex));
+
+    const guestsToSave = guestForms
+      .map((guest, index) => ({ guest, index }))
+      .filter(
+        ({ guest, index }) =>
+          !mappedGuestIndexes.has(index) &&
+          guest.save_for_future &&
+          guest.name.trim() &&
+          guest.age.trim()
+      )
+      .map(({ guest }) => ({
+        name: guest.name.trim(),
+        age: Number(guest.age),
+      }))
+      .filter((guest) => Number.isFinite(guest.age) && guest.age > 0);
+
+    if (guestsToSave.length > 0) {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (user) {
+        const { error: saveTravelersError } = await supabase.from('traveler_profiles').insert(
+          guestsToSave.map((guest) => ({
+            auth_user_id: user.id,
+            label: 'other',
+            first_name: guest.name,
+            age: guest.age,
+          }))
+        );
+
+        if (saveTravelersError) {
+          console.error('Failed to save travelers for future:', saveTravelersError.message);
+        }
+      }
     }
 
     const params = new URLSearchParams();
@@ -373,6 +593,30 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
             </div>
             <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
+            <details className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
+              <summary className="cursor-pointer font-medium select-none">
+                Use saved travelers
+              </summary>
+              <div className="mt-4 space-y-3">
+                {isTravelersLoading ? (
+                  <p className="text-sm text-neutral-500">Loading saved travelers...</p>
+                ) : savedTravelers.length === 0 ? (
+                  <p className="text-sm text-neutral-500">No saved travelers found.</p>
+                ) : (
+                  savedTravelers.map((traveler) => (
+                    <label key={traveler.id} className="flex items-center gap-3 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectedTravelerIds.includes(traveler.id)}
+                        onChange={(e) => handleTravelerToggle(traveler, e.target.checked)}
+                      />
+                      <span>{getTravelerDisplayName(traveler)}</span>
+                    </label>
+                  ))
+                )}
+              </div>
+            </details>
+
             <div className="space-y-5">
               {guestForms.map((form, index) => {
                 const hasName = form.name.trim().length > 0;
@@ -381,6 +625,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                   : `Guest ${index + 1}`;
                 const isExpanded = expandedGuestIndexes.includes(index);
                 const formError = guestFormErrors[index] ?? {};
+                const isFromSavedTraveler = Object.values(travelerToGuestIndex).includes(index);
 
                 return (
                   <div
@@ -476,6 +721,28 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                             ) : null}
                           </div>
                         </div>
+
+                        {isFromSavedTraveler ? (
+                          <p className="text-xs text-neutral-500">
+                            This traveler is from saved list and will not be saved again.
+                          </p>
+                        ) : (
+                          <label className="inline-flex items-center gap-2 text-sm text-neutral-700 dark:text-neutral-300">
+                            <input
+                              type="checkbox"
+                              checked={form.save_for_future}
+                              onChange={(e) => {
+                                const checked = e.currentTarget.checked;
+                                setGuestForms((prev) =>
+                                  prev.map((guest, i) =>
+                                    i === index ? { ...guest, save_for_future: checked } : guest
+                                  )
+                                );
+                              }}
+                            />
+                            Save for future
+                          </label>
+                        )}
                       </>
                     )}
                   </div>
