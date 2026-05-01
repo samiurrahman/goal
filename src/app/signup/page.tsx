@@ -1,6 +1,6 @@
 'use client';
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken } from '@/utils/authToken';
 import googleSvg from '@/images/Google.svg';
@@ -11,6 +11,10 @@ import Link from 'next/link';
 
 const PageSignUp = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const userType = (searchParams.get('userType') === 'agent' ? 'agent' : 'user') as
+    | 'user'
+    | 'agent';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -23,13 +27,38 @@ const PageSignUp = () => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: { user_type: userType },
+      },
     });
     setLoading(false);
     if (error) {
       setError(error.message);
-    } else {
-      // Store session token in cookie if available
-      if (data && data.session && data.session.access_token) {
+      return;
+    }
+    if (data.user) {
+      // Create user_details row
+      const { error: detailsError } = await supabase
+        .from('user_details')
+        .insert({ auth_user_id: data.user.id, user_type: userType });
+      if (detailsError) {
+        setError(`Failed to save user details: ${detailsError.message}`);
+        return;
+      }
+      // If agent, create agents row
+      if (userType === 'agent') {
+        const { error: agentError } = await supabase.from('agents').insert({
+          auth_user_id: data.user.id,
+          email_id: email,
+          name: email.split('@')[0],
+        });
+        if (agentError) {
+          setError(`Failed to create agent profile: ${agentError.message}`);
+          return;
+        }
+      }
+      // Store session token if available (email confirmation may not return session immediately)
+      if (data.session?.access_token) {
         storeAccessToken(data.session.access_token);
       }
       router.push('/login');
@@ -42,7 +71,7 @@ const PageSignUp = () => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: window.location.origin,
+        redirectTo: `${window.location.origin}?userType=${userType}`,
       },
     });
     setLoading(false);
@@ -55,7 +84,7 @@ const PageSignUp = () => {
     <div className={`nc-PageSignUp  `}>
       <div className="container mb-24 lg:mb-32">
         <h2 className="my-20 flex items-center text-3xl leading-[115%] md:text-5xl md:leading-[115%] font-semibold text-neutral-900 dark:text-neutral-100 justify-center">
-          Signup
+          {userType === 'agent' ? 'Sign up as Agent' : 'Sign up'}
         </h2>
         <div className="max-w-md mx-auto space-y-6 ">
           <div className="grid gap-3">

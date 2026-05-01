@@ -112,12 +112,20 @@ const PageLogin = () => {
           </form>
 
           {/* ==== */}
-          <span className="block text-center text-neutral-700 dark:text-neutral-300">
-            New user? {` `}
-            <Link href="/signup" className="font-semibold underline">
-              Create an account
-            </Link>
-          </span>
+          <div className="flex flex-col gap-2 text-center text-neutral-700 dark:text-neutral-300">
+            <span>
+              New user?{` `}
+              <Link href="/signup?userType=user" className="font-semibold underline">
+                Create an account
+              </Link>
+            </span>
+            <span>
+              New agent?{` `}
+              <Link href="/signup?userType=agent" className="font-semibold underline">
+                Create an account
+              </Link>
+            </span>
+          </div>
         </div>
       </div>
     </div>
