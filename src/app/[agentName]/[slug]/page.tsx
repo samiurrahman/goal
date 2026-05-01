@@ -144,6 +144,9 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   checkoutParams.set('guests', String(numberOfGuests));
   checkoutParams.set('slug', slug);
   checkoutParams.set('agent_name', agentName);
+  if (package_details?.agent_id) {
+    checkoutParams.set('agent_id', String(package_details.agent_id));
+  }
   const checkoutUrl = `/checkout?${checkoutParams.toString()}`;
 
   const redirectQuery = new URLSearchParams();

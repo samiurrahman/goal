@@ -6,7 +6,9 @@ export function middleware(request: NextRequest) {
   // Protect /account and related pages
   const protectedPaths = [
     '/account',
-    '/account-savelists',
+    '/listed-packages',
+    '/my-bookings',
+    '/bookings',
     '/account-password',
     '/account-billing',
   ];
@@ -27,5 +29,12 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/account', '/account-savelists', '/account-password', '/account-billing'],
+  matcher: [
+    '/account',
+    '/listed-packages',
+    '/my-bookings',
+    '/bookings',
+    '/account-password',
+    '/account-billing',
+  ],
 };

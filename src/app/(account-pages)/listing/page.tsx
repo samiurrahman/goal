@@ -9,6 +9,14 @@ import Textarea from '@/shared/Textarea';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import { Package } from '@/data/types';
 
+const slugify = (value: string): string =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
+
 const initialState: Partial<Package> = {
   title: '',
   price_per_person: 0,
@@ -62,22 +70,96 @@ export default function ListingPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      toast.error('You must be logged in as an agent to manage packages.');
+      setLoading(false);
+      return;
+    }
+
+    const { data: agentRowByAuth, error: agentAuthError } = await supabase
+      .from('agents')
+      .select('id, slug, known_as, email_id')
+      .eq('auth_user_id', user.id)
+      .maybeSingle();
+
+    if (agentAuthError) {
+      toast.error('Failed to resolve agent profile: ' + agentAuthError.message);
+      setLoading(false);
+      return;
+    }
+
+    let agentRow = agentRowByAuth;
+
+    if (!agentRow && user.email) {
+      const { data: agentRowByEmail, error: agentEmailError } = await supabase
+        .from('agents')
+        .select('id, slug, known_as, email_id, auth_user_id')
+        .eq('email_id', user.email)
+        .maybeSingle();
+
+      if (agentEmailError) {
+        toast.error('Failed to resolve agent profile by email: ' + agentEmailError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (agentRowByEmail) {
+        agentRow = agentRowByEmail;
+        if (!agentRowByEmail.auth_user_id) {
+          await supabase
+            .from('agents')
+            .update({ auth_user_id: user.id })
+            .eq('id', agentRowByEmail.id);
+        }
+      }
+    }
+
+    if (!agentRow) {
+      toast.error('No matching agent profile found for this account.');
+      setLoading(false);
+      return;
+    }
+
+    let agentSlug = (agentRow.slug || '').trim();
+    if (!agentSlug) {
+      const sourceName = (agentRow.known_as || '').trim() || user.email || user.id;
+      agentSlug = slugify(sourceName);
+      const { error: slugUpdateError } = await supabase
+        .from('agents')
+        .update({ slug: agentSlug, auth_user_id: user.id })
+        .eq('id', agentRow.id);
+
+      if (slugUpdateError) {
+        toast.error('Failed to create agent slug: ' + slugUpdateError.message);
+        setLoading(false);
+        return;
+      }
+    }
+
     if (id) {
       // Edit existing
-      const { error } = await supabase.from('packages').update(form).eq('id', id);
+      const { error } = await supabase
+        .from('packages')
+        .update({ ...form, agent_name: agentSlug, agent_id: user.id })
+        .eq('id', id);
       setLoading(false);
       if (error) {
         toast.error('Failed to update package: ' + error.message);
       } else {
         toast.success('Package updated successfully!');
-        router.push('/account-savelists');
+        router.push('/listed-packages');
       }
     } else {
       // Add new
       const { ...formWithoutId } = form;
       const { data: newPackage, error } = await supabase
         .from('packages')
-        .insert([{ ...formWithoutId, agent_id: 4 }])
+        .insert([{ ...formWithoutId, agent_id: user.id, agent_name: agentSlug }])
         .select()
         .single();
       if (error) throw error;
@@ -90,8 +172,8 @@ export default function ListingPage() {
         toast.error('Failed to add package: ' + error);
       } else {
         toast.success('Package added successfully!');
-        setForm(initialState); // Reset form after add
-        router.push('/account-savelists');
+        setForm(initialState);
+        router.push('/listed-packages');
       }
     }
   };

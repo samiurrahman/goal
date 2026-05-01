@@ -29,6 +29,7 @@ const CheckoutOrderPage: FC = () => {
 
   const slug = searchParams.get('slug');
   const agentName = searchParams.get('agent_name');
+  const agentId = searchParams.get('agent_id');
   const guestsFromUrl = Number(searchParams.get('guests'));
   const sharingFromUrl = Number(searchParams.get('sharing'));
   const bookingMobile = searchParams.get('booking_mobile') ?? '';
@@ -72,9 +73,10 @@ const CheckoutOrderPage: FC = () => {
     }
   }, [guestFormsRaw]);
 
-  const totalGuests = Number.isFinite(guestsFromUrl) && guestsFromUrl > 0
-    ? guestsFromUrl
-    : Math.max(guestForms.length, 1);
+  const totalGuests =
+    Number.isFinite(guestsFromUrl) && guestsFromUrl > 0
+      ? guestsFromUrl
+      : Math.max(guestForms.length, 1);
 
   const sharingRates = useMemo<SharingRate[]>(() => {
     try {
@@ -122,7 +124,12 @@ const CheckoutOrderPage: FC = () => {
       gstAmount: gstAmount.toLocaleString('en-IN'),
       total: total.toLocaleString('en-IN'),
     };
-  }, [packageDetails?.currency, packageDetails?.price_per_person, selectedRate?.value, totalGuests]);
+  }, [
+    packageDetails?.currency,
+    packageDetails?.price_per_person,
+    selectedRate?.value,
+    totalGuests,
+  ]);
 
   return (
     <div className="nc-PayPage">
@@ -317,7 +324,11 @@ const CheckoutOrderPage: FC = () => {
             <div className="flex flex-col sm:flex-row gap-3">
               <ButtonPrimary href="/pay-done">Proceed to Payment</ButtonPrimary>
               <Link
-                href={slug && agentName ? `/checkout?slug=${slug}&agent_name=${agentName}&guests=${totalGuests}&sharing=${selectedRate?.people ?? sharingFromUrl}` : '/checkout'}
+                href={
+                  slug && agentName
+                    ? `/checkout?slug=${slug}&agent_name=${agentName}${agentId ? `&agent_id=${agentId}` : ''}&guests=${totalGuests}&sharing=${selectedRate?.people ?? sharingFromUrl}`
+                    : '/checkout'
+                }
                 className="inline-flex items-center justify-center px-6 py-4 rounded-full border border-neutral-300 dark:border-neutral-700 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
                 Back to checkout

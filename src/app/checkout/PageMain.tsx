@@ -59,6 +59,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   const sharingFromUrl = Number(searchParams.get('sharing'));
   const slugFromUrl = searchParams.get('slug');
   const agentNameFromUrl = searchParams.get('agent_name');
+  const agentIdFromUrl = searchParams.get('agent_id');
   const initialAdults = Number.isFinite(guestsFromUrl) && guestsFromUrl > 0 ? guestsFromUrl : 2;
 
   const { data: packageDetails } = useQuery<PackageDetails | null>({
@@ -408,6 +409,28 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       return;
     }
 
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      setBookingMobileError('Please login to continue with booking.');
+      return;
+    }
+
+    if (!packageDetails?.id || !slugFromUrl) {
+      console.error('Missing package context for booking creation.');
+      return;
+    }
+
+    const resolvedAgentId = String(agentIdFromUrl || packageDetails.agent_id || '').trim();
+    const resolvedAgentName = String(agentNameFromUrl || packageDetails.agent_name || '').trim();
+
+    if (!resolvedAgentId || !resolvedAgentName) {
+      console.error('Missing agent details for booking creation.');
+      return;
+    }
+
     const mappedGuestIndexes = new Set(Object.values(travelerToGuestIndex));
 
     const guestsToSave = guestForms
@@ -426,24 +449,47 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       .filter((guest) => Number.isFinite(guest.age) && guest.age > 0);
 
     if (guestsToSave.length > 0) {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { error: saveTravelersError } = await supabase.from('traveler_profiles').insert(
+        guestsToSave.map((guest) => ({
+          auth_user_id: user.id,
+          label: 'other',
+          first_name: guest.name,
+          age: guest.age,
+        }))
+      );
 
-      if (user) {
-        const { error: saveTravelersError } = await supabase.from('traveler_profiles').insert(
-          guestsToSave.map((guest) => ({
-            auth_user_id: user.id,
-            label: 'other',
-            first_name: guest.name,
-            age: guest.age,
-          }))
-        );
-
-        if (saveTravelersError) {
-          console.error('Failed to save travelers for future:', saveTravelersError.message);
-        }
+      if (saveTravelersError) {
+        console.error('Failed to save travelers for future:', saveTravelersError.message);
       }
+    }
+
+    const subtotalAmount =
+      Number(activeRate?.value ?? packageDetails?.price_per_person ?? 0) * totalGuests;
+    const totalAmount = subtotalAmount + subtotalAmount * 0.05;
+
+    const { data: createdBooking, error: bookingError } = await supabase
+      .from('bookings')
+      .insert([
+        {
+          auth_user_id: user.id,
+          agent_id: resolvedAgentId,
+          agent_name: resolvedAgentName,
+          package_id: packageDetails.id,
+          slug: slugFromUrl,
+          guests: guestForms,
+          sharing: sharingCount,
+          booking_mobile: bookingMobile.trim(),
+          total_amount: totalAmount,
+          currency: packageDetails?.currency ?? 'INR',
+          status: 'pending',
+        },
+      ])
+      .select('id')
+      .single();
+
+    if (bookingError) {
+      console.error('Failed to create booking:', bookingError.message);
+      return;
     }
 
     const params = new URLSearchParams();
@@ -454,6 +500,12 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     if (agentNameFromUrl) {
       params.set('agent_name', agentNameFromUrl);
     }
+    if (agentIdFromUrl) {
+      params.set('agent_id', agentIdFromUrl);
+    } else if (resolvedAgentId) {
+      params.set('agent_id', resolvedAgentId);
+    }
+    params.set('booking_id', String(createdBooking.id));
 
     params.set('guests', String(totalGuests));
     params.set('sharing', String(sharingCount));
