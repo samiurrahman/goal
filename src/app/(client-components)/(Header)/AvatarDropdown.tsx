@@ -5,116 +5,175 @@ import SwitchDarkMode2 from '@/shared/SwitchDarkMode2';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabaseClient';
 import useOutsideAlerter from '@/hooks/useOutsideAlerter';
+import type { User } from '@supabase/supabase-js';
 interface Props {
   className?: string;
 }
 
-export default function AvatarDropdown({ className = '' }: Props) {
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [userType, setUserType] = useState<string | null>(null);
-  const [location, setLocation] = useState<string | null>(null);
+interface ResolvedUserDetails {
+  displayName: string;
+  userType: string | null;
+  city: string | null;
+  state: string | null;
+}
 
-  const [authKey, setAuthKey] = useState(0);
+const DEFAULT_DISPLAY_NAME = 'Guest';
+
+export default function AvatarDropdown({ className = '' }: Props) {
+  const [user, setUser] = useState<User | null>(null);
+  const [displayName, setDisplayName] = useState<string>(DEFAULT_DISPLAY_NAME);
+  const [userType, setUserType] = useState<string | null>(null);
+  const [city, setCity] = useState<string | null>(null);
+  const [state, setState] = useState<string | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
+
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   useOutsideAlerter(containerRef, () => setOpen(false));
-  useEffect(() => {
-    let listener: any;
-    // Initial fetch
-    const fetchUserAndProfile = async () => {
-      const { data } = await supabase.auth.getUser();
-      console.log(data);
 
-      setUser(data.user);
-      if (data.user) {
-        await loadProfile(data.user.id);
-        await loadUserDetails(data.user.id);
-      } else {
-        setProfile(null);
-        setUserType(null);
-        setLocation(null);
-      }
-    };
-    fetchUserAndProfile();
-
-    listener = supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        setUser(session.user);
-        await loadProfile(session.user.id);
-        await loadUserDetails(session.user.id);
-      } else {
-        setUser(null);
-        setProfile(null);
-        setUserType(null);
-        setLocation(null);
-      }
-      setAuthKey((k) => k + 1); // force re-render
-    });
-    return () => {
-      if (listener && listener.subscription) listener.subscription.unsubscribe();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadProfile = async (userId: string) => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('full_name, avatar_url')
-      .eq('id', userId)
-      .single();
-    setProfile(data);
+  const resetDetails = () => {
+    setDisplayName(DEFAULT_DISPLAY_NAME);
+    setUserType(null);
+    setCity(null);
+    setState(null);
   };
 
-  const loadUserDetails = async (userId: string) => {
-    // Fetch user_type from user_details
+  const loadUserDetails = async (userId: string): Promise<ResolvedUserDetails> => {
+    const fallback: ResolvedUserDetails = {
+      displayName: DEFAULT_DISPLAY_NAME,
+      userType: null,
+      city: null,
+      state: null,
+    };
+
     const { data: userDetailsData } = await supabase
       .from('user_details')
-      .select('user_type')
+      .select('user_type, first_name, last_name, city, state')
       .eq('auth_user_id', userId)
-      .single();
+      .maybeSingle();
 
-    if (userDetailsData) {
-      setUserType(userDetailsData.user_type);
+    if (!userDetailsData) return fallback;
+
+    const resolvedUserType = userDetailsData.user_type || null;
+    const baseCity = (userDetailsData.city || '').trim() || null;
+    const baseState = (userDetailsData.state || '').trim() || null;
+
+    if (resolvedUserType !== 'agent') {
+      const firstName = (userDetailsData.first_name || '').trim();
+      const lastName = (userDetailsData.last_name || '').trim();
+      const fullName = [firstName, lastName].filter(Boolean).join(' ');
+
+      return {
+        displayName: fullName || DEFAULT_DISPLAY_NAME,
+        userType: resolvedUserType,
+        city: baseCity,
+        state: baseState,
+      };
     }
 
-    // Fetch location from agents table if user_type is agent
-    if (userDetailsData?.user_type === 'agent') {
-      const { data: agentData } = await supabase
-        .from('agents')
-        .select('city, state, country')
-        .eq('auth_user_id', userId)
-        .single();
+    const { data: agentData } = await supabase
+      .from('agents')
+      .select('known_as, city, state')
+      .eq('auth_user_id', userId)
+      .maybeSingle();
 
-      if (agentData) {
-        const locationStr = [agentData.city, agentData.state, agentData.country]
-          .filter(Boolean)
-          .join(', ');
-        setLocation(locationStr || null);
-      }
-    }
+    const knownAs = (agentData?.known_as || '').trim();
+    return {
+      displayName: knownAs || DEFAULT_DISPLAY_NAME,
+      userType: resolvedUserType,
+      city: (agentData?.city || '').trim() || baseCity,
+      state: (agentData?.state || '').trim() || baseState,
+    };
   };
 
+  useEffect(() => {
+    let isMounted = true;
+    let currentRequest = 0;
+
+    const applyUserState = async (nextUser: User | null) => {
+      const requestId = ++currentRequest;
+
+      if (!isMounted) return;
+
+      setUser(nextUser);
+
+      if (!nextUser) {
+        setOpen(false);
+        resetDetails();
+        setIsAuthReady(true);
+        return;
+      }
+
+      const metadataFullName =
+        (nextUser.user_metadata?.full_name as string | undefined)?.trim() || DEFAULT_DISPLAY_NAME;
+      setDisplayName(metadataFullName);
+
+      const details = await loadUserDetails(nextUser.id);
+
+      if (!isMounted || requestId !== currentRequest) return;
+
+      setDisplayName(details.displayName || metadataFullName);
+      setUserType(details.userType);
+      setCity(details.city);
+      setState(details.state);
+      setIsAuthReady(true);
+    };
+
+    const initializeAuth = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      await applyUserState(session?.user ?? null);
+    };
+
+    void initializeAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      void applyUserState(session?.user ?? null);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const avatarUrl =
+    (user?.user_metadata?.avatar_url as string | undefined) ||
+    (user?.user_metadata?.picture as string | undefined);
+
   return (
-    <div ref={containerRef} key={authKey} className={`AvatarDropdown relative flex ${className}`}>
+    <div ref={containerRef} className={`AvatarDropdown relative flex ${className}`}>
       <button
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => {
+          if (!isAuthReady) return;
+          setOpen((v) => !v);
+        }}
+        aria-busy={!isAuthReady}
         className="self-center w-10 h-10 sm:w-12 sm:h-12 rounded-full text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none flex items-center justify-center"
       >
-        <Avatar sizeClass="w-8 h-8 sm:w-9 sm:h-9" imgUrl={user?.user_metadata?.picture} />
+        <Avatar sizeClass="w-8 h-8 sm:w-9 sm:h-9" imgUrl={avatarUrl} />
       </button>
       {open && (
         <div className="absolute z-50 w-screen max-w-[260px] px-4 top-full -right-10 sm:right-0 sm:px-0">
           <div className="overflow-hidden rounded-3xl shadow-lg ring-1 ring-black ring-opacity-5">
             <div className="relative grid grid-cols-1 gap-6 bg-white dark:bg-neutral-800 py-7 px-6">
               <div className="flex items-center space-x-3">
-                <Avatar sizeClass="w-12 h-12" imgUrl={user?.user_metadata?.picture} />
+                <Avatar sizeClass="w-12 h-12" imgUrl={avatarUrl} />
 
                 <div className="flex-grow">
-                  <h4 className="font-semibold">{user?.user_metadata?.full_name || 'Guest'}</h4>
-                  {location && <p className="text-xs mt-0.5">{location}</p>}
-                  {userType && <p className="text-xs mt-0.5 capitalize">{userType}</p>}
+                  <h4 className="font-semibold">{displayName}</h4>
+                  {(city || state) && (
+                    <p className="text-xs mt-0.5">{[city, state].filter(Boolean).join(', ')}</p>
+                  )}
+                  {userType === 'agent' && (
+                    <p className="text-[11px] mt-1 inline-flex rounded-full border border-emerald-300 px-2 py-0.5 text-emerald-700 dark:border-emerald-700 dark:text-emerald-300">
+                      Agent
+                    </p>
+                  )}
                 </div>
               </div>
 

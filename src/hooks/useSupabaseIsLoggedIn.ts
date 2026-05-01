@@ -1,23 +1,33 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 
+interface SupabaseAuthState {
+  isLoggedIn: boolean;
+  isAuthReady: boolean;
+}
+
 /**
  * Custom hook to check if a user is logged in via Supabase session.
- * @returns {boolean} isLoggedIn - True if user is logged in, false otherwise.
+ * @returns {SupabaseAuthState} Auth state with login status and readiness flag.
  */
-export function useSupabaseIsLoggedIn(): boolean {
+export function useSupabaseIsLoggedIn(): SupabaseAuthState {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isAuthReady, setIsAuthReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
     // Initial session check
     supabase.auth.getSession().then(({ data }) => {
-      if (mounted) setIsLoggedIn(!!data?.session);
+      if (!mounted) return;
+      setIsLoggedIn(!!data?.session);
+      setIsAuthReady(true);
     });
 
     // Listen for auth state changes
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) setIsLoggedIn(!!session);
+      if (!mounted) return;
+      setIsLoggedIn(!!session);
+      setIsAuthReady(true);
     });
 
     return () => {
@@ -26,5 +36,8 @@ export function useSupabaseIsLoggedIn(): boolean {
     };
   }, []);
 
-  return isLoggedIn;
+  return {
+    isLoggedIn,
+    isAuthReady,
+  };
 }

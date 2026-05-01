@@ -1,19 +1,17 @@
 'use client';
 
-import React, { FC, useEffect, useRef, useState } from 'react';
+import React from 'react';
 import Logo from '@/shared/Logo';
-import useOutsideAlerter from '@/hooks/useOutsideAlerter';
 import NotifyDropdown from './NotifyDropdown';
 import AvatarDropdown from './AvatarDropdown';
 import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
-import Link from 'next/link';
 import HeroSearchForm2Mobile from '../(HeroSearchForm2Mobile)/HeroSearchForm2Mobile';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 
 const Header3 = () => {
   //
 
-  const isLoggedIn = useSupabaseIsLoggedIn();
+  const { isLoggedIn, isAuthReady } = useSupabaseIsLoggedIn();
   return (
     <>
       <div
@@ -42,7 +40,9 @@ const Header3 = () => {
 
                 {/* {isLoggedIn && <NotifyDropdown />}
                 {isLoggedIn && <AvatarDropdown />} */}
-                {isLoggedIn ? (
+                {!isAuthReady ? (
+                  <div className="w-24 h-10 self-center" aria-hidden="true" />
+                ) : isLoggedIn ? (
                   <>
                     {' '}
                     <NotifyDropdown />
