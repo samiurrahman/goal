@@ -90,7 +90,22 @@ const createEmptyTraveler = (): TravelerFormState => ({
   special_assistance: '',
 });
 
-const isTravelerEmpty = (traveler: TravelerFormState): boolean => {
+type TravelerEmptyCheckInput = {
+  label?: string | null;
+  traveler_city?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  date_of_birth?: string | null;
+  nationality?: string | null;
+  passport_number?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  known_traveler_number?: string | null;
+  meal_preference?: string | null;
+  special_assistance?: string | null;
+};
+
+const isTravelerEmpty = (traveler: TravelerEmptyCheckInput): boolean => {
   return [
     traveler.label,
     traveler.traveler_city,
@@ -104,7 +119,7 @@ const isTravelerEmpty = (traveler: TravelerFormState): boolean => {
     traveler.known_traveler_number,
     traveler.meal_preference,
     traveler.special_assistance,
-  ].every((value) => value.trim() === '');
+  ].every((value) => (value || '').trim() === '');
 };
 
 const AccountPage = () => {
