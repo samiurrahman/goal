@@ -4,6 +4,7 @@ import Avatar from '@/shared/Avatar';
 import SwitchDarkMode2 from '@/shared/SwitchDarkMode2';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabaseClient';
+import { removeAccessToken } from '@/utils/authToken';
 import useOutsideAlerter from '@/hooks/useOutsideAlerter';
 import type { User } from '@supabase/supabase-js';
 interface Props {
@@ -26,6 +27,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
   const [city, setCity] = useState<string | null>(null);
   const [state, setState] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
+  const [isSigningOut, setIsSigningOut] = useState(false);
 
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -143,6 +145,72 @@ export default function AvatarDropdown({ className = '' }: Props) {
   const avatarUrl =
     (user?.user_metadata?.avatar_url as string | undefined) ||
     (user?.user_metadata?.picture as string | undefined);
+
+  const handleLogout = async () => {
+    if (isSigningOut) return;
+
+    setIsSigningOut(true);
+
+    const finalizeLocalLogout = () => {
+      removeAccessToken();
+
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem('app_forced_logged_out', '1');
+
+        const authStorageKeys = Object.keys(localStorage).filter(
+          (key) => key.startsWith('sb-') && key.endsWith('-auth-token')
+        );
+        authStorageKeys.forEach((key) => localStorage.removeItem(key));
+
+        const sessionAuthStorageKeys = Object.keys(sessionStorage).filter(
+          (key) => key.startsWith('sb-') && key.endsWith('-auth-token')
+        );
+        sessionAuthStorageKeys.forEach((key) => sessionStorage.removeItem(key));
+
+        window.dispatchEvent(new Event('app:force-logout'));
+      }
+
+      setUser(null);
+      resetDetails();
+      setOpen(false);
+      setIsAuthReady(true);
+      setIsSigningOut(false);
+    };
+
+    const { error } = await supabase.auth.signOut({ scope: 'global' });
+
+    if (!error) {
+      finalizeLocalLogout();
+      return;
+    }
+
+    const isForbidden = error.status === 403;
+    const isMissingServerSession =
+      !!error.message &&
+      error.message.includes('Session from session_id claim in JWT does not exist');
+
+    if (isForbidden || isMissingServerSession) {
+      const { error: localSignOutError } = await supabase.auth.signOut({ scope: 'local' });
+      if (localSignOutError) {
+        console.error(
+          'Failed to clear local session:',
+          localSignOutError.message || 'Unknown error'
+        );
+      }
+
+      finalizeLocalLogout();
+      return;
+    }
+
+    if (error) {
+      console.error('Failed to sign out:', error.message || 'Unknown error');
+      setIsSigningOut(false);
+      return;
+    }
+
+    setOpen(false);
+    setIsSigningOut(false);
+  };
 
   return (
     <div ref={containerRef} className={`AvatarDropdown relative flex ${className}`}>
@@ -329,11 +397,10 @@ export default function AvatarDropdown({ className = '' }: Props) {
               {/* ------------------ 2 --------------------- */}
               <button
                 type="button"
+                disabled={isSigningOut}
+                aria-disabled={isSigningOut}
                 className="flex items-center w-full p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  setOpen(false);
-                }}
+                onClick={handleLogout}
               >
                 <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
                   <svg
@@ -367,7 +434,9 @@ export default function AvatarDropdown({ className = '' }: Props) {
                   </svg>
                 </div>
                 <div className="ml-4">
-                  <p className="text-sm font-medium ">{'Log out'}</p>
+                  <p className="text-sm font-medium ">
+                    {isSigningOut ? 'Logging out...' : 'Log out'}
+                  </p>
                 </div>
               </button>
             </div>

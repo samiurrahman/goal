@@ -12,3 +12,10 @@ export function storeAccessToken(token: string) {
     path: '/',
   });
 }
+
+/**
+ * Removes the access token cookie.
+ */
+export function removeAccessToken() {
+  Cookies.remove('access_token', { path: '/' });
+}

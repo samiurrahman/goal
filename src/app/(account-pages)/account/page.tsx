@@ -20,6 +20,10 @@ interface AccountFormState {
   last_name: string;
   city: string;
   state: string;
+  address: string;
+  phone: string;
+  date_of_birth: string;
+  gender: TravelerGender;
 }
 
 interface TravelerFormState {
@@ -50,6 +54,18 @@ interface CityRecord {
   name: string;
   state?: string | null;
 }
+
+const normalizeDateForInput = (value: unknown): string => {
+  if (!value) return '';
+  if (typeof value === 'string') {
+    // Handles both "YYYY-MM-DD" and timestamp-like strings.
+    return value.includes('T') ? value.split('T')[0] : value;
+  }
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10);
+  }
+  return '';
+};
 
 const createEmptyTraveler = (): TravelerFormState => ({
   id: null,
@@ -103,6 +119,10 @@ const AccountPage = () => {
     last_name: '',
     city: '',
     state: '',
+    address: '',
+    phone: '',
+    date_of_birth: '',
+    gender: 'unspecified',
   });
 
   const { data: citiesData, isLoading: citiesLoading } = useCities();
@@ -141,7 +161,7 @@ const AccountPage = () => {
       const [detailsResult, travelersResult] = await Promise.all([
         supabase
           .from('user_details')
-          .select('first_name, last_name, city, state')
+          .select('first_name, last_name, city, state, address, phone, date_of_birth, gender')
           .eq('auth_user_id', user.id)
           .maybeSingle(),
         supabase
@@ -170,12 +190,20 @@ const AccountPage = () => {
       const detailsLastName = detailsResult.data?.last_name?.trim() || '';
       const detailsCity = detailsResult.data?.city?.trim() || '';
       const detailsState = detailsResult.data?.state?.trim() || '';
+      const detailsAddress = detailsResult.data?.address?.trim() || '';
+      const detailsPhone = detailsResult.data?.phone?.trim() || '';
+      const detailsDateOfBirth = normalizeDateForInput(detailsResult.data?.date_of_birth);
+      const detailsGender = (detailsResult.data?.gender as TravelerGender) || 'unspecified';
 
       setAccountForm({
         first_name: detailsFirstName || metadataFirstName,
         last_name: detailsLastName || metadataLastName,
         city: detailsCity,
         state: detailsState,
+        address: detailsAddress,
+        phone: detailsPhone,
+        date_of_birth: detailsDateOfBirth,
+        gender: detailsGender,
       });
 
       if (travelersResult.error) {
@@ -339,6 +367,10 @@ const AccountPage = () => {
       last_name: accountForm.last_name.trim(),
       city: accountForm.city.trim(),
       state: accountForm.state.trim(),
+      address: accountForm.address.trim(),
+      phone: accountForm.phone.trim(),
+      date_of_birth: accountForm.date_of_birth || null,
+      gender: accountForm.gender,
     };
 
     const { data: existingDetails, error: existingDetailsError } = await supabase
@@ -569,7 +601,7 @@ const AccountPage = () => {
             </div>
 
             <div>
-              <Label>City</Label>
+              <Label>Location</Label>
               <Select
                 className="mt-1.5"
                 value={selectedCityId}
@@ -593,13 +625,47 @@ const AccountPage = () => {
             </div>
 
             <div>
-              <Label>State</Label>
+              <Label>Address</Label>
               <Input
                 className="mt-1.5"
-                value={accountForm.state}
-                readOnly
-                placeholder="Enter state"
+                value={accountForm.address}
+                onChange={(e) => updateAccountField('address', e.target.value)}
+                placeholder="Enter address"
               />
+            </div>
+
+            <div>
+              <Label>Phone</Label>
+              <Input
+                className="mt-1.5"
+                value={accountForm.phone}
+                onChange={(e) => updateAccountField('phone', e.target.value)}
+                placeholder="Enter phone number"
+              />
+            </div>
+
+            <div>
+              <Label>Date of Birth</Label>
+              <Input
+                className="mt-1.5"
+                type="date"
+                value={accountForm.date_of_birth}
+                onChange={(e) => updateAccountField('date_of_birth', e.target.value)}
+              />
+            </div>
+
+            <div>
+              <Label>Gender</Label>
+              <Select
+                className="mt-1.5"
+                value={accountForm.gender}
+                onChange={(e) => updateAccountField('gender', e.target.value as TravelerGender)}
+              >
+                <option value="unspecified">Prefer not to say</option>
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+                <option value="other">Other</option>
+              </Select>
             </div>
           </div>
 
