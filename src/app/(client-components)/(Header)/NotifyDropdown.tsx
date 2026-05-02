@@ -1,7 +1,7 @@
 'use client';
 
 import { Popover, Transition } from '@headlessui/react';
-import { FC, Fragment, useEffect, useMemo, useState } from 'react';
+import { FC, Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import Avatar from '@/shared/Avatar';
 import { BellIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
@@ -58,9 +58,82 @@ interface Props {
 
 const NotifyDropdown: FC<Props> = ({ className = '' }) => {
   const [notifications, setNotifications] = useState<NotifyItem[]>([]);
-  const [hasUnread, setHasUnread] = useState(false);
+  const [readIds, setReadIds] = useState<string[]>([]);
+  const [readStorageKey, setReadStorageKey] = useState('');
+  const hasInteractedRef = useRef(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const hasNotifications = useMemo(() => notifications.length > 0, [notifications.length]);
+  const hasUnread = useMemo(
+    () => notifications.some((item) => !readIds.includes(item.id)),
+    [notifications, readIds]
+  );
+
+  const playNotificationSound = () => {
+    if (typeof window === 'undefined') return;
+    if (!hasInteractedRef.current) return;
+
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+
+    try {
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioCtx();
+      }
+
+      const ctx = audioContextRef.current;
+      if (!ctx || ctx.state === 'suspended') {
+        void ctx?.resume();
+      }
+
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.12);
+
+      gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.01);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.16);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.17);
+    } catch {
+      // Ignore audio failures (browser policy/device restrictions)
+    }
+  };
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const unlockAudio = () => {
+      hasInteractedRef.current = true;
+      if (audioContextRef.current?.state === 'suspended') {
+        void audioContextRef.current.resume();
+      }
+      window.removeEventListener('pointerdown', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+    };
+
+    window.addEventListener('pointerdown', unlockAudio);
+    window.addEventListener('keydown', unlockAudio);
+    window.addEventListener('touchstart', unlockAudio);
+
+    return () => {
+      window.removeEventListener('pointerdown', unlockAudio);
+      window.removeEventListener('keydown', unlockAudio);
+      window.removeEventListener('touchstart', unlockAudio);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!readStorageKey || typeof window === 'undefined') return;
+    window.localStorage.setItem(readStorageKey, JSON.stringify(readIds.slice(0, 200)));
+  }, [readIds, readStorageKey]);
 
   useEffect(() => {
     let isMounted = true;
@@ -70,7 +143,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
         const deduped = prev.filter((entry) => entry.id !== item.id);
         return [item, ...deduped].slice(0, 20);
       });
-      setHasUnread(true);
+      playNotificationSound();
     };
 
     const loadNotifications = async () => {
@@ -79,6 +152,26 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
       } = await supabase.auth.getUser();
 
       if (!isMounted || !user) return;
+
+      const storageKey = `notify_read_ids_v1_${user.id}`;
+      setReadStorageKey(storageKey);
+
+      let shouldBootstrapReadIds = false;
+      if (typeof window !== 'undefined') {
+        const raw = window.localStorage.getItem(storageKey);
+        if (raw === null) {
+          shouldBootstrapReadIds = true;
+        } else {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) {
+              setReadIds(parsed.filter((item) => typeof item === 'string').slice(0, 200));
+            }
+          } catch {
+            setReadIds([]);
+          }
+        }
+      }
 
       const { data: userDetails } = await supabase
         .from('user_details')
@@ -138,7 +231,9 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
         });
 
         setNotifications(mapped);
-        setHasUnread(false);
+        if (shouldBootstrapReadIds) {
+          setReadIds(mapped.map((item) => item.id).slice(0, 200));
+        }
 
         const agentChannel = supabase
           .channel(`agent-bookings-${user.id}`)
@@ -225,7 +320,9 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
       });
 
       setNotifications(mapped);
-      setHasUnread(false);
+      if (shouldBootstrapReadIds) {
+        setReadIds(mapped.map((item) => item.id).slice(0, 200));
+      }
 
       const userChannel = supabase
         .channel(`user-bookings-${user.id}`)
@@ -284,6 +381,10 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
     };
   }, []);
 
+  const handleNotificationClick = (id: string) => {
+    setReadIds((prev) => (prev.includes(id) ? prev : [id, ...prev].slice(0, 200)));
+  };
+
   return (
     <>
       <Popover className={`relative flex ${className}`}>
@@ -293,7 +394,6 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
               className={` ${
                 open ? '' : 'text-opacity-90'
               } group self-center w-10 h-10 sm:w-12 sm:h-12 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full inline-flex items-center justify-center text-base font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 relative`}
-              onClick={() => setHasUnread(false)}
             >
               {hasUnread && hasNotifications ? (
                 <span className="w-2 h-2 bg-blue-500 absolute top-2 right-2 rounded-full"></span>
@@ -322,6 +422,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
                         <Link
                           key={item.id}
                           href={item.href}
+                          onClick={() => handleNotificationClick(item.id)}
                           className="flex p-2 pr-8 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 relative"
                         >
                           <Avatar
