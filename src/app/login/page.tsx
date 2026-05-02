@@ -8,27 +8,73 @@ import Input from '@/shared/Input';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Image from 'next/image';
 import Link from 'next/link';
+import toast, { Toaster } from 'react-hot-toast';
+
+const getFriendlyAuthMessage = (rawMessage: string) => {
+  const original = (rawMessage || '').trim();
+  const message = original.toLowerCase();
+
+  if (original === 'Invalid login credentials') {
+    return "Hmm, that combo didn't match. Please double-check your email and password and give it another try.";
+  }
+
+  if (message.includes('invalid login credentials')) {
+    return "Hmm, that combo didn't match. Please double-check your email and password and give it another try.";
+  }
+  if (message.includes('email not confirmed')) {
+    return "Looks like we haven't officially met yet. Please verify your email first, then come right back.";
+  }
+  if (message.includes('too many requests')) {
+    return "Whoa, that was quick. Let's pause for a minute, then try again.";
+  }
+
+  return "We're having a small sign-in hiccup right now. Please try again in a moment.";
+};
 
 const PageLogin = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
   const [loading, setLoading] = useState(false);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    const nextErrors: { email?: string; password?: string; form?: string } = {};
+    const emailValue = email.trim();
+
+    if (!emailValue) {
+      nextErrors.email = 'Email is required.';
+    } else if (!/^\S+@\S+\.\S+$/.test(emailValue)) {
+      nextErrors.email = 'Please enter a valid email address.';
+    }
+
+    if (!password.trim()) {
+      nextErrors.password = 'Password is required.';
+    }
+
+    if (nextErrors.email || nextErrors.password) {
+      setErrors(nextErrors);
+      return;
+    }
+
+    setErrors({});
     setLoading(true);
-    setError(null);
     const { data, error } = await supabase.auth.signInWithPassword({
-      email,
+      email: emailValue,
       password,
     });
 
     setLoading(false);
     if (error) {
-      setError(error.message);
+      const friendlyMessage = getFriendlyAuthMessage(error.message);
+      if (error.message?.toLowerCase().includes('invalid login credentials')) {
+        toast.error(friendlyMessage);
+        setErrors({});
+      } else {
+        setErrors({ form: friendlyMessage });
+      }
     } else {
       // Store access token in cookie (secure, sameSite strict)
       if (data?.session?.access_token) {
@@ -53,11 +99,10 @@ const PageLogin = () => {
               className="flex w-full rounded-lg bg-primary-50 dark:bg-neutral-800 px-4 py-3 transform transition-transform sm:px-6 hover:translate-y-[-2px]"
               onClick={async () => {
                 setLoading(true);
-                setError(null);
                 // For OAuth, Supabase will handle the redirect and set the cookie on callback page
                 const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
                 if (error) {
-                  setError(error.message);
+                  toast.error('Google sign-in failed. Please try again.');
                   setLoading(false);
                 }
               }}
@@ -68,7 +113,6 @@ const PageLogin = () => {
                 Continue with Google
               </h3>
             </button>
-            {error && <span className="text-red-500 text-sm">{error}</span>}
           </div>
           {/* OR */}
           <div className="relative text-center">
@@ -78,17 +122,22 @@ const PageLogin = () => {
             <div className="absolute left-0 w-full top-1/2 transform -translate-y-1/2 border border-neutral-100 dark:border-neutral-800"></div>
           </div>
           {/* FORM */}
-          <form className="grid grid-cols-1 gap-6" onSubmit={handleSignIn}>
+          <form className="grid grid-cols-1 gap-6" onSubmit={handleSignIn} noValidate>
             <label className="block">
               <span className="text-neutral-800 dark:text-neutral-200">Email address</span>
               <Input
                 type="email"
                 placeholder="example@example.com"
-                className="mt-1"
+                className={`mt-1 ${errors.email ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}`}
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setErrors((prev) => ({ ...prev, email: undefined, form: undefined }));
+                }}
               />
+              {errors.email ? (
+                <span className="mt-1 text-xs text-red-600 block">{errors.email}</span>
+              ) : null}
             </label>
             <label className="block">
               <span className="flex justify-between items-center text-neutral-800 dark:text-neutral-200">
@@ -99,16 +148,21 @@ const PageLogin = () => {
               </span>
               <Input
                 type="password"
-                className="mt-1"
+                className={`mt-1 ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}`}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  setErrors((prev) => ({ ...prev, password: undefined, form: undefined }));
+                }}
               />
+              {errors.password ? (
+                <span className="mt-1 text-xs text-red-600 block">{errors.password}</span>
+              ) : null}
             </label>
             <ButtonPrimary type="submit" disabled={loading}>
               {loading ? 'Logging in...' : 'Continue'}
             </ButtonPrimary>
-            {error && <span className="text-red-500 text-sm">{error}</span>}
+            {errors.form ? <span className="text-xs text-red-600">{errors.form}</span> : null}
           </form>
 
           {/* ==== */}
@@ -128,6 +182,7 @@ const PageLogin = () => {
           </div>
         </div>
       </div>
+      <Toaster position="top-center" />
     </div>
   );
 };

@@ -8,6 +8,26 @@ import Input from '@/shared/Input';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Image from 'next/image';
 import Link from 'next/link';
+import toast, { Toaster } from 'react-hot-toast';
+
+const getFriendlySignupMessage = (rawMessage: string) => {
+  const message = rawMessage.toLowerCase();
+
+  if (message.includes('already registered') || message.includes('already been registered')) {
+    return 'This email is already registered. Please sign in instead.';
+  }
+  if (message.includes('password')) {
+    return 'Please use a stronger password and try again.';
+  }
+  if (message.includes('invalid email')) {
+    return 'Please enter a valid email address.';
+  }
+  if (message.includes('too many requests')) {
+    return "Whoa, that was quick. Let's pause for a minute, then try again.";
+  }
+
+  return "We're having a small sign-up hiccup right now. Please try again in a moment.";
+};
 
 const PageSignUp = () => {
   const router = useRouter();
@@ -17,13 +37,11 @@ const PageSignUp = () => {
     | 'agent';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -33,7 +51,7 @@ const PageSignUp = () => {
     });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      toast.error(getFriendlySignupMessage(error.message));
       return;
     }
     if (data.user) {
@@ -42,7 +60,7 @@ const PageSignUp = () => {
         .from('user_details')
         .insert({ auth_user_id: data.user.id, user_type: userType });
       if (detailsError) {
-        setError(`Failed to save user details: ${detailsError.message}`);
+        toast.error('Account created, but profile setup failed. Please contact support.');
         return;
       }
       // If agent, create agents row
@@ -53,7 +71,7 @@ const PageSignUp = () => {
           name: email.split('@')[0],
         });
         if (agentError) {
-          setError(`Failed to create agent profile: ${agentError.message}`);
+          toast.error('Account created, but agent profile setup failed. Please contact support.');
           return;
         }
       }
@@ -61,13 +79,13 @@ const PageSignUp = () => {
       if (data.session?.access_token) {
         storeAccessToken(data.session.access_token);
       }
+      toast.success('Account created successfully. Please sign in.');
       router.push('/login');
     }
   };
 
   const handleOAuthSignUp = async (provider: 'google') => {
     setLoading(true);
-    setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -76,7 +94,7 @@ const PageSignUp = () => {
     });
     setLoading(false);
     if (error) {
-      setError(error.message);
+      toast.error('Google sign-up failed. Please try again.');
     }
   };
 
@@ -135,7 +153,6 @@ const PageSignUp = () => {
             <ButtonPrimary type="submit" disabled={loading}>
               {loading ? 'Signing up...' : 'Continue'}
             </ButtonPrimary>
-            {error && <span className="text-red-500 text-sm">{error}</span>}
           </form>
 
           {/* ==== */}
@@ -147,6 +164,7 @@ const PageSignUp = () => {
           </span>
         </div>
       </div>
+      <Toaster position="top-center" />
     </div>
   );
 };
