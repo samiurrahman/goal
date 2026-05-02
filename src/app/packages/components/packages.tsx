@@ -6,6 +6,7 @@ import SaleOffBadge from '@/components/SaleOffBadge';
 import Badge from '@/shared/Badge';
 import { Package } from '@/data/types';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { MadinaIcon, MakkahIcon } from '@/components/icons/icons';
 import Avatar from '@/shared/Avatar';
@@ -15,9 +16,21 @@ type SharingRateItem = { value: string; people: number; default: boolean };
 export interface PackagesProps {
   className?: string;
   data?: Package;
+  agentProfileImage?: string | null;
+  agentDisplayName?: string;
+  agentSlug?: string;
 }
 
-const Packages: FC<PackagesProps> = ({ className = '', data = {} as Package }) => {
+const Packages: FC<PackagesProps> = ({
+  className = '',
+  data = {} as Package,
+  agentProfileImage,
+  agentDisplayName,
+  agentSlug,
+}) => {
+  const router = useRouter();
+  const profileImage =
+    agentProfileImage || (data as Package & { profile_image?: string | null }).profile_image;
   const {
     title,
     price_per_person,
@@ -63,12 +76,28 @@ const Packages: FC<PackagesProps> = ({ className = '', data = {} as Package }) =
     return `${day} ${month} ${year}`;
   };
 
+  const resolvedAgentSlug = (agentSlug || agent_name || '').trim();
+  const packageSlug = (slug || '').trim();
+  const packageHref =
+    resolvedAgentSlug && packageSlug
+      ? `/${encodeURIComponent(resolvedAgentSlug)}/${encodeURIComponent(packageSlug)}`
+      : '/packages';
+  const agentHref = resolvedAgentSlug ? `/${encodeURIComponent(resolvedAgentSlug)}` : '/packages';
+  const displayAgentName = (agentDisplayName || agent_name || '').trim() || 'Agent';
+
   return (
-    <Link
-      href={`/${agent_name}/${slug}`}
-      className={`lg:px-2 lg:py-1 shadow-sm nc-PropertyCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-3xl overflow-hidden block ${className}`}
+    <div
+      className={`lg:px-2 lg:py-1 shadow-sm nc-PropertyCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-3xl overflow-hidden block cursor-pointer ${className}`}
+      role="link"
       tabIndex={0}
       aria-label={title}
+      onClick={() => router.push(packageHref)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          router.push(packageHref);
+        }
+      }}
     >
       <div className="h-full w-full flex flex-col sm:flex-row sm:items-center">
         <div className="flex-shrink-0 p-3 w-full sm:w-64">
@@ -166,13 +195,21 @@ const Packages: FC<PackagesProps> = ({ className = '', data = {} as Package }) =
 
             <div className="flex w-full justify-between items-end">
               <div className="flex items-center space-x-3">
-                <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />
+                <Avatar
+                  hasChecked
+                  sizeClass="h-10 w-10"
+                  radius="rounded-full"
+                  imgUrl={profileImage || undefined}
+                />
                 <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
                   <Link
-                    href={`/${agent_name}/${slug}`}
+                    href={agentHref}
                     className="text-neutral-800 dark:text-neutral-200 font-small hover:underline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                    }}
                   >
-                    {agent_name}
+                    {displayAgentName}
                   </Link>
                 </span>
                 <StartRating reviewCount={12} point={4.5} />
@@ -194,7 +231,7 @@ const Packages: FC<PackagesProps> = ({ className = '', data = {} as Package }) =
         isLiked={true}
         className="absolute right-5 top-5 sm:right-3 sm:top-3"
       />
-    </Link>
+    </div>
   );
 };
 

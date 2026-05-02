@@ -12,6 +12,7 @@ interface HostInformationProps {
   responseRate: string;
   responseTime: string;
   profileUrl: string;
+  profileImage?: string | null;
 }
 
 const HostInformation: React.FC<HostInformationProps> = ({
@@ -22,6 +23,7 @@ const HostInformation: React.FC<HostInformationProps> = ({
   responseRate,
   responseTime,
   profileUrl,
+  profileImage,
 }) => (
   <div className="listingSection__wrap !space-y-4">
     <h2 className="text-xl font-normal text-gray-900">Host Information</h2>
@@ -32,6 +34,7 @@ const HostInformation: React.FC<HostInformationProps> = ({
         hasCheckedClass="w-4 h-4 -top-0.5 right-0.5"
         sizeClass="h-14 w-14"
         radius="rounded-full"
+        imgUrl={profileImage || undefined}
       />
       <div>
         <Link href={`/${profileUrl}`} className="block text-md font-medium hover:underline">

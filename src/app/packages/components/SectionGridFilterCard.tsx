@@ -1,5 +1,5 @@
 'use client';
-import React, { FC, useRef, useEffect, useMemo } from 'react';
+import React, { FC, useRef, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import Breadcrumb from '@/components/Breadcrumb';
@@ -135,6 +135,54 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
     [data?.pages]
   );
 
+  const [agentMetaBySlug, setAgentMetaBySlug] = useState<
+    Record<string, { profileImage?: string; knownAs?: string; slug?: string }>
+  >({});
+
+  useEffect(() => {
+    const agentSlugs = Array.from(
+      new Set(packages.map((item) => item.agent_name).filter(Boolean) as string[])
+    );
+
+    if (!agentSlugs.length) {
+      setAgentMetaBySlug({});
+      return;
+    }
+
+    let isCancelled = false;
+
+    const loadAgentImages = async () => {
+      const { data: agentsData } = await supabase
+        .from('agents')
+        .select('slug, known_as, profile_image')
+        .in('slug', agentSlugs);
+
+      if (isCancelled) return;
+
+      const nextMap: Record<string, { profileImage?: string; knownAs?: string; slug?: string }> =
+        {};
+      for (const row of agentsData || []) {
+        const slug = (row as { slug?: string | null }).slug;
+        const knownAs = (row as { known_as?: string | null }).known_as;
+        const profileImage = (row as { profile_image?: string | null }).profile_image;
+        if (slug) {
+          nextMap[slug] = {
+            slug,
+            knownAs: knownAs || undefined,
+            profileImage: profileImage || undefined,
+          };
+        }
+      }
+      setAgentMetaBySlug(nextMap);
+    };
+
+    void loadAgentImages();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [packages]);
+
   return (
     <div className={`nc-SectionGridFilterCard ${className}`} data-nc-id="SectionGridFilterCard">
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Packages' }]} className="mt-4" />
@@ -180,7 +228,17 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
         ) : (
           <>
             {packages.map((item, index) => (
-              <Packages key={item.id || index} data={item} />
+              <Packages
+                key={item.id || index}
+                data={item}
+                agentProfileImage={
+                  item.agent_name ? agentMetaBySlug[item.agent_name]?.profileImage : undefined
+                }
+                agentDisplayName={
+                  item.agent_name ? agentMetaBySlug[item.agent_name]?.knownAs : undefined
+                }
+                agentSlug={item.agent_name ? agentMetaBySlug[item.agent_name]?.slug : undefined}
+              />
             ))}
             <div ref={loaderRef} className="flex mt-12 justify-center items-center">
               {isFetchingNextPage && <ButtonPrimary loading>Loading more Packages</ButtonPrimary>}

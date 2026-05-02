@@ -12,6 +12,7 @@ export interface PackageMetaProps {
   madinaHotel: string;
   route: string;
   provider: string;
+  providerProfileImage?: string | null;
   providerVerified?: boolean;
   providerLocation: string;
   url: string;
@@ -25,6 +26,7 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
   madinaHotel,
   route,
   provider,
+  providerProfileImage,
   providerVerified = true,
   providerLocation,
   url,
@@ -118,7 +120,12 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
 
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 my-4">
         <div className="flex items-center">
-          <Avatar hasChecked sizeClass="h-10 w-10" radius="rounded-full" />
+          <Avatar
+            hasChecked
+            sizeClass="h-10 w-10"
+            radius="rounded-full"
+            imgUrl={providerProfileImage || undefined}
+          />
           <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
             <Link
               href={`/${url}`}

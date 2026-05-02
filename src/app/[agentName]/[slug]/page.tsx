@@ -58,6 +58,13 @@ const formatDateRangePart = (dateInput?: string) => {
 
 const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   const { agentName, slug } = params;
+  const { data: agentData } = await supabase
+    .from('agents')
+    .select('profile_image')
+    .eq('slug', agentName)
+    .maybeSingle();
+  const agentProfileImage = (agentData?.profile_image as string | null | undefined) ?? null;
+
   const { data: packageData, error } = await supabase
     .from('packages')
     .select('*')
@@ -109,12 +116,13 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     route: `${package_details?.departure_city?.toUpperCase() ?? ''} - ${package_details?.arrival_city?.toUpperCase() ?? ''}`,
     dates: `${departureDateText} - ${arrivalDateText}`,
     provider: package_details?.agent_name ?? 'Unknown Provider',
+    providerProfileImage: agentProfileImage,
     url: agentName,
     providerVerified: true,
     providerLocation: package_details?.package_location ?? 'Unknown Location',
   };
 
-  const hostData = { ...HOST_DATA, profileUrl: agentName };
+  const hostData = { ...HOST_DATA, profileUrl: agentName, profileImage: agentProfileImage };
 
   const iternaryData = parseJson<IternaryItemProps[]>(package_details?.details?.iternary, []);
   const stayInfoData = parseJson(package_details?.details?.stay_information, {

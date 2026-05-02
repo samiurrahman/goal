@@ -31,6 +31,10 @@ interface AgentProfileEditModalProps {
   };
 }
 
+interface AgentOwnershipRow {
+  auth_user_id: string | null;
+}
+
 interface RichTextEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -268,6 +272,8 @@ const AgentProfileEditModal = ({ agentId, initialData }: AgentProfileEditModalPr
   const [isSaving, setIsSaving] = useState(false);
   const [isUploadingProfile, setIsUploadingProfile] = useState(false);
   const [isUploadingBanner, setIsUploadingBanner] = useState(false);
+  const [isCheckingPermission, setIsCheckingPermission] = useState(true);
+  const [canEdit, setCanEdit] = useState(false);
   const [form, setForm] = useState({
     name: initialData.name || '',
     known_as: initialData.known_as || '',
@@ -304,6 +310,45 @@ const AgentProfileEditModal = ({ agentId, initialData }: AgentProfileEditModalPr
     });
   }, [initialData]);
 
+  useEffect(() => {
+    const checkOwnership = async () => {
+      if (!agentId) {
+        setCanEdit(false);
+        setIsCheckingPermission(false);
+        return;
+      }
+
+      setIsCheckingPermission(true);
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        setCanEdit(false);
+        setIsCheckingPermission(false);
+        return;
+      }
+
+      const { data: agentRow, error } = await supabase
+        .from('agents')
+        .select('auth_user_id')
+        .eq('id', agentId)
+        .maybeSingle<AgentOwnershipRow>();
+
+      if (error) {
+        setCanEdit(false);
+        setIsCheckingPermission(false);
+        return;
+      }
+
+      setCanEdit(Boolean(agentRow?.auth_user_id && agentRow.auth_user_id === user.id));
+      setIsCheckingPermission(false);
+    };
+
+    void checkOwnership();
+  }, [agentId]);
+
   const handleFieldChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -312,6 +357,11 @@ const AgentProfileEditModal = ({ agentId, initialData }: AgentProfileEditModalPr
   };
 
   const uploadImage = async (file: File, folder: 'profile' | 'banner') => {
+    if (!canEdit) {
+      toast.error('You are not allowed to edit this agent profile.');
+      return null;
+    }
+
     if (!agentId) {
       toast.error('Agent identifier missing.');
       return null;
@@ -383,6 +433,11 @@ const AgentProfileEditModal = ({ agentId, initialData }: AgentProfileEditModalPr
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!canEdit) {
+      toast.error('You are not allowed to edit this agent profile.');
+      return;
+    }
+
     if (!agentId) {
       toast.error('Agent identifier missing.');
       return;
@@ -424,7 +479,7 @@ const AgentProfileEditModal = ({ agentId, initialData }: AgentProfileEditModalPr
     router.refresh();
   };
 
-  return (
+  return !isCheckingPermission && canEdit ? (
     <NcModal
       isOpenProp={isOpen}
       onCloseModal={() => setIsOpen(false)}
@@ -655,7 +710,7 @@ const AgentProfileEditModal = ({ agentId, initialData }: AgentProfileEditModalPr
         </form>
       )}
     />
-  );
+  ) : null;
 };
 
 export default AgentProfileEditModal;
