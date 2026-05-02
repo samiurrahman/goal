@@ -309,7 +309,7 @@ export default function ListingPage() {
         <div>
           <ImageUpload
             label="Package Image"
-            currentImageUrl={form.thumbnail_url}
+            currentImageUrl={form.thumbnail_url || undefined}
             aspectRatio="wide"
             {...(id
               ? {
