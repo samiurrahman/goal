@@ -9,7 +9,7 @@ export function middleware(request: NextRequest) {
     '/listed-packages',
     '/my-bookings',
     '/bookings',
-    '/account-password',
+    '/account-settings',
     '/account-billing',
   ];
   const { pathname } = request.nextUrl;
@@ -34,7 +34,7 @@ export const config = {
     '/listed-packages',
     '/my-bookings',
     '/bookings',
-    '/account-password',
+    '/account-settings',
     '/account-billing',
   ],
 };

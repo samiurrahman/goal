@@ -186,6 +186,8 @@ export default function AvatarDropdown({ className = '' }: Props) {
     resolvePublicImageUrl(user?.user_metadata?.avatar_url as string | undefined) ||
     resolvePublicImageUrl(user?.user_metadata?.picture as string | undefined);
 
+  const myAccountHref = userType === 'agent' && agentSlug ? `/${agentSlug}` : '/account';
+
   const handleLogout = async () => {
     if (isSigningOut) return;
 
@@ -289,7 +291,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
 
               {/* ------------------ 1 --------------------- */}
               <Link
-                href={'/account'}
+                href={myAccountHref}
                 className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
                 onClick={() => setOpen(false)}
               >
@@ -323,51 +325,53 @@ export default function AvatarDropdown({ className = '' }: Props) {
               </Link>
 
               {/* ------------------ 2 --------------------- */}
-              <Link
-                href={'/my-bookings'}
-                className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
-                onClick={() => setOpen(false)}
-              >
-                <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M8 12.2H15"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeMiterlimit="10"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M8 16.2H12.38"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeMiterlimit="10"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M10 6H14C16 6 16 5 16 4C16 2 15 2 14 2H10C9 2 8 2 8 4C8 6 9 6 10 6Z"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeMiterlimit="10"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M16 4.02002C19.33 4.20002 21 5.43002 21 10V16C21 20 20 22 15 22H9C4 22 3 20 3 16V10C3 5.44002 4.67 4.20002 8 4.02002"
-                      stroke="currentColor"
-                      strokeWidth="1.5"
-                      strokeMiterlimit="10"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </div>
-                <div className="ml-4">
-                  <p className="text-sm font-medium ">{'My bookings'}</p>
-                </div>
-              </Link>
+              {userType !== 'agent' && (
+                <Link
+                  href={'/my-bookings'}
+                  className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
+                  onClick={() => setOpen(false)}
+                >
+                  <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M8 12.2H15"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeMiterlimit="10"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M8 16.2H12.38"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeMiterlimit="10"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M10 6H14C16 6 16 5 16 4C16 2 15 2 14 2H10C9 2 8 2 8 4C8 6 9 6 10 6Z"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeMiterlimit="10"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M16 4.02002C19.33 4.20002 21 5.43002 21 10V16C21 20 20 22 15 22H9C4 22 3 20 3 16V10C3 5.44002 4.67 4.20002 8 4.02002"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeMiterlimit="10"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium ">{'My bookings'}</p>
+                  </div>
+                </Link>
+              )}
 
               {userType === 'agent' && (
                 <Link
@@ -438,10 +442,38 @@ export default function AvatarDropdown({ className = '' }: Props) {
                     </svg>
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium ">{'Listed Packages'}</p>
+                    <p className="text-sm font-medium ">{'Packages'}</p>
                   </div>
                 </Link>
               )}
+
+              <Link
+                href={'/account-settings'}
+                className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
+                onClick={() => setOpen(false)}
+              >
+                <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M12 15.5C13.93 15.5 15.5 13.93 15.5 12C15.5 10.07 13.93 8.5 12 8.5C10.07 8.5 8.5 10.07 8.5 12C8.5 13.93 10.07 15.5 12 15.5Z"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <path
+                      d="M4 12.88V11.12C4 10.62 4.41 10.2 4.92 10.18L6.06 10.12C6.26 9.55 6.56 9.03 6.93 8.57L6.36 7.6C6.11 7.16 6.26 6.59 6.69 6.34L8.22 5.46C8.65 5.21 9.21 5.36 9.47 5.79L10.05 6.76C10.66 6.61 11.32 6.61 11.93 6.76L12.51 5.79C12.77 5.36 13.33 5.21 13.76 5.46L15.29 6.34C15.72 6.59 15.87 7.16 15.62 7.6L15.05 8.57C15.42 9.03 15.72 9.55 15.92 10.12L17.06 10.18C17.57 10.2 17.98 10.62 17.98 11.12V12.88C17.98 13.38 17.57 13.8 17.06 13.82L15.92 13.88C15.72 14.45 15.42 14.97 15.05 15.43L15.62 16.4C15.87 16.84 15.72 17.41 15.29 17.66L13.76 18.54C13.33 18.79 12.77 18.64 12.51 18.21L11.93 17.24C11.32 17.39 10.66 17.39 10.05 17.24L9.47 18.21C9.21 18.64 8.65 18.79 8.22 18.54L6.69 17.66C6.26 17.41 6.11 16.84 6.36 16.4L6.93 15.43C6.56 14.97 6.26 14.45 6.06 13.88L4.92 13.82C4.41 13.8 4 13.38 4 12.88Z"
+                      stroke="currentColor"
+                      strokeWidth="1.5"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-4">
+                  <p className="text-sm font-medium ">{'Account settings'}</p>
+                </div>
+              </Link>
 
               <div className="w-full border-b border-neutral-200 dark:border-neutral-700" />
 

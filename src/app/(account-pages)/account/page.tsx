@@ -18,7 +18,6 @@ export interface AccountPageProps {}
 
 type TravelerRelationship = 'self' | 'spouse' | 'child' | 'parent' | 'other';
 type TravelerGender = 'male' | 'female' | 'other' | 'unspecified';
-type UserType = 'user' | 'agent';
 
 interface AccountFormState {
   first_name: string;
@@ -52,21 +51,6 @@ interface TravelerFormState {
   known_traveler_number: string;
   meal_preference: string;
   special_assistance: string;
-}
-
-interface AgentFormState {
-  name: string;
-  known_as: string;
-  email_id: string;
-  contact_number: string;
-  alternate_number: string;
-  city: string;
-  state: string;
-  country: string;
-  address: string;
-  profile_image: string;
-  banner_image: string;
-  about_us: string;
 }
 
 interface CityRecord {
@@ -146,15 +130,11 @@ const AccountPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [authUserId, setAuthUserId] = useState<string | null>(null);
-  const [userType, setUserType] = useState<UserType>('user');
   const [initialTravelerIds, setInitialTravelerIds] = useState<string[]>([]);
   const [selectedCityId, setSelectedCityId] = useState<string>('');
-  const [selectedAgentCityId, setSelectedAgentCityId] = useState<string>('');
   const [collapsedTravelerKeys, setCollapsedTravelerKeys] = useState<string[]>([]);
   const [deletePendingKey, setDeletePendingKey] = useState<string | null>(null);
   const [userProfileUrl, setUserProfileUrl] = useState<string>('');
-  const [agentProfileUrl, setAgentProfileUrl] = useState<string>('');
-  const [agentBannerUrl, setAgentBannerUrl] = useState<string>('');
 
   const [accountForm, setAccountForm] = useState<AccountFormState>({
     first_name: '',
@@ -165,21 +145,6 @@ const AccountPage = () => {
     phone: '',
     date_of_birth: '',
     gender: 'unspecified',
-  });
-
-  const [agentForm, setAgentForm] = useState<AgentFormState>({
-    name: '',
-    known_as: '',
-    email_id: '',
-    contact_number: '',
-    alternate_number: '',
-    city: '',
-    state: '',
-    country: 'India',
-    address: '',
-    profile_image: '',
-    banner_image: '',
-    about_us: '',
   });
 
   const { data: citiesData, isLoading: citiesLoading } = useCities();
@@ -253,12 +218,6 @@ const AccountPage = () => {
       const detailsPhone = detailsResult.data?.phone?.trim() || '';
       const detailsDateOfBirth = normalizeDateForInput(detailsResult.data?.date_of_birth);
       const detailsGender = (detailsResult.data?.gender as TravelerGender) || 'unspecified';
-      const resolvedUserType =
-        detailsResult.data?.user_type === 'agent' || user.user_metadata?.user_type === 'agent'
-          ? 'agent'
-          : 'user';
-
-      setUserType(resolvedUserType);
 
       setAccountForm({
         first_name: detailsFirstName || metadataFirstName,
@@ -272,37 +231,6 @@ const AccountPage = () => {
       });
 
       setUserProfileUrl(detailsResult.data?.profile_image?.trim() || '');
-
-      if (resolvedUserType === 'agent') {
-        const { data: agentData, error: agentError } = await supabase
-          .from('agents')
-          .select(
-            'name, known_as, email_id, contact_number, alternate_number, city, state, country, address, profile_image, banner_image, about_us'
-          )
-          .eq('auth_user_id', user.id)
-          .maybeSingle();
-
-        if (agentError) {
-          toast.error(`Failed to load agent details: ${agentError.message}`);
-        } else if (agentData) {
-          setAgentForm({
-            name: (agentData.name || '').trim(),
-            known_as: (agentData.known_as || '').trim(),
-            email_id: (agentData.email_id || '').trim() || user.email || '',
-            contact_number: (agentData.contact_number || '').trim(),
-            alternate_number: (agentData.alternate_number || '').trim(),
-            city: (agentData.city || '').trim(),
-            state: (agentData.state || '').trim(),
-            country: (agentData.country || '').trim() || 'India',
-            address: (agentData.address || '').trim(),
-            profile_image: (agentData.profile_image || '').trim(),
-            banner_image: (agentData.banner_image || '').trim(),
-            about_us: (agentData.about_us || '').trim(),
-          });
-          setAgentProfileUrl((agentData.profile_image || '').trim());
-          setAgentBannerUrl((agentData.banner_image || '').trim());
-        }
-      }
 
       if (travelersResult.error) {
         const isMissingTable =
@@ -370,30 +298,8 @@ const AccountPage = () => {
     setSelectedCityId(matched ? String(matched.id) : '');
   }, [cities, accountForm.city, accountForm.state]);
 
-  useEffect(() => {
-    if (!cities.length) return;
-    if (!agentForm.city) {
-      setSelectedAgentCityId('');
-      return;
-    }
-
-    const matched = cities.find((city) => {
-      const sameCity = (city.name || '').toLowerCase() === agentForm.city.toLowerCase();
-      if (!sameCity) return false;
-
-      if (!agentForm.state) return true;
-      return ((city.state || '').toLowerCase() || '') === agentForm.state.toLowerCase();
-    });
-
-    setSelectedAgentCityId(matched ? String(matched.id) : '');
-  }, [cities, agentForm.city, agentForm.state]);
-
   const updateAccountField = (field: keyof AccountFormState, value: string) => {
     setAccountForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const updateAgentField = (field: keyof AgentFormState, value: string) => {
-    setAgentForm((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleCitySelect = (cityId: string) => {
@@ -408,24 +314,6 @@ const AccountPage = () => {
     if (!selectedCity) return;
 
     setAccountForm((prev) => ({
-      ...prev,
-      city: selectedCity.name || '',
-      state: selectedCity.state || '',
-    }));
-  };
-
-  const handleAgentCitySelect = (cityId: string) => {
-    setSelectedAgentCityId(cityId);
-
-    if (!cityId) {
-      setAgentForm((prev) => ({ ...prev, city: '', state: '' }));
-      return;
-    }
-
-    const selectedCity = cities.find((city) => String(city.id) === cityId);
-    if (!selectedCity) return;
-
-    setAgentForm((prev) => ({
       ...prev,
       city: selectedCity.name || '',
       state: selectedCity.state || '',
@@ -547,7 +435,7 @@ const AccountPage = () => {
     } else {
       const { error: insertError } = await supabase.from('user_details').insert({
         auth_user_id: authUserId,
-        user_type: userType === 'agent' ? 'agent' : 'user',
+        user_type: 'user',
         profile_image: url,
       });
 
@@ -558,152 +446,10 @@ const AccountPage = () => {
     }
   };
 
-  const persistAgentImages = async (next: { profileImage?: string; bannerImage?: string }) => {
-    if (!authUserId) return;
-
-    const payload: { profile_image?: string; banner_image?: string } = {};
-    if (typeof next.profileImage === 'string') payload.profile_image = next.profileImage;
-    if (typeof next.bannerImage === 'string') payload.banner_image = next.bannerImage;
-    if (!Object.keys(payload).length) return;
-
-    const { data: existingAgent, error: existingAgentError } = await supabase
-      .from('agents')
-      .select('id')
-      .eq('auth_user_id', authUserId)
-      .maybeSingle();
-
-    if (existingAgentError) {
-      toast.error(`Failed to save agent image: ${existingAgentError.message}`);
-      return;
-    }
-
-    if (existingAgent?.id) {
-      const { error: updateError } = await supabase
-        .from('agents')
-        .update(payload)
-        .eq('auth_user_id', authUserId);
-
-      if (updateError) {
-        toast.error(`Failed to save agent image: ${updateError.message}`);
-      }
-      return;
-    }
-
-    const { error: insertError } = await supabase.from('agents').insert({
-      auth_user_id: authUserId,
-      ...payload,
-    });
-
-    if (insertError) {
-      toast.error(`Failed to save agent image: ${insertError.message}`);
-    }
-  };
-
   const handleSave = async () => {
     if (!authUserId || isSaving) return;
 
     setIsSaving(true);
-
-    if (userType === 'agent') {
-      const trimmedAgent = {
-        name: agentForm.name.trim(),
-        known_as: agentForm.known_as.trim(),
-        email_id: agentForm.email_id.trim(),
-        contact_number: agentForm.contact_number.trim(),
-        alternate_number: agentForm.alternate_number.trim(),
-        city: agentForm.city.trim(),
-        state: agentForm.state.trim(),
-        country: agentForm.country.trim(),
-        address: agentForm.address.trim(),
-        profile_image: agentProfileUrl.trim() || null,
-        banner_image: agentBannerUrl.trim() || null,
-        about_us: agentForm.about_us.trim(),
-      };
-
-      const { data: existingAgent, error: existingAgentError } = await supabase
-        .from('agents')
-        .select('id')
-        .eq('auth_user_id', authUserId)
-        .maybeSingle();
-
-      if (existingAgentError) {
-        toast.error(`Failed to save agent details: ${existingAgentError.message}`);
-        setIsSaving(false);
-        return;
-      }
-
-      if (existingAgent?.id) {
-        const { error: agentUpdateError } = await supabase
-          .from('agents')
-          .update(trimmedAgent)
-          .eq('auth_user_id', authUserId);
-
-        if (agentUpdateError) {
-          toast.error(`Failed to save agent details: ${agentUpdateError.message}`);
-          setIsSaving(false);
-          return;
-        }
-      } else {
-        const { error: agentInsertError } = await supabase.from('agents').insert({
-          auth_user_id: authUserId,
-          ...trimmedAgent,
-        });
-
-        if (agentInsertError) {
-          toast.error(`Failed to save agent details: ${agentInsertError.message}`);
-          setIsSaving(false);
-          return;
-        }
-      }
-
-      const { data: existingDetails, error: existingDetailsError } = await supabase
-        .from('user_details')
-        .select('id')
-        .eq('auth_user_id', authUserId)
-        .maybeSingle();
-
-      if (existingDetailsError) {
-        toast.error(`Failed to sync account details: ${existingDetailsError.message}`);
-        setIsSaving(false);
-        return;
-      }
-
-      const syncUserDetails = {
-        user_type: 'agent',
-        city: trimmedAgent.city,
-        state: trimmedAgent.state,
-        address: trimmedAgent.address,
-        phone: trimmedAgent.contact_number,
-      };
-
-      if (existingDetails?.id) {
-        const { error: syncError } = await supabase
-          .from('user_details')
-          .update(syncUserDetails)
-          .eq('auth_user_id', authUserId);
-
-        if (syncError) {
-          toast.error(`Failed to sync account details: ${syncError.message}`);
-          setIsSaving(false);
-          return;
-        }
-      } else {
-        const { error: syncInsertError } = await supabase.from('user_details').insert({
-          auth_user_id: authUserId,
-          ...syncUserDetails,
-        });
-
-        if (syncInsertError) {
-          toast.error(`Failed to sync account details: ${syncInsertError.message}`);
-          setIsSaving(false);
-          return;
-        }
-      }
-
-      toast.success('Agent profile updated successfully.');
-      setIsSaving(false);
-      return;
-    }
 
     const trimmedDetails = {
       first_name: accountForm.first_name.trim(),
@@ -923,61 +669,35 @@ const AccountPage = () => {
         <p className="text-sm text-neutral-600 dark:text-neutral-300">Loading account data...</p>
       ) : (
         <div className="space-y-10">
-          {userType === 'agent' ? (
-            <div className="listingSection__wrap overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6 space-y-5">
-              <h3 className="text-xl font-semibold">Agent Profile</h3>
+          <>
+            <div className="listingSection__wrap overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
-                  <Label>Business Name</Label>
+                  <Label>First Name</Label>
                   <Input
                     className="mt-1.5"
-                    value={agentForm.name}
-                    onChange={(e) => updateAgentField('name', e.target.value)}
-                    placeholder="Enter legal/business name"
+                    value={accountForm.first_name}
+                    onChange={(e) => updateAccountField('first_name', e.target.value)}
+                    placeholder="Enter first name"
                   />
                 </div>
+
                 <div>
-                  <Label>Display Name</Label>
+                  <Label>Last Name</Label>
                   <Input
                     className="mt-1.5"
-                    value={agentForm.known_as}
-                    onChange={(e) => updateAgentField('known_as', e.target.value)}
-                    placeholder="How customers should see your name"
+                    value={accountForm.last_name}
+                    onChange={(e) => updateAccountField('last_name', e.target.value)}
+                    placeholder="Enter last name"
                   />
                 </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input
-                    className="mt-1.5"
-                    value={agentForm.email_id}
-                    onChange={(e) => updateAgentField('email_id', e.target.value)}
-                    placeholder="Enter contact email"
-                  />
-                </div>
-                <div>
-                  <Label>Contact Number</Label>
-                  <Input
-                    className="mt-1.5"
-                    value={agentForm.contact_number}
-                    onChange={(e) => updateAgentField('contact_number', e.target.value)}
-                    placeholder="Enter primary contact number"
-                  />
-                </div>
-                <div>
-                  <Label>Alternate Number</Label>
-                  <Input
-                    className="mt-1.5"
-                    value={agentForm.alternate_number}
-                    onChange={(e) => updateAgentField('alternate_number', e.target.value)}
-                    placeholder="Enter alternate contact number"
-                  />
-                </div>
+
                 <div>
                   <Label>Location</Label>
                   <Select
                     className="mt-1.5"
-                    value={selectedAgentCityId}
-                    onChange={(e) => handleAgentCitySelect(e.target.value)}
+                    value={selectedCityId}
+                    onChange={(e) => handleCitySelect(e.target.value)}
                     disabled={citiesLoading}
                   >
                     <option value="">{citiesLoading ? 'Loading cities...' : 'Select city'}</option>
@@ -988,524 +708,402 @@ const AccountPage = () => {
                       </option>
                     ))}
                   </Select>
-                  {agentForm.city && !selectedAgentCityId && (
+                  {accountForm.city && !selectedCityId && (
                     <p className="mt-2 text-xs text-neutral-500">
-                      Saved city: {agentForm.city}
-                      {agentForm.state ? `, ${agentForm.state}` : ''}
+                      Saved city: {accountForm.city}
+                      {accountForm.state ? `, ${accountForm.state}` : ''}
                     </p>
                   )}
                 </div>
+
                 <div>
-                  <Label>State</Label>
-                  <Input
-                    className="mt-1.5"
-                    value={agentForm.state}
-                    readOnly
-                    placeholder="Auto from city"
-                  />
-                </div>
-                <div>
-                  <Label>Country</Label>
-                  <Input
-                    className="mt-1.5"
-                    value={agentForm.country}
-                    onChange={(e) => updateAgentField('country', e.target.value)}
-                    placeholder="Enter country"
-                  />
-                </div>
-                <div className="md:col-span-2">
                   <Label>Address</Label>
                   <Input
                     className="mt-1.5"
-                    value={agentForm.address}
-                    onChange={(e) => updateAgentField('address', e.target.value)}
-                    placeholder="Enter office address"
+                    value={accountForm.address}
+                    onChange={(e) => updateAccountField('address', e.target.value)}
+                    placeholder="Enter address"
                   />
                 </div>
+
                 <div>
-                  <ImageUpload
-                    label="Profile Image"
-                    folder={`agents/${authUserId}/profile`}
-                    currentImageUrl={agentProfileUrl}
-                    fixedFileName="profile"
-                    onUploadSuccess={(url) => {
-                      setAgentProfileUrl(url);
-                      void persistAgentImages({ profileImage: url });
-                    }}
-                    aspectRatio="square"
-                  />
-                </div>
-                <div>
-                  <ImageUpload
-                    label="Banner Image"
-                    folder={`agents/${authUserId}/profile`}
-                    currentImageUrl={agentBannerUrl}
-                    fixedFileName="banner"
-                    onUploadSuccess={(url) => {
-                      setAgentBannerUrl(url);
-                      void persistAgentImages({ bannerImage: url });
-                    }}
-                    aspectRatio="wide"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <Label>About Us</Label>
-                  <Textarea
+                  <Label>Phone</Label>
+                  <Input
                     className="mt-1.5"
-                    value={agentForm.about_us}
-                    onChange={(e) => updateAgentField('about_us', e.target.value)}
-                    placeholder="Write a short company overview"
+                    value={accountForm.phone}
+                    onChange={(e) => updateAccountField('phone', e.target.value)}
+                    placeholder="Enter phone number"
                   />
                 </div>
+
+                <div>
+                  <Label>Date of Birth</Label>
+                  <Input
+                    className="mt-1.5"
+                    type="date"
+                    value={accountForm.date_of_birth}
+                    onChange={(e) => updateAccountField('date_of_birth', e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>Gender</Label>
+                  <Select
+                    className="mt-1.5"
+                    value={accountForm.gender}
+                    onChange={(e) => updateAccountField('gender', e.target.value as TravelerGender)}
+                  >
+                    <option value="unspecified">Prefer not to say</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
+                <ImageUpload
+                  label="Profile Picture"
+                  folder={`users/${authUserId}`}
+                  currentImageUrl={userProfileUrl}
+                  fixedFileName="profile"
+                  onUploadSuccess={(url) => {
+                    setUserProfileUrl(url);
+                    void persistUserProfileUrl(url);
+                  }}
+                  aspectRatio="square"
+                />
               </div>
             </div>
-          ) : (
-            <>
-              <div className="listingSection__wrap overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div>
-                    <Label>First Name</Label>
-                    <Input
-                      className="mt-1.5"
-                      value={accountForm.first_name}
-                      onChange={(e) => updateAccountField('first_name', e.target.value)}
-                      placeholder="Enter first name"
-                    />
-                  </div>
 
-                  <div>
-                    <Label>Last Name</Label>
-                    <Input
-                      className="mt-1.5"
-                      value={accountForm.last_name}
-                      onChange={(e) => updateAccountField('last_name', e.target.value)}
-                      placeholder="Enter last name"
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Location</Label>
-                    <Select
-                      className="mt-1.5"
-                      value={selectedCityId}
-                      onChange={(e) => handleCitySelect(e.target.value)}
-                      disabled={citiesLoading}
-                    >
-                      <option value="">
-                        {citiesLoading ? 'Loading cities...' : 'Select city'}
-                      </option>
-                      {cities.map((city) => (
-                        <option key={city.id} value={String(city.id)}>
-                          {city.name}
-                          {city.state ? `, ${city.state}` : ''}
-                        </option>
-                      ))}
-                    </Select>
-                    {accountForm.city && !selectedCityId && (
-                      <p className="mt-2 text-xs text-neutral-500">
-                        Saved city: {accountForm.city}
-                        {accountForm.state ? `, ${accountForm.state}` : ''}
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label>Address</Label>
-                    <Input
-                      className="mt-1.5"
-                      value={accountForm.address}
-                      onChange={(e) => updateAccountField('address', e.target.value)}
-                      placeholder="Enter address"
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Phone</Label>
-                    <Input
-                      className="mt-1.5"
-                      value={accountForm.phone}
-                      onChange={(e) => updateAccountField('phone', e.target.value)}
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Date of Birth</Label>
-                    <Input
-                      className="mt-1.5"
-                      type="date"
-                      value={accountForm.date_of_birth}
-                      onChange={(e) => updateAccountField('date_of_birth', e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Gender</Label>
-                    <Select
-                      className="mt-1.5"
-                      value={accountForm.gender}
-                      onChange={(e) =>
-                        updateAccountField('gender', e.target.value as TravelerGender)
-                      }
-                    >
-                      <option value="unspecified">Prefer not to say</option>
-                      <option value="male">Male</option>
-                      <option value="female">Female</option>
-                      <option value="other">Other</option>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                  <ImageUpload
-                    label="Profile Picture"
-                    folder={`users/${authUserId}`}
-                    currentImageUrl={userProfileUrl}
-                    fixedFileName="profile"
-                    onUploadSuccess={(url) => {
-                      setUserProfileUrl(url);
-                      void persistUserProfileUrl(url);
-                    }}
-                    aspectRatio="square"
-                  />
-                </div>
+            <div className="listingSection__wrap space-y-4 overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-xl font-semibold">Saved Travelers / Family Details</h3>
+                <button
+                  type="button"
+                  onClick={addTraveler}
+                  className="px-4 py-2 rounded-xl border border-neutral-300 text-sm hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+                >
+                  Add traveler
+                </button>
               </div>
 
-              <div className="listingSection__wrap space-y-4 overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
-                <div className="flex items-center justify-between gap-3">
-                  <h3 className="text-xl font-semibold">Saved Travelers / Family Details</h3>
-                  <button
-                    type="button"
-                    onClick={addTraveler}
-                    className="px-4 py-2 rounded-xl border border-neutral-300 text-sm hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
-                  >
-                    Add traveler
-                  </button>
-                </div>
-
-                {travelers.map((traveler, index) => (
-                  <div
-                    key={traveler.tempKey}
-                    className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5 space-y-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <h4 className="text-lg font-semibold">
-                        {[traveler.first_name, traveler.last_name]
-                          .filter(Boolean)
-                          .join(' ')
-                          .trim() || `Traveler ${index + 1}`}
-                      </h4>
-                      <div className="flex items-center gap-3">
+              {travelers.map((traveler, index) => (
+                <div
+                  key={traveler.tempKey}
+                  className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5 space-y-4"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <h4 className="text-lg font-semibold">
+                      {[traveler.first_name, traveler.last_name].filter(Boolean).join(' ').trim() ||
+                        `Traveler ${index + 1}`}
+                    </h4>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => toggleTravelerCard(traveler.tempKey)}
+                        className="inline-flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                        aria-label={
+                          collapsedTravelerKeys.includes(traveler.tempKey)
+                            ? 'Expand traveler details'
+                            : 'Collapse traveler details'
+                        }
+                      >
+                        {collapsedTravelerKeys.includes(traveler.tempKey) ? (
+                          <ChevronDownIcon className="w-5 h-5" />
+                        ) : (
+                          <ChevronUpIcon className="w-5 h-5" />
+                        )}
+                      </button>
+                      {travelers.length > 1 && (
                         <button
                           type="button"
-                          onClick={() => toggleTravelerCard(traveler.tempKey)}
-                          className="inline-flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-                          aria-label={
-                            collapsedTravelerKeys.includes(traveler.tempKey)
-                              ? 'Expand traveler details'
-                              : 'Collapse traveler details'
-                          }
+                          onClick={() => removeTraveler(traveler.tempKey)}
+                          className="inline-flex items-center justify-center rounded-xl p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
+                          aria-label="Delete traveler"
                         >
-                          {collapsedTravelerKeys.includes(traveler.tempKey) ? (
-                            <ChevronDownIcon className="w-5 h-5" />
-                          ) : (
-                            <ChevronUpIcon className="w-5 h-5" />
-                          )}
+                          <TrashIcon className="w-5 h-5" />
                         </button>
-                        {travelers.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeTraveler(traveler.tempKey)}
-                            className="inline-flex items-center justify-center rounded-xl p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
-                            aria-label="Delete traveler"
-                          >
-                            <TrashIcon className="w-5 h-5" />
-                          </button>
-                        )}
-                      </div>
+                      )}
                     </div>
+                  </div>
 
-                    {!collapsedTravelerKeys.includes(traveler.tempKey) && (
-                      <>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <Label>Label</Label>
-                            <Input
-                              className="mt-1.5"
-                              value={traveler.label}
-                              onChange={(e) =>
-                                updateTravelerField(traveler.tempKey, 'label', e.target.value)
-                              }
-                              placeholder="Wife / Son / Parent"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Relationship</Label>
-                            <Select
-                              className="mt-1.5"
-                              value={traveler.relationship}
-                              onChange={(e) =>
-                                updateTravelerField(
-                                  traveler.tempKey,
-                                  'relationship',
-                                  e.target.value as TravelerRelationship
-                                )
-                              }
-                            >
-                              <option value="self">Self</option>
-                              <option value="spouse">Spouse</option>
-                              <option value="child">Child</option>
-                              <option value="parent">Parent</option>
-                              <option value="other">Other</option>
-                            </Select>
-                          </div>
-
-                          <div>
-                            <Label>Traveler City</Label>
-                            <Select
-                              className="mt-1.5"
-                              value={getCityIdFromNames(
-                                traveler.traveler_city,
-                                traveler.traveler_state
-                              )}
-                              onChange={(e) =>
-                                handleTravelerCitySelect(traveler.tempKey, e.target.value)
-                              }
-                              disabled={citiesLoading}
-                            >
-                              <option value="">
-                                {citiesLoading ? 'Loading cities...' : 'Select city'}
-                              </option>
-                              {cities.map((city) => (
-                                <option key={city.id} value={String(city.id)}>
-                                  {city.name}
-                                  {city.state ? `, ${city.state}` : ''}
-                                </option>
-                              ))}
-                            </Select>
-                            {traveler.traveler_city &&
-                              !getCityIdFromNames(
-                                traveler.traveler_city,
-                                traveler.traveler_state
-                              ) && (
-                                <p className="mt-2 text-xs text-neutral-500">
-                                  Saved city: {traveler.traveler_city}
-                                  {traveler.traveler_state ? `, ${traveler.traveler_state}` : ''}
-                                </p>
-                              )}
-                          </div>
-
-                          <div>
-                            <Label>Traveler State</Label>
-                            <Input
-                              className="mt-1.5"
-                              value={traveler.traveler_state}
-                              readOnly
-                              placeholder="Auto from city"
-                            />
-                          </div>
-
-                          <div>
-                            <Label>First Name</Label>
-                            <Input
-                              className="mt-1.5"
-                              value={traveler.first_name}
-                              onChange={(e) =>
-                                updateTravelerField(traveler.tempKey, 'first_name', e.target.value)
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Last Name</Label>
-                            <Input
-                              className="mt-1.5"
-                              value={traveler.last_name}
-                              onChange={(e) =>
-                                updateTravelerField(traveler.tempKey, 'last_name', e.target.value)
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Date of Birth</Label>
-                            <Input
-                              className="mt-1.5"
-                              type="date"
-                              value={traveler.date_of_birth}
-                              onChange={(e) =>
-                                updateTravelerField(
-                                  traveler.tempKey,
-                                  'date_of_birth',
-                                  e.target.value
-                                )
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Gender</Label>
-                            <Select
-                              className="mt-1.5"
-                              value={traveler.gender}
-                              onChange={(e) =>
-                                updateTravelerField(
-                                  traveler.tempKey,
-                                  'gender',
-                                  e.target.value as TravelerGender
-                                )
-                              }
-                            >
-                              <option value="unspecified">Prefer not to say</option>
-                              <option value="male">Male</option>
-                              <option value="female">Female</option>
-                              <option value="other">Other</option>
-                            </Select>
-                          </div>
-
-                          <div>
-                            <Label>Nationality</Label>
-                            <Input
-                              className="mt-1.5"
-                              value={traveler.nationality}
-                              onChange={(e) =>
-                                updateTravelerField(traveler.tempKey, 'nationality', e.target.value)
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Passport Number</Label>
-                            <Input
-                              className="mt-1.5"
-                              value={traveler.passport_number}
-                              onChange={(e) =>
-                                updateTravelerField(
-                                  traveler.tempKey,
-                                  'passport_number',
-                                  e.target.value
-                                )
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Passport Expiry</Label>
-                            <Input
-                              className="mt-1.5"
-                              type="date"
-                              value={traveler.passport_expiry}
-                              onChange={(e) =>
-                                updateTravelerField(
-                                  traveler.tempKey,
-                                  'passport_expiry',
-                                  e.target.value
-                                )
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Issuing Country</Label>
-                            <Input
-                              className="mt-1.5"
-                              value={traveler.issuing_country}
-                              onChange={(e) =>
-                                updateTravelerField(
-                                  traveler.tempKey,
-                                  'issuing_country',
-                                  e.target.value
-                                )
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Phone</Label>
-                            <Input
-                              className="mt-1.5"
-                              value={traveler.phone}
-                              onChange={(e) =>
-                                updateTravelerField(traveler.tempKey, 'phone', e.target.value)
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Email</Label>
-                            <Input
-                              className="mt-1.5"
-                              value={traveler.email}
-                              onChange={(e) =>
-                                updateTravelerField(traveler.tempKey, 'email', e.target.value)
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Known Traveler Number</Label>
-                            <Input
-                              className="mt-1.5"
-                              value={traveler.known_traveler_number}
-                              onChange={(e) =>
-                                updateTravelerField(
-                                  traveler.tempKey,
-                                  'known_traveler_number',
-                                  e.target.value
-                                )
-                              }
-                            />
-                          </div>
-
-                          <div>
-                            <Label>Meal Preference</Label>
-                            <Input
-                              className="mt-1.5"
-                              value={traveler.meal_preference}
-                              onChange={(e) =>
-                                updateTravelerField(
-                                  traveler.tempKey,
-                                  'meal_preference',
-                                  e.target.value
-                                )
-                              }
-                            />
-                          </div>
+                  {!collapsedTravelerKeys.includes(traveler.tempKey) && (
+                    <>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <Label>Label</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={traveler.label}
+                            onChange={(e) =>
+                              updateTravelerField(traveler.tempKey, 'label', e.target.value)
+                            }
+                            placeholder="Wife / Son / Parent"
+                          />
                         </div>
 
                         <div>
-                          <Label>Special Assistance</Label>
-                          <Textarea
+                          <Label>Relationship</Label>
+                          <Select
                             className="mt-1.5"
-                            value={traveler.special_assistance}
+                            value={traveler.relationship}
                             onChange={(e) =>
                               updateTravelerField(
                                 traveler.tempKey,
-                                'special_assistance',
+                                'relationship',
+                                e.target.value as TravelerRelationship
+                              )
+                            }
+                          >
+                            <option value="self">Self</option>
+                            <option value="spouse">Spouse</option>
+                            <option value="child">Child</option>
+                            <option value="parent">Parent</option>
+                            <option value="other">Other</option>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label>Traveler City</Label>
+                          <Select
+                            className="mt-1.5"
+                            value={getCityIdFromNames(
+                              traveler.traveler_city,
+                              traveler.traveler_state
+                            )}
+                            onChange={(e) =>
+                              handleTravelerCitySelect(traveler.tempKey, e.target.value)
+                            }
+                            disabled={citiesLoading}
+                          >
+                            <option value="">
+                              {citiesLoading ? 'Loading cities...' : 'Select city'}
+                            </option>
+                            {cities.map((city) => (
+                              <option key={city.id} value={String(city.id)}>
+                                {city.name}
+                                {city.state ? `, ${city.state}` : ''}
+                              </option>
+                            ))}
+                          </Select>
+                          {traveler.traveler_city &&
+                            !getCityIdFromNames(
+                              traveler.traveler_city,
+                              traveler.traveler_state
+                            ) && (
+                              <p className="mt-2 text-xs text-neutral-500">
+                                Saved city: {traveler.traveler_city}
+                                {traveler.traveler_state ? `, ${traveler.traveler_state}` : ''}
+                              </p>
+                            )}
+                        </div>
+
+                        <div>
+                          <Label>Traveler State</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={traveler.traveler_state}
+                            readOnly
+                            placeholder="Auto from city"
+                          />
+                        </div>
+
+                        <div>
+                          <Label>First Name</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={traveler.first_name}
+                            onChange={(e) =>
+                              updateTravelerField(traveler.tempKey, 'first_name', e.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Last Name</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={traveler.last_name}
+                            onChange={(e) =>
+                              updateTravelerField(traveler.tempKey, 'last_name', e.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Date of Birth</Label>
+                          <Input
+                            className="mt-1.5"
+                            type="date"
+                            value={traveler.date_of_birth}
+                            onChange={(e) =>
+                              updateTravelerField(traveler.tempKey, 'date_of_birth', e.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Gender</Label>
+                          <Select
+                            className="mt-1.5"
+                            value={traveler.gender}
+                            onChange={(e) =>
+                              updateTravelerField(
+                                traveler.tempKey,
+                                'gender',
+                                e.target.value as TravelerGender
+                              )
+                            }
+                          >
+                            <option value="unspecified">Prefer not to say</option>
+                            <option value="male">Male</option>
+                            <option value="female">Female</option>
+                            <option value="other">Other</option>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label>Nationality</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={traveler.nationality}
+                            onChange={(e) =>
+                              updateTravelerField(traveler.tempKey, 'nationality', e.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Passport Number</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={traveler.passport_number}
+                            onChange={(e) =>
+                              updateTravelerField(
+                                traveler.tempKey,
+                                'passport_number',
                                 e.target.value
                               )
                             }
                           />
                         </div>
 
-                        <label className="inline-flex items-center gap-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={traveler.is_default}
+                        <div>
+                          <Label>Passport Expiry</Label>
+                          <Input
+                            className="mt-1.5"
+                            type="date"
+                            value={traveler.passport_expiry}
                             onChange={(e) =>
-                              updateTravelerField(traveler.tempKey, 'is_default', e.target.checked)
+                              updateTravelerField(
+                                traveler.tempKey,
+                                'passport_expiry',
+                                e.target.value
+                              )
                             }
                           />
-                          Set as default traveler
-                        </label>
-                      </>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
+                        </div>
+
+                        <div>
+                          <Label>Issuing Country</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={traveler.issuing_country}
+                            onChange={(e) =>
+                              updateTravelerField(
+                                traveler.tempKey,
+                                'issuing_country',
+                                e.target.value
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Phone</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={traveler.phone}
+                            onChange={(e) =>
+                              updateTravelerField(traveler.tempKey, 'phone', e.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Email</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={traveler.email}
+                            onChange={(e) =>
+                              updateTravelerField(traveler.tempKey, 'email', e.target.value)
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Known Traveler Number</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={traveler.known_traveler_number}
+                            onChange={(e) =>
+                              updateTravelerField(
+                                traveler.tempKey,
+                                'known_traveler_number',
+                                e.target.value
+                              )
+                            }
+                          />
+                        </div>
+
+                        <div>
+                          <Label>Meal Preference</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={traveler.meal_preference}
+                            onChange={(e) =>
+                              updateTravelerField(
+                                traveler.tempKey,
+                                'meal_preference',
+                                e.target.value
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Special Assistance</Label>
+                        <Textarea
+                          className="mt-1.5"
+                          value={traveler.special_assistance}
+                          onChange={(e) =>
+                            updateTravelerField(
+                              traveler.tempKey,
+                              'special_assistance',
+                              e.target.value
+                            )
+                          }
+                        />
+                      </div>
+
+                      <label className="inline-flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={traveler.is_default}
+                          onChange={(e) =>
+                            updateTravelerField(traveler.tempKey, 'is_default', e.target.checked)
+                          }
+                        />
+                        Set as default traveler
+                      </label>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          </>
 
           <div className="pt-2">
             <ButtonPrimary disabled={!canSave} onClick={handleSave}>
