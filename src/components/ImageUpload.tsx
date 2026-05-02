@@ -7,9 +7,10 @@ import toast from 'react-hot-toast';
 
 interface ImageUploadProps {
   label: string;
-  folder: string; // e.g., "users/{uuid}" or "agents/{uuid}/profile"
+  folder?: string; // e.g., "users/{uuid}" or "agents/{uuid}/profile" — not needed in deferred mode
   currentImageUrl?: string;
-  onUploadSuccess: (cdnUrl: string) => void;
+  onUploadSuccess?: (cdnUrl: string) => void; // immediate upload mode
+  onFileSelected?: (file: File) => void; // deferred mode: preview only, no upload
   fixedFileName?: string;
   aspectRatio?: 'square' | 'wide' | 'auto'; // For display preview
   maxFileSize?: number; // in bytes, default 5MB
@@ -20,6 +21,7 @@ export default function ImageUpload({
   folder,
   currentImageUrl,
   onUploadSuccess,
+  onFileSelected,
   fixedFileName,
   aspectRatio = 'square',
   maxFileSize = 5 * 1024 * 1024,
@@ -51,7 +53,16 @@ export default function ImageUpload({
     };
     reader.readAsDataURL(file);
 
-    // Upload
+    // Deferred mode: just hand the file back, no upload
+    if (onFileSelected) {
+      onFileSelected(file);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    // Immediate upload mode
+    if (!folder || !onUploadSuccess) return;
+
     setIsUploading(true);
     const result = await uploadImageToStorage(file, folder, currentImageUrl, {
       fixedFileName,

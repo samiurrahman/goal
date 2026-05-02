@@ -40,6 +40,7 @@ export default function ListingPage() {
   const [form, setForm] = useState<Partial<Package>>(initialState);
   const [loading, setLoading] = useState(false);
   const [authUserId, setAuthUserId] = useState<string | null>(null);
+  const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const id = searchParams.get('id');
@@ -174,19 +175,39 @@ export default function ListingPage() {
         .insert([{ ...formWithoutId, agent_id: user.id, agent_name: agentSlug }])
         .select()
         .single();
-      if (error) throw error;
+
+      if (error || !newPackage) {
+        toast.error('Failed to add package: ' + (error?.message ?? 'Unknown error'));
+        setLoading(false);
+        return;
+      }
+
+      // Upload pending image now that we have the real package ID
+      if (pendingImageFile) {
+        const { uploadImageToStorage } = await import('@/utils/supabaseStorageHelper');
+        const result = await uploadImageToStorage(
+          pendingImageFile,
+          `agents/${user.id}/packages/${newPackage.id}`,
+          undefined,
+          { fixedFileName: 'image' }
+        );
+        if (result.url) {
+          await supabase
+            .from('packages')
+            .update({ thumbnail_url: result.url })
+            .eq('id', newPackage.id);
+        }
+      }
 
       await supabase.from('package_details').insert({
-        package_id: newPackage?.id,
+        package_id: newPackage.id,
       });
+
       setLoading(false);
-      if (error) {
-        toast.error('Failed to add package: ' + error);
-      } else {
-        toast.success('Package added successfully!');
-        setForm(initialState);
-        router.push('/listed-packages');
-      }
+      toast.success('Package added successfully!');
+      setForm(initialState);
+      setPendingImageFile(null);
+      router.push('/listed-packages');
     }
   };
 
@@ -288,11 +309,19 @@ export default function ListingPage() {
         <div>
           <ImageUpload
             label="Package Image"
-            folder={`agents/${authUserId}/packages/${id || 'new'}`}
             currentImageUrl={form.thumbnail_url}
-            fixedFileName="image"
-            onUploadSuccess={(url) => setForm((prev) => ({ ...prev, thumbnail_url: url }))}
             aspectRatio="wide"
+            {...(id
+              ? {
+                  // Edit mode: upload immediately, package already exists
+                  folder: `agents/${authUserId}/packages/${id}`,
+                  fixedFileName: 'image',
+                  onUploadSuccess: (url) => setForm((prev) => ({ ...prev, thumbnail_url: url })),
+                }
+              : {
+                  // Add mode: defer upload until after package is created
+                  onFileSelected: (file) => setPendingImageFile(file),
+                })}
           />
         </div>
         <div>
