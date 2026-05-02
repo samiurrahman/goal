@@ -5,6 +5,7 @@ import SwitchDarkMode2 from '@/shared/SwitchDarkMode2';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabaseClient';
 import { removeAccessToken } from '@/utils/authToken';
+import { resolvePublicImageUrl } from '@/utils/supabaseStorageHelper';
 import useOutsideAlerter from '@/hooks/useOutsideAlerter';
 import type { User } from '@supabase/supabase-js';
 interface Props {
@@ -17,6 +18,7 @@ interface ResolvedUserDetails {
   city: string | null;
   state: string | null;
   agentSlug: string | null;
+  profileUrl: string | null;
 }
 
 const DEFAULT_DISPLAY_NAME = 'Guest';
@@ -28,6 +30,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
   const [city, setCity] = useState<string | null>(null);
   const [state, setState] = useState<string | null>(null);
   const [agentSlug, setAgentSlug] = useState<string | null>(null);
+  const [profileUrl, setProfileUrl] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -41,6 +44,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
     setCity(null);
     setState(null);
     setAgentSlug(null);
+    setProfileUrl(null);
   };
 
   const loadUserDetails = async (userId: string): Promise<ResolvedUserDetails> => {
@@ -50,11 +54,12 @@ export default function AvatarDropdown({ className = '' }: Props) {
       city: null,
       state: null,
       agentSlug: null,
+      profileUrl: null,
     };
 
     const { data: userDetailsData } = await supabase
       .from('user_details')
-      .select('user_type, first_name, last_name, city, state')
+      .select('user_type, first_name, last_name, city, state, profile_image')
       .eq('auth_user_id', userId)
       .maybeSingle();
 
@@ -75,12 +80,13 @@ export default function AvatarDropdown({ className = '' }: Props) {
         city: baseCity,
         state: baseState,
         agentSlug: null,
+        profileUrl: (userDetailsData.profile_image || '').trim() || null,
       };
     }
 
     const { data: agentData } = await supabase
       .from('agents')
-      .select('known_as, city, state, slug')
+      .select('known_as, city, state, slug, profile_image')
       .eq('auth_user_id', userId)
       .maybeSingle();
 
@@ -91,6 +97,10 @@ export default function AvatarDropdown({ className = '' }: Props) {
       city: (agentData?.city || '').trim() || baseCity,
       state: (agentData?.state || '').trim() || baseState,
       agentSlug: (agentData?.slug || '').trim() || null,
+      profileUrl:
+        (agentData?.profile_image || '').trim() ||
+        (userDetailsData.profile_image || '').trim() ||
+        null,
     };
   };
 
@@ -125,6 +135,28 @@ export default function AvatarDropdown({ className = '' }: Props) {
       setCity(details.city);
       setState(details.state);
       setAgentSlug(details.agentSlug);
+      setProfileUrl(details.profileUrl);
+
+      const metadataAvatar =
+        (nextUser.user_metadata?.avatar_url as string | undefined) ||
+        (nextUser.user_metadata?.picture as string | undefined) ||
+        '';
+
+      if (!details.profileUrl && metadataAvatar) {
+        const { error: upsertError } = await supabase.from('user_details').upsert(
+          {
+            auth_user_id: nextUser.id,
+            profile_image: metadataAvatar,
+            user_type: details.userType || 'user',
+          },
+          { onConflict: 'auth_user_id' }
+        );
+
+        if (!upsertError) {
+          setProfileUrl(metadataAvatar);
+        }
+      }
+
       setIsAuthReady(true);
     };
 
@@ -150,8 +182,9 @@ export default function AvatarDropdown({ className = '' }: Props) {
   }, []);
 
   const avatarUrl =
-    (user?.user_metadata?.avatar_url as string | undefined) ||
-    (user?.user_metadata?.picture as string | undefined);
+    resolvePublicImageUrl(profileUrl) ||
+    resolvePublicImageUrl(user?.user_metadata?.avatar_url as string | undefined) ||
+    resolvePublicImageUrl(user?.user_metadata?.picture as string | undefined);
 
   const handleLogout = async () => {
     if (isSigningOut) return;

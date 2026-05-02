@@ -7,6 +7,7 @@ import Label from '@/components/Label';
 import Input from '@/shared/Input';
 import Textarea from '@/shared/Textarea';
 import ButtonPrimary from '@/shared/ButtonPrimary';
+import ImageUpload from '@/components/ImageUpload';
 import { Package } from '@/data/types';
 
 const slugify = (value: string): string =>
@@ -38,9 +39,20 @@ const initialState: Partial<Package> = {
 export default function ListingPage() {
   const [form, setForm] = useState<Partial<Package>>(initialState);
   const [loading, setLoading] = useState(false);
+  const [authUserId, setAuthUserId] = useState<string | null>(null);
   const searchParams = useSearchParams();
   const router = useRouter();
   const id = searchParams.get('id');
+
+  useEffect(() => {
+    const getAuth = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      setAuthUserId(user?.id || null);
+    };
+    getAuth();
+  }, []);
 
   useEffect(() => {
     if (id) {
@@ -274,12 +286,13 @@ export default function ListingPage() {
           />
         </div>
         <div>
-          <Label>Thumbnail URL</Label>
-          <Input
-            name="thumbnail_url"
-            className="mt-1.5"
-            value={form.thumbnail_url || ''}
-            onChange={handleChange}
+          <ImageUpload
+            label="Package Image"
+            folder={`agents/${authUserId}/packages/${id || 'new'}`}
+            currentImageUrl={form.thumbnail_url}
+            fixedFileName="image"
+            onUploadSuccess={(url) => setForm((prev) => ({ ...prev, thumbnail_url: url }))}
+            aspectRatio="wide"
           />
         </div>
         <div>

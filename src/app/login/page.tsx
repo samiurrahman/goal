@@ -69,7 +69,12 @@ const PageLogin = () => {
     setLoading(false);
     if (error) {
       const friendlyMessage = getFriendlyAuthMessage(error.message);
-      if (error.message?.toLowerCase().includes('invalid login credentials')) {
+      const isInvalidCredentials = error.message
+        ?.toLowerCase()
+        .includes('invalid login credentials');
+      const isEmailNotConfirmed = error.message?.toLowerCase().includes('email not confirmed');
+
+      if (isInvalidCredentials || isEmailNotConfirmed) {
         toast.error(friendlyMessage);
         setErrors({});
       } else {
