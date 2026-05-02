@@ -10,12 +10,22 @@ import { supabase } from '@/utils/supabaseClient';
 import { useRouter } from 'next/navigation';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import toast, { Toaster } from 'react-hot-toast';
+import AddPackageWizardModal from './AddPackageWizardModal';
+
+const slugify = (value: string): string =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-');
 
 const ListedPackagesPage = () => {
   const categories = ['Umrah', 'Hajj'];
   const router = useRouter();
   const queryClient = useQueryClient();
   const [agentUUID, setAgentUUID] = useState<string | null>(null);
+  const [agentSlug, setAgentSlug] = useState<string>('');
   const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
@@ -33,7 +43,7 @@ const ListedPackagesPage = () => {
 
       const { data: agentRowByAuth, error: agentAuthError } = await supabase
         .from('agents')
-        .select('id, auth_user_id, email_id')
+        .select('id, auth_user_id, email_id, slug, known_as')
         .eq('auth_user_id', user.id)
         .maybeSingle();
 
@@ -50,7 +60,7 @@ const ListedPackagesPage = () => {
       if (!agentRow && user.email) {
         const { data: agentRowByEmail, error: agentEmailError } = await supabase
           .from('agents')
-          .select('id, auth_user_id, email_id')
+          .select('id, auth_user_id, email_id, slug, known_as')
           .eq('email_id', user.email)
           .maybeSingle();
 
@@ -77,7 +87,15 @@ const ListedPackagesPage = () => {
         return;
       }
 
+      let resolvedSlug = (agentRow.slug || '').trim();
+      if (!resolvedSlug) {
+        const sourceName = (agentRow.known_as || '').trim() || user.email || user.id;
+        resolvedSlug = slugify(sourceName);
+        await supabase.from('agents').update({ slug: resolvedSlug }).eq('id', agentRow.id);
+      }
+
       setAgentUUID(user.id);
+      setAgentSlug(resolvedSlug);
       setIsAuthLoading(false);
     };
     void loadAgent();
@@ -95,10 +113,6 @@ const ListedPackagesPage = () => {
       return data as Package[];
     },
   });
-
-  const handleEdit = (id: number) => {
-    router.push(`/listing?id=${id}`);
-  };
 
   const handleDelete = async (id: number) => {
     if (!confirm('Are you sure you want to delete this package?')) return;
@@ -120,9 +134,19 @@ const ListedPackagesPage = () => {
       <Toaster position="top-center" />
       <div className="flex justify-between items-center">
         <h2 className="text-3xl font-semibold">Listed Packages</h2>
-        <ButtonPrimary type="button" onClick={() => router.push('/listing')}>
-          Add New Package
-        </ButtonPrimary>
+        {agentUUID && agentSlug ? (
+          <AddPackageWizardModal
+            agentAuthUserId={agentUUID}
+            agentSlug={agentSlug}
+            onCreated={() => {
+              queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
+            }}
+          />
+        ) : (
+          <ButtonPrimary type="button" onClick={() => router.push('/listing')}>
+            Add New Package
+          </ButtonPrimary>
+        )}
       </div>
       <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
@@ -156,13 +180,20 @@ const ListedPackagesPage = () => {
                     <div key={pkg.id} className="relative">
                       <StayCard data={pkg} />
                       <div className="absolute top-2 right-2 z-10 flex flex-col space-y-1">
-                        <button
-                          className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                          onClick={() => handleEdit(pkg.id)}
-                          type="button"
-                        >
-                          Edit
-                        </button>
+                        {agentUUID && agentSlug ? (
+                          <AddPackageWizardModal
+                            agentAuthUserId={agentUUID}
+                            agentSlug={agentSlug}
+                            editPackageId={pkg.id}
+                            triggerLabel="Edit"
+                            triggerClassName="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
+                            onCreated={() => {
+                              queryClient.invalidateQueries({
+                                queryKey: ['agentPackages', agentUUID],
+                              });
+                            }}
+                          />
+                        ) : null}
                         <button
                           className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
                           onClick={() => handleDelete(pkg.id)}
