@@ -1,11 +1,13 @@
 'use client';
 
-import { Popover, Transition } from '@headlessui/react';
+import { Transition } from '@headlessui/react';
 import { FC, Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import Avatar from '@/shared/Avatar';
 import { BellIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { supabase } from '@/utils/supabaseClient';
+import useOutsideAlerter from '@/hooks/useOutsideAlerter';
+import { useRouter } from 'next/navigation';
 
 type BookingRow = {
   id: number;
@@ -61,9 +63,14 @@ interface Props {
 }
 
 const NotifyDropdown: FC<Props> = ({ className = '' }) => {
+  const router = useRouter();
   const [notifications, setNotifications] = useState<NotifyItem[]>([]);
+  const [open, setOpen] = useState(false);
   const hasInteractedRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useOutsideAlerter(containerRef, () => setOpen(false));
 
   const hasNotifications = useMemo(() => notifications.length > 0, [notifications.length]);
   const hasUnread = useMemo(() => notifications.some((item) => !item.isRead), [notifications]);
@@ -406,7 +413,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
   }, []);
 
   const handleNotificationClick = async (item: NotifyItem) => {
-    if (item.isRead) return;
+    if (item.isRead) return true;
 
     setNotifications((prev) => prev.filter((entry) => entry.id !== item.id));
 
@@ -416,94 +423,97 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
       } = await supabase.auth.getSession();
 
       const token = session?.access_token;
-      if (!token) return;
+      if (!token) return false;
 
-      await fetch('/api/bookings/notifications/read', {
+      const response = await fetch('/api/bookings/notifications/read', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({ bookingId: item.bookingId, target: item.target }),
+        keepalive: true,
       });
+
+      return response.ok;
     } catch {
       // Keep optimistic UI state even if network call fails.
+      return false;
     }
   };
 
   return (
     <>
-      <Popover className={`relative flex ${className}`}>
-        {({ open }) => (
-          <>
-            <Popover.Button
-              className={` ${
-                open ? '' : 'text-opacity-90'
-              } group self-center w-10 h-10 sm:w-12 sm:h-12 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full inline-flex items-center justify-center text-base font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 relative`}
-            >
-              {hasUnread && hasNotifications ? (
-                <span className="w-2 h-2 bg-blue-500 absolute top-2 right-2 rounded-full"></span>
-              ) : null}
-              <BellIcon className="h-6 w-6" />
-            </Popover.Button>
-            <Transition
-              as={Fragment}
-              enter="transition ease-out duration-200"
-              enterFrom="opacity-0 translate-y-1"
-              enterTo="opacity-100 translate-y-0"
-              leave="transition ease-in duration-150"
-              leaveFrom="opacity-100 translate-y-0"
-              leaveTo="opacity-0 translate-y-1"
-            >
-              <Popover.Panel className="absolute z-10 w-screen max-w-xs sm:max-w-sm px-4 top-full -right-28 sm:right-0 sm:px-0">
-                <div className="overflow-hidden rounded-2xl shadow-lg ring-1 ring-black ring-opacity-5">
-                  <div className="bg-white dark:bg-neutral-800 p-7">
-                    <h3 className="text-xl font-semibold">Notifications</h3>
-                    <div className="mt-6 max-h-80 overflow-y-auto overflow-x-hidden pr-3 pb-1 space-y-3">
-                      {notifications.length === 0 ? (
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          No new notifications.
-                        </p>
-                      ) : (
-                        notifications.map((item) => (
-                          <Link
-                            key={item.id}
-                            href={item.href}
-                            onClick={() => {
-                              void handleNotificationClick(item);
-                            }}
-                            className="flex items-start gap-3 p-3 pr-10 transition duration-150 ease-in-out rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 relative"
-                          >
-                            <Avatar
-                              imgUrl={item.avatar || undefined}
-                              sizeClass="w-8 h-8 sm:w-12 sm:h-12"
-                              userName={item.name}
-                            />
-                            <div className="flex-1 min-w-0 space-y-1">
-                              <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
-                                {item.name}
-                              </p>
-                              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                                {item.description}
-                              </p>
-                              <p className="text-xs text-gray-400 dark:text-gray-400">
-                                {item.time}
-                              </p>
-                            </div>
-                            {!item.isRead ? (
-                              <span className="absolute right-3 top-4 w-2 h-2 rounded-full bg-blue-500"></span>
-                            ) : null}
-                          </Link>
-                        ))
-                      )}
-                    </div>
-                  </div>
+      <div ref={containerRef} className={`relative flex ${className}`}>
+        <button
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          className={` ${
+            open ? '' : 'text-opacity-90'
+          } group self-center w-10 h-10 sm:w-12 sm:h-12 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full inline-flex items-center justify-center text-base font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 relative`}
+        >
+          {hasUnread && hasNotifications ? (
+            <span className="w-2 h-2 bg-blue-500 absolute top-2 right-2 rounded-full"></span>
+          ) : null}
+          <BellIcon className="h-6 w-6" />
+        </button>
+        <Transition
+          as={Fragment}
+          show={open}
+          enter="transition ease-out duration-200"
+          enterFrom="opacity-0 translate-y-1"
+          enterTo="opacity-100 translate-y-0"
+          leave="transition ease-in duration-150"
+          leaveFrom="opacity-100 translate-y-0"
+          leaveTo="opacity-0 translate-y-1"
+        >
+          <div className="absolute z-10 w-screen max-w-xs sm:max-w-sm px-4 top-full -right-28 sm:right-0 sm:px-0">
+            <div className="overflow-hidden rounded-2xl shadow-lg ring-1 ring-black ring-opacity-5">
+              <div className="bg-white dark:bg-neutral-800 p-7">
+                <h3 className="text-xl font-semibold">Notifications</h3>
+                <div className="mt-6 max-h-80 overflow-y-auto overflow-x-hidden pr-3 pb-1 space-y-3">
+                  {notifications.length === 0 ? (
+                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                      No new notifications.
+                    </p>
+                  ) : (
+                    notifications.map((item) => (
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        onClick={async (event) => {
+                          event.preventDefault();
+                          await handleNotificationClick(item);
+                          router.push(item.href);
+                        }}
+                        className="flex items-start gap-3 p-3 pr-10 transition duration-150 ease-in-out rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 relative"
+                      >
+                        <Avatar
+                          imgUrl={item.avatar || undefined}
+                          sizeClass="w-8 h-8 sm:w-12 sm:h-12"
+                          userName={item.name}
+                        />
+                        <div className="flex-1 min-w-0 space-y-1">
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                            {item.name}
+                          </p>
+                          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                            {item.description}
+                          </p>
+                          <p className="text-xs text-gray-400 dark:text-gray-400">{item.time}</p>
+                        </div>
+                        {!item.isRead ? (
+                          <span className="absolute right-3 top-4 w-2 h-2 rounded-full bg-blue-500"></span>
+                        ) : null}
+                      </Link>
+                    ))
+                  )}
                 </div>
-              </Popover.Panel>
-            </Transition>
-          </>
-        )}
-      </Popover>
+              </div>
+            </div>
+          </div>
+        </Transition>
+      </div>
     </>
   );
 };
