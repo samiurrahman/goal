@@ -46,23 +46,33 @@ const StarRating = ({
 export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormProps) {
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
+  const [formError, setFormError] = useState<string>('');
   const queryClient = useQueryClient();
 
   const submitReviewMutation = useMutation({
     mutationFn: async () => {
+      setFormError('');
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
 
-      if (!session?.access_token) {
-        throw new Error('No authentication token found');
+      let accessToken = session?.access_token;
+
+      if (!accessToken) {
+        const { data: refreshedData } = await supabase.auth.refreshSession();
+        accessToken = refreshedData?.session?.access_token;
+      }
+
+      if (!accessToken) {
+        throw new Error('Session expired. Please log in again.');
       }
 
       const response = await fetch('/api/agents/reviews', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
           agentId,
@@ -72,13 +82,20 @@ export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormPro
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to submit review');
+        let message = 'Failed to submit review';
+        try {
+          const error = await response.json();
+          message = error?.error || message;
+        } catch {
+          // keep fallback message
+        }
+        throw new Error(message);
       }
 
       return response.json();
     },
     onSuccess: () => {
+      setFormError('');
       toast.success('Review submitted successfully!');
       setRating(0);
       setReviewText('');
@@ -86,6 +103,7 @@ export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormPro
       onReviewSubmitted?.();
     },
     onError: (error: Error) => {
+      setFormError(error.message || 'Failed to submit review');
       toast.error(error.message);
     },
   });
@@ -93,12 +111,16 @@ export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormPro
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    setFormError('');
+
     if (rating === 0) {
+      setFormError('Please select a rating before submitting.');
       toast.error('Please select a rating');
       return;
     }
 
     if (reviewText.trim().length < 5) {
+      setFormError('Review must be at least 5 characters.');
       toast.error('Review must be at least 5 characters');
       return;
     }
@@ -135,9 +157,17 @@ export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormPro
           onChange={(e) => setReviewText(e.target.value)}
           placeholder="Share your experience with this agent..."
           rows={4}
+          minLength={5}
+          required
           className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
+
+      {formError ? (
+        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-900/60 dark:bg-red-900/20 dark:text-red-300">
+          {formError}
+        </div>
+      ) : null}
 
       <div className="flex justify-end gap-3">
         <button

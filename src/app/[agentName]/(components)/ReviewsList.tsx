@@ -1,12 +1,16 @@
 'use client';
 
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { AgentReview } from '@/data/types';
 import Image from 'next/image';
+import ReviewCardSkeleton from './ReviewCardSkeleton';
 
 interface ReviewsListProps {
   agentId: string;
   agentName: string;
+  hideLoader?: boolean;
+  onLoadingChange?: (isLoading: boolean) => void;
 }
 
 const StarDisplay = ({ rating }: { rating: number }) => {
@@ -51,7 +55,12 @@ const getAvatarColor = (email: string) => {
   return colors[hash % colors.length];
 };
 
-export default function ReviewsList({ agentId, agentName }: ReviewsListProps) {
+export default function ReviewsList({
+  agentId,
+  agentName,
+  hideLoader = false,
+  onLoadingChange,
+}: ReviewsListProps) {
   const {
     data: reviewsData,
     isLoading,
@@ -67,12 +76,15 @@ export default function ReviewsList({ agentId, agentName }: ReviewsListProps) {
 
   const reviews: AgentReview[] = reviewsData?.reviews || [];
 
+  useEffect(() => {
+    onLoadingChange?.(isLoading);
+  }, [isLoading, onLoadingChange]);
+
   if (isLoading) {
-    return (
-      <div className="flex justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    if (hideLoader) {
+      return null;
+    }
+    return <ReviewCardSkeleton count={2} className="py-2" />;
   }
 
   if (error) {

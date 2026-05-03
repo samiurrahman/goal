@@ -2,10 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 const getSupabaseEnv = () => {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+  const supabaseUrl =
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    process.env.SUPABASE_URL ||
+    process.env.SUPABASE_PROJECT_URL;
   const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
-  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    process.env.SUPABASE_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_KEY ||
+    process.env.SUPABASE_KEY;
+  const supabaseServiceRoleKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
 
   return {
     supabaseUrl,
@@ -71,6 +78,9 @@ const normalizeReview = (row: Record<string, any>) => {
 
 export async function POST(request: NextRequest) {
   try {
+    const { supabaseServiceRoleKey, supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
+    const hasServiceRole = !!supabaseServiceRoleKey;
+
     const authHeader = request.headers.get('authorization') || '';
     if (!authHeader.startsWith('Bearer ')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -79,7 +89,18 @@ export async function POST(request: NextRequest) {
     const authSupabase = getServerSupabase(authHeader);
     const adminSupabase = getAdminSupabase();
     if (!authSupabase || !adminSupabase) {
-      return NextResponse.json({ error: 'Server is not configured for Supabase' }, { status: 500 });
+      return NextResponse.json(
+        {
+          error:
+            'Server is not configured for Supabase (missing URL or anon key). Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.',
+          debug: {
+            hasSupabaseUrl: !!supabaseUrl,
+            hasSupabaseAnonKey: !!supabaseAnonKey,
+            hasSupabaseServiceRoleKey: !!supabaseServiceRoleKey,
+          },
+        },
+        { status: 500 }
+      );
     }
 
     const { data: authData, error: authError } = await authSupabase.auth.getUser();
@@ -87,8 +108,12 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // If service role is unavailable (e.g., local/dev), use auth-bound client for RLS-safe writes.
+    const readSupabase = hasServiceRole ? adminSupabase : authSupabase;
+    const writeSupabase = hasServiceRole ? adminSupabase : authSupabase;
+
     // Only normal users can review agents. Agent accounts are blocked.
-    const { data: userDetails } = await adminSupabase
+    const { data: userDetails } = await readSupabase
       .from('user_details')
       .select('user_type')
       .eq('auth_user_id', authData.user.id)
@@ -124,7 +149,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if agent exists
-    const { data: agentExists, error: agentCheckError } = await adminSupabase
+    const { data: agentExists, error: agentCheckError } = await readSupabase
       .from('agents')
       .select('id')
       .eq('id', agentId)
@@ -147,7 +172,7 @@ export async function POST(request: NextRequest) {
     let review: any[] | null = null;
     let reviewError: any = null;
 
-    const upsertResult = await adminSupabase
+    const upsertResult = await writeSupabase
       .from('agent_reviews')
       .upsert(reviewPayload, { onConflict: 'agent_id,user_id' })
       .select('id, agent_id, user_id, rating, review_text, created_at, updated_at');
@@ -161,7 +186,7 @@ export async function POST(request: NextRequest) {
         String(reviewError.message || '').includes('ON CONFLICT specification'));
 
     if (needsConflictFallback) {
-      const { data: existingReview, error: existingReviewError } = await adminSupabase
+      const { data: existingReview, error: existingReviewError } = await writeSupabase
         .from('agent_reviews')
         .select('id')
         .eq('agent_id', agentId)
@@ -177,12 +202,12 @@ export async function POST(request: NextRequest) {
       }
 
       const fallbackMutation = existingReview?.id
-        ? await adminSupabase
+        ? await writeSupabase
             .from('agent_reviews')
             .update(reviewPayload)
             .eq('id', existingReview.id)
             .select('id, agent_id, user_id, rating, review_text, created_at, updated_at')
-        : await adminSupabase
+        : await writeSupabase
             .from('agent_reviews')
             .insert(reviewPayload)
             .select('id, agent_id, user_id, rating, review_text, created_at, updated_at');
@@ -221,10 +246,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'agentId query parameter is required' }, { status: 400 });
     }
 
+    const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getSupabaseEnv();
     const supabase = getAdminSupabase();
 
     if (!supabase) {
-      return NextResponse.json({ error: 'Server is not configured for Supabase' }, { status: 500 });
+      return NextResponse.json(
+        {
+          error:
+            'Server is not configured for Supabase (missing URL or key). Please set NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.',
+          debug: {
+            hasSupabaseUrl: !!supabaseUrl,
+            hasSupabaseAnonKey: !!supabaseAnonKey,
+            hasSupabaseServiceRoleKey: !!supabaseServiceRoleKey,
+          },
+        },
+        { status: 500 }
+      );
     }
 
     // Fetch reviews for the agent, sorted by newest first

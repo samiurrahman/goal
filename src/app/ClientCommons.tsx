@@ -3,6 +3,7 @@
 import React, { useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useThemeMode } from '@/utils/useThemeMode';
+import { Toaster } from 'react-hot-toast';
 
 const ClientCommons = () => {
   //
@@ -29,7 +30,7 @@ const ClientCommons = () => {
     };
   }, [pathname]);
 
-  return <></>;
+  return <Toaster position="top-center" />;
 };
 
 export default ClientCommons;
