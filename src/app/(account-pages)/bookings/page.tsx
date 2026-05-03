@@ -49,6 +49,25 @@ const AgentBookingsPage = () => {
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
   const [userDetailsByAuth, setUserDetailsByAuth] = useState<Record<string, UserDetailsLite>>({});
   const [agentSlug, setAgentSlug] = useState('');
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [agentUserId, setAgentUserId] = useState<string | null>(null);
+
+  // Realtime subscription — scoped to this agent's bookings rows
+  useEffect(() => {
+    if (!agentUserId) return;
+    const channel = supabase
+      .channel(`agent-bookings-${agentUserId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'bookings', filter: `agent_id=eq.${agentUserId}` },
+        () => setRefreshKey((k) => k + 1)
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [agentUserId]);
 
   const requestedAgentSlug = searchParams.get('agent_id')?.trim() || '';
 
@@ -106,6 +125,8 @@ const AgentBookingsPage = () => {
       return;
     }
 
+    setAgentUserId(user.id);
+
     const effectiveSlug = requestedAgentSlug || (resolvedAgent.slug || '').trim();
     setAgentSlug(effectiveSlug);
 
@@ -154,7 +175,8 @@ const AgentBookingsPage = () => {
 
   useEffect(() => {
     void loadBookings();
-  }, [requestedAgentSlug]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requestedAgentSlug, refreshKey]);
 
   const toggle = (id: number) => {
     setExpandedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));

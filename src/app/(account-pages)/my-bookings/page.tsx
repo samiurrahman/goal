@@ -40,6 +40,30 @@ const MyBookingsPage = () => {
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [packagesById, setPackagesById] = useState<Record<number, PackageLite>>({});
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Realtime subscription — scoped to this user's bookings rows
+  useEffect(() => {
+    if (!currentUserId) return;
+    const channel = supabase
+      .channel(`my-bookings-${currentUserId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+          filter: `auth_user_id=eq.${currentUserId}`,
+        },
+        () => setRefreshKey((k) => k + 1)
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [currentUserId]);
 
   useEffect(() => {
     let isMounted = true;
@@ -58,6 +82,8 @@ const MyBookingsPage = () => {
         setIsLoading(false);
         return;
       }
+
+      setCurrentUserId(user.id);
 
       const { data: bookingRows, error: bookingsError } = await supabase
         .from('bookings')
@@ -112,7 +138,7 @@ const MyBookingsPage = () => {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [refreshKey]);
 
   const toggle = (id: number) => {
     setExpandedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
