@@ -1,28 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-
-const getSupabaseEnv = () => {
-  const supabaseUrl =
-    process.env.NEXT_PUBLIC_SUPABASE_URL ||
-    process.env.SUPABASE_URL ||
-    process.env.SUPABASE_PROJECT_URL;
-  const supabaseAnonKey =
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
-    process.env.SUPABASE_ANON_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_KEY ||
-    process.env.SUPABASE_KEY;
-  const supabaseServiceRoleKey =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY;
-
-  return {
-    supabaseUrl,
-    supabaseAnonKey,
-    supabaseServiceRoleKey,
-  };
-};
+import { getSupabaseConfig } from '@/lib/supabase-env';
 
 const getServerSupabase = (authHeader: string) => {
-  const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
+  const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return null;
@@ -38,7 +19,7 @@ const getServerSupabase = (authHeader: string) => {
 };
 
 const getAdminSupabase = () => {
-  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getSupabaseEnv();
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getSupabaseConfig();
 
   if (!supabaseUrl) {
     return null;
@@ -62,12 +43,14 @@ const getAdminSupabase = () => {
 };
 
 const normalizeReview = (row: Record<string, any>) => {
+  const email = (row.user_email as string | undefined) || '';
+  const emailName = email.includes('@') ? email.split('@')[0] : '';
   return {
     id: row.id,
     agent_id: row.agent_id,
     user_id: row.user_id,
-    user_email: row.user_email || '',
-    user_name: row.user_name || 'Anonymous',
+    user_email: email,
+    user_name: row.user_name || emailName || 'User',
     user_profile_image: row.user_profile_image || null,
     rating: row.rating,
     review_text: row.review_text,
@@ -76,9 +59,14 @@ const normalizeReview = (row: Record<string, any>) => {
   };
 };
 
+const buildReviewerName = (profile?: { first_name?: string | null; last_name?: string | null }) => {
+  const fullName = [profile?.first_name || '', profile?.last_name || ''].join(' ').trim();
+  return fullName || 'User';
+};
+
 export async function POST(request: NextRequest) {
   try {
-    const { supabaseServiceRoleKey, supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
+    const { supabaseServiceRoleKey, supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
     const hasServiceRole = !!supabaseServiceRoleKey;
 
     const authHeader = request.headers.get('authorization') || '';
@@ -169,13 +157,48 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     };
 
+    const { data: reviewerProfile } = await readSupabase
+      .from('user_details')
+      .select('first_name, last_name, profile_image')
+      .eq('auth_user_id', authData.user.id)
+      .maybeSingle();
+
+    const reviewPayloadWithIdentity = {
+      ...reviewPayload,
+      user_email: authData.user.email || '',
+      user_name: buildReviewerName(reviewerProfile || undefined),
+      user_profile_image: (reviewerProfile?.profile_image as string | null) || null,
+    };
+
+    let activePayload: Record<string, any> = reviewPayloadWithIdentity;
+
     let review: any[] | null = null;
     let reviewError: any = null;
 
-    const upsertResult = await writeSupabase
+    let upsertResult = await writeSupabase
       .from('agent_reviews')
-      .upsert(reviewPayload, { onConflict: 'agent_id,user_id' })
-      .select('id, agent_id, user_id, rating, review_text, created_at, updated_at');
+      .upsert(reviewPayloadWithIdentity, { onConflict: 'agent_id,user_id' })
+      .select(
+        'id, agent_id, user_id, user_email, user_name, user_profile_image, rating, review_text, created_at, updated_at'
+      );
+
+    const missingIdentityColumnsError =
+      !!upsertResult.error &&
+      (upsertResult.error.code === '42703' ||
+        String(upsertResult.error.message || '')
+          .toLowerCase()
+          .includes('column') ||
+        String(upsertResult.error.message || '')
+          .toLowerCase()
+          .includes('user_name'));
+
+    if (missingIdentityColumnsError) {
+      activePayload = reviewPayload;
+      upsertResult = await writeSupabase
+        .from('agent_reviews')
+        .upsert(reviewPayload, { onConflict: 'agent_id,user_id' })
+        .select('id, agent_id, user_id, rating, review_text, created_at, updated_at');
+    }
 
     review = upsertResult.data;
     reviewError = upsertResult.error;
@@ -204,16 +227,46 @@ export async function POST(request: NextRequest) {
       const fallbackMutation = existingReview?.id
         ? await writeSupabase
             .from('agent_reviews')
-            .update(reviewPayload)
+            .update(activePayload)
             .eq('id', existingReview.id)
-            .select('id, agent_id, user_id, rating, review_text, created_at, updated_at')
+            .select(
+              'id, agent_id, user_id, user_email, user_name, user_profile_image, rating, review_text, created_at, updated_at'
+            )
         : await writeSupabase
             .from('agent_reviews')
-            .insert(reviewPayload)
-            .select('id, agent_id, user_id, rating, review_text, created_at, updated_at');
+            .insert(activePayload)
+            .select(
+              'id, agent_id, user_id, user_email, user_name, user_profile_image, rating, review_text, created_at, updated_at'
+            );
 
-      review = fallbackMutation.data;
-      reviewError = fallbackMutation.error;
+      const fallbackMissingIdentityColumnsError =
+        !!fallbackMutation.error &&
+        (fallbackMutation.error.code === '42703' ||
+          String(fallbackMutation.error.message || '')
+            .toLowerCase()
+            .includes('column') ||
+          String(fallbackMutation.error.message || '')
+            .toLowerCase()
+            .includes('user_name'));
+
+      if (fallbackMissingIdentityColumnsError) {
+        const plainFallbackMutation = existingReview?.id
+          ? await writeSupabase
+              .from('agent_reviews')
+              .update(reviewPayload)
+              .eq('id', existingReview.id)
+              .select('id, agent_id, user_id, rating, review_text, created_at, updated_at')
+          : await writeSupabase
+              .from('agent_reviews')
+              .insert(reviewPayload)
+              .select('id, agent_id, user_id, rating, review_text, created_at, updated_at');
+
+        review = plainFallbackMutation.data;
+        reviewError = plainFallbackMutation.error;
+      } else {
+        review = fallbackMutation.data;
+        reviewError = fallbackMutation.error;
+      }
     }
 
     if (reviewError) {
@@ -224,10 +277,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const normalizedReview = review?.[0] ? normalizeReview(review[0]) : null;
+
+    if (!normalizedReview) {
+      return NextResponse.json(
+        {
+          message: 'Review submitted successfully',
+          review: null,
+        },
+        { status: 200 }
+      );
+    }
+
+    const reviewWithProfile = {
+      ...normalizedReview,
+      user_name:
+        normalizedReview.user_name || buildReviewerName(reviewerProfile || undefined) || 'User',
+      user_profile_image:
+        normalizedReview.user_profile_image ||
+        (reviewerProfile?.profile_image as string | null) ||
+        null,
+    };
+
     return NextResponse.json(
       {
         message: 'Review submitted successfully',
-        review: review?.[0] ? normalizeReview(review[0]) : null,
+        review: reviewWithProfile,
       },
       { status: 200 }
     );
@@ -246,7 +321,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'agentId query parameter is required' }, { status: 400 });
     }
 
-    const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getSupabaseEnv();
+    const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getSupabaseConfig();
     const supabase = getAdminSupabase();
 
     if (!supabase) {
@@ -265,13 +340,16 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch reviews for the agent, sorted by newest first
-    const { data: reviews, error: reviewsError } = await supabase
+    let reviewsQuery: any = (await supabase
       .from('agent_reviews')
       .select(
         `
         id,
         agent_id,
         user_id,
+        user_email,
+        user_name,
+        user_profile_image,
         rating,
         review_text,
         created_at,
@@ -279,17 +357,81 @@ export async function GET(request: NextRequest) {
       `
       )
       .eq('agent_id', agentId)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })) as any;
+
+    const missingIdentityColumnsError =
+      !!reviewsQuery.error &&
+      (reviewsQuery.error.code === '42703' ||
+        String(reviewsQuery.error.message || '')
+          .toLowerCase()
+          .includes('column') ||
+        String(reviewsQuery.error.message || '')
+          .toLowerCase()
+          .includes('user_name'));
+
+    if (missingIdentityColumnsError) {
+      reviewsQuery = (await supabase
+        .from('agent_reviews')
+        .select(
+          `
+          id,
+          agent_id,
+          user_id,
+          rating,
+          review_text,
+          created_at,
+          updated_at
+        `
+        )
+        .eq('agent_id', agentId)
+        .order('created_at', { ascending: false })) as any;
+    }
+
+    const { data: reviews, error: reviewsError } = reviewsQuery;
 
     if (reviewsError) {
       console.error('Error fetching reviews:', reviewsError);
       return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
     }
 
-    return NextResponse.json(
-      { reviews: (reviews || []).map((row) => normalizeReview(row as Record<string, any>)) },
-      { status: 200 }
+    const reviewRows = (reviews || []) as Record<string, any>[];
+    const userIds = Array.from(
+      new Set(reviewRows.map((review) => review.user_id).filter((value) => !!value))
     );
+
+    let profileByUserId = new Map<string, Record<string, any>>();
+
+    if (userIds.length > 0) {
+      const { data: profiles, error: profilesError } = await supabase
+        .from('user_details')
+        .select('auth_user_id, first_name, last_name, profile_image')
+        .in('auth_user_id', userIds);
+
+      if (!profilesError && profiles) {
+        profileByUserId = new Map<string, Record<string, any>>(
+          profiles.map((profile) => [
+            profile.auth_user_id as string,
+            profile as Record<string, any>,
+          ])
+        );
+      }
+    }
+
+    const enrichedReviews = reviewRows.map((review) => {
+      const normalized = normalizeReview(review);
+      const profile = profileByUserId.get(review.user_id as string);
+      if (!profile) {
+        return normalized;
+      }
+
+      return {
+        ...normalized,
+        user_name: buildReviewerName(profile),
+        user_profile_image: (profile.profile_image as string | null) || null,
+      };
+    });
+
+    return NextResponse.json({ reviews: enrichedReviews }, { status: 200 });
   } catch (error) {
     console.error('Error fetching reviews:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
