@@ -183,6 +183,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
             'id, auth_user_id, agent_id, agent_name, status, created_at, readByAgent, readByUser'
           )
           .eq('agent_id', user.id)
+          .eq('readByAgent', false)
           .order('created_at', { ascending: false })
           .limit(20);
 
@@ -290,6 +291,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
         )
         .eq('auth_user_id', user.id)
         .eq('status', 'confirmed')
+        .eq('readByUser', false)
         .order('created_at', { ascending: false })
         .limit(20);
 
@@ -406,9 +408,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
   const handleNotificationClick = async (item: NotifyItem) => {
     if (item.isRead) return;
 
-    setNotifications((prev) =>
-      prev.map((entry) => (entry.id === item.id ? { ...entry, isRead: true } : entry))
-    );
+    setNotifications((prev) => prev.filter((entry) => entry.id !== item.id));
 
     try {
       const {
@@ -457,42 +457,46 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
             >
               <Popover.Panel className="absolute z-10 w-screen max-w-xs sm:max-w-sm px-4 top-full -right-28 sm:right-0 sm:px-0">
                 <div className="overflow-hidden rounded-2xl shadow-lg ring-1 ring-black ring-opacity-5">
-                  <div className="relative grid gap-8 bg-white dark:bg-neutral-800 p-7">
+                  <div className="bg-white dark:bg-neutral-800 p-7">
                     <h3 className="text-xl font-semibold">Notifications</h3>
-                    {notifications.length === 0 ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        No new notifications.
-                      </p>
-                    ) : (
-                      notifications.map((item) => (
-                        <Link
-                          key={item.id}
-                          href={item.href}
-                          onClick={() => {
-                            void handleNotificationClick(item);
-                          }}
-                          className="flex p-2 pr-8 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 relative"
-                        >
-                          <Avatar
-                            imgUrl={item.avatar || undefined}
-                            sizeClass="w-8 h-8 sm:w-12 sm:h-12"
-                            userName={item.name}
-                          />
-                          <div className="ml-3 sm:ml-4 space-y-1">
-                            <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
-                              {item.name}
-                            </p>
-                            <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-                              {item.description}
-                            </p>
-                            <p className="text-xs text-gray-400 dark:text-gray-400">{item.time}</p>
-                          </div>
-                          {!item.isRead ? (
-                            <span className="absolute right-1 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500"></span>
-                          ) : null}
-                        </Link>
-                      ))
-                    )}
+                    <div className="mt-6 max-h-80 overflow-y-auto overflow-x-hidden pr-3 pb-1 space-y-3">
+                      {notifications.length === 0 ? (
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          No new notifications.
+                        </p>
+                      ) : (
+                        notifications.map((item) => (
+                          <Link
+                            key={item.id}
+                            href={item.href}
+                            onClick={() => {
+                              void handleNotificationClick(item);
+                            }}
+                            className="flex items-start gap-3 p-3 pr-10 transition duration-150 ease-in-out rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 relative"
+                          >
+                            <Avatar
+                              imgUrl={item.avatar || undefined}
+                              sizeClass="w-8 h-8 sm:w-12 sm:h-12"
+                              userName={item.name}
+                            />
+                            <div className="flex-1 min-w-0 space-y-1">
+                              <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                                {item.name}
+                              </p>
+                              <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                                {item.description}
+                              </p>
+                              <p className="text-xs text-gray-400 dark:text-gray-400">
+                                {item.time}
+                              </p>
+                            </div>
+                            {!item.isRead ? (
+                              <span className="absolute right-3 top-4 w-2 h-2 rounded-full bg-blue-500"></span>
+                            ) : null}
+                          </Link>
+                        ))
+                      )}
+                    </div>
                   </div>
                 </div>
               </Popover.Panel>

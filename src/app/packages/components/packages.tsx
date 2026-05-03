@@ -101,14 +101,16 @@ const Packages: FC<PackagesProps> = ({
     >
       <div className="h-full w-full flex flex-col sm:flex-row sm:items-center">
         <div className="flex-shrink-0 p-3 w-full sm:w-64">
-          <Image
-            src={thumbnail_url || '/default-image.jpg'}
-            alt={title || 'Package image'}
-            className="w-full rounded-2xl"
-            width={400}
-            height={300}
-            style={{ objectFit: 'cover' }}
-          />
+          <div className="w-full rounded-2xl bg-neutral-50 dark:bg-neutral-800 p-2">
+            <Image
+              src={thumbnail_url || '/default-image.jpg'}
+              alt={title || 'Package image'}
+              className="w-full rounded-xl"
+              width={400}
+              height={300}
+              style={{ objectFit: 'contain' }}
+            />
+          </div>
           <SaleOffBadge className="absolute left-5 top-5 !bg-orange-500" />
         </div>
 
