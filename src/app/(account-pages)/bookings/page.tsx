@@ -42,17 +42,12 @@ const statusClass: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
 };
 
-const formatBookingRef = (id: number) => {
-  const paddedId = String(id).padStart(6, '0');
-  return `BK-${paddedId}`;
-};
-
 const AgentBookingsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
   const [userDetailsByAuth, setUserDetailsByAuth] = useState<Record<string, UserDetailsLite>>({});
-  const [agentSlug, setAgentSlug] = useState('');
+  const [activeTab, setActiveTab] = useState<'pending' | 'confirmed'>('pending');
   const [refreshKey, setRefreshKey] = useState(0);
   const [agentUserId, setAgentUserId] = useState<string | null>(null);
 
@@ -129,9 +124,6 @@ const AgentBookingsPage = () => {
 
     setAgentUserId(user.id);
 
-    const effectiveSlug = (resolvedAgent.slug || '').trim();
-    setAgentSlug(effectiveSlug);
-
     const { data: bookingRows, error: bookingsError } = await supabase
       .from('bookings')
       .select(
@@ -200,19 +192,53 @@ const AgentBookingsPage = () => {
     toast.success('Booking confirmed.');
   };
 
-  const bookingCountLabel = useMemo(() => {
-    const count = bookings.length;
-    return `${count} booking${count === 1 ? '' : 's'}`;
-  }, [bookings.length]);
+  const pendingCount = useMemo(
+    () => bookings.filter((item) => (item.status || '').toLowerCase() === 'pending').length,
+    [bookings]
+  );
+
+  const confirmedCount = useMemo(
+    () => bookings.filter((item) => (item.status || '').toLowerCase() === 'confirmed').length,
+    [bookings]
+  );
+
+  const visibleBookings = useMemo(
+    () => bookings.filter((item) => (item.status || '').toLowerCase() === activeTab),
+    [activeTab, bookings]
+  );
 
   return (
     <div className="space-y-6 sm:space-y-8">
       <Toaster position="top-center" />
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          Agent: {agentSlug || 'TBD'}
-        </p>
-        <span className="text-sm text-neutral-500 dark:text-neutral-400">{bookingCountLabel}</span>
+        <ul className="flex items-center space-x-3 sm:space-x-5 overflow-x-auto hiddenScrollbar">
+          <li>
+            <button
+              type="button"
+              onClick={() => setActiveTab('pending')}
+              className={`px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition-colors ${
+                activeTab === 'pending'
+                  ? 'bg-secondary-900 text-secondary-50'
+                  : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+              }`}
+            >
+              Pending({pendingCount})
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={() => setActiveTab('confirmed')}
+              className={`px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition-colors ${
+                activeTab === 'confirmed'
+                  ? 'bg-secondary-900 text-secondary-50'
+                  : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+              }`}
+            >
+              Confirmed({confirmedCount})
+            </button>
+          </li>
+        </ul>
       </div>
 
       {isLoading ? (
@@ -221,9 +247,15 @@ const AgentBookingsPage = () => {
         <div className="listingSection__wrap rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-5">
           <p className="text-sm text-neutral-500 dark:text-neutral-400">No bookings found.</p>
         </div>
+      ) : visibleBookings.length === 0 ? (
+        <div className="listingSection__wrap rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-5">
+          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+            No {activeTab} bookings found.
+          </p>
+        </div>
       ) : (
         <div className="space-y-4">
-          {bookings.map((booking) => {
+          {visibleBookings.map((booking) => {
             const guests = Array.isArray(booking.guests) ? booking.guests : [];
             const isExpanded = expandedIds.includes(booking.id);
             const status = (booking.status || 'pending').toLowerCase();
@@ -235,7 +267,6 @@ const AgentBookingsPage = () => {
             const firstGuestName =
               guests.find((guest) => (guest?.name || '').trim())?.name?.trim() || '';
             const bookedByUserName = userName || firstGuestName || 'User';
-            const bookingRef = formatBookingRef(booking.id);
 
             return (
               <div
@@ -244,7 +275,7 @@ const AgentBookingsPage = () => {
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-semibold">Booking {bookingRef}</h3>
+                    <h3 className="text-lg font-semibold">{booking.slug || 'Package booking'}</h3>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">
                       User: {bookedByUserName}
                     </p>
