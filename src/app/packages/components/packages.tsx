@@ -50,10 +50,22 @@ const Packages: FC<PackagesProps> = ({
     departure_city,
     arrival_city,
     sharing_rate,
+    default_pricing,
     departure_date,
     arrival_date,
     package_location,
   } = data;
+
+  const parsedDefaultPricing = useMemo(() => {
+    try {
+      if (!default_pricing) return null;
+      const parsed =
+        typeof default_pricing === 'string' ? JSON.parse(default_pricing) : default_pricing;
+      return parsed as { people?: number; value?: number; currency?: string };
+    } catch {
+      return null;
+    }
+  }, [default_pricing]);
 
   const sharingRateArray = useMemo<SharingRateItem[]>(() => {
     try {
@@ -68,6 +80,11 @@ const Packages: FC<PackagesProps> = ({
   const defaultSharingRate = useMemo(
     () => sharingRateArray.find((r) => r.default) ?? sharingRateArray[0],
     [sharingRateArray]
+  );
+
+  const displayCurrency = parsedDefaultPricing?.currency || currency || 'INR';
+  const displayPrice = Number(
+    parsedDefaultPricing?.value ?? defaultSharingRate?.value ?? price_per_person ?? 0
   );
 
   const formatDateDMY = (dateInput?: string | Date) => {
@@ -126,7 +143,9 @@ const Packages: FC<PackagesProps> = ({
                 name={
                   <div className="flex items-center">
                     <i className="text-sm las la-share-alt"></i>
-                    <span className="ml-1">{defaultSharingRate?.people} Share</span>
+                    <span className="ml-1">
+                      {parsedDefaultPricing?.people ?? defaultSharingRate?.people} Share
+                    </span>
                   </div>
                 }
               />
@@ -222,7 +241,7 @@ const Packages: FC<PackagesProps> = ({
               </div>
 
               <span className="text-lg font-semibold text-secondary-700">
-                {currency} {price_per_person}
+                {displayCurrency} {displayPrice}
                 <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
                   /Person
                 </span>

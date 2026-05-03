@@ -110,6 +110,13 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
 
   const sharingRates = useMemo<SharingRate[]>(() => {
     try {
+      const purchaseSummary = packageDetails?.details?.purchase_summary as
+        | { rates?: SharingRate[] }
+        | undefined;
+      if (Array.isArray(purchaseSummary?.rates) && purchaseSummary.rates.length > 0) {
+        return purchaseSummary.rates;
+      }
+
       const raw = packageDetails?.sharing_rate;
       if (!raw) return [];
       const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -117,7 +124,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     } catch {
       return [];
     }
-  }, [packageDetails?.sharing_rate]);
+  }, [packageDetails?.details?.purchase_summary, packageDetails?.sharing_rate]);
 
   const selectedRate = useMemo(() => {
     const matchedRate = sharingRates.find((rate) => rate.people === sharingFromUrl);

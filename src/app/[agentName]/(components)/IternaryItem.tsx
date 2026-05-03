@@ -9,6 +9,7 @@ export interface IternaryItemProps {
   toLocation: string;
   tripTime: string;
   flightInfo: string;
+  nextLegLabel?: string;
   // Optionally allow icon and image as props in future
 }
 

@@ -35,6 +35,14 @@ export interface People {
 export interface Package {
   id: number;
   published?: boolean | null;
+  default_pricing?:
+    | {
+        people?: number;
+        value?: number;
+        currency?: string;
+      }
+    | string
+    | null;
   slug: string | null;
   type: string | null;
   title: string;
@@ -72,6 +80,14 @@ export interface Package {
 export interface PackageDetails {
   id: string;
   published?: boolean | null;
+  default_pricing?:
+    | {
+        people?: number;
+        value?: number;
+        currency?: string;
+      }
+    | string
+    | null;
   slug: string;
   type: 'UMRAH' | 'HAJJ';
   title: string;
@@ -99,7 +115,7 @@ export interface PackageDetails {
   agent_name: string;
   agent_id: string;
   location: string;
-  sharing_rate: number | null;
+  sharing_rate: string | null;
   arrival_city: string;
   arrival_date: string;
   package_location: string;
@@ -107,12 +123,25 @@ export interface PackageDetails {
     id: string;
     created_at: string;
     package_id: string;
-    iternary: {
-      name: string;
-    };
+    iternary: Array<{
+      fromDate?: string;
+      fromLocation?: string;
+      toDate?: string;
+      toLocation?: string;
+      tripTime?: string;
+      flightInfo?: string;
+      nextLegLabel?: string;
+    }>;
     stay_information: {
       title: string;
       details: string[];
+      content_html?: string;
+    };
+    purchase_summary?: {
+      rates: Array<{ value: string; people: number; default: boolean }>;
+      currency?: string;
+      min_guests?: number;
+      max_guests?: number;
     };
     amenities: null | Record<string, unknown>;
     policies: null | Record<string, unknown>;

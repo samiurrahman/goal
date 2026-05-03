@@ -5,10 +5,11 @@ import toast, { Toaster } from 'react-hot-toast';
 import { supabase } from '@/utils/supabaseClient';
 import Label from '@/components/Label';
 import Input from '@/shared/Input';
-import Textarea from '@/shared/Textarea';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ImageUpload from '@/components/ImageUpload';
 import { Package } from '@/data/types';
+
+type DefaultPricing = { people: number; value: number; currency: string };
 
 const slugify = (value: string): string =>
   value
@@ -21,7 +22,8 @@ const slugify = (value: string): string =>
 const initialState: Partial<Package> = {
   title: '',
   price_per_person: 0,
-  currency: '',
+  currency: 'INR',
+  default_pricing: { people: 5, value: 0, currency: 'INR' },
   total_duration_days: 0,
   makkah_hotel_name: '',
   madinah_hotel_name: '',
@@ -29,11 +31,52 @@ const initialState: Partial<Package> = {
   madinah_hotel_distance_m: 0,
   departure_city: '',
   arrival_city: '',
-  sharing_rate: '',
   thumbnail_url: '',
   slug: '',
   agent_name: '',
   location: '',
+};
+
+const parseLegacyDefaultPricing = (pkg: Partial<Package>): DefaultPricing => {
+  const currency = String(pkg.currency || 'INR');
+  const fallback: DefaultPricing = {
+    people: 5,
+    value: Number(pkg.price_per_person || 0),
+    currency,
+  };
+
+  const existing = pkg.default_pricing;
+  try {
+    const parsedExisting =
+      typeof existing === 'string' ? (JSON.parse(existing) as Partial<DefaultPricing>) : existing;
+    if (parsedExisting && typeof parsedExisting === 'object') {
+      return {
+        people: Number(parsedExisting.people || fallback.people),
+        value: Number(parsedExisting.value || fallback.value),
+        currency: String(parsedExisting.currency || fallback.currency),
+      };
+    }
+  } catch {
+    // fall through to legacy sharing_rate parsing
+  }
+
+  try {
+    const raw = pkg.sharing_rate;
+    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    const rates = parsed?.json?.rates ?? parsed?.rates ?? [];
+    if (Array.isArray(rates) && rates.length > 0) {
+      const selected = rates.find((rate: { default?: boolean }) => rate.default) ?? rates[0];
+      return {
+        people: Number(selected?.people || fallback.people),
+        value: Number(selected?.value || fallback.value),
+        currency,
+      };
+    }
+  } catch {
+    // ignore malformed legacy data and use fallback
+  }
+
+  return fallback;
 };
 
 export default function ListingPage() {
@@ -61,7 +104,13 @@ export default function ListingPage() {
       const fetchPackage = async () => {
         setLoading(true);
         const { data, error } = await supabase.from('packages').select('*').eq('id', id).single();
-        if (data) setForm(data);
+        if (data) {
+          const normalized = {
+            ...data,
+            default_pricing: parseLegacyDefaultPricing(data),
+          } as Partial<Package>;
+          setForm(normalized);
+        }
         setLoading(false);
         if (error) toast.error('Failed to fetch package: ' + error.message);
       };
@@ -78,6 +127,23 @@ export default function ListingPage() {
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleDefaultPricingChange = (field: 'people' | 'value' | 'currency', value: string) => {
+    setForm((prev) => {
+      const current = parseLegacyDefaultPricing(prev);
+      const next: DefaultPricing = {
+        ...current,
+        [field]: field === 'currency' ? value : Number(value || 0),
+      } as DefaultPricing;
+
+      return {
+        ...prev,
+        default_pricing: next,
+        price_per_person: Number(next.value || 0),
+        currency: next.currency,
+      };
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -154,12 +220,20 @@ export default function ListingPage() {
       }
     }
 
+    const normalizedDefaultPricing = parseLegacyDefaultPricing(form);
+    const packagePayload = {
+      ...form,
+      agent_name: agentSlug,
+      agent_id: user.id,
+      sharing_rate: null,
+      default_pricing: normalizedDefaultPricing,
+      price_per_person: Number(normalizedDefaultPricing.value || form.price_per_person || 0),
+      currency: normalizedDefaultPricing.currency || 'INR',
+    };
+
     if (id) {
       // Edit existing
-      const { error } = await supabase
-        .from('packages')
-        .update({ ...form, agent_name: agentSlug, agent_id: user.id })
-        .eq('id', id);
+      const { error } = await supabase.from('packages').update(packagePayload).eq('id', id);
       setLoading(false);
       if (error) {
         toast.error('Failed to update package: ' + error.message);
@@ -169,10 +243,9 @@ export default function ListingPage() {
       }
     } else {
       // Add new
-      const { ...formWithoutId } = form;
       const { data: newPackage, error } = await supabase
         .from('packages')
-        .insert([{ ...formWithoutId, agent_id: user.id, agent_name: agentSlug }])
+        .insert([packagePayload])
         .select()
         .single();
 
@@ -211,6 +284,8 @@ export default function ListingPage() {
     }
   };
 
+  const defaultPricingView = parseLegacyDefaultPricing(form);
+
   return (
     <div className="space-y-6 sm:space-y-8 max-w-2xl mx-auto">
       <Toaster position="top-center" />
@@ -235,7 +310,7 @@ export default function ListingPage() {
             name="currency"
             className="mt-1.5"
             value={form.currency || ''}
-            onChange={handleChange}
+            onChange={(e) => handleDefaultPricingChange('currency', e.target.value)}
           />
         </div>
         <div>
@@ -345,13 +420,23 @@ export default function ListingPage() {
           />
         </div>
         <div>
-          <Label>Sharing Rate (JSON string)</Label>
-          <Textarea
-            name="sharing_rate"
+          <Label>Default Sharing (People)</Label>
+          <Input
             className="mt-1.5"
-            value={form.sharing_rate || ''}
-            onChange={handleChange}
-            rows={3}
+            type="number"
+            min={1}
+            value={defaultPricingView.people}
+            onChange={(e) => handleDefaultPricingChange('people', e.target.value)}
+          />
+        </div>
+        <div>
+          <Label>Default Price (Per Person)</Label>
+          <Input
+            className="mt-1.5"
+            type="number"
+            min={0}
+            value={defaultPricingView.value}
+            onChange={(e) => handleDefaultPricingChange('value', e.target.value)}
           />
         </div>
         <div className="pt-2">

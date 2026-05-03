@@ -17,16 +17,6 @@ import { notFound } from 'next/navigation';
 
 type RoomRate = { value: string; people: number; default: boolean };
 
-const HOST_DATA = {
-  name: 'Kevin Francis',
-  places: 12,
-  description:
-    'Providing lake views, The Symphony 9 Tam Coc in Ninh Binh provides accommodation, an outdoor swimming pool, a bar, a shared lounge, a garden and barbecue facilities...',
-  joined: 'Joined in March 2016',
-  responseRate: '100%',
-  responseTime: 'Fast response - within a few hours',
-};
-
 export interface PackageDetailProps {
   params: { agentName: string; slug: string };
   searchParams?: {
@@ -60,6 +50,13 @@ const formatDateRangePart = (dateInput?: string) => {
   });
 };
 
+const formatJoinedText = (createdAt?: string | null) => {
+  if (!createdAt) return 'Joined recently';
+  const parsed = new Date(createdAt);
+  if (Number.isNaN(parsed.getTime())) return 'Joined recently';
+  return `Joined in ${parsed.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`;
+};
+
 const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   const { agentName, slug } = params;
   type AgentMetaRow = {
@@ -67,11 +64,19 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     auth_user_id?: string | null;
     rating_avg?: number | null;
     rating_total?: number | null;
+    known_as?: string | null;
+    about_us?: string | null;
+    created_at?: string | null;
+    city?: string | null;
+    state?: string | null;
+    country?: string | null;
   };
 
   const { data: baseAgentData, error: agentError } = await supabase
     .from('agents')
-    .select('profile_image, auth_user_id, rating_avg, rating_total')
+    .select(
+      'profile_image, auth_user_id, rating_avg, rating_total, known_as, about_us, created_at, city, state, country'
+    )
     .eq('slug', agentName)
     .maybeSingle();
 
@@ -81,6 +86,12 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
         auth_user_id: (baseAgentData as AgentMetaRow).auth_user_id ?? null,
         rating_avg: (baseAgentData as AgentMetaRow).rating_avg ?? null,
         rating_total: (baseAgentData as AgentMetaRow).rating_total ?? null,
+        known_as: (baseAgentData as AgentMetaRow).known_as ?? null,
+        about_us: (baseAgentData as AgentMetaRow).about_us ?? null,
+        created_at: (baseAgentData as AgentMetaRow).created_at ?? null,
+        city: (baseAgentData as AgentMetaRow).city ?? null,
+        state: (baseAgentData as AgentMetaRow).state ?? null,
+        country: (baseAgentData as AgentMetaRow).country ?? null,
       }
     : null;
 
@@ -102,6 +113,12 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
           auth_user_id: (fallback.data as AgentMetaRow).auth_user_id ?? null,
           rating_avg: null,
           rating_total: null,
+          known_as: null,
+          about_us: null,
+          created_at: null,
+          city: null,
+          state: null,
+          country: null,
         }
       : null;
   }
@@ -110,14 +127,38 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   const agentRatingPoint = Number(agentData?.rating_avg ?? 0);
   const agentReviewCount = Number(agentData?.rating_total ?? 0);
 
-  const { data: packageData, error } = await supabase
+  const { data: packageByName } = await supabase
     .from('packages')
     .select('*')
     .eq('slug', slug)
     .eq('agent_name', agentName)
-    .single();
+    .maybeSingle();
 
-  if (error || !packageData) {
+  let packageData = packageByName;
+
+  // Backward compatibility: older rows may not have agent_name aligned with URL slug.
+  if (!packageData && isUuid(agentAuthUserId)) {
+    const { data: packageByAgentId } = await supabase
+      .from('packages')
+      .select('*')
+      .eq('slug', slug)
+      .eq('agent_id', String(agentAuthUserId))
+      .maybeSingle();
+    packageData = packageByAgentId;
+  }
+
+  // Last fallback for legacy data where only slug was reliable.
+  if (!packageData) {
+    const { data: packageBySlugOnly } = await supabase
+      .from('packages')
+      .select('*')
+      .eq('slug', slug)
+      .limit(1)
+      .maybeSingle();
+    packageData = packageBySlugOnly;
+  }
+
+  if (!packageData) {
     notFound();
   }
 
@@ -128,7 +169,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
       .from('package_details')
       .select('*')
       .eq('package_id', packageData.id)
-      .single();
+      .maybeSingle();
 
     package_details = {
       ...packageData,
@@ -136,11 +177,21 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     } as PackageDetails;
   }
 
-  const sharingRates = parseJson<{
-    json?: { rates?: RoomRate[] };
-    rates?: RoomRate[];
-  }>(package_details?.sharing_rate, {});
-  const sharingRateList = sharingRates?.json?.rates ?? sharingRates?.rates ?? [];
+  const sharingRateList = (() => {
+    const purchaseSummaryRates = parseJson<{ rates?: RoomRate[] }>(
+      package_details?.details?.purchase_summary,
+      {}
+    )?.rates;
+    if (Array.isArray(purchaseSummaryRates) && purchaseSummaryRates.length > 0) {
+      return purchaseSummaryRates;
+    }
+
+    const legacySharingRates = parseJson<{
+      json?: { rates?: RoomRate[] };
+      rates?: RoomRate[];
+    }>(package_details?.sharing_rate, {});
+    return legacySharingRates?.json?.rates ?? legacySharingRates?.rates ?? [];
+  })();
 
   const defaultRate = sharingRateList.find((rate) => rate.default) ?? sharingRateList[0];
   const sharingFromQuery = Number(searchParams?.sharing ?? defaultRate?.people ?? 5);
@@ -169,19 +220,81 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     reviewCount: agentReviewCount,
   };
 
+  const hostLocationText = [agentData?.city, agentData?.state, agentData?.country]
+    .filter((value) => String(value || '').trim().length > 0)
+    .join(', ');
+
   const hostData = {
-    ...HOST_DATA,
+    name:
+      String(agentData?.known_as || '').trim() ||
+      String(package_details?.agent_name || '').trim() ||
+      'Host',
+    places: 0,
+    description:
+      String(agentData?.about_us || '').trim() ||
+      'Trusted travel partner for your pilgrimage journey.',
+    descriptionHtml: String(agentData?.about_us || '').trim() || undefined,
+    joined: formatJoinedText(agentData?.created_at),
+    location: hostLocationText || undefined,
+    responseRate: 'N/A',
+    responseTime: 'Contact host for response time',
     profileUrl: agentName,
     profileImage: agentProfileImage,
     ratingPoint: agentRatingPoint,
     reviewCount: agentReviewCount,
   };
 
-  const iternaryData = parseJson<IternaryItemProps[]>(package_details?.details?.iternary, []);
-  const stayInfoData = parseJson(package_details?.details?.stay_information, {
+  const rawIternaryPayload = parseJson<unknown>(package_details?.details?.iternary, []);
+  const payloadObj = (rawIternaryPayload || {}) as Record<string, unknown>;
+  const payloadJson = (payloadObj.json || {}) as Record<string, unknown>;
+  const normalizedIternarySource = Array.isArray(rawIternaryPayload)
+    ? rawIternaryPayload
+    : Array.isArray(payloadObj.iternary)
+      ? payloadObj.iternary
+      : Array.isArray(payloadObj.itinerary)
+        ? payloadObj.itinerary
+        : Array.isArray(payloadJson.iternary)
+          ? payloadJson.iternary
+          : Array.isArray(payloadJson.itinerary)
+            ? payloadJson.itinerary
+            : [];
+
+  const iternaryData: IternaryItemProps[] = Array.isArray(normalizedIternarySource)
+    ? normalizedIternarySource.map((item) => {
+        const row = (item || {}) as Record<string, unknown>;
+        return {
+          fromDate: String(row.fromDate || row.from_date || ''),
+          fromLocation: String(row.fromLocation || row.from_location || ''),
+          toDate: String(row.toDate || row.to_date || ''),
+          toLocation: String(row.toLocation || row.to_location || ''),
+          tripTime: String(row.tripTime || row.trip_time || ''),
+          flightInfo: String(row.flightInfo || row.flight_info || ''),
+          nextLegLabel: String(
+            row.nextLegLabel ||
+              row.next_leg_label ||
+              row.separatorLabel ||
+              row.separator_label ||
+              ''
+          ).trim(),
+        };
+      })
+    : [];
+  const rawStayInfoData = parseJson<{
+    title?: string;
+    details?: string[];
+    content_html?: string;
+    contentHtml?: string;
+  }>(package_details?.details?.stay_information, {
     title: 'Stay information',
     details: [],
+    content_html: '',
   });
+
+  const stayInfoData = {
+    title: rawStayInfoData.title || 'Stay information',
+    details: Array.isArray(rawStayInfoData.details) ? rawStayInfoData.details : [],
+    contentHtml: rawStayInfoData.contentHtml || rawStayInfoData.content_html || '',
+  };
   const policiesData = parseJson(package_details?.details?.policies, {
     cancellation: '',
     checkIn: '',
@@ -189,14 +302,39 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     notes: [],
   });
 
-  const amenitiesData = Amenities_demos.map((item) => ({
-    ...item,
-    icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
-  }));
+  const parsedAmenities = parseJson<unknown[]>(package_details?.details?.amenities, []);
+  const amenitiesFromDb = Array.isArray(parsedAmenities)
+    ? parsedAmenities
+        .map((item) => {
+          if (typeof item === 'string') {
+            return { name: item, icon: '' };
+          }
+
+          const row = (item || {}) as Record<string, unknown>;
+          const name = String(row.name || row.title || row.label || '').trim();
+          if (!name) return null;
+          return { name, icon: '' };
+        })
+        .filter((item): item is { name: string; icon: string } => Boolean(item))
+    : [];
+
+  const amenitiesData =
+    amenitiesFromDb.length > 0
+      ? amenitiesFromDb
+      : Amenities_demos.map((item) => ({
+          ...item,
+          icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
+        }));
 
   const isLoggedIn = Boolean(cookies().get('access_token')?.value);
 
-  const pricePerPerson = Number(selectedRate?.value ?? 0);
+  const parsedDefaultPricing = parseJson<{ people?: number; value?: number; currency?: string }>(
+    package_details?.default_pricing,
+    {}
+  );
+  const pricePerPerson = Number(
+    selectedRate?.value ?? parsedDefaultPricing?.value ?? package_details?.price_per_person ?? 0
+  );
   const formattedPrice = `INR ${pricePerPerson.toLocaleString('en-IN')}`;
 
   const checkoutParams = new URLSearchParams();

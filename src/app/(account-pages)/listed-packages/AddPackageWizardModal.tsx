@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import NcModal from '@/shared/NcModal';
 import ButtonPrimary from '@/shared/ButtonPrimary';
@@ -23,6 +23,7 @@ interface IternaryItemInput {
   toLocation: string;
   tripTime: string;
   flightInfo: string;
+  nextLegLabel?: string;
 }
 
 interface AddPackageWizardModalProps {
@@ -63,6 +64,72 @@ interface SharingRateItem {
   default: boolean;
 }
 
+interface RichTextEditorProps {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+}
+
+const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) => {
+  const editorRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!editorRef.current) return;
+    if (editorRef.current.innerHTML !== value) {
+      editorRef.current.innerHTML = value || '';
+    }
+  }, [value]);
+
+  const runCommand = (command: string) => {
+    if (!editorRef.current) return;
+    editorRef.current.focus();
+    document.execCommand(command, false);
+    onChange(editorRef.current.innerHTML);
+  };
+
+  const toolbarButtonClass =
+    'rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800';
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={toolbarButtonClass}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCommand('bold')}
+        >
+          Bold
+        </button>
+        <button
+          type="button"
+          className={toolbarButtonClass}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCommand('italic')}
+        >
+          Italic
+        </button>
+        <button
+          type="button"
+          className={toolbarButtonClass}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => runCommand('insertUnorderedList')}
+        >
+          Bullets
+        </button>
+      </div>
+      <div
+        ref={editorRef}
+        className="min-h-[220px] w-full rounded-2xl border border-neutral-200 bg-white p-3 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+        contentEditable
+        suppressContentEditableWarning
+        onInput={() => onChange(editorRef.current?.innerHTML || '')}
+        data-placeholder={placeholder || ''}
+      />
+    </div>
+  );
+};
+
 const slugify = (value: string): string =>
   value
     .toLowerCase()
@@ -100,6 +167,7 @@ const makeEmptyIternaryItem = (): IternaryItemInput => ({
   toLocation: '',
   tripTime: '',
   flightInfo: '',
+  nextLegLabel: '',
 });
 
 const AddPackageWizardModal = ({
@@ -129,8 +197,7 @@ const AddPackageWizardModal = ({
     makeEmptyIternaryItem(),
   ]);
   const [amenitiesText, setAmenitiesText] = useState('');
-  const [stayInfoTitle, setStayInfoTitle] = useState('Stay information');
-  const [stayInfoDetailsText, setStayInfoDetailsText] = useState('');
+  const [stayInfoContentHtml, setStayInfoContentHtml] = useState('');
   const [policyCancellation, setPolicyCancellation] = useState('');
   const [policyCheckIn, setPolicyCheckIn] = useState('');
   const [policyCheckOut, setPolicyCheckOut] = useState('');
@@ -185,6 +252,9 @@ const AddPackageWizardModal = ({
         toLocation: String(row.toLocation || ''),
         tripTime: String(row.tripTime || ''),
         flightInfo: String(row.flightInfo || ''),
+        nextLegLabel: String(
+          row.nextLegLabel || row.next_leg_label || row.separatorLabel || row.next_label || ''
+        ),
       };
     });
     return mapped.length > 0 ? mapped : [makeEmptyIternaryItem(), makeEmptyIternaryItem()];
@@ -236,6 +306,17 @@ const AddPackageWizardModal = ({
         { people: 4, value: '', default: false },
         { people: 5, value: '', default: true },
       ];
+
+      const detailRates =
+        (detailsRow?.purchase_summary as { rates?: unknown } | undefined)?.rates ?? [];
+      if (Array.isArray(detailRates) && detailRates.length > 0) {
+        return detailRates.map((rate: Record<string, unknown>) => ({
+          people: Number(rate.people || 0),
+          value: String(rate.value || ''),
+          default: Boolean(rate.default),
+        }));
+      }
+
       try {
         const raw = packageRow.sharing_rate;
         const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -277,19 +358,37 @@ const AddPackageWizardModal = ({
     setSharingRates(parsedRates);
     setIternaryItems(parseIternary(detailsRow?.iternary));
     setAmenitiesText(parseAmenitiesText(detailsRow?.amenities));
-    setStayInfoTitle(String(detailsRow?.stay_information?.title || 'Stay information'));
-    setStayInfoDetailsText(
-      Array.isArray(detailsRow?.stay_information?.details)
-        ? detailsRow.stay_information.details.map((line: unknown) => String(line || '')).join('\n')
-        : ''
+    const stayInfoRow = (detailsRow?.stay_information || {}) as Record<string, unknown>;
+    const legacyLines: string[] = Array.isArray(stayInfoRow?.details)
+      ? (stayInfoRow.details as unknown[]).map((line: unknown) => String(line || ''))
+      : [];
+    const legacyHtml = legacyLines.length
+      ? `<ul>${legacyLines.map((line: string) => `<li>${line}</li>`).join('')}</ul>`
+      : '';
+    setStayInfoContentHtml(
+      String(
+        stayInfoRow.content_html || stayInfoRow.contentHtml || stayInfoRow.content || legacyHtml
+      )
     );
-    setPolicyCancellation(String(detailsRow?.policies?.cancellation || ''));
-    setPolicyCheckIn(String(detailsRow?.policies?.checkIn || ''));
-    setPolicyCheckOut(String(detailsRow?.policies?.checkOut || ''));
+
+    const policiesRow = (detailsRow?.policies || {}) as Record<string, unknown>;
+    setPolicyCancellation(
+      String(policiesRow.cancellation || policiesRow.cancellation_policy || '')
+    );
+    setPolicyCheckIn(
+      String(policiesRow.checkIn || policiesRow.check_in || policiesRow.checkin || '')
+    );
+    setPolicyCheckOut(
+      String(policiesRow.checkOut || policiesRow.check_out || policiesRow.checkout || '')
+    );
     setPolicyNotesText(
-      Array.isArray(detailsRow?.policies?.notes)
-        ? detailsRow.policies.notes.map((line: unknown) => String(line || '')).join('\n')
-        : ''
+      Array.isArray(policiesRow.notes)
+        ? (policiesRow.notes as unknown[]).map((line: unknown) => String(line || '')).join('\n')
+        : Array.isArray(policiesRow.special_notes)
+          ? (policiesRow.special_notes as unknown[])
+              .map((line: unknown) => String(line || ''))
+              .join('\n')
+          : ''
     );
     setCurrentImageUrl(packageRow.thumbnail_url || undefined);
     setPendingImageFile(null);
@@ -307,8 +406,7 @@ const AddPackageWizardModal = ({
     ]);
     setIternaryItems([makeEmptyIternaryItem(), makeEmptyIternaryItem()]);
     setAmenitiesText('');
-    setStayInfoTitle('Stay information');
-    setStayInfoDetailsText('');
+    setStayInfoContentHtml('');
     setPolicyCancellation('');
     setPolicyCheckIn('');
     setPolicyCheckOut('');
@@ -392,12 +490,16 @@ const AddPackageWizardModal = ({
       selectedRates[0].default = true;
     }
 
+    const defaultSelectedRate = selectedRates.find((rate) => rate.default) ?? selectedRates[0];
+    const defaultPriceValue = Number(defaultSelectedRate?.value || meta.price_per_person || 0);
+    const defaultSharePeople = Number(defaultSelectedRate?.people || 5);
+
     const packagePayload = {
       title: meta.title.trim(),
       slug: packageSlug,
       type: 'UMRAH',
       short_description: meta.short_description.trim() || null,
-      price_per_person: Number(meta.price_per_person || 0),
+      price_per_person: defaultPriceValue,
       currency: 'INR',
       total_duration_days: Number(meta.total_duration_days || 0),
       makkah_days: Number(meta.makkah_days || 0),
@@ -412,7 +514,12 @@ const AddPackageWizardModal = ({
       makkah_hotel_distance_m: Number(meta.makkah_hotel_distance_m || 0),
       madinah_hotel_name: meta.madinah_hotel_name.trim() || null,
       madinah_hotel_distance_m: Number(meta.madinah_hotel_distance_m || 0),
-      sharing_rate: JSON.stringify({ json: { rates: selectedRates } }),
+      sharing_rate: null,
+      default_pricing: {
+        people: defaultSharePeople,
+        value: defaultPriceValue,
+        currency: 'INR',
+      },
       agent_id: agentAuthUserId,
       agent_name: agentSlug,
       published: editPackageId ? true : true,
@@ -469,8 +576,15 @@ const AddPackageWizardModal = ({
           item.flightInfo
       ),
       stay_information: {
-        title: stayInfoTitle.trim() || 'Stay information',
-        details: parseLines(stayInfoDetailsText),
+        title: 'Stay information',
+        details: [],
+        content_html: stayInfoContentHtml.trim(),
+      },
+      purchase_summary: {
+        rates: selectedRates,
+        currency: 'INR',
+        min_guests: 1,
+        max_guests: 20,
       },
       amenities: parseLines(amenitiesText).map((name) => ({ name })),
       policies: {
@@ -874,6 +988,18 @@ const AddPackageWizardModal = ({
                               );
                             }}
                           />
+                          <Input
+                            placeholder="Next Leg Label (for separator)"
+                            value={item.nextLegLabel || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setIternaryItems((prev) =>
+                                prev.map((entry, i) =>
+                                  i === idx ? { ...entry, nextLegLabel: value } : entry
+                                )
+                              );
+                            }}
+                          />
                         </div>
                       </div>
                     ))}
@@ -903,24 +1029,17 @@ const AddPackageWizardModal = ({
                 {step === 'stay' && (
                   <div className="space-y-4">
                     <div>
-                      <Label>Stay Section Title</Label>
-                      <Input
-                        className="mt-1.5"
-                        value={stayInfoTitle}
-                        onChange={(e) => setStayInfoTitle(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <Label>Stay Details (one per line)</Label>
-                      <Textarea
-                        className="mt-1.5"
-                        rows={10}
-                        value={stayInfoDetailsText}
-                        onChange={(e) => setStayInfoDetailsText(e.target.value)}
-                        placeholder={
-                          'Hotel check-in support\nDaily breakfast included\nNear transport points'
-                        }
-                      />
+                      <Label>Stay Information Content</Label>
+                      <p className="text-xs text-neutral-500 mt-1">
+                        You can structure this section freely (headings, bullets, emphasis).
+                      </p>
+                      <div className="mt-2">
+                        <RichTextEditor
+                          value={stayInfoContentHtml}
+                          onChange={setStayInfoContentHtml}
+                          placeholder="Write stay information..."
+                        />
+                      </div>
                     </div>
                   </div>
                 )}
