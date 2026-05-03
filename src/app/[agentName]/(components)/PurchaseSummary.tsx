@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 type RoomRate = { value: string; people: number; default: boolean };
@@ -15,6 +15,30 @@ export interface PurchaseSummaryProps {
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
+const buildReserveHref = (baseHref: string, guests: number, sharing: number) => {
+  try {
+    const dummyOrigin = 'https://local.hajjscanner';
+    const url = new URL(baseHref, dummyOrigin);
+
+    if (url.pathname === '/login') {
+      const redirect = url.searchParams.get('redirect');
+      if (redirect) {
+        const redirectUrl = new URL(redirect, dummyOrigin);
+        redirectUrl.searchParams.set('guests', String(guests));
+        redirectUrl.searchParams.set('sharing', String(sharing));
+        url.searchParams.set('redirect', `${redirectUrl.pathname}${redirectUrl.search}`);
+      }
+    } else {
+      url.searchParams.set('guests', String(guests));
+      url.searchParams.set('sharing', String(sharing));
+    }
+
+    return `${url.pathname}${url.search}`;
+  } catch {
+    return baseHref;
+  }
+};
+
 const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
   sharingRates,
   initialGuests,
@@ -22,8 +46,13 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
   reserveHref,
   className = '',
 }) => {
-  const numberOfGuests = clamp(initialGuests, 1, 20);
-  const sharingCount = clamp(initialSharing, 2, 5);
+  const [numberOfGuests, setNumberOfGuests] = useState(() => clamp(initialGuests, 1, 20));
+  const [sharingCount, setSharingCount] = useState(() => clamp(initialSharing, 2, 5));
+
+  useEffect(() => {
+    setNumberOfGuests(clamp(initialGuests, 1, 20));
+    setSharingCount(clamp(initialSharing, 2, 5));
+  }, [initialGuests, initialSharing]);
 
   const selectedRate =
     sharingRates.find((rate) => rate.people === sharingCount) ??
@@ -40,6 +69,10 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
   const formattedTotal = total.toLocaleString('en-IN');
   const formattedGst = gstAmount.toLocaleString('en-IN');
   const formattedGrandTotal = grandTotal.toLocaleString('en-IN');
+  const resolvedReserveHref = useMemo(
+    () => buildReserveHref(reserveHref, numberOfGuests, sharingCount),
+    [reserveHref, numberOfGuests, sharingCount]
+  );
 
   return (
     <div className={`listingSectionSidebar__wrap shadow-xl !space-y-4 ${className}`}>
@@ -56,29 +89,21 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
         <div className="p-3 flex items-center justify-between">
           <span className="font-medium text-neutral-800 dark:text-neutral-200">Guests</span>
           <div className="flex items-center gap-2">
-            <form method="get">
-              <input type="hidden" name="sharing" value={sharingCount} />
-              <button
-                type="submit"
-                name="guests"
-                value={clamp(numberOfGuests - 1, 1, 20)}
-                className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
-              >
-                -
-              </button>
-            </form>
+            <button
+              type="button"
+              onClick={() => setNumberOfGuests((prev) => clamp(prev - 1, 1, 20))}
+              className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+            >
+              -
+            </button>
             <span className="w-8 text-center">{numberOfGuests}</span>
-            <form method="get">
-              <input type="hidden" name="sharing" value={sharingCount} />
-              <button
-                type="submit"
-                name="guests"
-                value={clamp(numberOfGuests + 1, 1, 20)}
-                className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
-              >
-                +
-              </button>
-            </form>
+            <button
+              type="button"
+              onClick={() => setNumberOfGuests((prev) => clamp(prev + 1, 1, 20))}
+              className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+            >
+              +
+            </button>
           </div>
         </div>
 
@@ -87,29 +112,21 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
         <div className="p-3 flex items-center justify-between">
           <span className="font-medium text-neutral-800 dark:text-neutral-200">Sharing</span>
           <div className="flex items-center gap-2">
-            <form method="get">
-              <input type="hidden" name="guests" value={numberOfGuests} />
-              <button
-                type="submit"
-                name="sharing"
-                value={clamp(sharingCount - 1, 2, 5)}
-                className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
-              >
-                -
-              </button>
-            </form>
+            <button
+              type="button"
+              onClick={() => setSharingCount((prev) => clamp(prev - 1, 2, 5))}
+              className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+            >
+              -
+            </button>
             <span className="w-8 text-center">{sharingCount}</span>
-            <form method="get">
-              <input type="hidden" name="guests" value={numberOfGuests} />
-              <button
-                type="submit"
-                name="sharing"
-                value={clamp(sharingCount + 1, 2, 5)}
-                className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
-              >
-                +
-              </button>
-            </form>
+            <button
+              type="button"
+              onClick={() => setSharingCount((prev) => clamp(prev + 1, 2, 5))}
+              className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+            >
+              +
+            </button>
           </div>
         </div>
       </div>
@@ -134,7 +151,7 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
       </div>
 
       <Link
-        href={reserveHref}
+        href={resolvedReserveHref}
         className="ttnc-ButtonPrimary disabled:bg-opacity-70 bg-primary-6000 hover:bg-primary-700 text-neutral-50 relative h-auto inline-flex items-center justify-center rounded-full transition-colors text-sm sm:text-base font-medium px-4 py-3 sm:px-6"
       >
         Reserve
