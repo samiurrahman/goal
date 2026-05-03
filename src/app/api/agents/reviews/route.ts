@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-const getServerSupabase = (authHeader: string) => {
+const getSupabaseEnv = () => {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
   const supabaseAnonKey =
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  return {
+    supabaseUrl,
+    supabaseAnonKey,
+    supabaseServiceRoleKey,
+  };
+};
+
+const getServerSupabase = (authHeader: string) => {
+  const { supabaseUrl, supabaseAnonKey } = getSupabaseEnv();
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return null;
@@ -19,6 +30,30 @@ const getServerSupabase = (authHeader: string) => {
   });
 };
 
+const getAdminSupabase = () => {
+  const { supabaseUrl, supabaseAnonKey, supabaseServiceRoleKey } = getSupabaseEnv();
+
+  if (!supabaseUrl) {
+    return null;
+  }
+
+  // Prefer service role in production to avoid RLS-related read/write failures.
+  if (supabaseServiceRoleKey) {
+    return createClient(supabaseUrl, supabaseServiceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
+  }
+
+  if (supabaseAnonKey) {
+    return createClient(supabaseUrl, supabaseAnonKey);
+  }
+
+  return null;
+};
+
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization') || '';
@@ -26,24 +61,25 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const supabase = getServerSupabase(authHeader);
-    if (!supabase) {
+    const authSupabase = getServerSupabase(authHeader);
+    const adminSupabase = getAdminSupabase();
+    if (!authSupabase || !adminSupabase) {
       return NextResponse.json({ error: 'Server is not configured for Supabase' }, { status: 500 });
     }
 
-    const { data: authData, error: authError } = await supabase.auth.getUser();
+    const { data: authData, error: authError } = await authSupabase.auth.getUser();
     if (authError || !authData?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Only normal users can review agents. Agent accounts are blocked.
     const [{ data: userDetails }, { data: agentProfile }] = await Promise.all([
-      supabase
+      adminSupabase
         .from('user_details')
         .select('user_type')
         .eq('auth_user_id', authData.user.id)
         .maybeSingle(),
-      supabase.from('agents').select('id').eq('auth_user_id', authData.user.id).maybeSingle(),
+      adminSupabase.from('agents').select('id').eq('auth_user_id', authData.user.id).maybeSingle(),
     ]);
 
     const isAgentUserType = (userDetails?.user_type || '').toLowerCase() === 'agent';
@@ -77,7 +113,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if agent exists
-    const { data: agentExists, error: agentCheckError } = await supabase
+    const { data: agentExists, error: agentCheckError } = await adminSupabase
       .from('agents')
       .select('id')
       .eq('id', agentId)
@@ -101,24 +137,41 @@ export async function POST(request: NextRequest) {
       (userMetadata.picture as string) ||
       '';
 
-    const { data: review, error: reviewError } = await supabase
+    const { data: existingReview, error: existingReviewError } = await adminSupabase
       .from('agent_reviews')
-      .upsert(
-        {
-          agent_id: agentId,
-          user_id: authData.user.id,
-          rating: rating,
-          review_text: reviewText.trim(),
-          user_email: userEmail,
-          user_name: userFullName,
-          user_profile_image: userProfileImage,
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: 'agent_id,user_id',
-        }
-      )
-      .select();
+      .select('id')
+      .eq('agent_id', agentId)
+      .eq('user_id', authData.user.id)
+      .maybeSingle();
+
+    if (existingReviewError) {
+      console.error('Error checking existing review:', existingReviewError);
+      return NextResponse.json(
+        { error: 'Failed to submit review: ' + existingReviewError.message },
+        { status: 500 }
+      );
+    }
+
+    const reviewPayload = {
+      agent_id: agentId,
+      user_id: authData.user.id,
+      rating: rating,
+      review_text: reviewText.trim(),
+      user_email: userEmail,
+      user_name: userFullName,
+      user_profile_image: userProfileImage,
+      updated_at: new Date().toISOString(),
+    };
+
+    const reviewMutation = existingReview?.id
+      ? await adminSupabase
+          .from('agent_reviews')
+          .update(reviewPayload)
+          .eq('id', existingReview.id)
+          .select()
+      : await adminSupabase.from('agent_reviews').insert(reviewPayload).select();
+
+    const { data: review, error: reviewError } = reviewMutation;
 
     if (reviewError) {
       console.error('Error submitting review:', reviewError);
@@ -150,15 +203,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'agentId query parameter is required' }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-    const supabaseAnonKey =
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY;
+    const supabase = getAdminSupabase();
 
-    if (!supabaseUrl || !supabaseAnonKey) {
+    if (!supabase) {
       return NextResponse.json({ error: 'Server is not configured for Supabase' }, { status: 500 });
     }
-
-    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // Fetch reviews for the agent, sorted by newest first
     const { data: reviews, error: reviewsError } = await supabase
