@@ -83,8 +83,9 @@ const CheckoutOrderPage: FC = () => {
       const purchaseSummary = packageDetails?.details?.purchase_summary as
         | { rates?: SharingRate[] }
         | undefined;
-      if (Array.isArray(purchaseSummary?.rates) && purchaseSummary.rates.length > 0) {
-        return purchaseSummary.rates;
+      const purchaseSummaryRates = purchaseSummary?.rates;
+      if (Array.isArray(purchaseSummaryRates) && purchaseSummaryRates.length > 0) {
+        return purchaseSummaryRates;
       }
 
       const raw = packageDetails?.sharing_rate;
