@@ -46,6 +46,10 @@ const parseJson = <T,>(raw: unknown, fallback: T): T => {
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
+const isUuid = (value?: string | null) =>
+  !!value &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
 const formatDateRangePart = (dateInput?: string) => {
   if (!dateInput) return 'TBD';
   const date = new Date(dateInput);
@@ -60,10 +64,11 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   const { agentName, slug } = params;
   const { data: agentData } = await supabase
     .from('agents')
-    .select('profile_image')
+    .select('profile_image, auth_user_id')
     .eq('slug', agentName)
     .maybeSingle();
   const agentProfileImage = (agentData?.profile_image as string | null | undefined) ?? null;
+  const agentAuthUserId = (agentData?.auth_user_id as string | null | undefined) ?? null;
 
   const { data: packageData, error } = await supabase
     .from('packages')
@@ -152,7 +157,9 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   checkoutParams.set('guests', String(numberOfGuests));
   checkoutParams.set('slug', slug);
   checkoutParams.set('agent_name', agentName);
-  if (package_details?.agent_id) {
+  if (isUuid(agentAuthUserId)) {
+    checkoutParams.set('agent_id', String(agentAuthUserId));
+  } else if (isUuid(String(package_details?.agent_id || ''))) {
     checkoutParams.set('agent_id', String(package_details.agent_id));
   }
   const checkoutUrl = `/checkout?${checkoutParams.toString()}`;

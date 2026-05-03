@@ -1,9 +1,13 @@
 'use client';
 
 import { Tab } from '@headlessui/react';
-import StayCard from '@/components/StayCard';
+import {
+  ChevronDownIcon,
+  ChevronUpIcon,
+  PencilSquareIcon,
+  TrashIcon,
+} from '@heroicons/react/24/outline';
 import React, { Fragment, useEffect, useState } from 'react';
-import ButtonSecondary from '@/shared/ButtonSecondary';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
@@ -20,6 +24,15 @@ const slugify = (value: string): string =>
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
 
+const formatPackageRef = (id: number) => `PK-${String(id).padStart(6, '0')}`;
+
+const formatDateLabel = (value: unknown) => {
+  if (!value) return 'TBD';
+  const date = new Date(value as string);
+  if (Number.isNaN(date.getTime())) return 'TBD';
+  return date.toLocaleDateString('en-IN');
+};
+
 const ListedPackagesPage = () => {
   const categories = ['Umrah', 'Hajj'];
   const router = useRouter();
@@ -27,6 +40,7 @@ const ListedPackagesPage = () => {
   const [agentUUID, setAgentUUID] = useState<string | null>(null);
   const [agentSlug, setAgentSlug] = useState<string>('');
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [expandedPackageIds, setExpandedPackageIds] = useState<number[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -125,6 +139,12 @@ const ListedPackagesPage = () => {
     }
   };
 
+  const toggle = (id: number) => {
+    setExpandedPackageIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
   if (isAuthLoading) {
     return <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading...</p>;
   }
@@ -173,38 +193,105 @@ const ListedPackagesPage = () => {
               <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading packages...</p>
             ) : agentPackages && agentPackages.length > 0 ? (
               <>
-                <div className="grid grid-cols-1 gap-6 md:gap-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="space-y-4">
                   {agentPackages.map((pkg) => (
-                    <div key={pkg.id} className="relative">
-                      <StayCard data={pkg} />
-                      <div className="absolute top-2 right-2 z-10 flex flex-col space-y-1">
-                        {agentUUID && agentSlug ? (
-                          <AddPackageWizardModal
-                            agentAuthUserId={agentUUID}
-                            agentSlug={agentSlug}
-                            editPackageId={pkg.id}
-                            triggerLabel="Edit"
-                            triggerClassName="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs"
-                            onCreated={() => {
-                              queryClient.invalidateQueries({
-                                queryKey: ['agentPackages', agentUUID],
-                              });
-                            }}
-                          />
-                        ) : null}
-                        <button
-                          className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700 text-xs"
-                          onClick={() => handleDelete(pkg.id)}
-                          type="button"
-                        >
-                          Delete
-                        </button>
+                    <div
+                      key={pkg.id}
+                      className="listingSection__wrap rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                        <div>
+                          <h3 className="text-lg font-semibold">
+                            {pkg.title || `Package ${pkg.id}`}
+                          </h3>
+                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                            Ref: {formatPackageRef(pkg.id)}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                            {(pkg.type || 'UMRAH').toUpperCase()}
+                          </span>
+                          {agentUUID && agentSlug ? (
+                            <AddPackageWizardModal
+                              agentAuthUserId={agentUUID}
+                              agentSlug={agentSlug}
+                              editPackageId={pkg.id}
+                              triggerClassName="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
+                              triggerContent={<PencilSquareIcon className="w-5 h-5" />}
+                              onCreated={() => {
+                                queryClient.invalidateQueries({
+                                  queryKey: ['agentPackages', agentUUID],
+                                });
+                              }}
+                            />
+                          ) : null}
+                          <button
+                            className="inline-flex items-center justify-center rounded-md p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            onClick={() => handleDelete(pkg.id)}
+                            type="button"
+                            aria-label="Delete package"
+                            title="Delete"
+                          >
+                            <TrashIcon className="w-5 h-5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => toggle(pkg.id)}
+                            className="inline-flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                            aria-label={
+                              expandedPackageIds.includes(pkg.id)
+                                ? 'Collapse package details'
+                                : 'Expand package details'
+                            }
+                          >
+                            {expandedPackageIds.includes(pkg.id) ? (
+                              <ChevronUpIcon className="w-5 h-5" />
+                            ) : (
+                              <ChevronDownIcon className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
                       </div>
+
+                      {expandedPackageIds.includes(pkg.id) && (
+                        <div className="mt-4 space-y-4 border-t border-neutral-200 dark:border-neutral-700 pt-4">
+                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+                            <div>
+                              <p className="text-neutral-500 dark:text-neutral-400">Route</p>
+                              <p className="font-medium">
+                                {pkg.departure_city && pkg.arrival_city
+                                  ? `${pkg.departure_city} - ${pkg.arrival_city}`
+                                  : 'TBD'}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-500 dark:text-neutral-400">Duration</p>
+                              <p className="font-medium">{pkg.total_duration_days || 0} days</p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-500 dark:text-neutral-400">Price</p>
+                              <p className="font-medium">
+                                {pkg.currency || 'INR'}{' '}
+                                {Number(pkg.price_per_person || 0).toLocaleString('en-IN')}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-500 dark:text-neutral-400">
+                                Departure date
+                              </p>
+                              <p className="font-medium">{formatDateLabel(pkg.departure_date)}</p>
+                            </div>
+                            <div>
+                              <p className="text-neutral-500 dark:text-neutral-400">Arrival date</p>
+                              <p className="font-medium">{formatDateLabel(pkg.arrival_date)}</p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
-                </div>
-                <div className="flex mt-11 justify-center items-center">
-                  <ButtonSecondary>Show me more</ButtonSecondary>
                 </div>
               </>
             ) : (

@@ -31,6 +31,7 @@ interface AddPackageWizardModalProps {
   onCreated: () => void;
   editPackageId?: number;
   triggerLabel?: string;
+  triggerContent?: React.ReactNode;
   triggerClassName?: string;
 }
 
@@ -107,6 +108,7 @@ const AddPackageWizardModal = ({
   onCreated,
   editPackageId,
   triggerLabel,
+  triggerContent,
   triggerClassName,
 }: AddPackageWizardModalProps) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -530,7 +532,7 @@ const AddPackageWizardModal = ({
             openModal();
           }}
         >
-          {triggerLabel || (editPackageId ? 'Edit' : 'Add New Package')}
+          {triggerContent ?? triggerLabel ?? (editPackageId ? 'Edit' : 'Add New Package')}
         </button>
       )}
       renderContent={() => (

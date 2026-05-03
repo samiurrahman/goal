@@ -51,6 +51,10 @@ type SharingRate = {
   default: boolean;
 };
 
+const isUuid = (value?: string | null) =>
+  !!value &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
+
 const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -423,10 +427,23 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       return;
     }
 
-    const resolvedAgentId = String(agentIdFromUrl || packageDetails.agent_id || '').trim();
+    let resolvedAgentId = String(agentIdFromUrl || packageDetails.agent_id || '').trim();
     const resolvedAgentName = String(agentNameFromUrl || packageDetails.agent_name || '').trim();
 
-    if (!resolvedAgentId || !resolvedAgentName) {
+    if (!isUuid(resolvedAgentId) && resolvedAgentName) {
+      const { data: agentBySlug } = await supabase
+        .from('agents')
+        .select('auth_user_id')
+        .eq('slug', resolvedAgentName)
+        .maybeSingle();
+
+      const candidate = String(agentBySlug?.auth_user_id || '').trim();
+      if (isUuid(candidate)) {
+        resolvedAgentId = candidate;
+      }
+    }
+
+    if (!resolvedAgentName || !isUuid(resolvedAgentId)) {
       console.error('Missing agent details for booking creation.');
       return;
     }
