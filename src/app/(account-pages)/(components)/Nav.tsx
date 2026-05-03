@@ -2,8 +2,7 @@
 
 import { supabase } from '@/utils/supabaseClient';
 import { Route } from '@/routers/types';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
 type NavItem = {
@@ -13,6 +12,7 @@ type NavItem = {
 
 export const Nav = () => {
   const pathname = usePathname();
+  const router = useRouter();
   const [isAgent, setIsAgent] = useState(false);
   const [isResolved, setIsResolved] = useState(false);
 
@@ -67,25 +67,35 @@ export const Nav = () => {
 
   return (
     <div className="container">
-      <div className="flex space-x-8 md:space-x-14 overflow-x-auto hiddenScrollbar">
+      <ul className="flex space-x-5 sm:space-x-8 lg:space-x-11 overflow-x-auto hiddenScrollbar">
         {(isResolved
           ? listNav
           : [{ href: '/account-settings' as Route, label: 'Account settings' }]
         ).map((item) => {
           const isActive = pathname === item.href;
           return (
-            <Link
+            <li
               key={item.href}
-              href={item.href}
-              className={`block py-5 md:py-8 border-b-2 flex-shrink-0 capitalize ${
-                isActive ? 'border-primary-500 font-medium' : 'border-transparent'
+              className={`flex-shrink-0 flex items-center py-4 md:py-4 text-sm lg:text-base font-medium capitalize ${
+                isActive
+                  ? ''
+                  : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-400'
               }`}
             >
-              {item.label}
-            </Link>
+              <button
+                type="button"
+                onClick={() => router.push(item.href)}
+                className="inline-flex items-center focus:outline-none"
+              >
+                {isActive ? (
+                  <span className="block w-2.5 h-2.5 rounded-full bg-neutral-800 dark:bg-neutral-100 mr-2" />
+                ) : null}
+                <span>{item.label}</span>
+              </button>
+            </li>
           );
         })}
-      </div>
+      </ul>
     </div>
   );
 };
