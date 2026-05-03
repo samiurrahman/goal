@@ -19,6 +19,8 @@ export interface PackagesProps {
   agentProfileImage?: string | null;
   agentDisplayName?: string;
   agentSlug?: string;
+  agentRatingPoint?: number;
+  agentReviewCount?: number;
 }
 
 const Packages: FC<PackagesProps> = ({
@@ -27,6 +29,8 @@ const Packages: FC<PackagesProps> = ({
   agentProfileImage,
   agentDisplayName,
   agentSlug,
+  agentRatingPoint = 0,
+  agentReviewCount = 0,
 }) => {
   const router = useRouter();
   const profileImage =
@@ -214,7 +218,7 @@ const Packages: FC<PackagesProps> = ({
                     {displayAgentName}
                   </Link>
                 </span>
-                <StartRating reviewCount={12} point={4.5} />
+                <StartRating reviewCount={agentReviewCount} point={agentRatingPoint} />
               </div>
 
               <span className="text-lg font-semibold text-secondary-700">

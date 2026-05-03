@@ -7,6 +7,8 @@ import Link from 'next/link';
 interface HostInformationProps {
   name: string;
   places: number;
+  ratingPoint?: number;
+  reviewCount?: number;
   description: string;
   joined: string;
   responseRate: string;
@@ -18,6 +20,8 @@ interface HostInformationProps {
 const HostInformation: React.FC<HostInformationProps> = ({
   name,
   places,
+  ratingPoint = 0,
+  reviewCount = 0,
   description,
   joined,
   responseRate,
@@ -41,9 +45,7 @@ const HostInformation: React.FC<HostInformationProps> = ({
           {name}
         </Link>
         <div className="mt-1.5 flex items-center text-sm text-neutral-500 dark:text-neutral-400">
-          <StartRating />
-          <span className="mx-2">·</span>
-          <span>{places} places</span>
+          <StartRating point={ratingPoint} reviewCount={reviewCount} />
         </div>
       </div>
     </div>

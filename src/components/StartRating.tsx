@@ -7,7 +7,7 @@ export interface StartRatingProps {
   reviewCount?: number;
 }
 
-const StartRating: FC<StartRatingProps> = ({ className = '', point = 4.5, reviewCount = 112 }) => {
+const StartRating: FC<StartRatingProps> = ({ className = '', point = 0, reviewCount = 0 }) => {
   return (
     <div
       className={`nc-StartRating flex items-center space-x-1 text-sm  ${className}`}

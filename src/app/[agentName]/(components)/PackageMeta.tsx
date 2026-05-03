@@ -17,6 +17,8 @@ export interface PackageMetaProps {
   providerLocation: string;
   url: string;
   dates?: string;
+  ratingPoint?: number;
+  reviewCount?: number;
 }
 
 const PackageMeta: React.FC<PackageMetaProps> = ({
@@ -31,6 +33,8 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
   providerLocation,
   url,
   dates,
+  ratingPoint = 0,
+  reviewCount = 0,
 }) => {
   return (
     <div className="listingSection__wrap !space-y-4">
@@ -138,7 +142,7 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
         </div>
         <div className="flex items-center">
           <div className="flex items-center space-x-4">
-            <StartRating />
+            <StartRating point={ratingPoint} reviewCount={reviewCount} />
             <span>·</span>
             <span>
               <i className="las la-map-marker-alt"></i>

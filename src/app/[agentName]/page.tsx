@@ -119,8 +119,8 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
   ].filter((item) => item.href);
 
   const listingCount = Array.isArray(agentPackages) ? agentPackages.length : 0;
-  const agentRatingPoint = 4.5;
-  const agentReviewCount = 112;
+  const agentRatingPoint = Number(agentDetails?.rating_avg ?? 0);
+  const agentReviewCount = Number(agentDetails?.rating_total ?? 0);
   const agentRecord = (agentDetails || {}) as Record<string, unknown>;
   const experienceFieldCandidates = ['experience_years', 'years_of_experience', 'experience'];
   const experienceField =

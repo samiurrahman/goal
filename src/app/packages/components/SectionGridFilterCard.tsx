@@ -136,7 +136,16 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
   );
 
   const [agentMetaBySlug, setAgentMetaBySlug] = useState<
-    Record<string, { profileImage?: string; knownAs?: string; slug?: string }>
+    Record<
+      string,
+      {
+        profileImage?: string;
+        knownAs?: string;
+        slug?: string;
+        ratingPoint?: number;
+        reviewCount?: number;
+      }
+    >
   >({});
 
   useEffect(() => {
@@ -151,25 +160,74 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
 
     let isCancelled = false;
 
+    type AgentMetaRow = {
+      slug?: string | null;
+      known_as?: string | null;
+      profile_image?: string | null;
+      rating_avg?: number | null;
+      rating_total?: number | null;
+    };
+
     const loadAgentImages = async () => {
-      const { data: agentsData } = await supabase
+      const { data: baseAgentsData, error: agentsError } = await supabase
         .from('agents')
-        .select('slug, known_as, profile_image')
+        .select('slug, known_as, profile_image, rating_avg, rating_total')
         .in('slug', agentSlugs);
+
+      let agentsData: AgentMetaRow[] = ((baseAgentsData || []) as AgentMetaRow[]).map((row) => ({
+        slug: row.slug ?? null,
+        known_as: row.known_as ?? null,
+        profile_image: row.profile_image ?? null,
+        rating_avg: row.rating_avg ?? null,
+        rating_total: row.rating_total ?? null,
+      }));
+
+      // Backward compatibility: in case rating columns are not migrated yet.
+      if (
+        agentsError &&
+        String(agentsError.message || '')
+          .toLowerCase()
+          .includes('rating_')
+      ) {
+        const fallback = await supabase
+          .from('agents')
+          .select('slug, known_as, profile_image')
+          .in('slug', agentSlugs);
+
+        agentsData = ((fallback.data || []) as AgentMetaRow[]).map((row) => ({
+          slug: row.slug ?? null,
+          known_as: row.known_as ?? null,
+          profile_image: row.profile_image ?? null,
+          rating_avg: null,
+          rating_total: null,
+        }));
+      }
 
       if (isCancelled) return;
 
-      const nextMap: Record<string, { profileImage?: string; knownAs?: string; slug?: string }> =
-        {};
-      for (const row of agentsData || []) {
+      const nextMap: Record<
+        string,
+        {
+          profileImage?: string;
+          knownAs?: string;
+          slug?: string;
+          ratingPoint?: number;
+          reviewCount?: number;
+        }
+      > = {};
+      for (const row of agentsData) {
         const slug = (row as { slug?: string | null }).slug;
         const knownAs = (row as { known_as?: string | null }).known_as;
         const profileImage = (row as { profile_image?: string | null }).profile_image;
+        const ratingAvg = (row as { rating_avg?: number | null }).rating_avg;
+        const ratingTotal = (row as { rating_total?: number | null }).rating_total;
         if (slug) {
           nextMap[slug] = {
             slug,
             knownAs: knownAs || undefined,
             profileImage: profileImage || undefined,
+            ratingPoint: Number(ratingAvg ?? 0),
+            reviewCount: Number(ratingTotal ?? 0),
           };
         }
       }
@@ -238,6 +296,12 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
                   item.agent_name ? agentMetaBySlug[item.agent_name]?.knownAs : undefined
                 }
                 agentSlug={item.agent_name ? agentMetaBySlug[item.agent_name]?.slug : undefined}
+                agentRatingPoint={
+                  item.agent_name ? agentMetaBySlug[item.agent_name]?.ratingPoint : undefined
+                }
+                agentReviewCount={
+                  item.agent_name ? agentMetaBySlug[item.agent_name]?.reviewCount : undefined
+                }
               />
             ))}
             <div ref={loaderRef} className="flex mt-12 justify-center items-center">

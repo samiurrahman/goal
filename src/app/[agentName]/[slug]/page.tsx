@@ -62,13 +62,53 @@ const formatDateRangePart = (dateInput?: string) => {
 
 const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   const { agentName, slug } = params;
-  const { data: agentData } = await supabase
+  type AgentMetaRow = {
+    profile_image?: string | null;
+    auth_user_id?: string | null;
+    rating_avg?: number | null;
+    rating_total?: number | null;
+  };
+
+  const { data: baseAgentData, error: agentError } = await supabase
     .from('agents')
-    .select('profile_image, auth_user_id')
+    .select('profile_image, auth_user_id, rating_avg, rating_total')
     .eq('slug', agentName)
     .maybeSingle();
+
+  let agentData: AgentMetaRow | null = baseAgentData
+    ? {
+        profile_image: (baseAgentData as AgentMetaRow).profile_image ?? null,
+        auth_user_id: (baseAgentData as AgentMetaRow).auth_user_id ?? null,
+        rating_avg: (baseAgentData as AgentMetaRow).rating_avg ?? null,
+        rating_total: (baseAgentData as AgentMetaRow).rating_total ?? null,
+      }
+    : null;
+
+  // Backward compatibility for environments where rating columns are not migrated yet.
+  if (
+    agentError &&
+    String(agentError.message || '')
+      .toLowerCase()
+      .includes('rating_')
+  ) {
+    const fallback = await supabase
+      .from('agents')
+      .select('profile_image, auth_user_id')
+      .eq('slug', agentName)
+      .maybeSingle();
+    agentData = fallback.data
+      ? {
+          profile_image: (fallback.data as AgentMetaRow).profile_image ?? null,
+          auth_user_id: (fallback.data as AgentMetaRow).auth_user_id ?? null,
+          rating_avg: null,
+          rating_total: null,
+        }
+      : null;
+  }
   const agentProfileImage = (agentData?.profile_image as string | null | undefined) ?? null;
   const agentAuthUserId = (agentData?.auth_user_id as string | null | undefined) ?? null;
+  const agentRatingPoint = Number(agentData?.rating_avg ?? 0);
+  const agentReviewCount = Number(agentData?.rating_total ?? 0);
 
   const { data: packageData, error } = await supabase
     .from('packages')
@@ -125,9 +165,17 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     url: agentName,
     providerVerified: true,
     providerLocation: package_details?.package_location ?? 'Unknown Location',
+    ratingPoint: agentRatingPoint,
+    reviewCount: agentReviewCount,
   };
 
-  const hostData = { ...HOST_DATA, profileUrl: agentName, profileImage: agentProfileImage };
+  const hostData = {
+    ...HOST_DATA,
+    profileUrl: agentName,
+    profileImage: agentProfileImage,
+    ratingPoint: agentRatingPoint,
+    reviewCount: agentReviewCount,
+  };
 
   const iternaryData = parseJson<IternaryItemProps[]>(package_details?.details?.iternary, []);
   const stayInfoData = parseJson(package_details?.details?.stay_information, {

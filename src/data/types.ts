@@ -4,6 +4,8 @@ import { StaticImageData } from 'next/image';
 export interface Agent {
   id: string; // UUID
   created_at: string;
+  rating_avg?: number | null;
+  rating_total?: number | null;
   name: string;
   city: string;
   address: string;
