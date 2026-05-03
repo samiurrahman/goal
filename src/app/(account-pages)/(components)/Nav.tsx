@@ -32,15 +32,15 @@ export const Nav = () => {
         return;
       }
 
-      const { data: details } = await supabase
+      const { data: details } = (await supabase
         .from('user_details')
         .select('user_type')
         .eq('auth_user_id', user.id)
-        .maybeSingle();
+        .maybeSingle()) as any;
 
       if (!isMounted) return;
 
-      setIsAgent(details?.user_type === 'agent');
+      setIsAgent((details as { user_type?: string } | null)?.user_type === 'agent');
       setIsResolved(true);
     };
 

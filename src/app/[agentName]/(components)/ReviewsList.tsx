@@ -1,16 +1,9 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { AgentReview } from '@/data/types';
 import Image from 'next/image';
-import ReviewCardSkeleton from './ReviewCardSkeleton';
 
 interface ReviewsListProps {
-  agentId: string;
   agentName: string;
-  hideLoader?: boolean;
-  onLoadingChange?: (isLoading: boolean) => void;
+  reviews: AgentReview[];
 }
 
 const StarDisplay = ({ rating }: { rating: number }) => {
@@ -55,46 +48,7 @@ const getAvatarColor = (email: string) => {
   return colors[hash % colors.length];
 };
 
-export default function ReviewsList({
-  agentId,
-  agentName,
-  hideLoader = false,
-  onLoadingChange,
-}: ReviewsListProps) {
-  const {
-    data: reviewsData,
-    isLoading,
-    error,
-  } = useQuery({
-    queryKey: ['agentReviews', agentId],
-    queryFn: async () => {
-      const response = await fetch(`/api/agents/reviews?agentId=${agentId}`);
-      if (!response.ok) throw new Error('Failed to fetch reviews');
-      return response.json();
-    },
-  });
-
-  const reviews: AgentReview[] = reviewsData?.reviews || [];
-
-  useEffect(() => {
-    onLoadingChange?.(isLoading);
-  }, [isLoading, onLoadingChange]);
-
-  if (isLoading) {
-    if (hideLoader) {
-      return null;
-    }
-    return <ReviewCardSkeleton count={2} className="py-2" />;
-  }
-
-  if (error) {
-    return (
-      <div className="text-center py-8 text-red-500">
-        <p>Failed to load reviews</p>
-      </div>
-    );
-  }
-
+export default function ReviewsList({ agentName, reviews }: ReviewsListProps) {
   if (reviews.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">

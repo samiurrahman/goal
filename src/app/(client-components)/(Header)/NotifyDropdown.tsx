@@ -154,11 +154,11 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
 
       if (!isMounted || !user) return;
 
-      const { data: userDetails } = await supabase
+      const { data: userDetails } = (await supabase
         .from('user_details')
         .select('user_type')
         .eq('auth_user_id', user.id)
-        .maybeSingle();
+        .maybeSingle()) as any;
 
       const { data: agentByAuth } = await supabase
         .from('agents')
@@ -168,14 +168,16 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
 
       let hasAgentProfile = !!agentByAuth;
       if (!hasAgentProfile && user.email) {
-        const { data: agentByEmail } = await supabase
+        const { data: agentByEmail } = (await supabase
           .from('agents')
           .select('id, auth_user_id')
           .eq('email_id', user.email)
-          .maybeSingle();
+          .maybeSingle()) as any;
 
         if (agentByEmail && !agentByEmail.auth_user_id) {
-          await supabase.from('agents').update({ auth_user_id: user.id }).eq('id', agentByEmail.id);
+          await (supabase.from('agents') as any)
+            .update({ auth_user_id: user.id })
+            .eq('id', agentByEmail.id);
         }
 
         hasAgentProfile = !!agentByEmail;

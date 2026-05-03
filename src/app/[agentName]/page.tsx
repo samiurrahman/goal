@@ -1,7 +1,7 @@
 import React from 'react';
 import Breadcrumb from '@/components/Breadcrumb';
 import { supabase } from '@/utils/supabaseClient';
-import type { Agent, Package } from '@/data/types';
+import type { Agent, Package, AgentReview } from '@/data/types';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -50,6 +50,108 @@ const getAgentBySlug = async (agentName: string): Promise<Agent | null> => {
   return agentDetails;
 };
 
+const buildReviewerName = (profile?: { first_name?: string | null; last_name?: string | null }) => {
+  const fullName = [profile?.first_name || '', profile?.last_name || ''].join(' ').trim();
+  return fullName || 'User';
+};
+
+const normalizeReview = (row: Record<string, any>) => {
+  const email = (row.user_email as string | undefined) || '';
+  const emailName = email.includes('@') ? email.split('@')[0] : '';
+  return {
+    id: row.id,
+    agent_id: row.agent_id,
+    user_id: row.user_id,
+    user_email: email,
+    user_name: row.user_name || emailName || 'User',
+    user_profile_image: row.user_profile_image || null,
+    rating: row.rating,
+    review_text: row.review_text,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+};
+
+const getReviewsForAgent = async (agentId: string): Promise<AgentReview[]> => {
+  try {
+    // Fetch reviews for the agent
+    let reviewsQuery: any = await supabase
+      .from('agent_reviews')
+      .select(
+        'id, agent_id, user_id, user_email, user_name, user_profile_image, rating, review_text, created_at, updated_at'
+      )
+      .eq('agent_id', agentId)
+      .order('created_at', { ascending: false });
+
+    // Fallback for missing identity columns
+    const missingIdentityColumnsError =
+      !!reviewsQuery.error &&
+      (reviewsQuery.error.code === '42703' ||
+        String(reviewsQuery.error.message || '')
+          .toLowerCase()
+          .includes('column'));
+
+    if (missingIdentityColumnsError) {
+      reviewsQuery = await supabase
+        .from('agent_reviews')
+        .select('id, agent_id, user_id, rating, review_text, created_at, updated_at')
+        .eq('agent_id', agentId)
+        .order('created_at', { ascending: false });
+    }
+
+    const { data: reviews, error: reviewsError } = reviewsQuery;
+
+    if (reviewsError) {
+      console.error('Error fetching reviews:', reviewsError);
+      return [];
+    }
+
+    // Enrich reviews with user profile data
+    const reviewRows = (reviews || []) as Record<string, any>[];
+    const userIds = Array.from(
+      new Set(reviewRows.map((review) => review.user_id).filter((value) => !!value))
+    );
+
+    let profileByUserId = new Map<string, Record<string, any>>();
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('user_details')
+        .select('auth_user_id, first_name, last_name, profile_image')
+        .in('auth_user_id', userIds);
+
+      if (profiles) {
+        profileByUserId = new Map<string, Record<string, any>>(
+          profiles.map((profile) => [
+            profile.auth_user_id as string,
+            profile as Record<string, any>,
+          ])
+        );
+      }
+    }
+
+    const enrichedReviews = reviewRows.map((review) => {
+      const normalized = normalizeReview(review);
+      const profile = profileByUserId.get(review.user_id as string);
+
+      if (!profile) {
+        return normalized;
+      }
+
+      return {
+        ...normalized,
+        user_name: buildReviewerName(profile),
+        user_profile_image: (profile.profile_image as string | null) || null,
+      };
+    });
+
+    return enrichedReviews as AgentReview[];
+  } catch (error) {
+    console.error('Error fetching reviews for agent:', error);
+    return [];
+  }
+};
+
 export const generateMetadata = async ({ params }: AgentDetailsProps): Promise<Metadata> => {
   const agentDetails = await getAgentBySlug(params.agentName);
   const title = agentDetails?.known_as
@@ -93,6 +195,12 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
       .select('*')
       .eq('agent_id', agentDetails.id);
     agentPackages = (packagesData as Package[] | null) ?? [];
+  }
+
+  // Fetch reviews for this agent
+  let agentReviews: AgentReview[] = [];
+  if (agentDetails?.id) {
+    agentReviews = await getReviewsForAgent(agentDetails.id);
   }
 
   const agentLocation = [agentDetails?.city, agentDetails?.state, agentDetails?.country]
@@ -370,6 +478,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
             <ReviewsSection
               agentId={agentDetails?.id ? String(agentDetails.id) : ''}
               agentName={agentDetails?.known_as || ''}
+              initialReviews={agentReviews}
             />
           </div>
         </main>
