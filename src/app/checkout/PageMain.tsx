@@ -865,8 +865,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
 
   return (
     <div className={`nc-CheckOutPagePageMain ${className}`}>
-      <main className="container mt-11 mb-24 lg:mb-32 flex flex-col-reverse lg:flex-row">
+      <main className="container mt-11 mb-24 lg:mb-32 flex flex-col-reverse lg:flex-row gap-8 lg:gap-0">
         <div className="w-full lg:w-3/5 xl:w-2/3 lg:pr-10">{renderMain()}</div>
+        <div className="block lg:hidden w-full">{renderSidebar()}</div>
         <div className="hidden lg:block flex-grow">{renderSidebar()}</div>
       </main>
     </div>

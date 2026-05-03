@@ -135,9 +135,9 @@ const Packages: FC<PackagesProps> = ({
           <SaleOffBadge className="absolute left-5 top-5 !bg-orange-500" />
         </div>
 
-        <div className="flex-grow p-3 sm:pr-6 flex flex-col items-start">
+        <div className="flex-grow p-3 sm:pr-6 flex flex-col items-start min-w-0">
           <div className="space-y-4 w-full">
-            <div className="inline-flex space-x-3">
+            <div className="flex flex-wrap gap-2 sm:gap-3">
               <Badge name="Government Verified" color="green" />
               <Badge
                 name={
@@ -174,62 +174,62 @@ const Packages: FC<PackagesProps> = ({
               </h2>
             </div>
 
-            <div className="flex items-center justify-start space-x-4 text-neutral-700 dark:text-neutral-300">
-              <div className="flex items-center">
+            <div className="flex flex-wrap items-start gap-x-4 gap-y-2 text-neutral-700 dark:text-neutral-300">
+              <div className="flex items-center min-w-0">
                 <span className="hidden sm:inline-block">
                   <MakkahIcon />
                 </span>
-                <span className="ml-1 text-sm max-w-[90px] truncate overflow-hidden whitespace-nowrap inline-block align-bottom">
+                <span className="ml-1 text-sm max-w-[120px] truncate overflow-hidden whitespace-nowrap inline-block align-bottom">
                   {makkah_hotel_name}
                 </span>
                 <span className="ml-1 text-sm">(~{makkah_hotel_distance_m}m)</span>
               </div>
 
-              <div className="flex items-center">
+              <div className="flex items-center min-w-0">
                 <span className="hidden sm:inline-block">
                   <MadinaIcon />
                 </span>
-                <span className="ml-1.5 text-sm max-w-[90px] truncate overflow-hidden whitespace-nowrap inline-block align-bottom">
+                <span className="ml-1.5 text-sm max-w-[120px] truncate overflow-hidden whitespace-nowrap inline-block align-bottom">
                   {madinah_hotel_name}
                 </span>
                 <span className="ml-1 text-sm">(~{madinah_hotel_distance_m}m)</span>
               </div>
 
-              <div className="flex items-center">
+              <div className="flex items-center min-w-0">
                 <span className="hidden sm:inline-block">
                   <i className="las la-plane-departure text-2xl"></i>
                 </span>
-                <span className="ml-1.5 text-sm">
-                  <span className="ml-1 text-sm">
+                <span className="ml-1.5 text-sm min-w-0">
+                  <span className="ml-1 text-sm break-words">
                     {departure_city} - {arrival_city}
                   </span>
                 </span>
               </div>
 
-              <div className="flex items-center">
+              <div className="flex items-center min-w-0">
                 <span className="hidden sm:inline-block">
                   <i className="las la-calendar-alt text-2xl"></i>
                 </span>
-                <span className="ml-1.5 text-sm">
-                  <span className="ml-1 text-sm">
+                <span className="ml-1.5 text-sm min-w-0">
+                  <span className="ml-1 text-sm break-words">
                     {formatDateDMY(departure_date)} - {formatDateDMY(arrival_date)}
                   </span>
                 </span>
               </div>
             </div>
 
-            <div className="flex w-full justify-between items-end">
-              <div className="flex items-center space-x-3">
+            <div className="flex w-full flex-col sm:flex-row sm:justify-between gap-3 sm:gap-2 sm:items-end">
+              <div className="flex items-center space-x-3 min-w-0">
                 <Avatar
                   hasChecked
                   sizeClass="h-10 w-10"
                   radius="rounded-full"
                   imgUrl={profileImage || undefined}
                 />
-                <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
+                <span className="ml-2.5 text-neutral-500 dark:text-neutral-400 min-w-0 truncate">
                   <Link
                     href={agentHref}
-                    className="text-neutral-800 dark:text-neutral-200 font-small hover:underline"
+                    className="text-neutral-800 dark:text-neutral-200 font-small hover:underline truncate block"
                     onClick={(e) => {
                       e.stopPropagation();
                     }}
@@ -240,7 +240,7 @@ const Packages: FC<PackagesProps> = ({
                 <StartRating reviewCount={agentReviewCount} point={agentRatingPoint} />
               </div>
 
-              <span className="text-lg font-semibold text-secondary-700">
+              <span className="text-base sm:text-lg font-semibold text-secondary-700 self-start sm:self-auto">
                 {displayCurrency} {displayPrice}
                 <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
                   /Person

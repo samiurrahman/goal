@@ -391,7 +391,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
 
   return (
     <div className="nc-ListingStayDetailPage w-full min-h-screen">
-      <div className="relative z-20 mt-4">
+      <div className="container relative z-20 mt-4">
         <Breadcrumb
           items={[
             { label: 'Home', href: '/' },
@@ -402,7 +402,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
       </div>
 
       {/* MAIN */}
-      <main className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-0 w-full">
+      <main className="container relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-0 w-full">
         {/* CONTENT */}
         <div className="w-full lg:w-3/5 xl:w-2/3 space-y-6 sm:space-y-8 lg:space-y-10 lg:pr-10 mb-6">
           <PackageMeta {...packageMetaData} />

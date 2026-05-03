@@ -1,30 +1,28 @@
 'use client';
 
-import converSelectedDateToString from '@/utils/converSelectedDateToString';
 import React, { useState } from 'react';
-import { GuestsObject } from '../../type';
-import GuestsInput from '../GuestsInput';
+import Checkbox from '@/shared/Checkbox';
+import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
 import LocationInput from '../LocationInput';
-import DatesRangeInput from '../DatesRangeInput';
 
 const StaySearchForm = () => {
-  //
-  const [fieldNameShow, setFieldNameShow] = useState<'location' | 'dates' | 'guests'>('location');
-  //
+  const [fieldNameShow, setFieldNameShow] = useState<'location' | 'month'>('location');
   const [locationInputTo, setLocationInputTo] = useState('');
-  const [guestInput, setGuestInput] = useState<GuestsObject>({
-    guestAdults: 0,
-    guestChildren: 0,
-    guestInfants: 0,
-  });
-  const [startDate, setStartDate] = useState<Date | null>(new Date('2023/02/06'));
-  const [endDate, setEndDate] = useState<Date | null>(new Date('2023/02/23'));
-  //
+  const [monthStates, setMonthStates] = useState<string[]>([]);
 
-  const onChangeDate = (dates: [Date | null, Date | null]) => {
-    const [start, end] = dates;
-    setStartDate(start);
-    setEndDate(end);
+  const handleChangeMonth = (checked: boolean, name: string) => {
+    setMonthStates((prev) => {
+      if (checked) {
+        if (name === 'Any') {
+          return ['Any'];
+        }
+
+        const withoutAny = prev.filter((item) => item !== 'Any');
+        return withoutAny.includes(name) ? withoutAny : [...withoutAny, name];
+      }
+
+      return prev.filter((item) => item !== name);
+    });
   };
 
   const renderInputLocation = () => {
@@ -39,7 +37,7 @@ const StaySearchForm = () => {
       >
         {!isActive ? (
           <button
-            className={`w-full flex justify-between text-sm font-medium p-4`}
+            className="w-full flex justify-between text-sm font-medium p-4"
             onClick={() => setFieldNameShow('location')}
           >
             <span className="text-neutral-400">Where</span>
@@ -50,7 +48,7 @@ const StaySearchForm = () => {
             defaultValue={locationInputTo}
             onChange={(value) => {
               setLocationInputTo(value);
-              setFieldNameShow('dates');
+              setFieldNameShow('month');
             }}
           />
         )}
@@ -58,9 +56,8 @@ const StaySearchForm = () => {
     );
   };
 
-  const renderInputDates = () => {
-    const isActive = fieldNameShow === 'dates';
-
+  const renderInputMonth = () => {
+    const isActive = fieldNameShow === 'month';
     return (
       <div
         className={`w-full bg-white dark:bg-neutral-800 overflow-hidden ${
@@ -71,49 +68,31 @@ const StaySearchForm = () => {
       >
         {!isActive ? (
           <button
-            className={`w-full flex justify-between text-sm font-medium p-4  `}
-            onClick={() => setFieldNameShow('dates')}
+            className="w-full flex justify-between text-sm font-medium p-4"
+            onClick={() => setFieldNameShow('month')}
           >
-            <span className="text-neutral-400">When</span>
-            <span>{startDate ? converSelectedDateToString([startDate, endDate]) : 'Add date'}</span>
+            <span className="text-neutral-400">Month</span>
+            <span>{monthStates.length > 0 ? monthStates.join(', ') : 'Any'}</span>
           </button>
         ) : (
-          <DatesRangeInput />
-        )}
-      </div>
-    );
-  };
-
-  const renderInputGuests = () => {
-    const isActive = fieldNameShow === 'guests';
-    let guestSelected = '';
-    if (guestInput.guestAdults || guestInput.guestChildren) {
-      const guest = (guestInput.guestAdults || 0) + (guestInput.guestChildren || 0);
-      guestSelected += `${guest} guests`;
-    }
-
-    if (guestInput.guestInfants) {
-      guestSelected += `, ${guestInput.guestInfants} infants`;
-    }
-
-    return (
-      <div
-        className={`w-full bg-white dark:bg-neutral-800 overflow-hidden ${
-          isActive
-            ? 'rounded-2xl shadow-lg'
-            : 'rounded-xl shadow-[0px_2px_2px_0px_rgba(0,0,0,0.25)]'
-        }`}
-      >
-        {!isActive ? (
-          <button
-            className={`w-full flex justify-between text-sm font-medium p-4`}
-            onClick={() => setFieldNameShow('guests')}
-          >
-            <span className="text-neutral-400">Who</span>
-            <span>{guestSelected || `Add guests`}</span>
-          </button>
-        ) : (
-          <GuestsInput defaultValue={guestInput} onChange={setGuestInput} />
+          <div className="p-5">
+            <span className="block font-semibold text-xl sm:text-2xl">Month</span>
+            <div className="mt-5 space-y-3 max-h-[40vh] overflow-y-auto">
+              {MONTHS_LIST_WITH_ANY.map((month) => (
+                <span
+                  key={`${month}-${monthStates.includes(month)}`}
+                  className="flex items-center py-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-2xl px-2"
+                >
+                  <Checkbox
+                    name={month}
+                    label={month}
+                    defaultChecked={monthStates.includes(month)}
+                    onChange={(checked) => handleChangeMonth(checked, month)}
+                  />
+                </span>
+              ))}
+            </div>
+          </div>
         )}
       </div>
     );
@@ -122,12 +101,8 @@ const StaySearchForm = () => {
   return (
     <div>
       <div className="w-full space-y-5">
-        {/*  */}
         {renderInputLocation()}
-        {/*  */}
-        {renderInputDates()}
-        {/*  */}
-        {renderInputGuests()}
+        {renderInputMonth()}
       </div>
     </div>
   );

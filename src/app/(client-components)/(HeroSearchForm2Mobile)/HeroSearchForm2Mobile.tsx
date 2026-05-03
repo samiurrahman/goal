@@ -36,7 +36,7 @@ const HeroSearchForm2Mobile = () => {
         <div className="ml-3 flex-1 text-left overflow-hidden">
           <span className="block font-medium text-sm">Where to?</span>
           <span className="block mt-0.5 text-xs font-light text-neutral-500 dark:text-neutral-400 ">
-            <span className="line-clamp-1">Anywhere • Any week • Add guests</span>
+            <span className="line-clamp-1">Anywhere • Any month</span>
           </span>
         </div>
 
@@ -66,7 +66,7 @@ const HeroSearchForm2Mobile = () => {
           onClose={closeModal}
         >
           <div className="fixed inset-0 bg-neutral-100 dark:bg-neutral-900">
-            <div className="flex h-full">
+            <div className="flex h-full min-h-0">
               <Transition.Child
                 as={Fragment}
                 enter="ease-out transition-transform"
@@ -76,7 +76,7 @@ const HeroSearchForm2Mobile = () => {
                 leaveFrom="opacity-100 translate-y-0"
                 leaveTo="opacity-0 translate-y-52"
               >
-                <Dialog.Panel className="relative h-full overflow-hidden flex-1 flex flex-col justify-between ">
+                <Dialog.Panel className="relative h-full min-h-0 overflow-y-auto flex-1 flex flex-col justify-between ">
                   {showDialog && (
                     <Tab.Group manual>
                       <div className="absolute left-4 top-4">
@@ -103,8 +103,8 @@ const HeroSearchForm2Mobile = () => {
                           </Tab>
                         ))}
                       </Tab.List>
-                      <div className="flex-1 pt-3 px-1.5 sm:px-4 flex overflow-hidden">
-                        <Tab.Panels className="flex-1 overflow-y-auto hiddenScrollbar py-4">
+                      <div className="flex-1 min-h-0 pt-3 px-1.5 sm:px-4 flex overflow-hidden">
+                        <Tab.Panels className="flex-1 min-h-0 overflow-y-auto hiddenScrollbar py-4">
                           <Tab.Panel>
                             <div className="transition-opacity animate-[myblur_0.4s_ease-in-out]">
                               <StaySearchForm />
@@ -130,7 +130,7 @@ const HeroSearchForm2Mobile = () => {
                         </button>
                         <ButtonSubmit
                           onClick={() => {
-                            // closeModal();
+                            closeModal();
                             router.push('/packages');
                           }}
                         />
