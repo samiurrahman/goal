@@ -3,13 +3,13 @@ import React, { FC } from 'react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Image from 'next/image';
 
-export interface PayPageProps {}
+export interface SuccessPageProps {}
 
-const PayPage: FC<PayPageProps> = () => {
+const SuccessPage: FC<SuccessPageProps> = () => {
   const renderContent = () => {
     return (
       <div className="w-full flex flex-col sm:rounded-2xl space-y-10 px-0 sm:p-6 xl:p-8">
-        <h2 className="text-3xl lg:text-4xl font-semibold">Congratulation 🎉</h2>
+        <h2 className="text-3xl lg:text-4xl font-semibold">Booking Successful 🎉</h2>
 
         <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
 
@@ -127,7 +127,7 @@ const PayPage: FC<PayPageProps> = () => {
   };
 
   return (
-    <div className={`nc-PayPage`}>
+    <div className={`nc-SuccessPage`}>
       <main className="container mt-11 mb-24 lg:mb-32 ">
         <div className="max-w-4xl mx-auto">{renderContent()}</div>
       </main>
@@ -135,4 +135,4 @@ const PayPage: FC<PayPageProps> = () => {
   );
 };
 
-export default PayPage;
+export default SuccessPage;

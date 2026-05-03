@@ -330,7 +330,7 @@ const CheckoutOrderPage: FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <ButtonPrimary href="/pay-done">Proceed to Payment</ButtonPrimary>
+              <ButtonPrimary href="/booking-success">Proceed to Payment</ButtonPrimary>
               <Link
                 href={
                   slug && agentName

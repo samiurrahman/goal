@@ -151,7 +151,7 @@ const templatesChildrenMenus: NavItemType[] = [
   },
   //
   { id: ncNanoId(), href: '/checkout', name: 'Checkout' },
-  { id: ncNanoId(), href: '/pay-done', name: 'Pay done' },
+  { id: ncNanoId(), href: '/booking-success', name: 'Booking Success' },
   //
   { id: ncNanoId(), href: '/author', name: 'Author page' },
   { id: ncNanoId(), href: '/account', name: 'Account page' },
@@ -282,4 +282,3 @@ export const NAVIGATION_DEMO: NavItemType[] = [
     children: otherPageChildMenus,
   },
 ];
-

@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
 import Avatar from '@/shared/Avatar';
 import SwitchDarkMode2 from '@/shared/SwitchDarkMode2';
 import Link from 'next/link';
@@ -188,6 +189,9 @@ export default function AvatarDropdown({ className = '' }: Props) {
 
   const myAccountHref = userType === 'agent' && agentSlug ? `/${agentSlug}` : '/account';
 
+  const router = useRouter();
+  const pathname = usePathname();
+
   const handleLogout = async () => {
     if (isSigningOut) return;
 
@@ -217,6 +221,16 @@ export default function AvatarDropdown({ className = '' }: Props) {
       setOpen(false);
       setIsAuthReady(true);
       setIsSigningOut(false);
+
+      // Redirect to home if not on allowed pages (/packages, /agentName, or /agentName/slug)
+      const allowedPages = ['/packages'];
+      const pathParts = pathname.split('/').filter(Boolean); // Remove empty parts
+      const isAgentOrSlugPage = pathParts.length === 1 || pathParts.length === 2; // /agentName or /agentName/slug
+      const shouldStayOnCurrentPage = allowedPages.includes(pathname) || isAgentOrSlugPage;
+
+      if (!shouldStayOnCurrentPage) {
+        router.push('/');
+      }
     };
 
     const { error } = await supabase.auth.signOut({ scope: 'global' });

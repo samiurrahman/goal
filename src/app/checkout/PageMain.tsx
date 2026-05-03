@@ -856,7 +856,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           </div>
 
           <div className="pt-8">
-            <ButtonPrimary onClick={handleConfirmAndPay}>Confirm and pay</ButtonPrimary>
+            <ButtonPrimary onClick={handleConfirmAndPay}>Book Now</ButtonPrimary>
           </div>
         </div>
       </>
