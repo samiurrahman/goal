@@ -177,7 +177,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                 )}
                 <div className="absolute top-3 right-3 md:top-4 md:right-4 z-20">
                   <AgentProfileEditModal
-                    agentId={agentDetails?.id}
+                    agentId={agentDetails?.id ? String(agentDetails.id) : undefined}
                     initialData={{
                       name: agentDetails?.name,
                       known_as: agentDetails?.known_as,
@@ -368,7 +368,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
           {/* REVIEWS FULL-WIDTH */}
           <div className="lg:col-span-5 mt-6">
             <ReviewsSection
-              agentId={agentDetails?.id || 0}
+              agentId={agentDetails?.id ? String(agentDetails.id) : ''}
               agentName={agentDetails?.known_as || ''}
             />
           </div>

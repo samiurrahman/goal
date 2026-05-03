@@ -36,6 +36,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    // Only normal users can review agents. Agent accounts are blocked.
+    const [{ data: userDetails }, { data: agentProfile }] = await Promise.all([
+      supabase
+        .from('user_details')
+        .select('user_type')
+        .eq('auth_user_id', authData.user.id)
+        .maybeSingle(),
+      supabase.from('agents').select('id').eq('auth_user_id', authData.user.id).maybeSingle(),
+    ]);
+
+    const isAgentUserType = (userDetails?.user_type || '').toLowerCase() === 'agent';
+    const isAgentByProfile = !!agentProfile?.id;
+    if (isAgentUserType || isAgentByProfile) {
+      return NextResponse.json({ error: 'Only users can submit agent reviews' }, { status: 403 });
+    }
+
     const { agentId, rating, reviewText } = await request.json();
 
     // Validate input

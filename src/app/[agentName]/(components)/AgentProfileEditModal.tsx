@@ -12,7 +12,7 @@ import NcModal from '@/shared/NcModal';
 import { supabase } from '@/utils/supabaseClient';
 
 interface AgentProfileEditModalProps {
-  agentId?: number;
+  agentId?: string;
   initialData: {
     name?: string;
     known_as?: string;
