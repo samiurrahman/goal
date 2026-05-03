@@ -32,6 +32,7 @@ export interface People {
 }
 export interface Package {
   id: number;
+  published?: boolean | null;
   slug: string | null;
   type: string | null;
   title: string;
@@ -68,6 +69,7 @@ export interface Package {
 // PackageDetails type for detailed package JSON structure
 export interface PackageDetails {
   id: string;
+  published?: boolean | null;
   slug: string;
   type: 'UMRAH' | 'HAJJ';
   title: string;

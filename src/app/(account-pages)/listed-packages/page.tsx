@@ -4,6 +4,7 @@ import { Tab } from '@headlessui/react';
 import {
   ChevronDownIcon,
   ChevronUpIcon,
+  DocumentDuplicateIcon,
   PencilSquareIcon,
   TrashIcon,
 } from '@heroicons/react/24/outline';
@@ -31,6 +32,13 @@ const formatDateLabel = (value: unknown) => {
   const date = new Date(value as string);
   if (Number.isNaN(date.getTime())) return 'TBD';
   return date.toLocaleDateString('en-IN');
+};
+
+const makeCloneTitle = (title: string) => `${title} Copy`;
+
+const makeCloneSlug = (slug: string | null, title: string, packageId: number) => {
+  const base = slugify((slug || '').trim() || title.trim() || `package-${packageId}`);
+  return `${base}-draft-${Date.now()}`;
 };
 
 const ListedPackagesPage = () => {
@@ -139,6 +147,57 @@ const ListedPackagesPage = () => {
     }
   };
 
+  const handleClone = async (pkg: Package) => {
+    if (!agentUUID) return;
+
+    const clonedTitle = makeCloneTitle(pkg.title || `Package ${pkg.id}`);
+    const clonedSlug = makeCloneSlug(pkg.slug, pkg.title || `Package ${pkg.id}`, pkg.id);
+
+    const packagePayload = {
+      ...pkg,
+      id: undefined,
+      title: clonedTitle,
+      slug: clonedSlug,
+      published: false,
+      created_at: undefined,
+      updated_at: undefined,
+    } as Record<string, unknown>;
+
+    delete packagePayload.id;
+    delete packagePayload.created_at;
+    delete packagePayload.updated_at;
+
+    const { data: clonedPackage, error: cloneError } = await supabase
+      .from('packages')
+      .insert([packagePayload])
+      .select('id')
+      .single();
+
+    if (cloneError || !clonedPackage?.id) {
+      toast.error('Failed to clone package: ' + (cloneError?.message || 'Unknown error'));
+      return;
+    }
+
+    const { data: detailsRow } = await supabase
+      .from('package_details')
+      .select('*')
+      .eq('package_id', pkg.id)
+      .maybeSingle();
+
+    if (detailsRow) {
+      const detailsPayload = {
+        ...detailsRow,
+        id: undefined,
+        package_id: clonedPackage.id,
+      } as Record<string, unknown>;
+      delete detailsPayload.id;
+      await supabase.from('package_details').insert(detailsPayload);
+    }
+
+    toast.success('Draft package cloned. Open edit to adjust and publish.');
+    queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
+  };
+
   const toggle = (id: number) => {
     setExpandedPackageIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
@@ -213,6 +272,20 @@ const ListedPackagesPage = () => {
                           <span className="px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
                             {(pkg.type || 'UMRAH').toUpperCase()}
                           </span>
+                          {pkg.published === false ? (
+                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
+                              Draft
+                            </span>
+                          ) : null}
+                          <button
+                            className="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
+                            onClick={() => handleClone(pkg)}
+                            type="button"
+                            aria-label="Clone package"
+                            title="Clone"
+                          >
+                            <DocumentDuplicateIcon className="w-5 h-5" />
+                          </button>
                           {agentUUID && agentSlug ? (
                             <AddPackageWizardModal
                               agentAuthUserId={agentUUID}

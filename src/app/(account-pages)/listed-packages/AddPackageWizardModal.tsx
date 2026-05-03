@@ -114,6 +114,7 @@ const AddPackageWizardModal = ({
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingPackage, setIsLoadingPackage] = useState(false);
+  const [isDraftPackage, setIsDraftPackage] = useState(false);
   const [step, setStep] = useState<WizardStep>('meta');
 
   const [meta, setMeta] = useState<PackageMetaForm>(initialMetaForm);
@@ -292,6 +293,7 @@ const AddPackageWizardModal = ({
     );
     setCurrentImageUrl(packageRow.thumbnail_url || undefined);
     setPendingImageFile(null);
+    setIsDraftPackage(packageRow.published === false);
     setIsLoadingPackage(false);
   };
 
@@ -312,6 +314,7 @@ const AddPackageWizardModal = ({
     setPolicyCheckOut('');
     setPolicyNotesText('');
     setPendingImageFile(null);
+    setIsDraftPackage(false);
     setStep('meta');
   };
 
@@ -412,6 +415,7 @@ const AddPackageWizardModal = ({
       sharing_rate: JSON.stringify({ json: { rates: selectedRates } }),
       agent_id: agentAuthUserId,
       agent_name: agentSlug,
+      published: editPackageId ? true : true,
       thumbnail_url: editPackageId ? currentImageUrl || null : null,
     };
 
@@ -500,7 +504,11 @@ const AddPackageWizardModal = ({
     }
 
     toast.success(
-      editPackageId ? 'Package updated successfully!' : 'Package created successfully!'
+      editPackageId
+        ? isDraftPackage
+          ? 'Package published successfully!'
+          : 'Package updated successfully!'
+        : 'Package created successfully!'
     );
     onCreated();
     closeModal();
@@ -982,7 +990,13 @@ const AddPackageWizardModal = ({
                 </ButtonSecondary>
                 {isLastStep ? (
                   <ButtonPrimary type="button" onClick={handlePublish} disabled={isSaving}>
-                    {isSaving ? 'Saving...' : editPackageId ? 'Save Changes' : 'Publish Package'}
+                    {isSaving
+                      ? 'Saving...'
+                      : editPackageId
+                        ? isDraftPackage
+                          ? 'Publish Package'
+                          : 'Save Changes'
+                        : 'Publish Package'}
                   </ButtonPrimary>
                 ) : (
                   <ButtonPrimary type="button" onClick={goNext} disabled={isSaving}>
