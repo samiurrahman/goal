@@ -72,13 +72,15 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     country?: string | null;
   };
 
-  const { data: baseAgentData, error: agentError } = await supabase
+  const { data: baseAgentRows, error: agentError } = await supabase
     .from('agents')
     .select(
       'profile_image, auth_user_id, rating_avg, rating_total, known_as, about_us, created_at, city, state, country'
     )
-    .eq('slug', agentName)
-    .maybeSingle();
+    .ilike('slug', agentName)
+    .limit(1);
+
+  const baseAgentData = Array.isArray(baseAgentRows) ? baseAgentRows[0] : null;
 
   let agentData: AgentMetaRow | null = baseAgentData
     ? {
@@ -105,12 +107,13 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     const fallback = await supabase
       .from('agents')
       .select('profile_image, auth_user_id')
-      .eq('slug', agentName)
-      .maybeSingle();
-    agentData = fallback.data
+      .ilike('slug', agentName)
+      .limit(1);
+    const fallbackRow = Array.isArray(fallback.data) ? fallback.data[0] : null;
+    agentData = fallbackRow
       ? {
-          profile_image: (fallback.data as AgentMetaRow).profile_image ?? null,
-          auth_user_id: (fallback.data as AgentMetaRow).auth_user_id ?? null,
+          profile_image: (fallbackRow as AgentMetaRow)?.profile_image ?? null,
+          auth_user_id: (fallbackRow as AgentMetaRow)?.auth_user_id ?? null,
           rating_avg: null,
           rating_total: null,
           known_as: null,
@@ -127,34 +130,39 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   const agentRatingPoint = Number(agentData?.rating_avg ?? 0);
   const agentReviewCount = Number(agentData?.rating_total ?? 0);
 
-  const { data: packageByName } = await supabase
+  const { data: packageByNameRows } = await supabase
     .from('packages')
     .select('*')
-    .eq('slug', slug)
-    .eq('agent_name', agentName)
-    .maybeSingle();
+    .ilike('slug', slug)
+    .ilike('agent_name', agentName)
+    .limit(1);
+
+  const packageByName = Array.isArray(packageByNameRows) ? packageByNameRows[0] : null;
 
   let packageData = packageByName;
 
   // Backward compatibility: older rows may not have agent_name aligned with URL slug.
   if (!packageData && isUuid(agentAuthUserId)) {
-    const { data: packageByAgentId } = await supabase
+    const { data: packageByAgentIdRows } = await supabase
       .from('packages')
       .select('*')
-      .eq('slug', slug)
+      .ilike('slug', slug)
       .eq('agent_id', String(agentAuthUserId))
-      .maybeSingle();
+      .limit(1);
+    const packageByAgentId = Array.isArray(packageByAgentIdRows) ? packageByAgentIdRows[0] : null;
     packageData = packageByAgentId;
   }
 
   // Last fallback for legacy data where only slug was reliable.
   if (!packageData) {
-    const { data: packageBySlugOnly } = await supabase
+    const { data: packageBySlugOnlyRows } = await supabase
       .from('packages')
       .select('*')
-      .eq('slug', slug)
-      .limit(1)
-      .maybeSingle();
+      .ilike('slug', slug)
+      .limit(1);
+    const packageBySlugOnly = Array.isArray(packageBySlugOnlyRows)
+      ? packageBySlugOnlyRows[0]
+      : null;
     packageData = packageBySlugOnly;
   }
 
