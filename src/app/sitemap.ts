@@ -39,7 +39,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       dynamicRoutes = [...dynamicRoutes, ...agentRoutes];
     }
   } catch (error) {
-    console.error('Error fetching data for sitemap:', error);
+    console.warn(
+      'Warning: Could not fetch dynamic routes for sitemap:',
+      error instanceof Error ? error.message : String(error)
+    );
+    // Sitemap will continue with static routes only
   }
 
   return [...staticRoutes, ...dynamicRoutes];
