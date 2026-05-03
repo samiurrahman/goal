@@ -42,6 +42,8 @@ const statusClass: Record<string, string> = {
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
 };
 
+const LOADER_CARD_COUNT = 6;
+
 const AgentBookingsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
@@ -242,7 +244,31 @@ const AgentBookingsPage = () => {
       </div>
 
       {isLoading ? (
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading bookings...</p>
+        <div className="space-y-4">
+          {Array.from({ length: LOADER_CARD_COUNT }).map((_, index) => (
+            <div
+              key={`agent-booking-skeleton-${index}`}
+              className="listingSection__wrap rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5 animate-pulse"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div className="space-y-2">
+                  <div className="h-6 w-56 rounded bg-neutral-200 dark:bg-neutral-700" />
+                  <div className="h-4 w-36 rounded bg-neutral-200 dark:bg-neutral-700" />
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-7 w-20 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                  <div className="h-6 w-6 rounded bg-neutral-200 dark:bg-neutral-700" />
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : bookings.length === 0 ? (
         <div className="listingSection__wrap rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-5">
           <p className="text-sm text-neutral-500 dark:text-neutral-400">No bookings found.</p>

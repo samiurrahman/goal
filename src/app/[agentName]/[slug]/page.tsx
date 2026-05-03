@@ -284,6 +284,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     details?: string[];
     content_html?: string;
     contentHtml?: string;
+    content?: string;
   }>(package_details?.details?.stay_information, {
     title: 'Stay information',
     details: [],
@@ -293,14 +294,27 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   const stayInfoData = {
     title: rawStayInfoData.title || 'Stay information',
     details: Array.isArray(rawStayInfoData.details) ? rawStayInfoData.details : [],
-    contentHtml: rawStayInfoData.contentHtml || rawStayInfoData.content_html || '',
+    contentHtml:
+      rawStayInfoData.contentHtml || rawStayInfoData.content_html || rawStayInfoData.content || '',
   };
-  const policiesData = parseJson(package_details?.details?.policies, {
-    cancellation: '',
-    checkIn: '',
-    checkOut: '',
-    notes: [],
-  });
+  const rawPoliciesData = parseJson<Record<string, unknown>>(
+    package_details?.details?.policies,
+    {}
+  );
+  const policiesData = {
+    cancellation: String(rawPoliciesData.cancellation || rawPoliciesData.cancellation_policy || ''),
+    checkIn: String(
+      rawPoliciesData.checkIn || rawPoliciesData.check_in || rawPoliciesData.checkin || ''
+    ),
+    checkOut: String(
+      rawPoliciesData.checkOut || rawPoliciesData.check_out || rawPoliciesData.checkout || ''
+    ),
+    notes: Array.isArray(rawPoliciesData.notes)
+      ? (rawPoliciesData.notes as unknown[]).map((item) => String(item || ''))
+      : Array.isArray(rawPoliciesData.special_notes)
+        ? (rawPoliciesData.special_notes as unknown[]).map((item) => String(item || ''))
+        : [],
+  };
 
   const parsedAmenities = parseJson<unknown[]>(package_details?.details?.amenities, []);
   const amenitiesFromDb = Array.isArray(parsedAmenities)

@@ -44,6 +44,8 @@ const makeCloneSlug = (slug: string | null, title: string, packageId: number) =>
   return `${base}-draft-${Date.now()}`;
 };
 
+const LOADER_CARD_COUNT = 6;
+
 const ListedPackagesPage = () => {
   const categories = ['Umrah', 'Hajj'];
   const router = useRouter();
@@ -230,7 +232,7 @@ const ListedPackagesPage = () => {
   };
 
   if (isAuthLoading) {
-    return <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading...</p>;
+    return null;
   }
 
   return (
@@ -274,7 +276,33 @@ const ListedPackagesPage = () => {
         <Tab.Panels>
           <Tab.Panel className="mt-8">
             {packagesLoading ? (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading packages...</p>
+              <div className="space-y-4">
+                {Array.from({ length: LOADER_CARD_COUNT }).map((_, index) => (
+                  <div
+                    key={`listed-package-skeleton-${index}`}
+                    className="listingSection__wrap rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5 animate-pulse"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="space-y-2">
+                        <div className="h-6 w-56 rounded bg-neutral-200 dark:bg-neutral-700" />
+                        <div className="h-4 w-28 rounded bg-neutral-200 dark:bg-neutral-700" />
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="h-7 w-16 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                        <div className="h-7 w-16 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                        <div className="h-7 w-7 rounded bg-neutral-200 dark:bg-neutral-700" />
+                        <div className="h-7 w-7 rounded bg-neutral-200 dark:bg-neutral-700" />
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                      <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                      <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                      <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                      <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : agentPackages && agentPackages.length > 0 ? (
               <>
                 <div className="space-y-4">

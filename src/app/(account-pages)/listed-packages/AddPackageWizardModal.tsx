@@ -242,8 +242,17 @@ const AddPackageWizardModal = ({
   };
 
   const parseIternary = (value: unknown): IternaryItemInput[] => {
-    if (!Array.isArray(value)) return [makeEmptyIternaryItem(), makeEmptyIternaryItem()];
-    const mapped = value.map((item) => {
+    let source: unknown = value;
+    if (typeof source === 'string') {
+      try {
+        source = JSON.parse(source);
+      } catch {
+        source = [];
+      }
+    }
+
+    if (!Array.isArray(source)) return [makeEmptyIternaryItem(), makeEmptyIternaryItem()];
+    const mapped = source.map((item) => {
       const row = (item || {}) as Record<string, unknown>;
       return {
         fromDate: String(row.fromDate || ''),
@@ -261,8 +270,17 @@ const AddPackageWizardModal = ({
   };
 
   const parseAmenitiesText = (value: unknown): string => {
-    if (Array.isArray(value)) {
-      return value
+    let source: unknown = value;
+    if (typeof source === 'string') {
+      try {
+        source = JSON.parse(source);
+      } catch {
+        source = [];
+      }
+    }
+
+    if (Array.isArray(source)) {
+      return source
         .map((item) => {
           if (typeof item === 'string') return item;
           if (item && typeof item === 'object' && 'name' in (item as Record<string, unknown>)) {
@@ -358,7 +376,17 @@ const AddPackageWizardModal = ({
     setSharingRates(parsedRates);
     setIternaryItems(parseIternary(detailsRow?.iternary));
     setAmenitiesText(parseAmenitiesText(detailsRow?.amenities));
-    const stayInfoRow = (detailsRow?.stay_information || {}) as Record<string, unknown>;
+    const stayInfoRow = (() => {
+      const raw = detailsRow?.stay_information;
+      if (typeof raw === 'string') {
+        try {
+          return JSON.parse(raw) as Record<string, unknown>;
+        } catch {
+          return {} as Record<string, unknown>;
+        }
+      }
+      return (raw || {}) as Record<string, unknown>;
+    })();
     const legacyLines: string[] = Array.isArray(stayInfoRow?.details)
       ? (stayInfoRow.details as unknown[]).map((line: unknown) => String(line || ''))
       : [];
@@ -371,7 +399,17 @@ const AddPackageWizardModal = ({
       )
     );
 
-    const policiesRow = (detailsRow?.policies || {}) as Record<string, unknown>;
+    const policiesRow = (() => {
+      const raw = detailsRow?.policies;
+      if (typeof raw === 'string') {
+        try {
+          return JSON.parse(raw) as Record<string, unknown>;
+        } catch {
+          return {} as Record<string, unknown>;
+        }
+      }
+      return (raw || {}) as Record<string, unknown>;
+    })();
     setPolicyCancellation(
       String(policiesRow.cancellation || policiesRow.cancellation_policy || '')
     );
