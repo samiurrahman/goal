@@ -7,6 +7,7 @@ import toast, { Toaster } from 'react-hot-toast';
 
 type BookingRow = {
   id: number;
+  agent_id: string;
   package_id: number | null;
   slug: string;
   guests: Array<{ title?: string; name?: string; age?: string | number; mobile?: string }> | null;
@@ -29,16 +30,27 @@ type PackageLite = {
   arrival_date: string | null;
 };
 
+type AgentLite = {
+  auth_user_id: string;
+  known_as: string | null;
+};
+
 const statusClass: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
   confirmed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
 };
 
+const formatBookingRef = (id: number) => {
+  const paddedId = String(id).padStart(6, '0');
+  return `BK-${paddedId}`;
+};
+
 const MyBookingsPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [packagesById, setPackagesById] = useState<Record<number, PackageLite>>({});
+  const [agentsByAuthId, setAgentsByAuthId] = useState<Record<string, AgentLite>>({});
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -88,7 +100,7 @@ const MyBookingsPage = () => {
       const { data: bookingRows, error: bookingsError } = await supabase
         .from('bookings')
         .select(
-          'id, package_id, slug, guests, sharing, booking_mobile, total_amount, currency, status, agent_name, created_at'
+          'id, agent_id, package_id, slug, guests, sharing, booking_mobile, total_amount, currency, status, agent_name, created_at'
         )
         .eq('auth_user_id', user.id)
         .order('created_at', { ascending: false });
@@ -104,6 +116,25 @@ const MyBookingsPage = () => {
       const parsedBookings = (bookingRows || []) as BookingRow[];
       setBookings(parsedBookings);
       setExpandedIds(parsedBookings.length > 0 ? [parsedBookings[0].id] : []);
+
+      const agentAuthIds = Array.from(
+        new Set(parsedBookings.map((item) => item.agent_id).filter(Boolean))
+      );
+
+      if (agentAuthIds.length > 0) {
+        const { data: agentRows } = await supabase
+          .from('agents')
+          .select('auth_user_id, known_as')
+          .in('auth_user_id', agentAuthIds);
+
+        const mappedAgents: Record<string, AgentLite> = {};
+        (agentRows || []).forEach((agent: AgentLite) => {
+          mappedAgents[agent.auth_user_id] = agent;
+        });
+        setAgentsByAuthId(mappedAgents);
+      } else {
+        setAgentsByAuthId({});
+      }
 
       const packageIds = Array.from(
         new Set(parsedBookings.map((item) => item.package_id).filter((id): id is number => !!id))
@@ -171,6 +202,8 @@ const MyBookingsPage = () => {
             const guests = Array.isArray(booking.guests) ? booking.guests : [];
             const isExpanded = expandedIds.includes(booking.id);
             const status = (booking.status || 'pending').toLowerCase();
+            const bookingRef = formatBookingRef(booking.id);
+            const agentKnownAs = (agentsByAuthId[booking.agent_id]?.known_as || '').trim();
 
             return (
               <div
@@ -180,10 +213,13 @@ const MyBookingsPage = () => {
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
                     <h3 className="text-lg font-semibold">
-                      {pkg?.title || booking.slug || `Booking #${booking.id}`}
+                      {pkg?.title || booking.slug || `Booking ${bookingRef}`}
                     </h3>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Agent: {booking.agent_name || 'TBD'}
+                      Agent: {agentKnownAs || booking.agent_name || 'TBD'}
+                    </p>
+                    <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                      Ref: {bookingRef}
                     </p>
                   </div>
 

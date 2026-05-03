@@ -9,6 +9,7 @@ import ButtonPrimary from '@/shared/ButtonPrimary';
 type BookingRow = {
   id: number;
   auth_user_id: string;
+  agent_id: string;
   package_id: number | null;
   slug: string;
   guests: Array<{ title?: string; name?: string; age?: string | number; mobile?: string }> | null;
@@ -39,6 +40,11 @@ const statusClass: Record<string, string> = {
   pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
   confirmed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
   cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+};
+
+const formatBookingRef = (id: number) => {
+  const paddedId = String(id).padStart(6, '0');
+  return `BK-${paddedId}`;
 };
 
 const AgentBookingsPage = () => {
@@ -129,7 +135,7 @@ const AgentBookingsPage = () => {
     const { data: bookingRows, error: bookingsError } = await supabase
       .from('bookings')
       .select(
-        'id, auth_user_id, package_id, slug, guests, sharing, booking_mobile, total_amount, currency, status, agent_name, created_at'
+        'id, auth_user_id, agent_id, package_id, slug, guests, sharing, booking_mobile, total_amount, currency, status, agent_name, created_at'
       )
       .eq('agent_id', user.id)
       .order('created_at', { ascending: false });
@@ -230,6 +236,10 @@ const AgentBookingsPage = () => {
               .filter(Boolean)
               .join(' ')
               .trim();
+            const firstGuestName =
+              guests.find((guest) => (guest?.name || '').trim())?.name?.trim() || '';
+            const bookedByUserName = userName || firstGuestName || 'User';
+            const bookingRef = formatBookingRef(booking.id);
 
             return (
               <div
@@ -238,9 +248,9 @@ const AgentBookingsPage = () => {
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <h3 className="text-lg font-semibold">Booking #{booking.id}</h3>
+                    <h3 className="text-lg font-semibold">Booking {bookingRef}</h3>
                     <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      Customer: {userName || booking.auth_user_id}
+                      User: {bookedByUserName}
                     </p>
                   </div>
 
@@ -268,6 +278,10 @@ const AgentBookingsPage = () => {
                 </div>
 
                 <div className="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+                  <div>
+                    <p className="text-neutral-500 dark:text-neutral-400">User name</p>
+                    <p className="font-medium">{bookedByUserName}</p>
+                  </div>
                   <div>
                     <p className="text-neutral-500 dark:text-neutral-400">Booking mobile</p>
                     <p className="font-medium">
