@@ -173,11 +173,13 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   let package_details = packageData as PackageDetails;
 
   if (packageData?.id) {
-    const { data: details } = await supabase
+    const { data: detailsArray } = await supabase
       .from('package_details')
       .select('*')
       .eq('package_id', packageData.id)
-      .maybeSingle();
+      .limit(1);
+
+    const details = Array.isArray(detailsArray) ? detailsArray[0] : null;
 
     package_details = {
       ...packageData,
