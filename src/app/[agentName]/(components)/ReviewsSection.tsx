@@ -33,15 +33,15 @@ export default function ReviewsSection({ agentId, agentName }: ReviewsSectionPro
         return;
       }
 
-      const [{ data: userDetails }, { data: agentProfile }] = await Promise.all([
-        supabase.from('user_details').select('user_type').eq('auth_user_id', user.id).maybeSingle(),
-        supabase.from('agents').select('id').eq('auth_user_id', user.id).maybeSingle(),
-      ]);
+      const { data: userDetails } = await supabase
+        .from('user_details')
+        .select('user_type')
+        .eq('auth_user_id', user.id)
+        .maybeSingle();
 
-      const isAgentUserType = (userDetails?.user_type || '').toLowerCase() === 'agent';
-      const isAgentByProfile = !!agentProfile?.id;
+      const isAgentUserType = (userDetails?.user_type || '').toLowerCase().trim() === 'agent';
 
-      if (mounted) setCanReview(!(isAgentUserType || isAgentByProfile));
+      if (mounted) setCanReview(!isAgentUserType);
     };
 
     resolveEligibility();

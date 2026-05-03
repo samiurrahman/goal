@@ -54,6 +54,21 @@ const getAdminSupabase = () => {
   return null;
 };
 
+const normalizeReview = (row: Record<string, any>) => {
+  return {
+    id: row.id,
+    agent_id: row.agent_id,
+    user_id: row.user_id,
+    user_email: row.user_email || '',
+    user_name: row.user_name || 'Anonymous',
+    user_profile_image: row.user_profile_image || null,
+    rating: row.rating,
+    review_text: row.review_text,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  };
+};
+
 export async function POST(request: NextRequest) {
   try {
     const authHeader = request.headers.get('authorization') || '';
@@ -73,18 +88,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Only normal users can review agents. Agent accounts are blocked.
-    const [{ data: userDetails }, { data: agentProfile }] = await Promise.all([
-      adminSupabase
-        .from('user_details')
-        .select('user_type')
-        .eq('auth_user_id', authData.user.id)
-        .maybeSingle(),
-      adminSupabase.from('agents').select('id').eq('auth_user_id', authData.user.id).maybeSingle(),
-    ]);
+    const { data: userDetails } = await adminSupabase
+      .from('user_details')
+      .select('user_type')
+      .eq('auth_user_id', authData.user.id)
+      .maybeSingle();
 
-    const isAgentUserType = (userDetails?.user_type || '').toLowerCase() === 'agent';
-    const isAgentByProfile = !!agentProfile?.id;
-    if (isAgentUserType || isAgentByProfile) {
+    const isAgentUserType = (userDetails?.user_type || '').toLowerCase().trim() === 'agent';
+    if (isAgentUserType) {
       return NextResponse.json({ error: 'Only users can submit agent reviews' }, { status: 403 });
     }
 
@@ -124,54 +135,61 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert or update review (upsert)
-    const userEmail = authData.user.email || '';
-    const userMetadata = authData.user.user_metadata || {};
-    const userFullName =
-      (userMetadata.full_name as string) ||
-      (userMetadata.name as string) ||
-      userEmail.split('@')[0] ||
-      '';
-    const userProfileImage =
-      (userMetadata.profile_image as string) ||
-      (userMetadata.avatar_url as string) ||
-      (userMetadata.picture as string) ||
-      '';
-
-    const { data: existingReview, error: existingReviewError } = await adminSupabase
-      .from('agent_reviews')
-      .select('id')
-      .eq('agent_id', agentId)
-      .eq('user_id', authData.user.id)
-      .maybeSingle();
-
-    if (existingReviewError) {
-      console.error('Error checking existing review:', existingReviewError);
-      return NextResponse.json(
-        { error: 'Failed to submit review: ' + existingReviewError.message },
-        { status: 500 }
-      );
-    }
-
+    // Keep payload limited to guaranteed columns for cross-environment compatibility.
     const reviewPayload = {
       agent_id: agentId,
       user_id: authData.user.id,
       rating: rating,
       review_text: reviewText.trim(),
-      user_email: userEmail,
-      user_name: userFullName,
-      user_profile_image: userProfileImage,
       updated_at: new Date().toISOString(),
     };
 
-    const reviewMutation = existingReview?.id
-      ? await adminSupabase
-          .from('agent_reviews')
-          .update(reviewPayload)
-          .eq('id', existingReview.id)
-          .select()
-      : await adminSupabase.from('agent_reviews').insert(reviewPayload).select();
+    let review: any[] | null = null;
+    let reviewError: any = null;
 
-    const { data: review, error: reviewError } = reviewMutation;
+    const upsertResult = await adminSupabase
+      .from('agent_reviews')
+      .upsert(reviewPayload, { onConflict: 'agent_id,user_id' })
+      .select('id, agent_id, user_id, rating, review_text, created_at, updated_at');
+
+    review = upsertResult.data;
+    reviewError = upsertResult.error;
+
+    const needsConflictFallback =
+      !!reviewError &&
+      (reviewError.code === '42P10' ||
+        String(reviewError.message || '').includes('ON CONFLICT specification'));
+
+    if (needsConflictFallback) {
+      const { data: existingReview, error: existingReviewError } = await adminSupabase
+        .from('agent_reviews')
+        .select('id')
+        .eq('agent_id', agentId)
+        .eq('user_id', authData.user.id)
+        .maybeSingle();
+
+      if (existingReviewError) {
+        console.error('Error checking existing review:', existingReviewError);
+        return NextResponse.json(
+          { error: 'Failed to submit review: ' + existingReviewError.message },
+          { status: 500 }
+        );
+      }
+
+      const fallbackMutation = existingReview?.id
+        ? await adminSupabase
+            .from('agent_reviews')
+            .update(reviewPayload)
+            .eq('id', existingReview.id)
+            .select('id, agent_id, user_id, rating, review_text, created_at, updated_at')
+        : await adminSupabase
+            .from('agent_reviews')
+            .insert(reviewPayload)
+            .select('id, agent_id, user_id, rating, review_text, created_at, updated_at');
+
+      review = fallbackMutation.data;
+      reviewError = fallbackMutation.error;
+    }
 
     if (reviewError) {
       console.error('Error submitting review:', reviewError);
@@ -184,7 +202,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       {
         message: 'Review submitted successfully',
-        review: review?.[0],
+        review: review?.[0] ? normalizeReview(review[0]) : null,
       },
       { status: 200 }
     );
@@ -217,9 +235,6 @@ export async function GET(request: NextRequest) {
         id,
         agent_id,
         user_id,
-        user_email,
-        user_name,
-        user_profile_image,
         rating,
         review_text,
         created_at,
@@ -234,7 +249,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Failed to fetch reviews' }, { status: 500 });
     }
 
-    return NextResponse.json({ reviews: reviews || [] }, { status: 200 });
+    return NextResponse.json(
+      { reviews: (reviews || []).map((row) => normalizeReview(row as Record<string, any>)) },
+      { status: 200 }
+    );
   } catch (error) {
     console.error('Error fetching reviews:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
