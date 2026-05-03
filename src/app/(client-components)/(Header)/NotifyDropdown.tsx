@@ -14,11 +14,12 @@ type BookingRow = {
   agent_name: string;
   status: string;
   created_at: string;
+  readByAgent: boolean;
+  readByUser: boolean;
 };
 
 type AgentRow = {
   auth_user_id: string | null;
-  slug: string | null;
   known_as: string | null;
   profile_image: string | null;
 };
@@ -31,11 +32,14 @@ type UserDetailsRow = {
 
 type NotifyItem = {
   id: string;
+  bookingId: number;
   name: string;
   description: string;
   time: string;
   href: string;
   avatar?: string | null;
+  target: 'agent' | 'user';
+  isRead: boolean;
 };
 
 const formatTimeAgo = (value: string) => {
@@ -58,16 +62,11 @@ interface Props {
 
 const NotifyDropdown: FC<Props> = ({ className = '' }) => {
   const [notifications, setNotifications] = useState<NotifyItem[]>([]);
-  const [readIds, setReadIds] = useState<string[]>([]);
-  const [readStorageKey, setReadStorageKey] = useState('');
   const hasInteractedRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const hasNotifications = useMemo(() => notifications.length > 0, [notifications.length]);
-  const hasUnread = useMemo(
-    () => notifications.some((item) => !readIds.includes(item.id)),
-    [notifications, readIds]
-  );
+  const hasUnread = useMemo(() => notifications.some((item) => !item.isRead), [notifications]);
 
   const playNotificationSound = () => {
     if (typeof window === 'undefined') return;
@@ -131,11 +130,6 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
   }, []);
 
   useEffect(() => {
-    if (!readStorageKey || typeof window === 'undefined') return;
-    window.localStorage.setItem(readStorageKey, JSON.stringify(readIds.slice(0, 200)));
-  }, [readIds, readStorageKey]);
-
-  useEffect(() => {
     let isMounted = true;
 
     const pushNotification = (item: NotifyItem) => {
@@ -153,53 +147,61 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
 
       if (!isMounted || !user) return;
 
-      const storageKey = `notify_read_ids_v1_${user.id}`;
-      setReadStorageKey(storageKey);
-
-      let shouldBootstrapReadIds = false;
-      if (typeof window !== 'undefined') {
-        const raw = window.localStorage.getItem(storageKey);
-        if (raw === null) {
-          shouldBootstrapReadIds = true;
-        } else {
-          try {
-            const parsed = JSON.parse(raw);
-            if (Array.isArray(parsed)) {
-              setReadIds(parsed.filter((item) => typeof item === 'string').slice(0, 200));
-            }
-          } catch {
-            setReadIds([]);
-          }
-        }
-      }
-
       const { data: userDetails } = await supabase
         .from('user_details')
         .select('user_type')
         .eq('auth_user_id', user.id)
         .maybeSingle();
 
-      const isAgent = userDetails?.user_type === 'agent';
+      const { data: agentByAuth } = await supabase
+        .from('agents')
+        .select('id, auth_user_id')
+        .eq('auth_user_id', user.id)
+        .maybeSingle();
 
-      if (isAgent) {
-        const { data: selfAgent } = await supabase
+      let hasAgentProfile = !!agentByAuth;
+      if (!hasAgentProfile && user.email) {
+        const { data: agentByEmail } = await supabase
           .from('agents')
-          .select('slug')
-          .eq('auth_user_id', user.id)
+          .select('id, auth_user_id')
+          .eq('email_id', user.email)
           .maybeSingle();
 
-        const agentSlug = (selfAgent?.slug || '').trim();
+        if (agentByEmail && !agentByEmail.auth_user_id) {
+          await supabase.from('agents').update({ auth_user_id: user.id }).eq('id', agentByEmail.id);
+        }
 
-        const { data: rows } = await supabase
+        hasAgentProfile = !!agentByEmail;
+      }
+
+      const isAgent = userDetails?.user_type === 'agent' || hasAgentProfile;
+
+      if (isAgent) {
+        const { data: rows, error: rowsError } = await supabase
           .from('bookings')
-          .select('id, auth_user_id, agent_id, agent_name, status, created_at')
+          .select(
+            'id, auth_user_id, agent_id, agent_name, status, created_at, readByAgent, readByUser'
+          )
           .eq('agent_id', user.id)
           .order('created_at', { ascending: false })
           .limit(20);
 
         if (!isMounted) return;
 
-        const parsedRows = (rows || []) as BookingRow[];
+        let parsedRows = (rows || []) as BookingRow[];
+        if (rowsError) {
+          const { data: fallbackRows } = await supabase
+            .from('bookings')
+            .select('id, auth_user_id, agent_id, agent_name, status, created_at')
+            .eq('agent_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(20);
+
+          parsedRows = (
+            (fallbackRows || []) as Omit<BookingRow, 'readByAgent' | 'readByUser'>[]
+          ).map((item) => ({ ...item, readByAgent: false, readByUser: false }));
+        }
+
         const userIds = Array.from(new Set(parsedRows.map((item) => item.auth_user_id)));
 
         let userMap: Record<string, UserDetailsRow> = {};
@@ -222,21 +224,21 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
 
           return {
             id: `agent-${item.id}-${item.created_at}`,
+            bookingId: item.id,
             name: customerName,
             description: 'New booking received. Please review and confirm it.',
             time: formatTimeAgo(item.created_at),
-            href: agentSlug ? `/bookings?agent_id=${encodeURIComponent(agentSlug)}` : '/bookings',
+            href: '/bookings',
             avatar: null,
+            target: 'agent',
+            isRead: !!item.readByAgent,
           } as NotifyItem;
         });
 
         setNotifications(mapped);
-        if (shouldBootstrapReadIds) {
-          setReadIds(mapped.map((item) => item.id).slice(0, 200));
-        }
 
         const agentChannel = supabase
-          .channel(`agent-bookings-${user.id}`)
+          .channel(`notify-agent-bookings-${user.id}`)
           .on(
             'postgres_changes',
             {
@@ -263,13 +265,14 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
 
               pushNotification({
                 id: `agent-${booking.id}-${booking.created_at}`,
+                bookingId: booking.id,
                 name: customerName,
                 description: 'New booking received. Please review and confirm it.',
                 time: 'Just now',
-                href: agentSlug
-                  ? `/bookings?agent_id=${encodeURIComponent(agentSlug)}`
-                  : '/bookings',
+                href: '/bookings',
                 avatar: null,
+                target: 'agent',
+                isRead: false,
               });
             }
           )
@@ -280,9 +283,11 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
         };
       }
 
-      const { data: rows } = await supabase
+      const { data: rows, error: rowsError } = await supabase
         .from('bookings')
-        .select('id, auth_user_id, agent_id, agent_name, status, created_at')
+        .select(
+          'id, auth_user_id, agent_id, agent_name, status, created_at, readByAgent, readByUser'
+        )
         .eq('auth_user_id', user.id)
         .eq('status', 'confirmed')
         .order('created_at', { ascending: false })
@@ -290,7 +295,21 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
 
       if (!isMounted) return;
 
-      const parsedRows = (rows || []) as BookingRow[];
+      let parsedRows = (rows || []) as BookingRow[];
+      if (rowsError) {
+        const { data: fallbackRows } = await supabase
+          .from('bookings')
+          .select('id, auth_user_id, agent_id, agent_name, status, created_at')
+          .eq('auth_user_id', user.id)
+          .eq('status', 'confirmed')
+          .order('created_at', { ascending: false })
+          .limit(20);
+
+        parsedRows = ((fallbackRows || []) as Omit<BookingRow, 'readByAgent' | 'readByUser'>[]).map(
+          (item) => ({ ...item, readByAgent: false, readByUser: false })
+        );
+      }
+
       const agentIds = Array.from(new Set(parsedRows.map((item) => item.agent_id).filter(Boolean)));
 
       let agentById: Record<string, AgentRow> = {};
@@ -311,21 +330,21 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
         const agent = agentById[item.agent_id];
         return {
           id: `user-${item.id}-${item.created_at}`,
+          bookingId: item.id,
           name: (agent?.known_as || item.agent_name || 'Your agent').trim(),
           description: 'Your booking is confirmed. Enjoy!!!',
           time: formatTimeAgo(item.created_at),
           href: '/my-bookings',
           avatar: agent?.profile_image || null,
+          target: 'user',
+          isRead: !!item.readByUser,
         } as NotifyItem;
       });
 
       setNotifications(mapped);
-      if (shouldBootstrapReadIds) {
-        setReadIds(mapped.map((item) => item.id).slice(0, 200));
-      }
 
       const userChannel = supabase
-        .channel(`user-bookings-${user.id}`)
+        .channel(`notify-user-bookings-${user.id}`)
         .on(
           'postgres_changes',
           {
@@ -354,11 +373,14 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
 
             pushNotification({
               id: `user-${current.id}-${current.created_at}`,
+              bookingId: current.id,
               name,
               description: 'Your booking is confirmed. Enjoy!!!',
               time: 'Just now',
               href: '/my-bookings',
               avatar,
+              target: 'user',
+              isRead: !!current.readByUser,
             });
           }
         )
@@ -381,8 +403,32 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
     };
   }, []);
 
-  const handleNotificationClick = (id: string) => {
-    setReadIds((prev) => (prev.includes(id) ? prev : [id, ...prev].slice(0, 200)));
+  const handleNotificationClick = async (item: NotifyItem) => {
+    if (item.isRead) return;
+
+    setNotifications((prev) =>
+      prev.map((entry) => (entry.id === item.id ? { ...entry, isRead: true } : entry))
+    );
+
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      const token = session?.access_token;
+      if (!token) return;
+
+      await fetch('/api/bookings/notifications/read', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ bookingId: item.bookingId, target: item.target }),
+      });
+    } catch {
+      // Keep optimistic UI state even if network call fails.
+    }
   };
 
   return (
@@ -422,7 +468,9 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
                         <Link
                           key={item.id}
                           href={item.href}
-                          onClick={() => handleNotificationClick(item.id)}
+                          onClick={() => {
+                            void handleNotificationClick(item);
+                          }}
                           className="flex p-2 pr-8 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50 relative"
                         >
                           <Avatar
@@ -439,7 +487,9 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
                             </p>
                             <p className="text-xs text-gray-400 dark:text-gray-400">{item.time}</p>
                           </div>
-                          <span className="absolute right-1 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500"></span>
+                          {!item.isRead ? (
+                            <span className="absolute right-1 top-1/2 transform -translate-y-1/2 w-2 h-2 rounded-full bg-blue-500"></span>
+                          ) : null}
                         </Link>
                       ))
                     )}

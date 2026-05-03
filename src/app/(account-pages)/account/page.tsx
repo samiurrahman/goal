@@ -659,16 +659,13 @@ const AccountPage = () => {
   };
 
   return (
-    <div className="gap-8">
+    <div className="gap-4">
       <Toaster position="top-center" />
-      {/* HEADING */}
-      <h2 className="text-3xl font-semibold">Account information</h2>
-      <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
       {isLoading ? (
         <p className="text-sm text-neutral-600 dark:text-neutral-300">Loading account data...</p>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-4">
           <>
             <div className="listingSection__wrap overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

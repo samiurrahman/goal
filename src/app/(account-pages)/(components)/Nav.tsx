@@ -52,7 +52,7 @@ export const Nav = () => {
   }, []);
 
   const userTabs: NavItem[] = [
-    { href: '/account', label: 'Account' },
+    { href: '/account', label: 'Profile' },
     { href: '/my-bookings', label: 'My bookings' },
     { href: '/account-settings', label: 'Account settings' },
   ];

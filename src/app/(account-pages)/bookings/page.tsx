@@ -2,7 +2,6 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
-import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import toast, { Toaster } from 'react-hot-toast';
 import ButtonPrimary from '@/shared/ButtonPrimary';
@@ -43,7 +42,6 @@ const statusClass: Record<string, string> = {
 };
 
 const AgentBookingsPage = () => {
-  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
@@ -68,8 +66,6 @@ const AgentBookingsPage = () => {
       void supabase.removeChannel(channel);
     };
   }, [agentUserId]);
-
-  const requestedAgentSlug = searchParams.get('agent_id')?.trim() || '';
 
   const loadBookings = async () => {
     setIsLoading(true);
@@ -127,7 +123,7 @@ const AgentBookingsPage = () => {
 
     setAgentUserId(user.id);
 
-    const effectiveSlug = requestedAgentSlug || (resolvedAgent.slug || '').trim();
+    const effectiveSlug = (resolvedAgent.slug || '').trim();
     setAgentSlug(effectiveSlug);
 
     const { data: bookingRows, error: bookingsError } = await supabase
@@ -136,7 +132,6 @@ const AgentBookingsPage = () => {
         'id, auth_user_id, package_id, slug, guests, sharing, booking_mobile, total_amount, currency, status, agent_name, created_at'
       )
       .eq('agent_id', user.id)
-      .eq('agent_name', effectiveSlug)
       .order('created_at', { ascending: false });
 
     if (bookingsError) {
@@ -176,7 +171,7 @@ const AgentBookingsPage = () => {
   useEffect(() => {
     void loadBookings();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [requestedAgentSlug, refreshKey]);
+  }, [refreshKey]);
 
   const toggle = (id: number) => {
     setExpandedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
