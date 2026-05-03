@@ -391,7 +391,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
 
   return (
     <div className="nc-ListingStayDetailPage w-full min-h-screen">
-      <div className="container relative z-20 mt-4">
+      <div className="relative z-20 mt-4">
         <Breadcrumb
           items={[
             { label: 'Home', href: '/' },
@@ -402,7 +402,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
       </div>
 
       {/* MAIN */}
-      <main className="container relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-0 w-full">
+      <main className="relative z-10 flex flex-col lg:flex-row gap-8 lg:gap-0 w-full">
         {/* CONTENT */}
         <div className="w-full lg:w-3/5 xl:w-2/3 space-y-6 sm:space-y-8 lg:space-y-10 lg:pr-10 mb-6">
           <PackageMeta {...packageMetaData} />
@@ -414,8 +414,8 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
         </div>
 
         {/* SIDEBAR: Purchase summary, visible on all devices, sticky on lg+ */}
-        <div className="hidden lg:flex lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0 flex-col items-stretch">
-          <div className="sticky top-28 max-w-md mx-auto w-full">
+        <div className="w-full lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0 flex flex-col items-stretch">
+          <div className="sticky top-28 hidden lg:block max-w-md mx-auto w-full">
             <PurchaseSummary {...purchaseSummaryProps} />
           </div>
         </div>

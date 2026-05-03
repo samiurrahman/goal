@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import PurchaseSummary from './PurchaseSummary';
+import PurchaseSummaryInteractive from './PurchaseSummaryInteractive';
 
 type RoomRate = { value: string; people: number; default: boolean };
 
@@ -58,12 +58,11 @@ const MobileFooterSticky = ({
                 Close
               </button>
             </div>
-            <PurchaseSummary
+            <PurchaseSummaryInteractive
               sharingRates={sharingRates}
               initialGuests={initialGuests}
               initialSharing={initialSharing}
               reserveHref={reserveHref}
-              className="!shadow-none !border-0 !rounded-none"
             />
           </div>
         </div>
