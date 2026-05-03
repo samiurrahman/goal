@@ -10,6 +10,7 @@ export interface PurchaseSummaryProps {
   initialGuests: number;
   initialSharing: number;
   reserveHref: string;
+  className?: string;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
@@ -19,6 +20,7 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
   initialGuests,
   initialSharing,
   reserveHref,
+  className = '',
 }) => {
   const numberOfGuests = clamp(initialGuests, 1, 20);
   const sharingCount = clamp(initialSharing, 2, 5);
@@ -40,7 +42,7 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
   const formattedGrandTotal = grandTotal.toLocaleString('en-IN');
 
   return (
-    <div className="listingSectionSidebar__wrap shadow-xl !space-y-4">
+    <div className={`listingSectionSidebar__wrap shadow-xl !space-y-4 ${className}`}>
       <div className="flex justify-between">
         <span className="text-2xl font-normal">
           INR {formattedPrice}

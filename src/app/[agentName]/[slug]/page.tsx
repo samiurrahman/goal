@@ -414,18 +414,20 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
         </div>
 
         {/* SIDEBAR: Purchase summary, visible on all devices, sticky on lg+ */}
-        <div className="w-full lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0 flex flex-col items-stretch">
-          <div className="sticky top-28 hidden lg:block max-w-md mx-auto w-full">
-            <PurchaseSummary {...purchaseSummaryProps} />
-          </div>
-          {/* Mobile/Tablet: show purchase summary below content */}
-          <div className="block lg:hidden mb-8 w-full max-w-lg mx-auto">
+        <div className="hidden lg:flex lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0 flex-col items-stretch">
+          <div className="sticky top-28 max-w-md mx-auto w-full">
             <PurchaseSummary {...purchaseSummaryProps} />
           </div>
         </div>
       </main>
-      <div className="block lg:hidden h-8" />
-      <MobileFooterSticky reserveHref={reserveHref} priceLabel={formattedPrice} />
+      <div className="block lg:hidden h-24" />
+      <MobileFooterSticky
+        sharingRates={sharingRateList}
+        initialGuests={numberOfGuests}
+        initialSharing={sharingCount}
+        reserveHref={reserveHref}
+        priceLabel={formattedPrice}
+      />
     </div>
   );
 };
