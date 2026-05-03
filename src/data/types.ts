@@ -2,7 +2,7 @@ import { Route } from '@/routers/types';
 import { StaticImageData } from 'next/image';
 // Agent interface for agents table
 export interface Agent {
-  id: number;
+  id: string; // UUID
   created_at: string;
   name: string;
   city: string;
@@ -60,7 +60,7 @@ export interface Package {
   madinah_hotel_distance_m: number | null;
   agent_name: string | null;
   location: string | null;
-  agent_id: number | null;
+  agent_id: string | null;
   arrival_city: string | null;
   sharing_rate: string | null;
   package_location: string | null;
@@ -95,7 +95,7 @@ export interface PackageDetails {
   madinah_hotel_name: string;
   madinah_hotel_distance_m: number;
   agent_name: string;
-  agent_id: number;
+  agent_id: string;
   location: string;
   sharing_rate: number | null;
   arrival_city: string;
@@ -115,6 +115,20 @@ export interface PackageDetails {
     amenities: null | Record<string, unknown>;
     policies: null | Record<string, unknown>;
   };
+}
+
+// AgentReview interface for agent reviews
+export interface AgentReview {
+  id: number;
+  agent_id: string;
+  user_id: string;
+  user_email: string;
+  user_name: string;
+  user_profile_image?: string | null;
+  rating: number;
+  review_text: string;
+  created_at: string;
+  updated_at: string;
 }
 
 //  ######  CustomLink  ######## //

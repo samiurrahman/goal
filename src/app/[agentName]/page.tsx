@@ -1,4 +1,3 @@
-import CommentListing from '@/components/CommentListing';
 import React from 'react';
 import Breadcrumb from '@/components/Breadcrumb';
 import { supabase } from '@/utils/supabaseClient';
@@ -13,6 +12,7 @@ import StartRating from '@/components/StartRating';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
 import SectionGridFeaturePlaces from './(components)/SectionGridFeaturePlaces';
 import AgentProfileEditModal from './(components)/AgentProfileEditModal';
+import ReviewsSection from './(components)/ReviewsSection';
 
 export interface AgentDetailsProps {
   params: { agentName: string };
@@ -367,23 +367,10 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
 
           {/* REVIEWS FULL-WIDTH */}
           <div className="lg:col-span-5 mt-6">
-            <div className="listingSection__wrap !space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <h2 className="text-xl font-normal text-gray-900">Reviews</h2>
-                <Link
-                  href="/account"
-                  className="text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200"
-                >
-                  <i className="las la-pen text-2xl"></i>
-                </Link>
-              </div>
-              <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
-              <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                <CommentListing hasListingTitle className="pb-8" />
-                <CommentListing hasListingTitle className="py-8" />
-                <CommentListing hasListingTitle className="py-8" />
-              </div>
-            </div>
+            <ReviewsSection
+              agentId={agentDetails?.id || 0}
+              agentName={agentDetails?.known_as || ''}
+            />
           </div>
         </main>
       </div>
