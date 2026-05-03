@@ -184,10 +184,8 @@ const MyBookingsPage = () => {
     <div className="space-y-6 sm:space-y-8">
       <Toaster position="top-center" />
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-3xl font-semibold">My Bookings</h2>
         <span className="text-sm text-neutral-500 dark:text-neutral-400">{bookingCountLabel}</span>
       </div>
-      <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
       {isLoading ? (
         <p className="text-sm text-neutral-500 dark:text-neutral-400">Loading bookings...</p>

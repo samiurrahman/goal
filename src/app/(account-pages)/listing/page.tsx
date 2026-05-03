@@ -214,8 +214,6 @@ export default function ListingPage() {
   return (
     <div className="space-y-6 sm:space-y-8 max-w-2xl mx-auto">
       <Toaster position="top-center" />
-      <h2 className="text-3xl font-semibold">{id ? 'Edit Package' : 'Add New Package'}</h2>
-      <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <Label>Title</Label>

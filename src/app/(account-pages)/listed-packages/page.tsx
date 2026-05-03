@@ -132,8 +132,7 @@ const ListedPackagesPage = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       <Toaster position="top-center" />
-      <div className="flex justify-between items-center">
-        <h2 className="text-3xl font-semibold">Listed Packages</h2>
+      <div className="flex justify-end items-center">
         {agentUUID && agentSlug ? (
           <AddPackageWizardModal
             agentAuthUserId={agentUUID}
@@ -148,7 +147,6 @@ const ListedPackagesPage = () => {
           </ButtonPrimary>
         )}
       </div>
-      <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
       <Tab.Group>
         <Tab.List className="flex space-x-1 overflow-x-auto">
