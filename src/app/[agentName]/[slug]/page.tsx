@@ -290,7 +290,6 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     details: [],
     content_html: '',
   });
-
   const stayInfoData = {
     title: rawStayInfoData.title || 'Stay information',
     details: Array.isArray(rawStayInfoData.details) ? rawStayInfoData.details : [],
