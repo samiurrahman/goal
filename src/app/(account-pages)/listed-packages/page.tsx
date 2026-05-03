@@ -1,12 +1,14 @@
 'use client';
 
 import { Tab } from '@headlessui/react';
+import { Dialog, Transition } from '@headlessui/react';
 import {
   ChevronDownIcon,
   ChevronUpIcon,
   DocumentDuplicateIcon,
   PencilSquareIcon,
   TrashIcon,
+  XMarkIcon,
 } from '@heroicons/react/24/outline';
 import React, { Fragment, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -14,6 +16,7 @@ import { Package } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 import { useRouter } from 'next/navigation';
 import ButtonPrimary from '@/shared/ButtonPrimary';
+import ButtonSecondary from '@/shared/ButtonSecondary';
 import toast, { Toaster } from 'react-hot-toast';
 import AddPackageWizardModal from './AddPackageWizardModal';
 
@@ -49,6 +52,7 @@ const ListedPackagesPage = () => {
   const [agentSlug, setAgentSlug] = useState<string>('');
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [expandedPackageIds, setExpandedPackageIds] = useState<number[]>([]);
+  const [deletePendingPackageId, setDeletePendingPackageId] = useState<number | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -137,14 +141,35 @@ const ListedPackagesPage = () => {
   });
 
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this package?')) return;
-    const { error } = await supabase.from('packages').delete().eq('id', id);
-    if (error) {
-      toast.error('Failed to delete package: ' + error.message);
+    const { error: packageError } = await supabase.from('packages').delete().eq('id', id);
+    if (packageError) {
+      toast.error('Failed to delete package: ' + packageError.message);
+      return;
+    }
+
+    const { error: detailsError } = await supabase
+      .from('package_details')
+      .delete()
+      .eq('package_id', id);
+
+    if (detailsError) {
+      toast.error('Package deleted, but package details cleanup failed: ' + detailsError.message);
     } else {
       toast.success('Package deleted successfully!');
-      queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
     }
+
+    queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
+  };
+
+  const requestDeletePackage = (id: number) => {
+    setDeletePendingPackageId(id);
+  };
+
+  const confirmDeletePackage = async () => {
+    if (!deletePendingPackageId) return;
+    const packageId = deletePendingPackageId;
+    setDeletePendingPackageId(null);
+    await handleDelete(packageId);
   };
 
   const handleClone = async (pkg: Package) => {
@@ -302,7 +327,7 @@ const ListedPackagesPage = () => {
                           ) : null}
                           <button
                             className="inline-flex items-center justify-center rounded-md p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                            onClick={() => handleDelete(pkg.id)}
+                            onClick={() => requestDeletePackage(pkg.id)}
                             type="button"
                             aria-label="Delete package"
                             title="Delete"
@@ -381,6 +406,72 @@ const ListedPackagesPage = () => {
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>
+
+      <Transition appear show={deletePendingPackageId !== null} as={Fragment}>
+        <Dialog
+          as="div"
+          className="fixed inset-0 z-50 overflow-y-auto"
+          onClose={() => setDeletePendingPackageId(null)}
+        >
+          <div className="min-h-screen px-4 text-center">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-75"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-75"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Dialog.Overlay className="fixed inset-0 bg-neutral-900 bg-opacity-50 dark:bg-opacity-80" />
+            </Transition.Child>
+            <span className="inline-block h-screen align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-75"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-75"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <div className="inline-block w-full max-w-md p-6 my-8 text-left align-middle transition-all transform bg-white dark:bg-neutral-900 shadow-xl rounded-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <Dialog.Title className="text-lg font-semibold">Delete Package</Dialog.Title>
+                  <button
+                    type="button"
+                    onClick={() => setDeletePendingPackageId(null)}
+                    className="inline-flex items-center justify-center rounded-xl p-1.5 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Are you sure you want to delete this package? This action cannot be undone.
+                </p>
+                <div className="mt-6 flex gap-3 justify-end">
+                  <ButtonSecondary
+                    type="button"
+                    onClick={() => setDeletePendingPackageId(null)}
+                    className="!text-sm"
+                  >
+                    Cancel
+                  </ButtonSecondary>
+                  <ButtonPrimary
+                    type="button"
+                    onClick={confirmDeletePackage}
+                    className="!bg-red-600 hover:!bg-red-700 !text-sm"
+                  >
+                    Delete
+                  </ButtonPrimary>
+                </div>
+              </div>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   );
 };
