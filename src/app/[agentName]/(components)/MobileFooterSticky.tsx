@@ -63,6 +63,8 @@ const MobileFooterSticky = ({
               initialGuests={initialGuests}
               initialSharing={initialSharing}
               reserveHref={reserveHref}
+              className="!rounded-none"
+              flat
             />
           </div>
         </div>

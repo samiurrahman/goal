@@ -90,9 +90,7 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
         </span>
       </div>
 
-      <div
-        className={`flex flex-col overflow-hidden ${flat ? '' : 'border border-neutral-200 dark:border-neutral-700 rounded-3xl'}`}
-      >
+      <div className="flex flex-col overflow-hidden border border-neutral-200 dark:border-neutral-700 rounded-3xl">
         <div className="p-3 flex items-center justify-between">
           <span className="font-medium text-neutral-800 dark:text-neutral-200">Guests</span>
           <div className="flex items-center gap-2">
@@ -114,9 +112,7 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
           </div>
         </div>
 
-        {!flat ? (
-          <div className="w-full border-b border-neutral-200 dark:border-neutral-700" />
-        ) : null}
+        <div className="w-full border-b border-neutral-200 dark:border-neutral-700" />
 
         <div className="p-3 flex items-center justify-between">
           <span className="font-medium text-neutral-800 dark:text-neutral-200">Sharing</span>
