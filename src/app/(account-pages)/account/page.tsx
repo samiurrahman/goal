@@ -210,14 +210,27 @@ const AccountPage = () => {
       const metadataFirstName = splitMetadataName[0] || '';
       const metadataLastName = splitMetadataName.slice(1).join(' ');
 
-      const detailsFirstName = detailsResult.data?.first_name?.trim() || '';
-      const detailsLastName = detailsResult.data?.last_name?.trim() || '';
-      const detailsCity = detailsResult.data?.city?.trim() || '';
-      const detailsState = detailsResult.data?.state?.trim() || '';
-      const detailsAddress = detailsResult.data?.address?.trim() || '';
-      const detailsPhone = detailsResult.data?.phone?.trim() || '';
-      const detailsDateOfBirth = normalizeDateForInput(detailsResult.data?.date_of_birth);
-      const detailsGender = (detailsResult.data?.gender as TravelerGender) || 'unspecified';
+      type UserDetails = {
+        first_name?: string;
+        last_name?: string;
+        city?: string;
+        state?: string;
+        address?: string;
+        phone?: string;
+        date_of_birth?: string;
+        gender?: TravelerGender;
+        profile_image?: string;
+      };
+      const details = detailsResult.data as UserDetails | null;
+
+      const detailsFirstName = details?.first_name?.trim() || '';
+      const detailsLastName = details?.last_name?.trim() || '';
+      const detailsCity = details?.city?.trim() || '';
+      const detailsState = details?.state?.trim() || '';
+      const detailsAddress = details?.address?.trim() || '';
+      const detailsPhone = details?.phone?.trim() || '';
+      const detailsDateOfBirth = normalizeDateForInput(details?.date_of_birth);
+      const detailsGender = (details?.gender as TravelerGender) || 'unspecified';
 
       setAccountForm({
         first_name: detailsFirstName || metadataFirstName,
