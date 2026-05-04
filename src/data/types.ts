@@ -21,6 +21,9 @@ export interface Agent {
   email_id: string;
   email_isVerified: string | null;
   alternate_number: string;
+  whatsapp_url?: string | null;
+  instagram_url?: string | null;
+  facebook_url?: string | null;
   about_us: string;
   founders: People[];
   profile_image: string | null;

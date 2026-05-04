@@ -58,6 +58,7 @@ export const Nav = () => {
   ];
 
   const agentTabs: NavItem[] = [
+    { href: '/profile', label: 'Profile' },
     { href: '/bookings', label: 'Bookings' },
     { href: '/listed-packages', label: 'Packages' },
     { href: '/account-settings', label: 'Account settings' },

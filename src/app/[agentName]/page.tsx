@@ -11,7 +11,6 @@ import SocialsList from '@/shared/SocialsList';
 import StartRating from '@/components/StartRating';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
 import SectionGridFeaturePlaces from './(components)/SectionGridFeaturePlaces';
-import AgentProfileEditModal from './(components)/AgentProfileEditModal';
 import ReviewsSection from './(components)/ReviewsSection';
 
 export interface AgentDetailsProps {
@@ -70,6 +69,13 @@ const normalizeReview = (row: Record<string, any>) => {
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
+};
+
+const normalizeExternalLink = (value?: string | null) => {
+  const trimmed = (value || '').trim();
+  if (!trimmed) return '';
+  if (/^(https?:|mailto:|tel:)/i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
 };
 
 const getReviewsForAgent = async (agentId: string): Promise<AgentReview[]> => {
@@ -208,11 +214,24 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
     .join(', ');
 
   const phoneDigits = (agentDetails?.contact_number || '').replace(/\D/g, '');
+  const whatsappHref =
+    normalizeExternalLink(agentDetails?.whatsapp_url) ||
+    (phoneDigits ? `https://wa.me/${phoneDigits}` : '');
   const socialLinks = [
     {
-      href: phoneDigits ? `https://wa.me/${phoneDigits}` : '',
+      href: whatsappHref,
       icon: 'lab la-whatsapp',
       name: 'WhatsApp',
+    },
+    {
+      href: normalizeExternalLink(agentDetails?.instagram_url),
+      icon: 'lab la-instagram',
+      name: 'Instagram',
+    },
+    {
+      href: normalizeExternalLink(agentDetails?.facebook_url),
+      icon: 'lab la-facebook-square',
+      name: 'Facebook',
     },
     {
       href: agentDetails?.contact_number ? `tel:${agentDetails.contact_number}` : '',
@@ -283,27 +302,6 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                     </div>
                   </div>
                 )}
-                <div className="absolute top-3 right-3 md:top-4 md:right-4 z-20">
-                  <AgentProfileEditModal
-                    agentId={agentDetails?.id ? String(agentDetails.id) : undefined}
-                    initialData={{
-                      name: agentDetails?.name,
-                      known_as: agentDetails?.known_as,
-                      contact_number: agentDetails?.contact_number,
-                      alternate_number: agentDetails?.alternate_number,
-                      email_id: agentDetails?.email_id,
-                      address: agentDetails?.address,
-                      city: agentDetails?.city,
-                      state: agentDetails?.state,
-                      country: agentDetails?.country,
-                      profile_image: agentDetails?.profile_image,
-                      banner_image: agentDetails?.banner_image,
-                      experience: experienceValue == null ? '' : String(experienceValue),
-                      experienceField,
-                      about_us: agentDetails?.about_us,
-                    }}
-                  />
-                </div>
                 <div className="hidden lg:block absolute right-3 lg:right-4 bottom-0 translate-y-1/2 z-20 max-w-[62vw]">
                   <div className="flex flex-wrap items-center justify-end gap-2 rounded-2xl bg-white/95 dark:bg-neutral-900/95 px-2.5 py-2 shadow-md border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm">
                     <Badge

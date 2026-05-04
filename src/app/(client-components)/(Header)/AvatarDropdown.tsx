@@ -18,7 +18,6 @@ interface ResolvedUserDetails {
   userType: string | null;
   city: string | null;
   state: string | null;
-  agentSlug: string | null;
   profileUrl: string | null;
 }
 
@@ -30,7 +29,6 @@ export default function AvatarDropdown({ className = '' }: Props) {
   const [userType, setUserType] = useState<string | null>(null);
   const [city, setCity] = useState<string | null>(null);
   const [state, setState] = useState<string | null>(null);
-  const [agentSlug, setAgentSlug] = useState<string | null>(null);
   const [profileUrl, setProfileUrl] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -44,7 +42,6 @@ export default function AvatarDropdown({ className = '' }: Props) {
     setUserType(null);
     setCity(null);
     setState(null);
-    setAgentSlug(null);
     setProfileUrl(null);
   };
 
@@ -54,7 +51,6 @@ export default function AvatarDropdown({ className = '' }: Props) {
       userType: null,
       city: null,
       state: null,
-      agentSlug: null,
       profileUrl: null,
     };
 
@@ -80,7 +76,6 @@ export default function AvatarDropdown({ className = '' }: Props) {
         userType: resolvedUserType,
         city: baseCity,
         state: baseState,
-        agentSlug: null,
         profileUrl: (userDetailsData.profile_image || '').trim() || null,
       };
     }
@@ -97,7 +92,6 @@ export default function AvatarDropdown({ className = '' }: Props) {
       userType: resolvedUserType,
       city: (agentData?.city || '').trim() || baseCity,
       state: (agentData?.state || '').trim() || baseState,
-      agentSlug: (agentData?.slug || '').trim() || null,
       profileUrl:
         (agentData?.profile_image || '').trim() ||
         (userDetailsData.profile_image || '').trim() ||
@@ -135,7 +129,6 @@ export default function AvatarDropdown({ className = '' }: Props) {
       setUserType(details.userType);
       setCity(details.city);
       setState(details.state);
-      setAgentSlug(details.agentSlug);
       setProfileUrl(details.profileUrl);
 
       const metadataAvatar =
@@ -187,7 +180,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
     resolvePublicImageUrl(user?.user_metadata?.avatar_url as string | undefined) ||
     resolvePublicImageUrl(user?.user_metadata?.picture as string | undefined);
 
-  const myAccountHref = userType === 'agent' && agentSlug ? `/${agentSlug}` : '/account';
+  const myAccountHref = userType === 'agent' ? '/profile' : '/account';
 
   const router = useRouter();
   const pathname = usePathname();
