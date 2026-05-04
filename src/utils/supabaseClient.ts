@@ -1,9 +1,9 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { getSupabaseConfig } from '@/lib/supabase-env';
 
-let supabaseInstance: ReturnType<typeof createClient> | null = null;
+let supabaseInstance: SupabaseClient | null = null;
 
-export const getSupabaseClient = () => {
+export const getSupabaseClient = (): SupabaseClient => {
   if (supabaseInstance) {
     return supabaseInstance;
   }
@@ -29,4 +29,4 @@ export const supabase = new Proxy(
       return (client as any)[prop];
     },
   }
-) as ReturnType<typeof createClient>;
+) as SupabaseClient;

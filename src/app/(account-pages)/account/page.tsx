@@ -243,7 +243,7 @@ const AccountPage = () => {
         gender: detailsGender,
       });
 
-      setUserProfileUrl(detailsResult.data?.profile_image?.trim() || '');
+      setUserProfileUrl(details?.profile_image?.trim() || '');
 
       if (travelersResult.error) {
         const isMissingTable =
