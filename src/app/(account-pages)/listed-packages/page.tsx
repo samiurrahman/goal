@@ -294,7 +294,7 @@ const ListedPackagesPage = () => {
                         <div className="h-7 w-7 rounded bg-neutral-200 dark:bg-neutral-700" />
                       </div>
                     </div>
-                    <div className="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
                       <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
                       <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
@@ -383,7 +383,7 @@ const ListedPackagesPage = () => {
 
                       {expandedPackageIds.includes(pkg.id) && (
                         <div className="mt-4 space-y-4 border-t border-neutral-200 dark:border-neutral-700 pt-4">
-                          <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                             <div>
                               <p className="text-neutral-500 dark:text-neutral-400">Route</p>
                               <p className="font-medium">

@@ -2,7 +2,8 @@
 
 import { supabase } from '@/utils/supabaseClient';
 import { Route } from '@/routers/types';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import React, { useEffect, useState } from 'react';
 
 type NavItem = {
@@ -12,7 +13,6 @@ type NavItem = {
 
 export const Nav = () => {
   const pathname = usePathname();
-  const router = useRouter();
   const [isAgent, setIsAgent] = useState(false);
   const [isResolved, setIsResolved] = useState(false);
 
@@ -83,16 +83,15 @@ export const Nav = () => {
                   : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-400'
               }`}
             >
-              <button
-                type="button"
-                onClick={() => router.push(item.href)}
+              <Link
+                href={item.href}
                 className="inline-flex items-center focus:outline-none"
               >
                 {isActive ? (
                   <span className="block w-2.5 h-2.5 rounded-full bg-neutral-800 dark:bg-neutral-100 mr-2" />
                 ) : null}
                 <span>{item.label}</span>
-              </button>
+              </Link>
             </li>
           );
         })}

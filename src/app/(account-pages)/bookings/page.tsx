@@ -260,7 +260,7 @@ const AgentBookingsPage = () => {
                   <div className="h-6 w-6 rounded bg-neutral-200 dark:bg-neutral-700" />
                 </div>
               </div>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
                 <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
                 <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
                 <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
@@ -330,7 +330,7 @@ const AgentBookingsPage = () => {
                   </div>
                 </div>
 
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-4 gap-3 text-sm">
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                   <div>
                     <p className="text-neutral-500 dark:text-neutral-400">User name</p>
                     <p className="font-medium">{bookedByUserName}</p>
