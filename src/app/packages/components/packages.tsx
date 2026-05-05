@@ -6,7 +6,6 @@ import SaleOffBadge from '@/components/SaleOffBadge';
 import Badge from '@/shared/Badge';
 import { Package } from '@/data/types';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { MadinaIcon, MakkahIcon } from '@/components/icons/icons';
 import Avatar from '@/shared/Avatar';
@@ -107,18 +106,10 @@ const Packages: FC<PackagesProps> = ({
   const displayAgentName = (agentDisplayName || agent_name || '').trim() || 'Agent';
 
   return (
-    <div
+    <Link
+      href={packageHref}
       className={`lg:px-2 lg:py-1 shadow-sm nc-PropertyCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-3xl overflow-hidden block cursor-pointer ${className}`}
-      role="link"
-      tabIndex={0}
       aria-label={title}
-      onClick={() => router.push(packageHref)}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          router.push(packageHref);
-        }
-      }}
     >
       <div className="h-full w-full flex flex-col sm:flex-row sm:items-center">
         <div className="flex-shrink-0 p-3 w-full sm:w-64">
@@ -256,7 +247,7 @@ const Packages: FC<PackagesProps> = ({
         isLiked={true}
         className="absolute right-5 top-5 sm:right-3 sm:top-3"
       />
-    </div>
+    </Link>
   );
 };
 

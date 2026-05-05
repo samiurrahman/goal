@@ -8,6 +8,7 @@ import { supabase } from '@/utils/supabaseClient';
 import { removeAccessToken } from '@/utils/authToken';
 import { resolvePublicImageUrl } from '@/utils/supabaseStorageHelper';
 import useOutsideAlerter from '@/hooks/useOutsideAlerter';
+import { isProtectedRoute } from '@/constants/protectedRoutes';
 import type { User } from '@supabase/supabase-js';
 interface Props {
   className?: string;
@@ -222,13 +223,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
       setIsAuthReady(true);
       setIsSigningOut(false);
 
-      // Redirect to home if not on allowed pages (/packages, /agentName, or /agentName/slug)
-      const allowedPages = ['/packages'];
-      const pathParts = pathname.split('/').filter(Boolean); // Remove empty parts
-      const isAgentOrSlugPage = pathParts.length === 1 || pathParts.length === 2; // /agentName or /agentName/slug
-      const shouldStayOnCurrentPage = allowedPages.includes(pathname) || isAgentOrSlugPage;
-
-      if (!shouldStayOnCurrentPage) {
+      if (isProtectedRoute(pathname)) {
         router.push('/');
       }
     };

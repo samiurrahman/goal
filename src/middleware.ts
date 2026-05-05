@@ -1,40 +1,32 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { supabase } from '@/utils/supabaseClient';
+import { isProtectedRoute } from '@/constants/protectedRoutes';
 
 export function middleware(request: NextRequest) {
-  // Protect /account and related pages
-  const protectedPaths = [
-    '/account',
-    '/listed-packages',
-    '/my-bookings',
-    '/bookings',
-    '/account-settings',
-    '/account-billing',
-  ];
   const { pathname } = request.nextUrl;
-  const isProtected = protectedPaths.some(
-    (path) => pathname === path || pathname.startsWith(path + '/')
-  );
-  if (isProtected) {
+
+  if (isProtectedRoute(pathname)) {
     const token = request.cookies.get('access_token')?.value;
     if (!token) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
-    // Optionally, validate token with Supabase here using the imported supabase client
   }
+
   return NextResponse.next();
 }
 
 export const config = {
   matcher: [
-    '/account',
-    '/listed-packages',
-    '/my-bookings',
-    '/bookings',
-    '/account-settings',
-    '/account-billing',
+    '/account/:path*',
+    '/profile/:path*',
+    '/listed-packages/:path*',
+    '/my-bookings/:path*',
+    '/bookings/:path*',
+    '/account-settings/:path*',
+    '/account-billing/:path*',
+    '/listing/:path*',
+    '/page-content/:path*',
   ],
 };

@@ -1,3 +1,4 @@
+import NextTopLoader from 'nextjs-toploader';
 import dynamic from 'next/dynamic';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/utils/reactQueryClient';
@@ -131,6 +132,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="bg-white text-base dark:bg-neutral-900 text-neutral-900 dark:text-neutral-200">
+        <NextTopLoader color="#4f46e5" height={3} showSpinner={false} />
         <ClientCommons />
 
         <ReactQueryProvider>
