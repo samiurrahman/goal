@@ -10,7 +10,7 @@ import { useCities } from '@/hooks/useCities';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Input from '@/shared/Input';
 import Select from '@/shared/Select';
-import Textarea from '@/shared/Textarea';
+import RichTextEditor from '@/shared/RichTextEditor';
 import type { Agent } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 
@@ -420,12 +420,14 @@ const AgentProfilePage = () => {
 
             <div className="mt-5">
               <Label>About Us</Label>
-              <Textarea
-                className="mt-1.5 min-h-[160px]"
-                value={form.about_us}
-                onChange={(e) => updateField('about_us', e.target.value)}
-                placeholder="Describe your services, process, and support."
-              />
+              <div className="mt-1.5">
+                <RichTextEditor
+                  value={form.about_us}
+                  onChange={(updated) => updateField('about_us', updated)}
+                  placeholder="Describe your services, process, and support."
+                  minHeightClassName="min-h-[220px]"
+                />
+              </div>
             </div>
 
             <div className="mt-6 grid grid-cols-1 gap-5 border-t border-neutral-200 pt-5 dark:border-neutral-700 md:grid-cols-2">

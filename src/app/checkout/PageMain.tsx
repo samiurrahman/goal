@@ -3,6 +3,7 @@
 import { ChevronDownIcon, ChevronUpIcon, TrashIcon } from '@heroicons/react/24/outline';
 import React, { FC, useEffect, useMemo, useState } from 'react';
 import Input from '@/shared/Input';
+import Select from '@/shared/Select';
 import Label from '@/components/Label';
 import Textarea from '@/shared/Textarea';
 import ButtonPrimary from '@/shared/ButtonPrimary';
@@ -744,17 +745,16 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                         <div className="grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,3fr)_minmax(0,1fr)] gap-4">
                           <div className="space-y-1">
                             <Label>Title</Label>
-                            <select
+                            <Select
                               value={form.title}
                               onChange={(e) =>
                                 handleGuestFormChange(index, 'title', e.target.value)
                               }
-                              className="block w-full rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 py-3 text-sm"
                             >
                               <option value="Mr">Mr</option>
                               <option value="Mrs">Mrs</option>
                               <option value="Ms">Ms</option>
-                            </select>
+                            </Select>
                           </div>
 
                           <div className="space-y-1 min-w-0">

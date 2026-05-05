@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import NcModal from '@/shared/NcModal';
 import ButtonPrimary from '@/shared/ButtonPrimary';
@@ -9,12 +9,65 @@ import Label from '@/components/Label';
 import Input from '@/shared/Input';
 import Textarea from '@/shared/Textarea';
 import Select from '@/shared/Select';
+import RichTextEditor from '@/shared/RichTextEditor';
 import ImageUpload from '@/components/ImageUpload';
 import { supabase } from '@/utils/supabaseClient';
 import { uploadImageToStorage } from '@/utils/supabaseStorageHelper';
 import { useCities } from '@/hooks/useCities';
 
 type WizardStep = 'meta' | 'itinerary' | 'amenities' | 'stay' | 'policies' | 'media';
+
+const WIZARD_STEPS: WizardStep[] = ['meta', 'itinerary', 'amenities', 'stay', 'policies', 'media'];
+
+const WIZARD_STEP_LABELS: Record<WizardStep, string> = {
+  meta: 'Package Info',
+  itinerary: 'Itinerary',
+  amenities: 'Amenities',
+  stay: 'Stay Information',
+  policies: 'Cancellation Policy',
+  media: 'Package Image',
+};
+
+const POLICY_TIME_OPTIONS = Array.from({ length: 24 }, (_, hour) => {
+  const normalizedHour = hour % 12 || 12;
+  const meridiem = hour < 12 ? 'am' : 'pm';
+  return `${normalizedHour}:00${meridiem}`;
+});
+
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
+const linesToListHtml = (lines: string[]) => {
+  const items = lines.map((line) => line.trim()).filter(Boolean);
+  if (!items.length) return '';
+  return `<ul>${items.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>`;
+};
+
+const htmlToPlainText = (value: string) =>
+  value
+    .replace(/<\/(p|div|li|h[1-6])>/gi, '\n')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .trim();
+
+const htmlToPlainLines = (value: string) =>
+  htmlToPlainText(value)
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+const hasHtmlContent = (value: string) => htmlToPlainText(value).length > 0;
 
 interface IternaryItemInput {
   fromDate: string;
@@ -63,72 +116,6 @@ interface SharingRateItem {
   value: string;
   default: boolean;
 }
-
-interface RichTextEditorProps {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-}
-
-const RichTextEditor = ({ value, onChange, placeholder }: RichTextEditorProps) => {
-  const editorRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!editorRef.current) return;
-    if (editorRef.current.innerHTML !== value) {
-      editorRef.current.innerHTML = value || '';
-    }
-  }, [value]);
-
-  const runCommand = (command: string) => {
-    if (!editorRef.current) return;
-    editorRef.current.focus();
-    document.execCommand(command, false);
-    onChange(editorRef.current.innerHTML);
-  };
-
-  const toolbarButtonClass =
-    'rounded-lg border border-neutral-200 px-2.5 py-1.5 text-xs font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800';
-
-  return (
-    <div className="space-y-2">
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={toolbarButtonClass}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => runCommand('bold')}
-        >
-          Bold
-        </button>
-        <button
-          type="button"
-          className={toolbarButtonClass}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => runCommand('italic')}
-        >
-          Italic
-        </button>
-        <button
-          type="button"
-          className={toolbarButtonClass}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => runCommand('insertUnorderedList')}
-        >
-          Bullets
-        </button>
-      </div>
-      <div
-        ref={editorRef}
-        className="min-h-[220px] w-full rounded-2xl border border-neutral-200 bg-white p-3 text-sm text-neutral-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
-        contentEditable
-        suppressContentEditableWarning
-        onInput={() => onChange(editorRef.current?.innerHTML || '')}
-        data-placeholder={placeholder || ''}
-      />
-    </div>
-  );
-};
 
 const slugify = (value: string): string =>
   value
@@ -206,21 +193,12 @@ const AddPackageWizardModal = ({
   const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(undefined);
   const { data: citiesData, isLoading: citiesLoading } = useCities();
 
-  const steps: WizardStep[] = ['meta', 'itinerary', 'amenities', 'stay', 'policies', 'media'];
-  const currentStepIndex = steps.indexOf(step);
+  const currentStepIndex = WIZARD_STEPS.indexOf(step);
   const isFirstStep = currentStepIndex === 0;
-  const isLastStep = currentStepIndex === steps.length - 1;
+  const isLastStep = currentStepIndex === WIZARD_STEPS.length - 1;
 
   const stepTitle = useMemo(() => {
-    const labels: Record<WizardStep, string> = {
-      meta: 'Package Meta',
-      itinerary: 'Iternary',
-      amenities: 'Amenities',
-      stay: 'Stay Information',
-      policies: 'Things To Know',
-      media: 'Media & Publish',
-    };
-    return labels[step];
+    return WIZARD_STEP_LABELS[step];
   }, [step]);
 
   const cityOptions = useMemo(() => {
@@ -421,11 +399,13 @@ const AddPackageWizardModal = ({
     );
     setPolicyNotesText(
       Array.isArray(policiesRow.notes)
-        ? (policiesRow.notes as unknown[]).map((line: unknown) => String(line || '')).join('\n')
+        ? linesToListHtml(
+            (policiesRow.notes as unknown[]).map((line: unknown) => String(line || ''))
+          )
         : Array.isArray(policiesRow.special_notes)
-          ? (policiesRow.special_notes as unknown[])
-              .map((line: unknown) => String(line || ''))
-              .join('\n')
+          ? linesToListHtml(
+              (policiesRow.special_notes as unknown[]).map((line: unknown) => String(line || ''))
+            )
           : ''
     );
     setCurrentImageUrl(packageRow.thumbnail_url || undefined);
@@ -456,12 +436,12 @@ const AddPackageWizardModal = ({
 
   const goNext = () => {
     if (isLastStep) return;
-    setStep(steps[currentStepIndex + 1]);
+    setStep(WIZARD_STEPS[currentStepIndex + 1]);
   };
 
   const goBack = () => {
     if (isFirstStep) return;
-    setStep(steps[currentStepIndex - 1]);
+    setStep(WIZARD_STEPS[currentStepIndex - 1]);
   };
 
   const parseLines = (value: string): string[] =>
@@ -469,6 +449,63 @@ const AddPackageWizardModal = ({
       .split('\n')
       .map((line) => line.trim())
       .filter(Boolean);
+
+  const completedSteps = useMemo<Record<WizardStep, boolean>>(
+    () => ({
+      meta:
+        [
+          meta.title,
+          meta.short_description,
+          meta.price_per_person,
+          meta.total_duration_days,
+          meta.makkah_days,
+          meta.madinah_days,
+          meta.departure_city,
+          meta.arrival_city,
+          meta.departure_date,
+          meta.arrival_date,
+          meta.location,
+          meta.package_location,
+          meta.makkah_hotel_name,
+          meta.makkah_hotel_distance_m,
+          meta.madinah_hotel_name,
+          meta.madinah_hotel_distance_m,
+        ].some((value) => String(value || '').trim()) ||
+        sharingRates.some((rate) => String(rate.value || '').trim()),
+      itinerary: iternaryItems.some((item) =>
+        [
+          item.fromDate,
+          item.fromLocation,
+          item.toDate,
+          item.toLocation,
+          item.tripTime,
+          item.flightInfo,
+          item.nextLegLabel,
+        ].some((value) => String(value || '').trim())
+      ),
+      amenities: parseLines(amenitiesText).length > 0,
+      stay: hasHtmlContent(stayInfoContentHtml),
+      policies:
+        Boolean(policyCancellation.trim()) ||
+        Boolean(policyCheckIn.trim()) ||
+        Boolean(policyCheckOut.trim()) ||
+        hasHtmlContent(policyNotesText),
+      media: Boolean(pendingImageFile || currentImageUrl),
+    }),
+    [
+      amenitiesText,
+      currentImageUrl,
+      iternaryItems,
+      meta,
+      pendingImageFile,
+      policyCancellation,
+      policyCheckIn,
+      policyCheckOut,
+      policyNotesText,
+      sharingRates,
+      stayInfoContentHtml,
+    ]
+  );
 
   const handleMetaChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -629,7 +666,7 @@ const AddPackageWizardModal = ({
         cancellation: policyCancellation.trim(),
         checkIn: policyCheckIn.trim(),
         checkOut: policyCheckOut.trim(),
-        notes: parseLines(policyNotesText),
+        notes: htmlToPlainLines(policyNotesText),
       },
     };
 
@@ -704,10 +741,46 @@ const AddPackageWizardModal = ({
           ) : (
             <>
               <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                Step {currentStepIndex + 1} of {steps.length}
+                Step {currentStepIndex + 1} of {WIZARD_STEPS.length}
               </div>
 
-              <div className="max-h-[65vh] overflow-y-auto pr-1 space-y-5">
+              <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+                <div className="flex min-w-max gap-2 sm:grid sm:min-w-0 sm:grid-cols-3 lg:grid-cols-6">
+                  {WIZARD_STEPS.map((wizardStep, index) => {
+                    const isActive = wizardStep === step;
+                    const isComplete = completedSteps[wizardStep];
+
+                    return (
+                      <button
+                        key={wizardStep}
+                        type="button"
+                        onClick={() => setStep(wizardStep)}
+                        className={`flex min-h-[48px] w-40 items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-medium transition sm:w-auto ${
+                          isActive
+                            ? 'border-primary-6000 bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-900/20 dark:text-primary-200'
+                            : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800'
+                        }`}
+                        aria-current={isActive ? 'step' : undefined}
+                      >
+                        <span
+                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] ${
+                            isActive
+                              ? 'bg-primary-6000 text-white'
+                              : isComplete
+                                ? 'bg-green-600 text-white'
+                                : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+                          }`}
+                        >
+                          {isComplete ? <i className="las la-check text-sm" /> : index + 1}
+                        </span>
+                        <span className="leading-snug">{WIZARD_STEP_LABELS[wizardStep]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="max-h-[58vh] overflow-y-auto pr-1 space-y-5 sm:max-h-[62vh]">
                 {step === 'meta' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2">
@@ -940,7 +1013,7 @@ const AddPackageWizardModal = ({
                         className="border border-neutral-200 dark:border-neutral-700 rounded-2xl p-4 space-y-3"
                       >
                         <div className="flex items-center justify-between">
-                          <h4 className="font-medium">Iternary Segment {idx + 1}</h4>
+                          <h4 className="font-medium">Itinerary Segment {idx + 1}</h4>
                           {iternaryItems.length > 1 && (
                             <button
                               type="button"
@@ -1046,7 +1119,7 @@ const AddPackageWizardModal = ({
                       type="button"
                       onClick={() => setIternaryItems((prev) => [...prev, makeEmptyIternaryItem()])}
                     >
-                      Add Iternary Segment
+                      Add Itinerary Segment
                     </ButtonSecondary>
                   </div>
                 )}
@@ -1096,31 +1169,54 @@ const AddPackageWizardModal = ({
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       <div>
                         <Label>Check-in Time</Label>
-                        <Input
+                        <Select
                           className="mt-1.5"
                           value={policyCheckIn}
                           onChange={(e) => setPolicyCheckIn(e.target.value)}
-                          placeholder="2:00 PM"
-                        />
+                        >
+                          <option value="">Select check-in time</option>
+                          {policyCheckIn && !POLICY_TIME_OPTIONS.includes(policyCheckIn) ? (
+                            <option value={policyCheckIn}>{policyCheckIn}</option>
+                          ) : null}
+                          {POLICY_TIME_OPTIONS.map((time) => (
+                            <option key={time} value={time}>
+                              {time}
+                            </option>
+                          ))}
+                        </Select>
                       </div>
                       <div>
                         <Label>Check-out Time</Label>
-                        <Input
+                        <Select
                           className="mt-1.5"
                           value={policyCheckOut}
                           onChange={(e) => setPolicyCheckOut(e.target.value)}
-                          placeholder="11:00 AM"
-                        />
+                        >
+                          <option value="">Select check-out time</option>
+                          {policyCheckOut && !POLICY_TIME_OPTIONS.includes(policyCheckOut) ? (
+                            <option value={policyCheckOut}>{policyCheckOut}</option>
+                          ) : null}
+                          {POLICY_TIME_OPTIONS.map((time) => (
+                            <option key={time} value={time}>
+                              {time}
+                            </option>
+                          ))}
+                        </Select>
                       </div>
                     </div>
                     <div>
                       <Label>Special Notes (one per line)</Label>
-                      <Textarea
-                        className="mt-1.5"
-                        rows={8}
-                        value={policyNotesText}
-                        onChange={(e) => setPolicyNotesText(e.target.value)}
-                      />
+                      <div className="mt-1.5">
+                        <RichTextEditor
+                          value={policyNotesText}
+                          onChange={setPolicyNotesText}
+                          placeholder="Add special notes..."
+                          minHeightClassName="min-h-[180px]"
+                        />
+                      </div>
+                      <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                        Each line or list item will be saved as a separate note.
+                      </p>
                     </div>
                   </div>
                 )}
@@ -1141,12 +1237,22 @@ const AddPackageWizardModal = ({
                 )}
               </div>
 
-              <div className="flex justify-between pt-2">
-                <ButtonSecondary type="button" onClick={goBack} disabled={isFirstStep || isSaving}>
+              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
+                <ButtonSecondary
+                  type="button"
+                  className="w-full sm:w-auto"
+                  onClick={goBack}
+                  disabled={isFirstStep || isSaving}
+                >
                   Back
                 </ButtonSecondary>
                 {isLastStep ? (
-                  <ButtonPrimary type="button" onClick={handlePublish} disabled={isSaving}>
+                  <ButtonPrimary
+                    type="button"
+                    className="w-full sm:w-auto"
+                    onClick={handlePublish}
+                    disabled={isSaving}
+                  >
                     {isSaving
                       ? 'Saving...'
                       : editPackageId
@@ -1156,7 +1262,12 @@ const AddPackageWizardModal = ({
                         : 'Publish Package'}
                   </ButtonPrimary>
                 ) : (
-                  <ButtonPrimary type="button" onClick={goNext} disabled={isSaving}>
+                  <ButtonPrimary
+                    type="button"
+                    className="w-full sm:w-auto"
+                    onClick={goNext}
+                    disabled={isSaving}
+                  >
                     Continue
                   </ButtonPrimary>
                 )}
