@@ -12,7 +12,6 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import Avatar from '@/shared/Avatar';
 import SwitchDarkMode2 from '@/shared/SwitchDarkMode2';
-import MenuBar from '@/shared/MenuBar';
 import { supabase } from '@/utils/supabaseClient';
 import { removeAccessToken } from '@/utils/authToken';
 import { isProtectedRoute } from '@/constants/protectedRoutes';
@@ -86,8 +85,12 @@ const FooterNav = () => {
   };
 
   const showHideFooter = () => {
-    let currentScrollPos = window.pageYOffset;
     if (!containerRef.current) return;
+    if (window.visualViewport && window.visualViewport.scale !== 1) {
+      containerRef.current.classList.remove('FooterNav--hide');
+      return;
+    }
+    let currentScrollPos = window.pageYOffset;
     if (currentScrollPos > WIN_PREV_POSITION) {
       if (isInViewport(containerRef.current) && currentScrollPos - WIN_PREV_POSITION < 80) return;
       containerRef.current.classList.add('FooterNav--hide');
@@ -563,19 +566,10 @@ const FooterNav = () => {
               </button>
             </>
           ) : (
-            <>
-              {/* Log in */}
-              <Link href="/login" className={tabClass(pathname === '/login')}>
-                <UserCircleIcon className={iconClass(pathname === '/login')} />
-                <span className={labelClass(pathname === '/login')}>Log in</span>
-              </Link>
-
-              {/* Menu (site nav) */}
-              <div className={tabClass(false)}>
-                <MenuBar iconClassName="w-6 h-6" className="" />
-                <span className="text-[11px] leading-none mt-1">Menu</span>
-              </div>
-            </>
+            <Link href="/login" className={tabClass(pathname === '/login')}>
+              <UserCircleIcon className={iconClass(pathname === '/login')} />
+              <span className={labelClass(pathname === '/login')}>Log in</span>
+            </Link>
           )}
         </div>
       </div>
