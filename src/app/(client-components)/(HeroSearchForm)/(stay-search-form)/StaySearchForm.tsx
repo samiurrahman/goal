@@ -1,5 +1,5 @@
 'use client';
-import React, { Fragment, useState, useRef, useEffect } from 'react';
+import React, { Fragment, useState, useRef } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import LocationInput from '../LocationInput';
@@ -7,67 +7,25 @@ import ClearDataButton from '../ClearDataButton';
 import ButtonSubmit from '../ButtonSubmit';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
+import { usePackageSearch } from '@/hooks/usePackageSearch';
 
 const StaySearchForm = () => {
   const [dropOffLocationType, setDropOffLocationType] = useState<'Umrah' | 'Hajj'>('Umrah');
-  const [selectedLocation, setSelectedLocation] = useState<any>(null);
-  const [monthStates, setMonthStates] = useState<string[]>([]);
-  const [packagesUrl, setPackagesUrl] = useState<string>('/packages');
+  const {
+    monthStates,
+    handleChangeMonth,
+    packagesUrl,
+    handleSelectLocation,
+    monthLabel,
+    clearMonths,
+  } = usePackageSearch();
   const monthRef = useRef<HTMLButtonElement>(null);
 
-  const buildPackagesUrl = (locationObj: any, selectedMonths: string[]) => {
-    // Try to extract location string from common shapes
-    let location = '';
-    if (locationObj) {
-      if (typeof locationObj === 'string') {
-        location = locationObj;
-      } else if (locationObj.label) {
-        location = locationObj.label;
-      } else if (locationObj.name) {
-        location = locationObj.name;
-      }
-    }
-
-    const params = new URLSearchParams();
-    if (location) params.append('location', location);
-    const filteredMonths = selectedMonths.filter((month) => month !== 'Any');
-    if (filteredMonths.length > 0) {
-      params.append('month', filteredMonths.join(','));
-    }
-
-    return params.toString() ? `/packages?${params.toString()}` : '/packages';
-  };
-
   const handleLocationSelect = (value: any) => {
-    setSelectedLocation(value);
-    // Focus month selector when location is selected.
+    handleSelectLocation(value);
     if (monthRef.current) {
       monthRef.current.focus();
     }
-  };
-
-  const handleChangeMonth = (checked: boolean, name: string) => {
-    setMonthStates((prev) => {
-      if (checked) {
-        if (name === 'Any') {
-          return ['Any'];
-        }
-
-        const withoutAny = prev.filter((item) => item !== 'Any');
-        return withoutAny.includes(name) ? withoutAny : [...withoutAny, name];
-      }
-
-      return prev.filter((item) => item !== name);
-    });
-  };
-
-  useEffect(() => {
-    setPackagesUrl(buildPackagesUrl(selectedLocation, monthStates));
-  }, [selectedLocation, monthStates]);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // No need to update packagesUrl here, it's already updated in the handlers
   };
 
   const renderMonthDropdown = () => {
@@ -89,7 +47,7 @@ const StaySearchForm = () => {
                     Month
                   </div>
                   <div className="dark:text-neutral-100 line-clamp-1 block mt-0.5 text-sm text-neutral-400 font-light">
-                    {monthStates.length > 0 ? monthStates.join(', ') : 'Select month'}
+                    {monthLabel || 'Select month'}
                   </div>
                 </div>
               </div>
@@ -100,11 +58,7 @@ const StaySearchForm = () => {
                     e.stopPropagation();
                   }}
                 >
-                  <ClearDataButton
-                    onClick={() => {
-                      setMonthStates([]);
-                    }}
-                  />
+                  <ClearDataButton onClick={clearMonths} />
                 </span>
               ) : null}
             </Popover.Button>
@@ -175,7 +129,7 @@ const StaySearchForm = () => {
     return (
       <form
         className="w-full relative rounded-[40px] xl:rounded-[49px] rounded-t-2xl xl:rounded-t-3xl shadow-xl dark:shadow-2xl bg-white dark:bg-neutral-800 "
-        onSubmit={handleSubmit}
+        onSubmit={(e) => e.preventDefault()}
       >
         {renderRadioBtn()}
         <div className={`relative flex flex-row items-center self-center`}>

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useCallback, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dialog, Tab, Transition } from '@headlessui/react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
@@ -12,6 +12,11 @@ import StaySearchForm from './(stay-search-form)/StaySearchForm';
 const HeroSearchForm2Mobile = () => {
   const [showModal, setShowModal] = useState(false);
   const router = useRouter();
+  const packagesUrlRef = useRef('/packages');
+
+  const handleUrlChange = useCallback((url: string) => {
+    packagesUrlRef.current = url;
+  }, []);
 
   // FOR RESET ALL DATA WHEN CLICK CLEAR BUTTON
   const [showDialog, setShowDialog] = useState(false);
@@ -107,12 +112,12 @@ const HeroSearchForm2Mobile = () => {
                         <Tab.Panels className="flex-1 min-h-0 overflow-y-auto hiddenScrollbar py-4">
                           <Tab.Panel>
                             <div className="transition-opacity animate-[myblur_0.4s_ease-in-out]">
-                              <StaySearchForm />
+                              <StaySearchForm onUrlChange={handleUrlChange} />
                             </div>
                           </Tab.Panel>
                           <Tab.Panel>
                             <div className="transition-opacity animate-[myblur_0.4s_ease-in-out]">
-                              <StaySearchForm />
+                              <StaySearchForm onUrlChange={handleUrlChange} />
                             </div>
                           </Tab.Panel>
                         </Tab.Panels>
@@ -131,7 +136,7 @@ const HeroSearchForm2Mobile = () => {
                         <ButtonSubmit
                           onClick={() => {
                             closeModal();
-                            router.push('/packages');
+                            router.push(packagesUrlRef.current);
                           }}
                         />
                       </div>

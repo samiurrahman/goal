@@ -1,29 +1,31 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
 import LocationInput from '../LocationInput';
+import { usePackageSearch } from '@/hooks/usePackageSearch';
 
-const StaySearchForm = () => {
-  const [fieldNameShow, setFieldNameShow] = useState<'location' | 'month'>('location');
-  const [locationInputTo, setLocationInputTo] = useState('');
-  const [monthStates, setMonthStates] = useState<string[]>([]);
+interface StaySearchFormProps {
+  onUrlChange?: (url: string) => void;
+}
 
-  const handleChangeMonth = (checked: boolean, name: string) => {
-    setMonthStates((prev) => {
-      if (checked) {
-        if (name === 'Any') {
-          return ['Any'];
-        }
+const StaySearchForm: React.FC<StaySearchFormProps> = ({ onUrlChange }) => {
+  const {
+    locationValue,
+    setLocationValue,
+    handleSelectLocation,
+    monthStates,
+    handleChangeMonth,
+    monthLabel,
+    packagesUrl,
+  } = usePackageSearch();
 
-        const withoutAny = prev.filter((item) => item !== 'Any');
-        return withoutAny.includes(name) ? withoutAny : [...withoutAny, name];
-      }
+  React.useEffect(() => {
+    onUrlChange?.(packagesUrl);
+  }, [packagesUrl, onUrlChange]);
 
-      return prev.filter((item) => item !== name);
-    });
-  };
+  const [fieldNameShow, setFieldNameShow] = React.useState<'location' | 'month'>('location');
 
   const renderInputLocation = () => {
     const isActive = fieldNameShow === 'location';
@@ -41,13 +43,17 @@ const StaySearchForm = () => {
             onClick={() => setFieldNameShow('location')}
           >
             <span className="text-neutral-400">Where</span>
-            <span>{locationInputTo || 'Location'}</span>
+            <span>{locationValue || 'Location'}</span>
           </button>
         ) : (
           <LocationInput
-            defaultValue={locationInputTo}
+            defaultValue={locationValue}
             onChange={(value) => {
-              setLocationInputTo(value);
+              setLocationValue(value);
+              setFieldNameShow('month');
+            }}
+            onLocationSelect={(city) => {
+              handleSelectLocation(city);
               setFieldNameShow('month');
             }}
           />
@@ -72,7 +78,7 @@ const StaySearchForm = () => {
             onClick={() => setFieldNameShow('month')}
           >
             <span className="text-neutral-400">Month</span>
-            <span>{monthStates.length > 0 ? monthStates.join(', ') : 'Any'}</span>
+            <span>{monthLabel || 'Any'}</span>
           </button>
         ) : (
           <div className="p-5">

@@ -18,7 +18,7 @@ const Header3 = () => {
         className={`nc-Header sticky top-0 w-full left-0 right-0 z-40 nc-header-bg shadow-sm dark:border-b dark:border-neutral-700`}
       >
         <div className={`nc-MainNav1 relative z-10`}>
-          <div className="px-4 lg:container h-16 sm:h-20 relative flex justify-between items-center">
+          <div className="px-4 lg:container py-4 sm:py-0 sm:h-20 relative flex justify-between items-center">
             <div className="hidden md:flex justify-start flex-1 space-x-4 sm:space-x-10">
               <Logo className="w-24 self-center" />
             </div>

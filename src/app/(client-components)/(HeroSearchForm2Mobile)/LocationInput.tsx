@@ -7,6 +7,7 @@ import { useCities } from '@/hooks/useCities';
 interface Props {
   onClick?: () => void;
   onChange?: (value: string) => void;
+  onLocationSelect?: (city: any) => void;
   className?: string;
   defaultValue?: string;
   headingText?: string;
@@ -14,6 +15,7 @@ interface Props {
 
 const LocationInput: FC<Props> = ({
   onChange = () => {},
+  onLocationSelect,
   className = '',
   defaultValue = 'United States',
   headingText = 'Where to?',
@@ -27,11 +29,12 @@ const LocationInput: FC<Props> = ({
     setValue(defaultValue);
   }, [defaultValue]);
 
-  const handleSelectLocation = (item: string) => {
-    // DO NOT REMOVE SETTIMEOUT FUNC
+  const handleSelectLocation = (item: any) => {
+    const label = item.name + (item.state ? ', ' + item.state : '');
     setTimeout(() => {
-      setValue(item);
-      onChange && onChange(item);
+      setValue(label);
+      onChange && onChange(label);
+      onLocationSelect && onLocationSelect(item);
     }, 0);
   };
 
@@ -52,9 +55,7 @@ const LocationInput: FC<Props> = ({
           {filteredCities?.map((item: any) => (
             <div
               className="py-2 mb-1 flex items-center space-x-3 text-sm"
-              onClick={() =>
-                handleSelectLocation(item.name + (item.state ? ', ' + item.state : ''))
-              }
+              onClick={() => handleSelectLocation(item)}
               key={item.id}
             >
               <MapPinIcon className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
