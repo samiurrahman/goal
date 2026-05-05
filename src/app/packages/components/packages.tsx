@@ -31,7 +31,7 @@ const Packages: FC<PackagesProps> = ({
   agentRatingPoint = 0,
   agentReviewCount = 0,
 }) => {
-  const router = useRouter();
+
   const profileImage =
     agentProfileImage || (data as Package & { profile_image?: string | null }).profile_image;
   const {
