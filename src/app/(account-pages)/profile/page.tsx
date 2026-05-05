@@ -342,7 +342,7 @@ const AgentProfilePage = () => {
       {isLoading ? (
         <p className="text-sm text-neutral-600 dark:text-neutral-300">Loading profile...</p>
       ) : !agent ? (
-        <div className="listingSection__wrap overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-xl dark:border-neutral-700 dark:bg-neutral-900 md:p-6">
+        <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 md:p-6">
           <h1 className="text-xl font-semibold text-neutral-900 dark:text-white">Agent Profile</h1>
           <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
             No agent profile is connected to this account.
@@ -350,26 +350,18 @@ const AgentProfilePage = () => {
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold text-neutral-900 dark:text-white">
-                Agent Profile
-              </h1>
-              <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
-                Update the details shown on your public agent page.
-              </p>
-            </div>
-            {agent.slug ? (
+          {agent.slug ? (
+            <div className="flex justify-end">
               <Link
                 href={`/${agent.slug}`}
                 className="inline-flex w-fit items-center rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800"
               >
                 View Public Page
               </Link>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
 
-          <div className="listingSection__wrap overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-xl dark:border-neutral-700 dark:bg-neutral-900 md:p-6">
+          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 md:p-6">
             <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
               <div>
                 <Label>Legal Name</Label>
@@ -567,7 +559,7 @@ const AgentProfilePage = () => {
             </ButtonPrimary>
           </div>
 
-          <div className="listingSection__wrap overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-xl dark:border-neutral-700 dark:bg-neutral-900 md:p-6">
+          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 md:p-6">
             <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
               Info Section
             </h2>

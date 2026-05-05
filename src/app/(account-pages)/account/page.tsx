@@ -680,7 +680,7 @@ const AccountPage = () => {
       ) : (
         <div className="space-y-4">
           <>
-            <div className="listingSection__wrap overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
+            <div className="overflow-hidden rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <Label>First Name</Label>
@@ -786,7 +786,7 @@ const AccountPage = () => {
               </div>
             </div>
 
-            <div className="listingSection__wrap space-y-4 overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
+            <div className="space-y-4 overflow-hidden rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-xl font-semibold">Saved Travelers / Family Details</h3>
                 <button

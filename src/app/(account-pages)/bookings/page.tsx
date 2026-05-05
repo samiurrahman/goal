@@ -248,7 +248,7 @@ const AgentBookingsPage = () => {
           {Array.from({ length: LOADER_CARD_COUNT }).map((_, index) => (
             <div
               key={`agent-booking-skeleton-${index}`}
-              className="listingSection__wrap rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5 animate-pulse"
+              className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5 animate-pulse"
             >
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <div className="space-y-2">
@@ -270,11 +270,11 @@ const AgentBookingsPage = () => {
           ))}
         </div>
       ) : bookings.length === 0 ? (
-        <div className="listingSection__wrap rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-5">
+        <div className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-5">
           <p className="text-sm text-neutral-500 dark:text-neutral-400">No bookings found.</p>
         </div>
       ) : visibleBookings.length === 0 ? (
-        <div className="listingSection__wrap rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-5">
+        <div className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-5">
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             No {activeTab} bookings found.
           </p>
@@ -297,7 +297,7 @@ const AgentBookingsPage = () => {
             return (
               <div
                 key={booking.id}
-                className="listingSection__wrap rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5"
+                className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5"
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
