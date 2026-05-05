@@ -463,7 +463,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
 
           {/* BOTTOM SECTION: LISTINGS FULL-WIDTH */}
           <div className="lg:col-span-5 gap-12 flex flex-col">
-            <SectionOurFeatures agentName={agentDetails?.known_as} />
+            <SectionOurFeatures agentName={agentDetails?.known_as} agent={agentDetails} />
             <SectionGridFeaturePlaces
               packages={agentPackages ?? []}
               heading="Our Packages"

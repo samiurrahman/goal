@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import NcModal from '@/shared/NcModal';
 import ButtonPrimary from '@/shared/ButtonPrimary';
@@ -745,36 +745,55 @@ const AddPackageWizardModal = ({
               </div>
 
               <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
-                <div className="flex min-w-max gap-2 sm:grid sm:min-w-0 sm:grid-cols-3 lg:grid-cols-6">
+                <div className="flex min-w-max items-start">
                   {WIZARD_STEPS.map((wizardStep, index) => {
                     const isActive = wizardStep === step;
                     const isComplete = completedSteps[wizardStep];
+                    const prevComplete = index > 0 && completedSteps[WIZARD_STEPS[index - 1]];
 
                     return (
-                      <button
-                        key={wizardStep}
-                        type="button"
-                        onClick={() => setStep(wizardStep)}
-                        className={`flex min-h-[48px] w-40 items-center gap-2 rounded-xl border px-3 py-2 text-left text-xs font-medium transition sm:w-auto ${
-                          isActive
-                            ? 'border-primary-6000 bg-primary-50 text-primary-700 dark:border-primary-500 dark:bg-primary-900/20 dark:text-primary-200'
-                            : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800'
-                        }`}
-                        aria-current={isActive ? 'step' : undefined}
-                      >
-                        <span
-                          className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[11px] ${
-                            isActive
-                              ? 'bg-primary-6000 text-white'
-                              : isComplete
-                                ? 'bg-green-600 text-white'
-                                : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
-                          }`}
+                      <React.Fragment key={wizardStep}>
+                        {index > 0 && (
+                          <div
+                            className={`flex-1 border-t-2 border-dashed mt-4 min-w-[16px] ${
+                              prevComplete
+                                ? 'border-green-400 dark:border-green-600'
+                                : 'border-neutral-300 dark:border-neutral-600'
+                            }`}
+                          />
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setStep(wizardStep)}
+                          className="flex flex-col items-center gap-1.5 px-1"
+                          aria-current={isActive ? 'step' : undefined}
                         >
-                          {isComplete ? <i className="las la-check text-sm" /> : index + 1}
-                        </span>
-                        <span className="leading-snug">{WIZARD_STEP_LABELS[wizardStep]}</span>
-                      </button>
+                          <span
+                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold transition ${
+                              isActive
+                                ? 'bg-primary-6000 text-white ring-2 ring-primary-300 dark:ring-primary-700'
+                                : isComplete
+                                  ? 'bg-green-600 text-white'
+                                  : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+                            }`}
+                          >
+                            {isComplete ? (
+                              <i className="las la-check text-sm" />
+                            ) : (
+                              index + 1
+                            )}
+                          </span>
+                          <span
+                            className={`w-20 text-center text-[11px] leading-snug font-medium ${
+                              isActive
+                                ? 'text-primary-700 dark:text-primary-300'
+                                : 'text-neutral-500 dark:text-neutral-400'
+                            }`}
+                          >
+                            {WIZARD_STEP_LABELS[wizardStep]}
+                          </span>
+                        </button>
+                      </React.Fragment>
                     );
                   })}
                 </div>

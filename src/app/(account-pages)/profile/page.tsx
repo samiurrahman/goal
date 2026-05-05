@@ -11,7 +11,9 @@ import ButtonPrimary from '@/shared/ButtonPrimary';
 import Input from '@/shared/Input';
 import Select from '@/shared/Select';
 import RichTextEditor from '@/shared/RichTextEditor';
-import type { Agent } from '@/data/types';
+import Checkbox from '@/shared/Checkbox';
+import Textarea from '@/shared/Textarea';
+import type { Agent, AgentInfoFeature, TwMainColor } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 
 interface CityRecord {
@@ -64,6 +66,20 @@ const AgentProfilePage = () => {
     experience: '',
     about_us: '',
   });
+
+  const [infoSection, setInfoSection] = useState<{
+    heading: string;
+    features: AgentInfoFeature[];
+    use_default_image: boolean;
+    image_url: string | null;
+  }>({
+    heading: 'What We Provide',
+    features: [{ badge_name: '', badge_color: 'blue', title: '', description: '' }],
+    use_default_image: true,
+    image_url: null,
+  });
+  const [isSavingInfoSection, setIsSavingInfoSection] = useState(false);
+  const [pendingInfoImage, setPendingInfoImage] = useState<File | null>(null);
 
   const { data: citiesData, isLoading: citiesLoading } = useCities();
   const cities = useMemo<CityRecord[]>(() => {
@@ -130,6 +146,22 @@ const AgentProfilePage = () => {
         experience: resolvedExperience == null ? '' : String(resolvedExperience),
         about_us: agentProfile?.about_us || '',
       });
+
+      if (isMounted && agentProfile) {
+        let features = agentProfile.info_features;
+        if (typeof features === 'string') {
+          try { features = JSON.parse(features); } catch { features = []; }
+        }
+        setInfoSection({
+          heading: agentProfile.info_heading || 'What We Provide',
+          features: Array.isArray(features) && features.length > 0
+            ? features
+            : [{ badge_name: '', badge_color: 'blue', title: '', description: '' }],
+          use_default_image: agentProfile.info_use_default_image ?? true,
+          image_url: agentProfile.info_image_url || null,
+        });
+      }
+
       setIsLoading(false);
     };
 
@@ -222,6 +254,85 @@ const AgentProfilePage = () => {
     setAgent((data as Agent | null) ?? agent);
     toast.success('Profile updated successfully.');
     router.refresh();
+  };
+
+  const addFeature = () => {
+    if (infoSection.features.length >= 5) return;
+    setInfoSection((prev) => ({
+      ...prev,
+      features: [
+        ...prev.features,
+        { badge_name: '', badge_color: 'blue' as TwMainColor, title: '', description: '' },
+      ],
+    }));
+  };
+
+  const removeFeature = (index: number) => {
+    if (infoSection.features.length <= 1) return;
+    setInfoSection((prev) => ({
+      ...prev,
+      features: prev.features.filter((_, i) => i !== index),
+    }));
+  };
+
+  const updateFeature = (index: number, field: keyof AgentInfoFeature, value: string) => {
+    setInfoSection((prev) => ({
+      ...prev,
+      features: prev.features.map((f, i) => (i === index ? { ...f, [field]: value } : f)),
+    }));
+  };
+
+  const handleSaveInfoSection = async () => {
+    if (!agent?.id || isSavingInfoSection) return;
+    setIsSavingInfoSection(true);
+
+    let imageUrl = infoSection.image_url;
+
+    if (!infoSection.use_default_image && pendingInfoImage) {
+      const ext = pendingInfoImage.name.split('.').pop() || 'jpg';
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('agent-images')
+        .upload(`agents/${agent.id}/info_section.${ext}`, pendingInfoImage, {
+          cacheControl: '3600',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        toast.error(`Image upload failed: ${uploadError.message}`);
+        setIsSavingInfoSection(false);
+        return;
+      }
+
+      const { data: urlData } = supabase.storage
+        .from('agent-images')
+        .getPublicUrl(uploadData.path);
+      imageUrl = urlData.publicUrl;
+      setPendingInfoImage(null);
+    }
+
+    if (infoSection.use_default_image) {
+      imageUrl = null;
+    }
+
+    const { error } = await supabase
+      .from('agents')
+      .update({
+        info_heading: infoSection.heading.trim() || 'What We Provide',
+        info_features: infoSection.features,
+        info_use_default_image: infoSection.use_default_image,
+        info_image_url: imageUrl,
+      })
+      .eq('id', agent.id);
+
+    setIsSavingInfoSection(false);
+
+    if (error) {
+      toast.error(`Failed to save info section: ${error.message}`);
+      return;
+    }
+
+    setInfoSection((prev) => ({ ...prev, image_url: imageUrl }));
+    toast.success('Info section updated successfully.');
   };
 
   return (
@@ -454,6 +565,158 @@ const AgentProfilePage = () => {
             <ButtonPrimary disabled={!canSave} onClick={handleSave}>
               {isSaving ? 'Saving...' : 'Update info'}
             </ButtonPrimary>
+          </div>
+
+          <div className="listingSection__wrap overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-xl dark:border-neutral-700 dark:bg-neutral-900 md:p-6">
+            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+              Info Section
+            </h2>
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+              Customize the &ldquo;What We Provide&rdquo; section on your public profile page.
+            </p>
+
+            <div className="mt-4 space-y-5">
+              <div>
+                <Label>Section Heading</Label>
+                <Input
+                  className="mt-1.5"
+                  value={infoSection.heading}
+                  onChange={(e) =>
+                    setInfoSection((prev) => ({ ...prev, heading: e.target.value }))
+                  }
+                  placeholder="What We Provide"
+                />
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Features ({infoSection.features.length}/5)</Label>
+                  {infoSection.features.length < 5 && (
+                    <button
+                      type="button"
+                      onClick={addFeature}
+                      className="text-sm text-primary-6000 hover:text-primary-700 font-medium"
+                    >
+                      + Add Feature
+                    </button>
+                  )}
+                </div>
+
+                {infoSection.features.map((feature, index) => (
+                  <div
+                    key={index}
+                    className="rounded-xl border border-neutral-200 dark:border-neutral-700 p-4 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                        Feature {index + 1}
+                      </span>
+                      {infoSection.features.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => removeFeature(index)}
+                          className="text-xs text-red-500 hover:text-red-700"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      <div>
+                        <Label>Badge Name</Label>
+                        <Input
+                          className="mt-1"
+                          value={feature.badge_name}
+                          onChange={(e) =>
+                            updateFeature(index, 'badge_name', e.target.value)
+                          }
+                          placeholder="e.g. Best Service"
+                        />
+                      </div>
+                      <div>
+                        <Label>Badge Color</Label>
+                        <Select
+                          className="mt-1"
+                          value={feature.badge_color}
+                          onChange={(e) =>
+                            updateFeature(index, 'badge_color', e.target.value)
+                          }
+                        >
+                          {(
+                            [
+                              'blue',
+                              'green',
+                              'red',
+                              'yellow',
+                              'pink',
+                              'purple',
+                              'indigo',
+                              'gray',
+                            ] as const
+                          ).map((c) => (
+                            <option key={c} value={c}>
+                              {c.charAt(0).toUpperCase() + c.slice(1)}
+                            </option>
+                          ))}
+                        </Select>
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>Title</Label>
+                        <Input
+                          className="mt-1"
+                          value={feature.title}
+                          onChange={(e) =>
+                            updateFeature(index, 'title', e.target.value)
+                          }
+                          placeholder="Feature title"
+                        />
+                      </div>
+                      <div className="md:col-span-2">
+                        <Label>Description</Label>
+                        <Textarea
+                          className="mt-1"
+                          value={feature.description}
+                          onChange={(e) =>
+                            updateFeature(index, 'description', e.target.value)
+                          }
+                          placeholder="Brief description"
+                          rows={2}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4 space-y-3">
+                <Checkbox
+                  key={String(infoSection.use_default_image)}
+                  name="use_default_image"
+                  label="Use default image"
+                  subLabel="Uncheck to upload a custom image for the info section"
+                  defaultChecked={infoSection.use_default_image}
+                  onChange={(checked) =>
+                    setInfoSection((prev) => ({ ...prev, use_default_image: checked }))
+                  }
+                />
+
+                {!infoSection.use_default_image && (
+                  <ImageUpload
+                    label="Info Section Image"
+                    currentImageUrl={infoSection.image_url || undefined}
+                    onFileSelected={(file) => setPendingInfoImage(file)}
+                    aspectRatio="wide"
+                  />
+                )}
+              </div>
+
+              <ButtonPrimary
+                disabled={!agent?.id || isSavingInfoSection}
+                onClick={handleSaveInfoSection}
+              >
+                {isSavingInfoSection ? 'Saving...' : 'Save Info Section'}
+              </ButtonPrimary>
+            </div>
           </div>
         </div>
       )}

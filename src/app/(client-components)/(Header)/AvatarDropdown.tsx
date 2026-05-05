@@ -19,6 +19,7 @@ interface ResolvedUserDetails {
   city: string | null;
   state: string | null;
   profileUrl: string | null;
+  agentSlug: string | null;
 }
 
 const DEFAULT_DISPLAY_NAME = 'Guest';
@@ -30,6 +31,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
   const [city, setCity] = useState<string | null>(null);
   const [state, setState] = useState<string | null>(null);
   const [profileUrl, setProfileUrl] = useState<string | null>(null);
+  const [agentSlug, setAgentSlug] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
 
@@ -43,6 +45,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
     setCity(null);
     setState(null);
     setProfileUrl(null);
+    setAgentSlug(null);
   };
 
   const loadUserDetails = async (userId: string): Promise<ResolvedUserDetails> => {
@@ -52,6 +55,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
       city: null,
       state: null,
       profileUrl: null,
+      agentSlug: null,
     };
 
     const { data: userDetailsData } = await supabase
@@ -77,6 +81,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
         city: baseCity,
         state: baseState,
         profileUrl: (userDetailsData.profile_image || '').trim() || null,
+        agentSlug: null,
       };
     }
 
@@ -96,6 +101,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
         (agentData?.profile_image || '').trim() ||
         (userDetailsData.profile_image || '').trim() ||
         null,
+      agentSlug: (agentData?.slug || '').trim() || null,
     };
   };
 
@@ -130,6 +136,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
       setCity(details.city);
       setState(details.state);
       setProfileUrl(details.profileUrl);
+      setAgentSlug(details.agentSlug);
 
       const metadataAvatar =
         (nextUser.user_metadata?.avatar_url as string | undefined) ||
@@ -278,21 +285,40 @@ export default function AvatarDropdown({ className = '' }: Props) {
         <div className="absolute z-50 w-screen max-w-[260px] px-4 top-full -right-10 sm:right-0 sm:px-0">
           <div className="overflow-hidden rounded-3xl shadow-lg ring-1 ring-black ring-opacity-5">
             <div className="relative grid grid-cols-1 gap-6 bg-white dark:bg-neutral-800 py-7 px-6">
-              <div className="flex items-center space-x-3">
-                <Avatar sizeClass="w-12 h-12" imgUrl={avatarUrl} />
-
-                <div className="flex-grow">
-                  <h4 className="font-semibold">{displayName}</h4>
-                  {(city || state) && (
-                    <p className="text-xs mt-0.5">{[city, state].filter(Boolean).join(', ')}</p>
-                  )}
-                  {userType === 'agent' && (
+              {userType === 'agent' && agentSlug ? (
+                <Link
+                  href={`/${agentSlug}`}
+                  onClick={() => setOpen(false)}
+                  className="flex items-center space-x-3 group"
+                >
+                  <Avatar sizeClass="w-12 h-12" imgUrl={avatarUrl} />
+                  <div className="flex-grow">
+                    <h4 className="font-semibold group-hover:text-primary-6000 transition-colors">
+                      {displayName}
+                    </h4>
+                    {(city || state) && (
+                      <p className="text-xs mt-0.5">
+                        {[city, state].filter(Boolean).join(', ')}
+                      </p>
+                    )}
                     <p className="text-[11px] mt-1 inline-flex rounded-full border border-emerald-300 px-2 py-0.5 text-emerald-700 dark:border-emerald-700 dark:text-emerald-300">
                       Agent
                     </p>
-                  )}
+                  </div>
+                </Link>
+              ) : (
+                <div className="flex items-center space-x-3">
+                  <Avatar sizeClass="w-12 h-12" imgUrl={avatarUrl} />
+                  <div className="flex-grow">
+                    <h4 className="font-semibold">{displayName}</h4>
+                    {(city || state) && (
+                      <p className="text-xs mt-0.5">
+                        {[city, state].filter(Boolean).join(', ')}
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="w-full border-b border-neutral-200 dark:border-neutral-700" />
 

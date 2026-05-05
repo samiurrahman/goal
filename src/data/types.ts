@@ -28,6 +28,10 @@ export interface Agent {
   founders: People[];
   profile_image: string | null;
   banner_image?: string | null;
+  info_heading?: string;
+  info_features?: AgentInfoFeature[];
+  info_image_url?: string | null;
+  info_use_default_image?: boolean;
 }
 export interface People {
   id: string;
@@ -163,6 +167,13 @@ export interface AgentReview {
   review_text: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface AgentInfoFeature {
+  badge_name: string;
+  badge_color: TwMainColor;
+  title: string;
+  description: string;
 }
 
 //  ######  CustomLink  ######## //
