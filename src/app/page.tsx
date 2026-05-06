@@ -24,7 +24,7 @@ function PageHome() {
           <div className="relative rounded-3xl overflow-hidden bg-gradient-to-b from-sky-100 via-sky-50 to-white dark:from-neutral-800 dark:via-neutral-800 dark:to-neutral-900">
             <div className="px-5 pt-6 pb-5">
               <h1 className="text-2xl font-extralight text-neutral-900 dark:text-neutral-100 leading-tight">
-                Find your perfect Hajj &amp; Umrah journey
+                Find your perfect Umrah journey
               </h1>
               <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300">
                 Compare packages from verified travel agents
