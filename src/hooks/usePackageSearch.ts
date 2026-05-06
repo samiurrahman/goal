@@ -53,6 +53,17 @@ export function usePackageSearch() {
 
   const clearMonths = useCallback(() => setMonthStates([]), []);
 
+  const clearLocation = useCallback(() => {
+    setLocationValue('');
+    setSelectedLocation(null);
+  }, []);
+
+  const clearAll = useCallback(() => {
+    setLocationValue('');
+    setSelectedLocation(null);
+    setMonthStates([]);
+  }, []);
+
   const packagesUrl = useMemo(() => {
     const location = selectedLocation
       ? selectedLocation.name || ''
@@ -76,5 +87,7 @@ export function usePackageSearch() {
     packagesUrl,
     monthLabel,
     clearMonths,
+    clearLocation,
+    clearAll,
   };
 }
