@@ -9,7 +9,7 @@ export const CITY_LANDMARKS: Record<string, string> = {
   Mumbai: '/images/cities/mumbai.jpg',
   Delhi: '/images/cities/delhi.jpg',
   Bangalore: '/images/cities/bangalore.jpg',
-  Hyderabad: '/images/cities/hyderabad.jpg',
+  Hyderabad: '/images/cities/hyderabad.webp',
   Chennai: '/images/cities/chennai.jpg',
   Kolkata: '/images/cities/kolkata.jpg',
   Lucknow: '/images/cities/lucknow.jpg',

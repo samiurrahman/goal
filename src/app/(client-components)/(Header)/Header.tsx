@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import { usePathname } from 'next/navigation';
 import Logo from '@/shared/Logo';
 import NotifyDropdown from './NotifyDropdown';
 import AvatarDropdown from './AvatarDropdown';
@@ -11,10 +12,14 @@ const Header3 = () => {
   //
 
   const { isLoggedIn, isAuthReady } = useSupabaseIsLoggedIn();
+  const pathname = usePathname();
+  const hideOnMobile = pathname === '/';
   return (
     <>
       <div
-        className={`nc-Header sticky top-0 w-full left-0 right-0 z-40 nc-header-bg shadow-sm dark:border-b dark:border-neutral-700`}
+        className={`nc-Header sticky top-0 w-full left-0 right-0 z-40 nc-header-bg shadow-sm dark:border-b dark:border-neutral-700 ${
+          hideOnMobile ? 'hidden lg:block' : ''
+        }`}
       >
         <div className={`nc-MainNav1 relative z-10`}>
           <div className="px-4 lg:container py-2 sm:py-0 sm:h-20 relative flex justify-between items-center">

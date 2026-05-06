@@ -2,7 +2,7 @@
 
 import React, { Fragment, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Dialog, Tab, Transition } from '@headlessui/react';
+import { Dialog, Transition } from '@headlessui/react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { XMarkIcon, MapPinIcon } from '@heroicons/react/24/solid';
 import { useTimeoutFn } from 'react-use';
@@ -17,7 +17,6 @@ const HeroSearchTrigger = () => {
   const [, , resetIsShowingDialog] = useTimeoutFn(() => setShowDialog(true), 1);
 
   const [fieldNameShow, setFieldNameShow] = useState<'location' | 'month'>('location');
-  const [tripType, setTripType] = useState<'Umrah' | 'Hajj'>('Umrah');
   const [locationQuery, setLocationQuery] = useState('');
 
   const {
@@ -212,7 +211,7 @@ const HeroSearchTrigger = () => {
           className="HeroSearchFormMobile__Dialog relative z-max"
           onClose={closeModal}
         >
-          <div className="fixed inset-0 bg-neutral-100 dark:bg-neutral-900">
+          <div className="fixed inset-0 bg-neutral-100 dark:bg-neutral-900 h-[100dvh]">
             <div className="flex h-full min-h-0">
               <Transition.Child
                 as={Fragment}
@@ -223,52 +222,24 @@ const HeroSearchTrigger = () => {
                 leaveFrom="opacity-100 translate-y-0"
                 leaveTo="opacity-0 translate-y-52"
               >
-                <Dialog.Panel className="relative h-full min-h-0 overflow-hidden flex-1 flex flex-col justify-between">
+                <Dialog.Panel className="relative h-full min-h-0 overflow-hidden flex-1 flex flex-col">
                   {showDialog && (
-                    <Tab.Group
-                      manual
-                      selectedIndex={tripType === 'Umrah' ? 0 : 1}
-                      onChange={(idx) => setTripType(idx === 0 ? 'Umrah' : 'Hajj')}
-                    >
+                    <>
                       <div className="absolute left-4 top-4 z-10">
                         <button onClick={closeModal} aria-label="Close search">
                           <XMarkIcon className="w-5 h-5 text-black dark:text-white" />
                         </button>
                       </div>
 
-                      <Tab.List className="pt-12 flex w-full justify-center font-semibold text-sm sm:text-base text-neutral-500 dark:text-neutral-400 space-x-6 sm:space-x-8">
-                        {['Umrah', 'Hajj'].map((item, index) => (
-                          <Tab key={index} as={Fragment}>
-                            {({ selected }) => (
-                              <div className="relative focus:outline-none focus-visible:ring-0 outline-none select-none">
-                                <div className={selected ? 'text-black dark:text-white' : ''}>
-                                  {item}
-                                </div>
-                                {selected && (
-                                  <span className="absolute inset-x-0 top-full border-b-2 border-black dark:border-white" />
-                                )}
-                              </div>
-                            )}
-                          </Tab>
-                        ))}
-                      </Tab.List>
-
-                      <div className="flex-1 min-h-0 pt-3 px-1.5 sm:px-4 flex overflow-hidden">
-                        <Tab.Panels className="flex-1 min-h-0 overflow-y-auto hiddenScrollbar py-4">
-                          <Tab.Panel>
-                            <div className="transition-opacity animate-[myblur_0.4s_ease-in-out]">
-                              {renderForm()}
-                            </div>
-                          </Tab.Panel>
-                          <Tab.Panel>
-                            <div className="transition-opacity animate-[myblur_0.4s_ease-in-out]">
-                              {renderForm()}
-                            </div>
-                          </Tab.Panel>
-                        </Tab.Panels>
+                      <div className="flex-1 min-h-0 pt-12 px-1.5 sm:px-4 flex overflow-hidden">
+                        <div className="flex-1 min-h-0 overflow-y-auto hiddenScrollbar py-4">
+                          <div className="transition-opacity animate-[myblur_0.4s_ease-in-out]">
+                            {renderForm()}
+                          </div>
+                        </div>
                       </div>
 
-                      <div className="px-4 py-3 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
+                      <div className="mt-auto px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 flex justify-between items-center">
                         <button
                           type="button"
                           className="underline font-semibold flex-shrink-0"
@@ -298,7 +269,7 @@ const HeroSearchTrigger = () => {
                           <span className="ml-2">Search</span>
                         </button>
                       </div>
-                    </Tab.Group>
+                    </>
                   )}
                 </Dialog.Panel>
               </Transition.Child>
