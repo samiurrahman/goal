@@ -21,12 +21,6 @@ function PageHome() {
       {/* Mobile */}
       <div className="lg:hidden pb-24">
         <section className="relative px-4 pt-4">
-          <div className="px-4 pb-5 pt-2">
-            <div className="flex justify-center">
-              <Logo className="w-14" />
-            </div>
-            <HeroSearchTrigger />
-          </div>
           <div className="relative rounded-3xl overflow-hidden bg-gradient-to-b from-sky-100 via-sky-50 to-white dark:from-neutral-800 dark:via-neutral-800 dark:to-neutral-900">
             <div className="px-5 pt-6 pb-5">
               <h1 className="text-2xl font-extralight text-neutral-900 dark:text-neutral-100 leading-tight">
@@ -43,6 +37,12 @@ function PageHome() {
                 priority
                 className="w-64 h-auto"
               />
+            </div>
+            <div className="px-4 pb-5 pt-2">
+              {/* <div className="flex justify-center">
+                <Logo className="w-14" />
+              </div> */}
+              <HeroSearchTrigger />
             </div>
           </div>
         </section>
