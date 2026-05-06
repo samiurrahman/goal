@@ -29,12 +29,6 @@ const PackageSearchForm: FC<PackageSearchFormProps> = ({ className = '' }) => {
         </div>
       </div>
 
-      {/* Mobile: search form only */}
-      <div className="lg:hidden flex items-start justify-center min-h-[calc(100vh-4rem)] pt-16">
-        <div className="w-full max-w-lg mx-auto">
-          <SearchForm />
-        </div>
-      </div>
     </div>
   );
 };

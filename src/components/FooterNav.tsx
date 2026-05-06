@@ -365,8 +365,8 @@ const FooterNav = () => {
   const tabClass = (active: boolean) =>
     `flex flex-col items-center justify-between text-neutral-500 dark:text-neutral-300/90 ${active ? 'text-neutral-900 dark:text-neutral-100' : ''}`;
 
-  const iconClass = (active: boolean) => `w-6 h-6 ${active ? 'text-red-600' : ''}`;
-  const labelClass = (active: boolean) => `text-[11px] leading-none mt-1 ${active ? 'text-red-600' : ''}`;
+  const iconClass = (active: boolean) => `w-6 h-6 ${active ? 'text-primary-6000' : ''}`;
+  const labelClass = (active: boolean) => `text-[11px] leading-none mt-1 ${active ? 'text-primary-6000' : ''}`;
 
   const menuLinks = useMemo(() => {
     if (userType === 'agent') {
