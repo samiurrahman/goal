@@ -39,9 +39,9 @@ function PageHome() {
               />
             </div>
             <div className="px-4 pb-5 pt-2">
-              {/* <div className="flex justify-center">
+              <div className="flex justify-center">
                 <Logo className="w-14" />
-              </div> */}
+              </div>
               <HeroSearchTrigger />
             </div>
           </div>
