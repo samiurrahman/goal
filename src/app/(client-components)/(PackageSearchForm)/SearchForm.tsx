@@ -2,14 +2,14 @@
 import React, { Fragment, useState, useRef } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import { CalendarDaysIcon } from '@heroicons/react/24/outline';
-import LocationInput from '../LocationInput';
-import ClearDataButton from '../ClearDataButton';
-import ButtonSubmit from '../ButtonSubmit';
+import LocationInput from './LocationInput';
+import ClearDataButton from './ClearDataButton';
+import ButtonSubmit from './ButtonSubmit';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
 import { usePackageSearch } from '@/hooks/usePackageSearch';
 
-const StaySearchForm = () => {
+const SearchForm = () => {
   const [dropOffLocationType, setDropOffLocationType] = useState<'Umrah' | 'Hajj'>('Umrah');
   const {
     monthStates,
@@ -100,9 +100,9 @@ const StaySearchForm = () => {
 
   const renderRadioBtn = () => {
     return (
-      <div className=" py-5 [ nc-hero-field-padding ] flex items-center flex-wrap flex-row border-b border-neutral-100 dark:border-neutral-700">
+      <div className="py-4 px-5 lg:py-5 [ nc-hero-field-padding ] flex items-center flex-wrap flex-row border-b border-neutral-100 dark:border-neutral-700">
         <div
-          className={`py-1.5 px-4 flex items-center rounded-full font-medium text-xs cursor-pointer mr-2 my-1 sm:mr-3 ${
+          className={`py-2 px-5 lg:py-1.5 lg:px-4 flex items-center rounded-full font-medium text-sm lg:text-xs cursor-pointer mr-2 my-1 sm:mr-3 ${
             dropOffLocationType === 'Umrah'
               ? 'bg-black text-white shadow-black/10 shadow-lg'
               : 'border border-neutral-300 dark:border-neutral-700'
@@ -112,7 +112,7 @@ const StaySearchForm = () => {
           Umrah
         </div>
         <div
-          className={`py-1.5 px-4 flex items-center rounded-full font-medium text-xs cursor-pointer mr-2 my-1 sm:mr-3 ${
+          className={`py-2 px-5 lg:py-1.5 lg:px-4 flex items-center rounded-full font-medium text-sm lg:text-xs cursor-pointer mr-2 my-1 sm:mr-3 ${
             dropOffLocationType === 'Hajj'
               ? 'bg-black text-white shadow-black/10 shadow-lg'
               : 'border border-neutral-300 dark:border-neutral-700'
@@ -128,17 +128,16 @@ const StaySearchForm = () => {
   const renderForm = () => {
     return (
       <form
-        className="w-full relative rounded-[40px] xl:rounded-[49px] rounded-t-2xl xl:rounded-t-3xl shadow-xl dark:shadow-2xl bg-white dark:bg-neutral-800 "
+        className="w-full relative rounded-3xl lg:rounded-[40px] xl:rounded-[49px] rounded-t-2xl xl:rounded-t-3xl shadow-xl dark:shadow-2xl bg-white dark:bg-neutral-800"
         onSubmit={(e) => e.preventDefault()}
       >
-        {renderRadioBtn()}
-        <div className={`relative flex flex-row items-center self-center`}>
+        <div className="hidden lg:block">{renderRadioBtn()}</div>
+        <div className="relative flex flex-col lg:flex-row lg:items-center">
           <LocationInput className="flex-[1.5]" onLocationSelect={handleLocationSelect} />
-          <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
+          <div className="hidden lg:block self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
+          <div className="lg:hidden mx-5 border-b border-slate-200 dark:border-slate-700"></div>
           {renderMonthDropdown()}
-          {/* <div className="self-center border-r border-slate-200 dark:border-slate-700 h-8"></div>
-          <GuestsInput className="flex-1" /> */}
-          <div className="pl-1 pr-2 xl:pr-4">
+          <div className="p-4 lg:p-0 lg:pl-1 lg:pr-2 xl:pr-4">
             <ButtonSubmit href={packagesUrl} />
           </div>
         </div>
@@ -149,4 +148,4 @@ const StaySearchForm = () => {
   return renderForm();
 };
 
-export default StaySearchForm;
+export default SearchForm;

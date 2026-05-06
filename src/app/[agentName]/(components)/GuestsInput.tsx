@@ -4,7 +4,7 @@ import React, { Fragment, FC, useState } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import NcInputNumber from '@/components/NcInputNumber';
 import { UserPlusIcon } from '@heroicons/react/24/outline';
-import ClearDataButton from '@/app/(client-components)/(HeroSearchForm)/ClearDataButton';
+import ClearDataButton from '@/app/(client-components)/(PackageSearchForm)/ClearDataButton';
 import { GuestsObject } from '@/app/(client-components)/type';
 
 export interface GuestsInputProps {
