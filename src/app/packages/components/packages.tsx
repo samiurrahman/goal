@@ -1,8 +1,6 @@
 'use client';
 import React, { FC, useMemo } from 'react';
 import StartRating from '@/components/StartRating';
-import BtnLikeIcon from '@/components/BtnLikeIcon';
-import SaleOffBadge from '@/components/SaleOffBadge';
 import Badge from '@/shared/Badge';
 import { Package } from '@/data/types';
 import Link from 'next/link';
@@ -108,145 +106,152 @@ const Packages: FC<PackagesProps> = ({
   return (
     <Link
       href={packageHref}
-      className={`lg:px-2 lg:py-1 shadow-sm nc-PropertyCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-3xl overflow-hidden block cursor-pointer ${className}`}
+      className={`nc-PropertyCardH group relative block bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 ${className}`}
       aria-label={title}
     >
-      <div className="h-full w-full flex flex-col sm:flex-row sm:items-center">
-        <div className="flex-shrink-0 p-3 w-full sm:w-64">
-          <div className="w-full rounded-2xl bg-neutral-50 dark:bg-neutral-800 p-2">
-            <Image
-              src={thumbnail_url || '/default-image.jpg'}
-              alt={title || 'Package image'}
-              className="w-full rounded-xl"
-              width={400}
-              height={300}
-              style={{ objectFit: 'contain' }}
-            />
-          </div>
-          <SaleOffBadge className="absolute left-5 top-5 !bg-orange-500" />
-        </div>
+      <div className="flex flex-col sm:flex-row">
+        <div className="relative w-full aspect-[16/10] sm:aspect-auto sm:w-72 sm:flex-shrink-0 sm:self-stretch bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+          <Image
+            src={thumbnail_url || '/default-image.jpg'}
+            alt={title || 'Package image'}
+            fill
+            className="object-cover transition-transform duration-500 group-hover:scale-105"
+            sizes="(max-width: 640px) 100vw, 288px"
+          />
 
-        <div className="flex-grow p-3 sm:pr-6 flex flex-col items-start min-w-0">
-          <div className="space-y-4 w-full">
-            <div className="flex flex-wrap gap-2 sm:gap-3">
-              <Badge name="Government Verified" color="green" />
-              <Badge
-                name={
-                  <div className="flex items-center">
-                    <i className="text-sm las la-share-alt"></i>
-                    <span className="ml-1">
-                      {parsedDefaultPricing?.people ?? defaultSharingRate?.people} Share
-                    </span>
-                  </div>
-                }
-              />
-              <Badge
-                name={
-                  <div className="flex items-center">
-                    <i className="text-sm las la-clock"></i>
-                    <span className="ml-1">{total_duration_days} Days</span>
-                  </div>
-                }
-              />
-              <Badge
-                name={
-                  <div className="flex items-center">
-                    <i className="text-sm las la-map-marker"></i>
-                    <span className="ml-1">{package_location}</span>
-                  </div>
-                }
-              />
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Badge name="ADS" color="green" />
-              <h2 className="text-lg font-medium capitalize">
-                <span className="line-clamp-2">{title}</span>
-              </h2>
-            </div>
-
-            <div className="flex flex-wrap items-start gap-x-4 gap-y-2 text-neutral-700 dark:text-neutral-300">
-              <div className="flex items-center min-w-0">
-                <span className="hidden sm:inline-block">
-                  <MakkahIcon />
+          <div className="absolute left-3 top-3">
+            <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full bg-neutral-900/80 backdrop-blur-md shadow-lg ring-1 ring-white/10">
+              <span className="relative flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 shadow-inner ring-1 ring-amber-300/50">
+                <svg
+                  viewBox="0 0 12 12"
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="#78350F"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="2.5 6 5 8.5 9.5 3.5" />
+                </svg>
+              </span>
+              <span className="flex flex-col leading-none">
+                <span className="text-[10px] font-bold text-white tracking-wider uppercase">
+                  Verified
                 </span>
-                <span className="ml-1 text-sm max-w-[120px] truncate overflow-hidden whitespace-nowrap inline-block align-bottom">
-                  {makkah_hotel_name}
-                </span>
-                <span className="ml-1 text-sm">(~{makkah_hotel_distance_m}m)</span>
-              </div>
-
-              <div className="flex items-center min-w-0">
-                <span className="hidden sm:inline-block">
-                  <MadinaIcon />
-                </span>
-                <span className="ml-1.5 text-sm max-w-[120px] truncate overflow-hidden whitespace-nowrap inline-block align-bottom">
-                  {madinah_hotel_name}
-                </span>
-                <span className="ml-1 text-sm">(~{madinah_hotel_distance_m}m)</span>
-              </div>
-
-              <div className="flex items-center min-w-0">
-                <span className="hidden sm:inline-block">
-                  <i className="las la-plane-departure text-2xl"></i>
-                </span>
-                <span className="ml-1.5 text-sm min-w-0">
-                  <span className="ml-1 text-sm break-words">
-                    {departure_city} - {arrival_city}
-                  </span>
-                </span>
-              </div>
-
-              <div className="flex items-center min-w-0">
-                <span className="hidden sm:inline-block">
-                  <i className="las la-calendar-alt text-2xl"></i>
-                </span>
-                <span className="ml-1.5 text-sm min-w-0">
-                  <span className="ml-1 text-sm break-words">
-                    {formatDateDMY(departure_date)} - {formatDateDMY(arrival_date)}
-                  </span>
-                </span>
-              </div>
-            </div>
-
-            <div className="flex w-full flex-col sm:flex-row sm:justify-between gap-3 sm:gap-2 sm:items-end">
-              <div className="flex items-center space-x-3 min-w-0">
-                <Avatar
-                  hasChecked
-                  sizeClass="h-10 w-10"
-                  radius="rounded-full"
-                  imgUrl={profileImage || undefined}
-                />
-                <span className="ml-2.5 text-neutral-500 dark:text-neutral-400 min-w-0 truncate">
-                  <Link
-                    href={agentHref}
-                    className="text-neutral-800 dark:text-neutral-200 font-small hover:underline truncate block"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                  >
-                    {displayAgentName}
-                  </Link>
-                </span>
-                <StartRating reviewCount={agentReviewCount} point={agentRatingPoint} />
-              </div>
-
-              <span className="text-base sm:text-lg font-semibold text-secondary-700 self-start sm:self-auto">
-                {displayCurrency} {displayPrice}
-                <span className="text-sm text-neutral-500 dark:text-neutral-400 font-normal">
-                  /Person
+                <span className="text-[7px] font-medium text-amber-200/80 uppercase tracking-[0.15em] mt-[1px]">
+                  Government
                 </span>
               </span>
+            </span>
+          </div>
+        </div>
+
+        <div className="flex flex-grow flex-col gap-3 p-4 sm:p-5 min-w-0">
+          <div className="flex items-start justify-between gap-3">
+            <h3 className="text-base sm:text-lg font-semibold capitalize leading-snug line-clamp-2 text-neutral-900 dark:text-neutral-100 min-w-0">
+              {title}
+            </h3>
+            <Badge name="ADS" color="green" className="flex-shrink-0" />
+          </div>
+
+          <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-neutral-600 dark:text-neutral-300">
+            <span className="inline-flex items-center gap-1">
+              <i className="las la-clock text-base"></i>
+              {total_duration_days} Days
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <i className="las la-share-alt text-base"></i>
+              {parsedDefaultPricing?.people ?? defaultSharingRate?.people} Sharing
+            </span>
+            {package_location ? (
+              <span className="inline-flex items-center gap-1">
+                <i className="las la-map-marker text-base"></i>
+                {package_location}
+              </span>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div className="flex items-start gap-2 min-w-0">
+              <span className="flex-shrink-0">
+                <MakkahIcon />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
+                  {makkah_hotel_name}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  ~{makkah_hotel_distance_m}m from Haram
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 min-w-0">
+              <span className="flex-shrink-0">
+                <MadinaIcon />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
+                  {madinah_hotel_name}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  ~{madinah_hotel_distance_m}m from Masjid
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-neutral-600 dark:text-neutral-400">
+            <span className="inline-flex items-center gap-1.5">
+              <i className="las la-plane-departure text-base"></i>
+              {departure_city} → {arrival_city}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <i className="las la-calendar-alt text-base"></i>
+              {formatDateDMY(departure_date)} – {formatDateDMY(arrival_date)}
+            </span>
+          </div>
+
+          <div className="mt-auto pt-3 border-t border-neutral-200 dark:border-neutral-700 flex items-end justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <Avatar
+                hasChecked
+                sizeClass="h-9 w-9"
+                radius="rounded-full"
+                imgUrl={profileImage || undefined}
+              />
+              <div className="min-w-0">
+                <Link
+                  href={agentHref}
+                  className="text-sm font-medium text-neutral-800 dark:text-neutral-200 hover:underline truncate block"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  {displayAgentName}
+                </Link>
+                <StartRating
+                  point={agentRatingPoint}
+                  reviewCount={agentReviewCount}
+                  className="mt-0.5"
+                />
+              </div>
+            </div>
+
+            <div className="flex-shrink-0 text-right">
+              <p className="text-[10px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+                From
+              </p>
+              <p className="whitespace-nowrap leading-tight">
+                <span className="text-lg sm:text-xl font-bold text-secondary-700">
+                  {displayCurrency} {displayPrice.toLocaleString('en-IN')}
+                </span>
+                <span className="text-xs text-neutral-500 dark:text-neutral-400 ml-1">
+                  /person
+                </span>
+              </p>
             </div>
           </div>
         </div>
       </div>
-
-      <BtnLikeIcon
-        colorClass=" bg-neutral-100 dark:bg-neutral-700 hover:bg-neutral-200 hover:bg-opacity-70 text-neutral-6000 dark:text-neutral-400"
-        isLiked={true}
-        className="absolute right-5 top-5 sm:right-3 sm:top-3"
-      />
     </Link>
   );
 };

@@ -22,13 +22,13 @@ const Header3 = () => {
         }`}
       >
         <div className={`nc-MainNav1 relative z-10`}>
-          <div className="px-4 lg:container py-2 sm:py-0 sm:h-20 relative flex justify-between items-center">
-            <div className="hidden md:flex justify-start flex-1 space-x-4 sm:space-x-10">
-              <Logo className="w-24 self-center" />
+          <div className="px-4 lg:container h-14 sm:h-16 relative flex justify-between items-center">
+            <div className="hidden md:flex justify-start flex-1 items-center">
+              <Logo className="w-40 sm:w-44" />
             </div>
 
-            <div className="flex lg:hidden flex-1 justify-center">
-              <Logo className="w-24 self-center" />
+            <div className="flex md:hidden flex-1 justify-center items-center">
+              <Logo className="w-40 sm:w-44" />
             </div>
 
             <div className="hidden md:flex relative z-10 flex-1 justify-end text-neutral-700 dark:text-neutral-100">

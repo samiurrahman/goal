@@ -4,11 +4,13 @@ import { useSearchParams } from 'next/navigation';
 
 import Breadcrumb from '@/components/Breadcrumb';
 import TabFilters from './TabFilters';
+import SortByFilter from './SortByFilter';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import { supabase } from '@/utils/supabaseClient';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Package } from '@/data/types';
 import Packages from './packages';
+import { fetchPackages, SortValue } from '@/lib/queries/packages';
 
 export interface SectionGridFilterCardProps {
   className?: string;
@@ -90,26 +92,18 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
     agentNameList,
   };
 
+  const sortValue = (searchParams.get('sort') || '') as SortValue;
+
   const { data, error, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery<Package[], Error>({
-      queryKey: ['packages', payload],
+      queryKey: ['packages', payload, sortValue],
       queryFn: async ({ pageParam = 0 }) => {
         const page = typeof pageParam === 'number' ? pageParam : 0;
-
-        const { data, error } = await supabase.functions.invoke('packages', {
-          body: {
-            payload,
-            page,
-            pageSize: PAGE_SIZE,
-          },
-        });
-
-        if (error) throw new Error(error.message || 'Failed to fetch packages');
-        return (data?.data ?? []) as Package[];
+        return fetchPackages({ payload, page, pageSize: PAGE_SIZE, sort: sortValue });
       },
       getNextPageParam: (lastPage, allPages) => {
         if (!lastPage || lastPage.length < PAGE_SIZE) return undefined;
-        return allPages.length * PAGE_SIZE;
+        return allPages.length;
       },
       initialPageParam: 0,
     });
@@ -244,8 +238,11 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
   return (
     <div className={`nc-SectionGridFilterCard ${className}`} data-nc-id="SectionGridFilterCard">
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Packages' }]} className="mt-4" />
-      <div className="mb-4 lg:mb-6 mt-4">
-        <TabFilters />
+      <div className="mb-4 lg:mb-6 mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="min-w-0 flex-grow">
+          <TabFilters />
+        </div>
+        <SortByFilter />
       </div>
       <div className="grid grid-cols-1 gap-6 rounded-3xl">
         {isLoading ? (
