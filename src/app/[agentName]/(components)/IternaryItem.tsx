@@ -44,7 +44,7 @@ const IternaryItem: React.FC<IternaryItemProps> = ({
             </div>
           </div>
         </div>
-        <div className="border-l border-neutral-200 dark:border-neutral-700 md:mx-6 lg:mx-10"></div>
+        <div className="hidden md:block border-l border-neutral-200 dark:border-neutral-700 md:mx-6 lg:mx-10"></div>
         <ul className="text-xs text-neutral-500 dark:text-neutral-400 space-y-1 md:space-y-2">
           <li>Trip time: {tripTime}</li>
           <li>{flightInfo}</li>

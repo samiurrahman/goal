@@ -40,16 +40,6 @@ const isUuid = (value?: string | null) =>
   !!value &&
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
-const formatDateRangePart = (dateInput?: string) => {
-  if (!dateInput) return 'TBD';
-  const date = new Date(dateInput);
-  if (Number.isNaN(date.getTime())) return 'TBD';
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
-};
-
 const formatJoinedText = (createdAt?: string | null) => {
   if (!createdAt) return 'Joined recently';
   const parsed = new Date(createdAt);
@@ -72,120 +62,72 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     country?: string | null;
   };
 
-  const { data: baseAgentRows, error: agentError } = await supabase
-    .from('agents')
-    .select(
-      'profile_image, auth_user_id, rating_avg, rating_total, known_as, about_us, created_at, city, state, country'
-    )
-    .ilike('slug', agentName)
-    .limit(1);
+  // Fetch agent + candidate packages in parallel (no dependency between them)
+  const [agentResult, packagesResult] = await Promise.all([
+    supabase
+      .from('agents')
+      .select(
+        'profile_image, auth_user_id, rating_avg, rating_total, known_as, about_us, created_at, city, state, country'
+      )
+      .ilike('slug', agentName)
+      .limit(1),
+    supabase.from('packages').select('*').ilike('slug', slug).limit(5),
+  ]);
 
-  const baseAgentData = Array.isArray(baseAgentRows) ? baseAgentRows[0] : null;
-
-  let agentData: AgentMetaRow | null = baseAgentData
+  const agentRow = Array.isArray(agentResult.data) ? agentResult.data[0] : null;
+  const agentData: AgentMetaRow | null = agentRow
     ? {
-        profile_image: (baseAgentData as AgentMetaRow).profile_image ?? null,
-        auth_user_id: (baseAgentData as AgentMetaRow).auth_user_id ?? null,
-        rating_avg: (baseAgentData as AgentMetaRow).rating_avg ?? null,
-        rating_total: (baseAgentData as AgentMetaRow).rating_total ?? null,
-        known_as: (baseAgentData as AgentMetaRow).known_as ?? null,
-        about_us: (baseAgentData as AgentMetaRow).about_us ?? null,
-        created_at: (baseAgentData as AgentMetaRow).created_at ?? null,
-        city: (baseAgentData as AgentMetaRow).city ?? null,
-        state: (baseAgentData as AgentMetaRow).state ?? null,
-        country: (baseAgentData as AgentMetaRow).country ?? null,
+        profile_image: (agentRow as AgentMetaRow).profile_image ?? null,
+        auth_user_id: (agentRow as AgentMetaRow).auth_user_id ?? null,
+        rating_avg: (agentRow as AgentMetaRow).rating_avg ?? null,
+        rating_total: (agentRow as AgentMetaRow).rating_total ?? null,
+        known_as: (agentRow as AgentMetaRow).known_as ?? null,
+        about_us: (agentRow as AgentMetaRow).about_us ?? null,
+        created_at: (agentRow as AgentMetaRow).created_at ?? null,
+        city: (agentRow as AgentMetaRow).city ?? null,
+        state: (agentRow as AgentMetaRow).state ?? null,
+        country: (agentRow as AgentMetaRow).country ?? null,
       }
     : null;
 
-  // Backward compatibility for environments where rating columns are not migrated yet.
-  if (
-    agentError &&
-    String(agentError.message || '')
-      .toLowerCase()
-      .includes('rating_')
-  ) {
-    const fallback = await supabase
-      .from('agents')
-      .select('profile_image, auth_user_id')
-      .ilike('slug', agentName)
-      .limit(1);
-    const fallbackRow = Array.isArray(fallback.data) ? fallback.data[0] : null;
-    agentData = fallbackRow
-      ? {
-          profile_image: (fallbackRow as AgentMetaRow)?.profile_image ?? null,
-          auth_user_id: (fallbackRow as AgentMetaRow)?.auth_user_id ?? null,
-          rating_avg: null,
-          rating_total: null,
-          known_as: null,
-          about_us: null,
-          created_at: null,
-          city: null,
-          state: null,
-          country: null,
-        }
-      : null;
-  }
   const agentProfileImage = (agentData?.profile_image as string | null | undefined) ?? null;
   const agentAuthUserId = (agentData?.auth_user_id as string | null | undefined) ?? null;
   const agentRatingPoint = Number(agentData?.rating_avg ?? 0);
   const agentReviewCount = Number(agentData?.rating_total ?? 0);
 
-  const { data: packageByNameRows } = await supabase
-    .from('packages')
-    .select('*')
-    .ilike('slug', slug)
-    .ilike('agent_name', agentName)
-    .limit(1);
-
-  const packageByName = Array.isArray(packageByNameRows) ? packageByNameRows[0] : null;
-
-  let packageData = packageByName;
-
-  // Backward compatibility: older rows may not have agent_name aligned with URL slug.
-  if (!packageData && isUuid(agentAuthUserId)) {
-    const { data: packageByAgentIdRows } = await supabase
-      .from('packages')
-      .select('*')
-      .ilike('slug', slug)
-      .eq('agent_id', String(agentAuthUserId))
-      .limit(1);
-    const packageByAgentId = Array.isArray(packageByAgentIdRows) ? packageByAgentIdRows[0] : null;
-    packageData = packageByAgentId;
-  }
-
-  // Last fallback for legacy data where only slug was reliable.
-  if (!packageData) {
-    const { data: packageBySlugOnlyRows } = await supabase
-      .from('packages')
-      .select('*')
-      .ilike('slug', slug)
-      .limit(1);
-    const packageBySlugOnly = Array.isArray(packageBySlugOnlyRows)
-      ? packageBySlugOnlyRows[0]
-      : null;
-    packageData = packageBySlugOnly;
-  }
+  // Pick the best matching package: prefer agent_name match, then agent_id match, then any
+  const candidatePackages = (packagesResult.data ?? []) as Array<{
+    agent_name?: string | null;
+    agent_id?: string | null;
+  }>;
+  const lowerAgentName = agentName.toLowerCase();
+  const packageData =
+    candidatePackages.find(
+      (p) => (p.agent_name || '').toLowerCase() === lowerAgentName
+    ) ??
+    (isUuid(agentAuthUserId)
+      ? candidatePackages.find((p) => String(p.agent_id || '') === String(agentAuthUserId))
+      : undefined) ??
+    candidatePackages[0] ??
+    null;
 
   if (!packageData) {
     notFound();
   }
 
-  let package_details = packageData as PackageDetails;
+  // Now fetch package_details using the resolved package id
+  const { data: detailsArray } = await supabase
+    .from('package_details')
+    .select('*')
+    .eq('package_id', (packageData as { id: number | string }).id)
+    .limit(1);
 
-  if (packageData?.id) {
-    const { data: detailsArray } = await supabase
-      .from('package_details')
-      .select('*')
-      .eq('package_id', packageData.id)
-      .limit(1);
+  const details = Array.isArray(detailsArray) ? detailsArray[0] : null;
 
-    const details = Array.isArray(detailsArray) ? detailsArray[0] : null;
-
-    package_details = {
-      ...packageData,
-      details: details ?? null,
-    } as PackageDetails;
-  }
+  const package_details = {
+    ...(packageData as object),
+    details: details ?? null,
+  } as PackageDetails;
 
   const sharingRateList = (() => {
     const purchaseSummaryRates = parseJson<{ rates?: RoomRate[] }>(
@@ -211,23 +153,35 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   const guestsFromQuery = Number(searchParams?.guests ?? 1);
   const numberOfGuests = clamp(Number.isFinite(guestsFromQuery) ? guestsFromQuery : 1, 1, 20);
 
-  const departureDateText = formatDateRangePart(package_details?.departure_date);
-  const arrivalDateText = formatDateRangePart(package_details?.arrival_date);
+  const parsedSharing = parseJson<{ people?: number }>(package_details?.default_pricing, {});
+  const sharingPeopleForMeta = Number(
+    parsedSharing?.people ?? defaultRate?.people ?? sharingCount ?? 5
+  );
 
   const packageMetaData = {
     title: package_details?.title ?? 'Untitled Package',
-    duration: '5 Days, 4 Nights',
-    makkahHotel: 'Makkah Hotel (~500m)',
-    madinaHotel: 'Madina Hotel (~300m)',
-    route: `${package_details?.departure_city?.toUpperCase() ?? ''} - ${package_details?.arrival_city?.toUpperCase() ?? ''}`,
-    dates: `${departureDateText} - ${arrivalDateText}`,
-    provider: package_details?.agent_name ?? 'Unknown Provider',
-    providerProfileImage: agentProfileImage,
-    url: agentName,
-    providerVerified: true,
-    providerLocation: package_details?.package_location ?? 'Unknown Location',
-    ratingPoint: agentRatingPoint,
-    reviewCount: agentReviewCount,
+    thumbnailUrl: (package_details as { thumbnail_url?: string | null })?.thumbnail_url ?? null,
+    thumbnailBlur:
+      (package_details as { thumbnail_blur?: string | null })?.thumbnail_blur ?? null,
+    totalDurationDays: package_details?.total_duration_days ?? null,
+    sharingPeople: sharingPeopleForMeta,
+    packageLocation: package_details?.package_location ?? 'Unknown Location',
+    makkahHotelName: package_details?.makkah_hotel_name ?? '',
+    makkahHotelDistanceM: package_details?.makkah_hotel_distance_m ?? null,
+    madinahHotelName: package_details?.madinah_hotel_name ?? '',
+    madinahHotelDistanceM: package_details?.madinah_hotel_distance_m ?? null,
+    departureCity: package_details?.departure_city ?? '',
+    arrivalCity: package_details?.arrival_city ?? '',
+    departureDate: package_details?.departure_date ?? '',
+    arrivalDate: package_details?.arrival_date ?? '',
+    agentSlug: agentName,
+    agentDisplayName:
+      String(agentData?.known_as || '').trim() ||
+      String(package_details?.agent_name || '').trim() ||
+      'Agent',
+    agentProfileImage: agentProfileImage,
+    agentRatingPoint,
+    agentReviewCount,
   };
 
   const hostLocationText = [agentData?.city, agentData?.state, agentData?.country]
@@ -413,12 +367,12 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
           <HostInformation {...hostData} />
         </div>
 
-        {/* SIDEBAR: Purchase summary, visible on all devices, sticky on lg+ */}
-        <div className="w-full lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0 flex flex-col items-stretch">
-          <div className="sticky top-28 hidden lg:block max-w-md mx-auto w-full">
+        {/* SIDEBAR: Purchase summary, sticky on lg+, hidden on mobile (replaced by MobileFooterSticky) */}
+        <aside className="hidden lg:block lg:sticky lg:top-28 lg:self-start w-full lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0">
+          <div className="max-w-md mx-auto w-full">
             <PurchaseSummary {...purchaseSummaryProps} />
           </div>
-        </div>
+        </aside>
       </main>
       <div className="block lg:hidden h-24" />
       <MobileFooterSticky

@@ -1,160 +1,225 @@
 import React from 'react';
+import Image from 'next/image';
+import Link from 'next/link';
 import Avatar from '@/shared/Avatar';
-import Badge from '@/shared/Badge';
 import StartRating from '@/components/StartRating';
 import { MakkahIcon, MadinaIcon } from '@/components/icons/icons';
-import Link from 'next/link';
+import { getOptimizedImageUrl } from '@/lib/imageUrl';
+
+const FALLBACK_BLUR_DATA_URL =
+  'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
+
+const formatDateDMY = (dateInput?: string | Date) => {
+  if (!dateInput) return '';
+  const date = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  if (isNaN(date.getTime())) return typeof dateInput === 'string' ? dateInput : '';
+  const day = date.getDate().toString().padStart(2, '0');
+  const month = date.toLocaleString('en-US', { month: 'short' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+};
 
 export interface PackageMetaProps {
   title: string;
-  duration: string;
-  makkahHotel: string;
-  madinaHotel: string;
-  route: string;
-  provider: string;
-  providerProfileImage?: string | null;
-  providerVerified?: boolean;
-  providerLocation: string;
-  url: string;
-  dates?: string;
-  ratingPoint?: number;
-  reviewCount?: number;
+  thumbnailUrl?: string | null;
+  thumbnailBlur?: string | null;
+  totalDurationDays?: number | null;
+  sharingPeople?: number;
+  packageLocation?: string;
+  makkahHotelName?: string;
+  makkahHotelDistanceM?: number | null;
+  madinahHotelName?: string;
+  madinahHotelDistanceM?: number | null;
+  departureCity?: string;
+  arrivalCity?: string;
+  departureDate?: string;
+  arrivalDate?: string;
+  agentSlug: string;
+  agentDisplayName: string;
+  agentProfileImage?: string | null;
+  agentRatingPoint?: number;
+  agentReviewCount?: number;
 }
 
 const PackageMeta: React.FC<PackageMetaProps> = ({
   title,
-  duration,
-  makkahHotel,
-  madinaHotel,
-  route,
-  provider,
-  providerProfileImage,
-  providerVerified = true,
-  providerLocation,
-  url,
-  dates,
-  ratingPoint = 0,
-  reviewCount = 0,
+  thumbnailUrl,
+  thumbnailBlur,
+  totalDurationDays,
+  sharingPeople,
+  packageLocation,
+  makkahHotelName,
+  makkahHotelDistanceM,
+  madinahHotelName,
+  madinahHotelDistanceM,
+  departureCity,
+  arrivalCity,
+  departureDate,
+  arrivalDate,
+  agentSlug,
+  agentDisplayName,
+  agentProfileImage,
+  agentRatingPoint = 0,
+  agentReviewCount = 0,
 }) => {
   return (
-    <div className="listingSection__wrap !space-y-4">
-      <h1 className="text-2xl font-normal text-gray-900">{title}</h1>
-      <div className="inline-flex space-x-3">
-        <Badge
-          name={
-            <div className="flex items-center">
-              <i className="text-sm las la-clock"></i>
-              <span className="ml-1">{duration}</span>
-            </div>
-          }
-        />
-        <Badge
-          name={
-            <div className="flex items-center">
-              <i className="text-sm las la-map-marker"></i>
-              <span className="ml-1">{providerLocation}</span>
-            </div>
-          }
-        />
-
-        <Badge
-          name={
-            <div className="flex items-center">
-              <i className="text-sm las la-share-alt"></i>
-              <span className="ml-1">5 Sharing</span>
-            </div>
-          }
-        />
-      </div>
-
-      <div className="w-full border-b border-neutral-100 dark:border-neutral-700" />
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        <div className="flex items-start gap-4">
-          <i className="text-3xl las la-kaaba flex-shrink-0 mt-0.5"></i>
-          <div className="flex-1">
-            <p className="text-xs text-gray-600">Makkah Hotels</p>
-            <span className="text-sm text-gray-900 font-medium">{makkahHotel}</span>
-          </div>
-        </div>
-        <div className="flex items-start gap-4">
-          <i className="text-3xl las la-mosque flex-shrink-0 mt-0.5"></i>
-          <div className="flex-1">
-            <p className="text-xs text-gray-600">Madina Hotels</p>
-            <span className="text-sm text-gray-900 font-medium">{madinaHotel}</span>
-          </div>
-        </div>
-        <div className="flex items-start gap-4">
-          <i className="text-3xl las la-city flex-shrink-0 mt-0.5"></i>
-          <div className="flex-1">
-            <p className="text-xs text-gray-600">Makkah and Madina Days</p>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-900 font-medium">5 Days -</span>
-              <span className="text-sm text-gray-900 font-medium">4 Days</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex items-start gap-4">
-          <i className="las la-plane-departure text-2xl flex-shrink-0 mt-0.5"></i>
-          <div className="flex-1">
-            <p className="text-xs text-gray-600">Flight Departure & Arrival Details</p>
-            <p className="text-sm text-gray-900 font-medium">{route}</p>
-          </div>
-        </div>
-        <div className="flex items-start gap-4">
-          <i className="las la-calendar-week text-2xl flex-shrink-0 mt-0.5"></i>
-          <div className="flex-1">
-            <p className="text-xs text-gray-600">Package Start & End Dates</p>
-            <p className="text-sm text-gray-900 font-medium">{dates}</p>
-          </div>
-        </div>
-        <div className="flex items-start gap-4">
-          <i className="las la-bell text-2xl flex-shrink-0 mt-0.5"></i>
-          <div className="flex-1">
-            <p className="text-xs text-gray-600">Free cancellation before 10 days of departure</p>
-            <p className="text-sm text-gray-900 font-medium">
-              Get a full refund if you change your mind.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="w-full border-b border-neutral-100 dark:border-neutral-700" />
-
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 my-4">
-        <div className="flex items-center">
-          <Avatar
-            hasChecked
-            sizeClass="h-10 w-10"
-            radius="rounded-full"
-            imgUrl={providerProfileImage || undefined}
+    <article className="nc-PackageMeta group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden shadow-sm">
+      <div className="flex flex-col">
+        {/* Hero image */}
+        <div className="relative w-full aspect-[16/10] sm:aspect-[16/9] bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
+          <Image
+            src={
+              getOptimizedImageUrl(thumbnailUrl, {
+                width: 1200,
+                height: 675,
+                resize: 'cover',
+                quality: 80,
+              }) || '/default-image.jpg'
+            }
+            alt={title || 'Package image'}
+            fill
+            className="object-cover"
+            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 60vw, 800px"
+            quality={80}
+            priority
+            placeholder="blur"
+            blurDataURL={thumbnailBlur || FALLBACK_BLUR_DATA_URL}
           />
-          <span className="ml-2.5 text-neutral-500 dark:text-neutral-400">
-            <Link
-              href={`/${url}`}
-              className="text-neutral-900 dark:text-neutral-200 font-medium hover:underline"
-            >
-              {provider}
-            </Link>
-            {providerVerified && <Badge name="Government Verified" color="green" />}
-          </span>
-        </div>
-        <div className="flex items-center">
-          <div className="flex items-center space-x-4">
-            <StartRating point={ratingPoint} reviewCount={reviewCount} />
-            <span>·</span>
-            <span>
-              <i className="las la-map-marker-alt"></i>
-              <span className="ml-1 text-neutral-500 dark:text-neutral-400">
-                {' '}
-                {providerLocation}
+
+          <div className="absolute left-3 top-3">
+            <span className="inline-flex items-center gap-1.5 pl-1 pr-2.5 py-0.5 rounded-full bg-neutral-900/80 backdrop-blur-md shadow-lg ring-1 ring-white/10">
+              <span className="relative flex items-center justify-center w-5 h-5 rounded-full bg-gradient-to-br from-amber-200 via-amber-400 to-amber-600 shadow-inner ring-1 ring-amber-300/50">
+                <svg
+                  viewBox="0 0 12 12"
+                  className="w-3 h-3"
+                  fill="none"
+                  stroke="#78350F"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <polyline points="2.5 6 5 8.5 9.5 3.5" />
+                </svg>
+              </span>
+              <span className="flex flex-col leading-none">
+                <span className="text-[10px] font-bold text-white tracking-wider uppercase">
+                  Verified
+                </span>
+                <span className="text-[7px] font-medium text-amber-200/80 uppercase tracking-[0.15em] mt-[1px]">
+                  Government
+                </span>
               </span>
             </span>
           </div>
         </div>
+
+        {/* Content */}
+        <div className="flex flex-col gap-4 p-4 sm:p-5">
+          <h1 className="text-xl sm:text-2xl font-semibold capitalize leading-tight text-neutral-900 dark:text-neutral-100">
+            {title}
+          </h1>
+
+          {/* Quick meta pills */}
+          <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-neutral-600 dark:text-neutral-300">
+            {totalDurationDays != null && (
+              <span className="inline-flex items-center gap-1.5">
+                <i className="las la-clock text-base"></i>
+                {totalDurationDays} Days
+              </span>
+            )}
+            {sharingPeople != null && (
+              <span className="inline-flex items-center gap-1.5">
+                <i className="las la-share-alt text-base"></i>
+                {sharingPeople} Sharing
+              </span>
+            )}
+            {packageLocation && (
+              <span className="inline-flex items-center gap-1.5">
+                <i className="las la-map-marker text-base"></i>
+                {packageLocation}
+              </span>
+            )}
+          </div>
+
+          {/* Hotels */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex items-start gap-2 min-w-0">
+              <span className="flex-shrink-0">
+                <MakkahIcon />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
+                  {makkahHotelName || 'Makkah Hotel'}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {makkahHotelDistanceM != null
+                    ? `~${makkahHotelDistanceM}m from Haram`
+                    : 'Distance from Haram TBD'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-start gap-2 min-w-0">
+              <span className="flex-shrink-0">
+                <MadinaIcon />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-neutral-800 dark:text-neutral-200 truncate">
+                  {madinahHotelName || 'Madina Hotel'}
+                </p>
+                <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                  {madinahHotelDistanceM != null
+                    ? `~${madinahHotelDistanceM}m from Masjid`
+                    : 'Distance from Masjid TBD'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Travel route + dates */}
+          <div className="flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-neutral-600 dark:text-neutral-400">
+            <span className="inline-flex items-center gap-1.5">
+              <i className="las la-plane-departure text-base"></i>
+              {departureCity || 'TBD'} → {arrivalCity || 'TBD'}
+            </span>
+            <span className="inline-flex items-center gap-1.5">
+              <i className="las la-calendar-alt text-base"></i>
+              {formatDateDMY(departureDate) || 'TBD'} – {formatDateDMY(arrivalDate) || 'TBD'}
+            </span>
+          </div>
+
+          {/* Agent footer */}
+          <div className="mt-auto pt-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center gap-3">
+            <Avatar
+              hasChecked
+              sizeClass="h-10 w-10"
+              radius="rounded-full"
+              imgUrl={
+                getOptimizedImageUrl(agentProfileImage, {
+                  width: 96,
+                  height: 96,
+                  resize: 'cover',
+                  quality: 75,
+                }) || undefined
+              }
+            />
+            <div className="min-w-0 flex-grow">
+              <Link
+                href={`/${agentSlug}`}
+                className="text-sm font-medium text-neutral-800 dark:text-neutral-200 hover:underline truncate block"
+              >
+                {agentDisplayName}
+              </Link>
+              <StartRating
+                point={agentRatingPoint}
+                reviewCount={agentReviewCount}
+                className="mt-0.5"
+              />
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+    </article>
   );
 };
 

@@ -3,6 +3,7 @@ import Avatar from '@/shared/Avatar';
 import StartRating from '@/components/StartRating';
 import ButtonSecondary from '@/shared/ButtonSecondary';
 import Link from 'next/link';
+import { getOptimizedImageUrl } from '@/lib/imageUrl';
 
 interface HostInformationProps {
   name: string;
@@ -53,7 +54,14 @@ const HostInformation: React.FC<HostInformationProps> = ({
           hasCheckedClass="w-4 h-4 -top-0.5 right-0.5"
           sizeClass="h-14 w-14"
           radius="rounded-full"
-          imgUrl={profileImage || undefined}
+          imgUrl={
+            getOptimizedImageUrl(profileImage, {
+              width: 120,
+              height: 120,
+              resize: 'cover',
+              quality: 75,
+            }) || undefined
+          }
         />
         <div>
           <Link href={normalizedProfileHref} className="block text-md font-medium hover:underline">
