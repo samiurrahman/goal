@@ -14,3 +14,27 @@ Add a single line to your .env:
 NEXT_PUBLIC_USE_SUPABASE_TRANSFORMS=true
 Restart the dev server / redeploy. Done.
 I'll proceed and ping you to test when this step is done.
+
+
+Locally — in your project's .env.local (the file you just opened). That env var is read by your Next.js app, not Supabase.
+
+Two separate things to do when you go Pro:
+1. In Supabase Dashboard (this enables the feature on their side)
+
+Settings → Storage → toggle "Image Transformations" ON
+This is the actual Pro feature — Supabase starts accepting ?width=…&format=webp query params on storage URLs
+2. In your Next.js project (this tells your code to start using it)
+
+Add to .env.local:
+
+NEXT_PUBLIC_USE_SUPABASE_TRANSFORMS=true
+Also add the same line to your production deployment env vars (Vercel/wherever) — .env.local is gitignored and only applies to local dev
+Summary of where things live
+Var	Where	Purpose
+NEXT_PUBLIC_USE_SUPABASE_TRANSFORMS=true	.env.local (dev) + hosting env vars (prod)	Tells getOptimizedImageUrl helper to emit transform URLs
+Image Transformations toggle	Supabase Dashboard → Storage settings	Actually enables the feature on the Supabase side
+If you only do one without the other:
+
+Toggle in Supabase but not env var: transforms work, but your app keeps requesting full-size images (no benefit).
+Env var but no toggle in Supabase: your app sends transform URLs, Supabase ignores params, returns full-size. No harm, just wasted query params.
+Both must be flipped for the optimization to actually kick in.
