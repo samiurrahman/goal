@@ -1,4 +1,5 @@
 import { supabase } from '@/utils/supabaseClient';
+import { compressToWebp, CompressOpts, generateLqipDataUrl } from '@/lib/imageCompression';
 
 export const STORAGE_BUCKET = 'uploads';
 
@@ -88,27 +89,46 @@ export const deleteImageFromStorage = async (
 
 /**
  * Upload image to storage and return relative path
- * Automatically deletes old file if provided
+ * Automatically deletes old file if provided.
+ *
+ * Compresses + converts the file to WebP before upload (unless `compress: false`).
  */
 export const uploadImageToStorage = async (
   file: File,
   folder: string, // e.g., "users/{uuid}" or "agents/{uuid}/profile"
   oldImageUrlOrPath?: string,
-  options?: { fixedFileName?: string }
-): Promise<{ path: string | null; url: string | null; error?: string }> => {
+  options?: {
+    fixedFileName?: string;
+    compress?: boolean;
+    compressOpts?: CompressOpts;
+    generateLqip?: boolean;
+  }
+): Promise<{ path: string | null; url: string | null; lqip?: string | null; error?: string }> => {
   // Validate file
   if (!file) {
     return { path: null, url: null, error: 'No file provided' };
   }
 
-  const validMimes = ['image/jpeg', 'image/png', 'image/webp'];
+  const validMimes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
   if (!validMimes.includes(file.type)) {
-    return { path: null, url: null, error: 'Only JPG, PNG, and WebP allowed' };
+    return { path: null, url: null, error: 'Only JPG, PNG, WebP, or HEIC images allowed' };
   }
 
-  const maxSize = 5 * 1024 * 1024; // 5MB
+  const maxSize = 15 * 1024 * 1024; // 15MB raw — gets compressed to ~1MB webp
   if (file.size > maxSize) {
-    return { path: null, url: null, error: 'File must be smaller than 5MB' };
+    return { path: null, url: null, error: 'File must be smaller than 15MB' };
+  }
+
+  // Compress + convert to WebP (default on, opt out via compress: false)
+  const shouldCompress = options?.compress !== false;
+  const fileToUpload = shouldCompress
+    ? await compressToWebp(file, options?.compressOpts)
+    : file;
+
+  // Generate LQIP from the (compressed) file for next/image blurDataURL
+  let lqip: string | null = null;
+  if (options?.generateLqip) {
+    lqip = await generateLqipDataUrl(fileToUpload);
   }
 
   // Delete old image if provided
@@ -120,7 +140,7 @@ export const uploadImageToStorage = async (
   }
 
   // Use fixed file name when caller wants a single image slot (profile/banner/etc.)
-  const ext = file.name.split('.').pop() || 'jpg';
+  const ext = fileToUpload.name.split('.').pop() || 'webp';
   const fixedFileName = (options?.fixedFileName || '').trim();
   const filename = fixedFileName ? `${fixedFileName}.${ext}` : `${Date.now()}.${ext}`;
   const fullPath = `${folder}/${filename}`;
@@ -131,6 +151,7 @@ export const uploadImageToStorage = async (
       `${folder}/${fixedFileName}.jpeg`,
       `${folder}/${fixedFileName}.png`,
       `${folder}/${fixedFileName}.webp`,
+      `${folder}/${fixedFileName}.heic`,
     ].filter((path, index, self) => self.indexOf(path) === index && path !== fullPath);
 
     if (sameSlotCandidates.length > 0) {
@@ -139,15 +160,18 @@ export const uploadImageToStorage = async (
   }
 
   // Upload
-  const { data, error } = await supabase.storage.from(STORAGE_BUCKET).upload(fullPath, file, {
-    cacheControl: '3600',
-    upsert: !!fixedFileName,
-  });
+  const { data, error } = await supabase.storage
+    .from(STORAGE_BUCKET)
+    .upload(fullPath, fileToUpload, {
+      cacheControl: fixedFileName ? '3600' : '31536000, immutable',
+      upsert: !!fixedFileName,
+      contentType: fileToUpload.type,
+    });
 
   if (error) {
     return { path: null, url: null, error: error.message };
   }
 
   const cdnUrl = generateCdnUrl(data.path);
-  return { path: data.path, url: cdnUrl, error: undefined };
+  return { path: data.path, url: cdnUrl, lqip, error: undefined };
 };

@@ -1,0 +1,16 @@
+Today (Free plan): helper returns the URL unchanged. Next.js Image API does the heavy lifting.
+When you upgrade to Pro: flip a single env flag (NEXT_PUBLIC_USE_SUPABASE_TRANSFORMS=true), and the helper starts emitting Supabase transform query params. Zero consumer code changes.
+
+
+
+Nothing required from you right now. I have everything I need:
+
+Supabase project URL is in your env
+All upload paths flow through supabaseStorageHelper.ts which I can wrap
+You'll only have one task later when you flip to Pro:
+
+Add a single line to your .env:
+
+NEXT_PUBLIC_USE_SUPABASE_TRANSFORMS=true
+Restart the dev server / redeploy. Done.
+I'll proceed and ping you to test when this step is done.

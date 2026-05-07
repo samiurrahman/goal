@@ -617,24 +617,29 @@ const AddPackageWizardModal = ({
     }
 
     let finalThumbnailUrl: string | null = null;
+    let finalThumbnailBlur: string | null = null;
     if (pendingImageFile) {
       const imageUpload = await uploadImageToStorage(
         pendingImageFile,
         `agents/${agentAuthUserId}/packages/${packageData.id}`,
         undefined,
-        { fixedFileName: 'image' }
+        { fixedFileName: 'image', generateLqip: true }
       );
       if (imageUpload.error) {
         toast.error('Image upload failed: ' + imageUpload.error);
       } else {
         finalThumbnailUrl = imageUpload.url;
+        finalThumbnailBlur = imageUpload.lqip ?? null;
       }
     }
 
     if (finalThumbnailUrl) {
       await supabase
         .from('packages')
-        .update({ thumbnail_url: finalThumbnailUrl })
+        .update({
+          thumbnail_url: finalThumbnailUrl,
+          thumbnail_blur: finalThumbnailBlur,
+        })
         .eq('id', packageData.id);
       setCurrentImageUrl(finalThumbnailUrl);
     }

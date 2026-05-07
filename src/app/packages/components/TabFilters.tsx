@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import LocationFilter from './LocationFilter';
 import AgentFilter from './AgentFilter';
 import MonthFilter from './MonthFilter';
@@ -8,7 +9,11 @@ import PackageDurationFilter from './PackageDurationFilter';
 import PriceFilter from './PriceFilter';
 import HotelDistanceFilter from './HotelDistanceFilter';
 import StopPointsFilter from './StopPointsFilter';
-import MobileFiltersModal from './MobileFiltersModal';
+
+const MobileFiltersModal = dynamic(() => import('./MobileFiltersModal'), {
+  ssr: false,
+  loading: () => null,
+});
 
 const TabFilters = () => {
   const [isOpenMoreFilter, setisOpenMoreFilter] = useState(false);

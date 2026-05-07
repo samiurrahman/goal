@@ -16,12 +16,60 @@ export type PackagesFilterPayload = {
   agentNameList?: string[];
 };
 
+const MONTH_NAME_TO_NUMBER: Record<string, number> = {
+  Jan: 1, Feb: 2, Mar: 3, Apr: 4, May: 5, Jun: 6,
+  Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12,
+};
+
+/**
+ * Build the Packages query args from URL params.
+ * Works on both server (plain object → wrap getter) and client (URLSearchParams.get).
+ */
+export function buildPackagesQueryArgs(
+  getParam: (key: string) => string | null
+): { payload: PackagesFilterPayload; sort: SortValue } {
+  const splitCsv = (key: string) =>
+    (getParam(key) || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+
+  const monthList = splitCsv('month');
+  const months = monthList.map((m) => MONTH_NAME_TO_NUMBER[m]).filter(Boolean);
+
+  const priceParam = getParam('price') || '';
+  const makkahParam = getParam('makkah_hotel_distance_m');
+  const madinahParam = getParam('madinah_hotel_distance_m');
+
+  const payload: PackagesFilterPayload = {
+    location: splitCsv('location'),
+    datestart: getParam('datestart') || '',
+    dateend: getParam('dateend') || '',
+    total_duration_days: getParam('total_duration_days') || '',
+    months,
+    year: new Date().getFullYear(),
+    price: priceParam ? Number(priceParam) : '',
+    makkahHotelDistance: makkahParam ? Number(makkahParam) : undefined,
+    madinahHotelDistance: madinahParam ? Number(madinahParam) : undefined,
+    agentNameList: splitCsv('agent_name'),
+  };
+
+  const sort = (getParam('sort') || '') as SortValue;
+
+  return { payload, sort };
+}
+
 const PACKAGE_FIELDS = [
   'id',
   'slug',
   'title',
   'agent_name',
+  'agent_known_as',
+  'agent_profile_image',
+  'agent_rating_avg',
+  'agent_rating_total',
   'thumbnail_url',
+  'thumbnail_blur',
   'price_per_person',
   'currency',
   'default_pricing',
@@ -36,7 +84,6 @@ const PACKAGE_FIELDS = [
   'makkah_hotel_distance_m',
   'madinah_hotel_name',
   'madinah_hotel_distance_m',
-  'agent_rating_avg',
 ].join(', ');
 
 const toNum = (v: unknown): number | undefined => {

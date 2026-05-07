@@ -1,100 +1,36 @@
 'use client';
-import React, { FC, useRef, useEffect, useMemo, useState } from 'react';
+import React, { FC, useRef, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import Breadcrumb from '@/components/Breadcrumb';
 import TabFilters from './TabFilters';
 import SortByFilter from './SortByFilter';
 import ButtonPrimary from '@/shared/ButtonPrimary';
-import { supabase } from '@/utils/supabaseClient';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Package } from '@/data/types';
 import Packages from './packages';
-import { fetchPackages, SortValue } from '@/lib/queries/packages';
+import { fetchPackages, buildPackagesQueryArgs } from '@/lib/queries/packages';
 
 export interface SectionGridFilterCardProps {
   className?: string;
+  initialData?: Package[];
 }
 
 const PAGE_SIZE = 20;
 const INITIAL_SKELETON_COUNT = 8;
 
-const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' }) => {
+const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
+  className = '',
+  initialData,
+}) => {
   const searchParams = useSearchParams();
-  // Read params and create payload
-  // Support multiple locations as comma-separated
-  const locationParam = searchParams.get('location') || '';
-  const locationList = locationParam
-    ? locationParam
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : [];
-  // Month filter logic
-  const monthParam = searchParams.get('month') || '';
-  const monthList = monthParam
-    ? monthParam
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : [];
-  // Map month names to numbers (Jan=1, Feb=2, ...)
-  const monthNameToNumber: Record<string, number> = {
-    Jan: 1,
-    Feb: 2,
-    Mar: 3,
-    Apr: 4,
-    May: 5,
-    Jun: 6,
-    Jul: 7,
-    Aug: 8,
-    Sep: 9,
-    Oct: 10,
-    Nov: 11,
-    Dec: 12,
-  };
-  const selectedMonthNumbers = monthList.map((m) => monthNameToNumber[m]).filter(Boolean);
-  const currentYear = new Date().getFullYear();
 
-  // Price filter
-  const priceParam = searchParams.get('price') || '';
-  const price = priceParam ? Number(priceParam) : '';
+  const { payload, sort: sortValue } = useMemo(
+    () => buildPackagesQueryArgs((key) => searchParams.get(key)),
+    [searchParams]
+  );
 
-  // Hotel distance filters
-  const makkahHotelDistanceParam = searchParams.get('makkah_hotel_distance_m');
-  const madinahHotelDistanceParam = searchParams.get('madinah_hotel_distance_m');
-  const makkahHotelDistance = makkahHotelDistanceParam
-    ? Number(makkahHotelDistanceParam)
-    : undefined;
-  const madinahHotelDistance = madinahHotelDistanceParam
-    ? Number(madinahHotelDistanceParam)
-    : undefined;
-
-  // Agent name filter
-  const agentNameParam = searchParams.get('agent_name') || '';
-  const agentNameList = agentNameParam
-    ? agentNameParam
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-    : [];
-
-  const payload = {
-    location: locationList,
-    datestart: searchParams.get('datestart') || '',
-    dateend: searchParams.get('dateend') || '',
-    total_duration_days: searchParams.get('total_duration_days') || '',
-    months: selectedMonthNumbers,
-    year: currentYear,
-    price,
-    makkahHotelDistance,
-    madinahHotelDistance,
-    agentNameList,
-  };
-
-  const sortValue = (searchParams.get('sort') || '') as SortValue;
-
-  const { data, error, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery<Package[], Error>({
       queryKey: ['packages', payload, sortValue],
       queryFn: async ({ pageParam = 0 }) => {
@@ -106,18 +42,24 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
         return allPages.length;
       },
       initialPageParam: 0,
+      initialData: initialData
+        ? { pages: [initialData], pageParams: [0] }
+        : undefined,
     });
 
-  // Infinite scroll observer
+  // Infinite scroll observer — prefetches before the loader is in view
   const loaderRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (!hasNextPage || isFetchingNextPage) return;
     const loaderElement = loaderRef.current;
-    const observer = new IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting) {
-        fetchNextPage();
-      }
-    });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          fetchNextPage();
+        }
+      },
+      { rootMargin: '800px 0px' }
+    );
     if (loaderElement) observer.observe(loaderElement);
     return () => {
       if (loaderElement) observer.unobserve(loaderElement);
@@ -128,112 +70,6 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
     () => data?.pages.flatMap((page) => page as Package[]) || [],
     [data?.pages]
   );
-
-  const [agentMetaBySlug, setAgentMetaBySlug] = useState<
-    Record<
-      string,
-      {
-        profileImage?: string;
-        knownAs?: string;
-        slug?: string;
-        ratingPoint?: number;
-        reviewCount?: number;
-      }
-    >
-  >({});
-
-  useEffect(() => {
-    const agentSlugs = Array.from(
-      new Set(packages.map((item) => item.agent_name).filter(Boolean) as string[])
-    );
-
-    if (!agentSlugs.length) {
-      setAgentMetaBySlug({});
-      return;
-    }
-
-    let isCancelled = false;
-
-    type AgentMetaRow = {
-      slug?: string | null;
-      known_as?: string | null;
-      profile_image?: string | null;
-      rating_avg?: number | null;
-      rating_total?: number | null;
-    };
-
-    const loadAgentImages = async () => {
-      const { data: baseAgentsData, error: agentsError } = await supabase
-        .from('agents')
-        .select('slug, known_as, profile_image, rating_avg, rating_total')
-        .in('slug', agentSlugs);
-
-      let agentsData: AgentMetaRow[] = ((baseAgentsData || []) as AgentMetaRow[]).map((row) => ({
-        slug: row.slug ?? null,
-        known_as: row.known_as ?? null,
-        profile_image: row.profile_image ?? null,
-        rating_avg: row.rating_avg ?? null,
-        rating_total: row.rating_total ?? null,
-      }));
-
-      // Backward compatibility: in case rating columns are not migrated yet.
-      if (
-        agentsError &&
-        String(agentsError.message || '')
-          .toLowerCase()
-          .includes('rating_')
-      ) {
-        const fallback = await supabase
-          .from('agents')
-          .select('slug, known_as, profile_image')
-          .in('slug', agentSlugs);
-
-        agentsData = ((fallback.data || []) as AgentMetaRow[]).map((row) => ({
-          slug: row.slug ?? null,
-          known_as: row.known_as ?? null,
-          profile_image: row.profile_image ?? null,
-          rating_avg: null,
-          rating_total: null,
-        }));
-      }
-
-      if (isCancelled) return;
-
-      const nextMap: Record<
-        string,
-        {
-          profileImage?: string;
-          knownAs?: string;
-          slug?: string;
-          ratingPoint?: number;
-          reviewCount?: number;
-        }
-      > = {};
-      for (const row of agentsData) {
-        const slug = (row as { slug?: string | null }).slug;
-        const knownAs = (row as { known_as?: string | null }).known_as;
-        const profileImage = (row as { profile_image?: string | null }).profile_image;
-        const ratingAvg = (row as { rating_avg?: number | null }).rating_avg;
-        const ratingTotal = (row as { rating_total?: number | null }).rating_total;
-        if (slug) {
-          nextMap[slug] = {
-            slug,
-            knownAs: knownAs || undefined,
-            profileImage: profileImage || undefined,
-            ratingPoint: Number(ratingAvg ?? 0),
-            reviewCount: Number(ratingTotal ?? 0),
-          };
-        }
-      }
-      setAgentMetaBySlug(nextMap);
-    };
-
-    void loadAgentImages();
-
-    return () => {
-      isCancelled = true;
-    };
-  }, [packages]);
 
   return (
     <div className={`nc-SectionGridFilterCard ${className}`} data-nc-id="SectionGridFilterCard">
@@ -249,32 +85,51 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
           Array.from({ length: INITIAL_SKELETON_COUNT }).map((_, index) => (
             <div
               key={`package-skeleton-${index}`}
-              className="lg:px-2 lg:py-1 shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-3xl overflow-hidden"
+              className="bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden shadow-sm"
             >
-              <div className="h-full w-full flex flex-col sm:flex-row sm:items-center animate-pulse">
-                <div className="flex-shrink-0 p-3 w-full sm:w-64">
-                  <div className="w-full h-44 sm:h-36 rounded-2xl bg-neutral-200 dark:bg-neutral-700" />
-                </div>
+              <div className="flex flex-col sm:flex-row animate-pulse">
+                <div className="relative w-full aspect-[16/10] sm:aspect-auto sm:w-72 sm:flex-shrink-0 sm:self-stretch bg-neutral-200 dark:bg-neutral-700" />
 
-                <div className="flex-grow p-3 sm:pr-6 space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    <div className="h-6 w-24 rounded-full bg-neutral-200 dark:bg-neutral-700" />
-                    <div className="h-6 w-20 rounded-full bg-neutral-200 dark:bg-neutral-700" />
-                    <div className="h-6 w-20 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                <div className="flex flex-grow flex-col gap-3 p-4 sm:p-5 min-w-0">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="h-5 sm:h-6 w-3/4 rounded bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="h-5 w-12 rounded-full bg-neutral-200 dark:bg-neutral-700 flex-shrink-0" />
                   </div>
 
-                  <div className="h-6 w-3/4 rounded bg-neutral-200 dark:bg-neutral-700" />
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
-                    <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
-                    <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
-                    <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
+                  <div className="flex flex-wrap gap-x-3 gap-y-1.5">
+                    <div className="h-3 w-16 rounded bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="h-3 w-20 rounded bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="h-3 w-24 rounded bg-neutral-200 dark:bg-neutral-700" />
                   </div>
 
-                  <div className="flex items-center justify-between pt-2">
-                    <div className="h-5 w-40 rounded bg-neutral-200 dark:bg-neutral-700" />
-                    <div className="h-6 w-28 rounded bg-neutral-200 dark:bg-neutral-700" />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <div className="space-y-1.5">
+                      <div className="h-4 w-32 rounded bg-neutral-200 dark:bg-neutral-700" />
+                      <div className="h-3 w-24 rounded bg-neutral-200 dark:bg-neutral-700" />
+                    </div>
+                    <div className="space-y-1.5">
+                      <div className="h-4 w-28 rounded bg-neutral-200 dark:bg-neutral-700" />
+                      <div className="h-3 w-24 rounded bg-neutral-200 dark:bg-neutral-700" />
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-x-4 gap-y-1">
+                    <div className="h-3 w-32 rounded bg-neutral-200 dark:bg-neutral-700" />
+                    <div className="h-3 w-36 rounded bg-neutral-200 dark:bg-neutral-700" />
+                  </div>
+
+                  <div className="mt-auto pt-3 border-t border-neutral-200 dark:border-neutral-700 flex items-end justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-9 w-9 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                      <div className="space-y-1.5">
+                        <div className="h-4 w-24 rounded bg-neutral-200 dark:bg-neutral-700" />
+                        <div className="h-3 w-20 rounded bg-neutral-200 dark:bg-neutral-700" />
+                      </div>
+                    </div>
+                    <div className="space-y-1.5 text-right">
+                      <div className="h-3 w-10 ml-auto rounded bg-neutral-200 dark:bg-neutral-700" />
+                      <div className="h-5 w-28 rounded bg-neutral-200 dark:bg-neutral-700" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -286,19 +141,12 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({ className = '' 
               <Packages
                 key={item.id || index}
                 data={item}
-                agentProfileImage={
-                  item.agent_name ? agentMetaBySlug[item.agent_name]?.profileImage : undefined
-                }
-                agentDisplayName={
-                  item.agent_name ? agentMetaBySlug[item.agent_name]?.knownAs : undefined
-                }
-                agentSlug={item.agent_name ? agentMetaBySlug[item.agent_name]?.slug : undefined}
-                agentRatingPoint={
-                  item.agent_name ? agentMetaBySlug[item.agent_name]?.ratingPoint : undefined
-                }
-                agentReviewCount={
-                  item.agent_name ? agentMetaBySlug[item.agent_name]?.reviewCount : undefined
-                }
+                priority={index < 3}
+                agentProfileImage={item.agent_profile_image || undefined}
+                agentDisplayName={item.agent_known_as || undefined}
+                agentSlug={item.agent_name || undefined}
+                agentRatingPoint={Number(item.agent_rating_avg ?? 0)}
+                agentReviewCount={Number(item.agent_rating_total ?? 0)}
               />
             ))}
             <div ref={loaderRef} className="flex mt-12 justify-center items-center">

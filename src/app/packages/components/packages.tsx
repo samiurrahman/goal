@@ -7,6 +7,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { MadinaIcon, MakkahIcon } from '@/components/icons/icons';
 import Avatar from '@/shared/Avatar';
+import { getOptimizedImageUrl } from '@/lib/imageUrl';
+
+// Neutral 2x2 gray JPEG used as fallback blur for packages without a stored LQIP
+const FALLBACK_BLUR_DATA_URL =
+  'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
 
 type SharingRateItem = { value: string; people: number; default: boolean };
 
@@ -18,6 +23,7 @@ export interface PackagesProps {
   agentSlug?: string;
   agentRatingPoint?: number;
   agentReviewCount?: number;
+  priority?: boolean;
 }
 
 const Packages: FC<PackagesProps> = ({
@@ -28,6 +34,7 @@ const Packages: FC<PackagesProps> = ({
   agentSlug,
   agentRatingPoint = 0,
   agentReviewCount = 0,
+  priority = false,
 }) => {
 
   const profileImage =
@@ -38,6 +45,7 @@ const Packages: FC<PackagesProps> = ({
     total_duration_days,
     currency,
     thumbnail_url,
+    thumbnail_blur,
     slug,
     agent_name,
     makkah_hotel_name,
@@ -104,19 +112,32 @@ const Packages: FC<PackagesProps> = ({
   const displayAgentName = (agentDisplayName || agent_name || '').trim() || 'Agent';
 
   return (
-    <Link
-      href={packageHref}
-      className={`nc-PropertyCardH group relative block bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 ${className}`}
-      aria-label={title}
+    <article
+      className={`nc-PropertyCardH group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-shadow duration-300 ${className}`}
     >
+      <Link href={packageHref} className="absolute inset-0 z-10" aria-label={title}>
+        <span className="sr-only">{title}</span>
+      </Link>
       <div className="flex flex-col sm:flex-row">
         <div className="relative w-full aspect-[16/10] sm:aspect-auto sm:w-72 sm:flex-shrink-0 sm:self-stretch bg-neutral-100 dark:bg-neutral-800 overflow-hidden">
           <Image
-            src={thumbnail_url || '/default-image.jpg'}
+            src={
+              getOptimizedImageUrl(thumbnail_url, {
+                width: 600,
+                height: 400,
+                resize: 'cover',
+                quality: 75,
+              }) || '/default-image.jpg'
+            }
             alt={title || 'Package image'}
             fill
             className="object-cover transition-transform duration-500 group-hover:scale-105"
             sizes="(max-width: 640px) 100vw, 288px"
+            quality={75}
+            priority={priority}
+            loading={priority ? undefined : 'lazy'}
+            placeholder="blur"
+            blurDataURL={thumbnail_blur || FALLBACK_BLUR_DATA_URL}
           />
 
           <div className="absolute left-3 top-3">
@@ -218,13 +239,19 @@ const Packages: FC<PackagesProps> = ({
                 hasChecked
                 sizeClass="h-9 w-9"
                 radius="rounded-full"
-                imgUrl={profileImage || undefined}
+                imgUrl={
+                  getOptimizedImageUrl(profileImage, {
+                    width: 80,
+                    height: 80,
+                    resize: 'cover',
+                    quality: 70,
+                  }) || undefined
+                }
               />
               <div className="min-w-0">
                 <Link
                   href={agentHref}
-                  className="text-sm font-medium text-neutral-800 dark:text-neutral-200 hover:underline truncate block"
-                  onClick={(e) => e.stopPropagation()}
+                  className="relative z-20 text-sm font-medium text-neutral-800 dark:text-neutral-200 hover:underline truncate block"
                 >
                   {displayAgentName}
                 </Link>
@@ -252,7 +279,7 @@ const Packages: FC<PackagesProps> = ({
           </div>
         </div>
       </div>
-    </Link>
+    </article>
   );
 };
 

@@ -11,6 +11,7 @@ import {
   XMarkIcon,
 } from '@heroicons/react/24/outline';
 import React, { Fragment, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
@@ -18,7 +19,11 @@ import { useRouter } from 'next/navigation';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonSecondary from '@/shared/ButtonSecondary';
 import toast, { Toaster } from 'react-hot-toast';
-import AddPackageWizardModal from './AddPackageWizardModal';
+
+const AddPackageWizardModal = dynamic(() => import('./AddPackageWizardModal'), {
+  ssr: false,
+  loading: () => null,
+});
 
 const slugify = (value: string): string =>
   value

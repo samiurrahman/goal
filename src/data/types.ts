@@ -71,11 +71,16 @@ export interface Package {
   booked_seats: number | null;
   seats_left: number | null;
   thumbnail_url: string | null;
+  thumbnail_blur: string | null;
   makkah_hotel_name: string | null;
   makkah_hotel_distance_m: number | null;
   madinah_hotel_name: string | null;
   madinah_hotel_distance_m: number | null;
   agent_name: string | null;
+  agent_known_as: string | null;
+  agent_profile_image: string | null;
+  agent_rating_avg: number | null;
+  agent_rating_total: number | null;
   location: string | null;
   agent_id: string | null;
   arrival_city: string | null;

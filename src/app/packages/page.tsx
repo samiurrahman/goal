@@ -2,6 +2,8 @@ import BgGlassmorphism from '@/components/BgGlassmorphism';
 import React from 'react';
 import SectionGridFilterCard from './components/SectionGridFilterCard';
 import { Metadata } from 'next';
+import { buildPackagesQueryArgs, fetchPackages } from '@/lib/queries/packages';
+import { Package } from '@/data/types';
 
 export const metadata: Metadata = {
   title: 'Hajj & Umrah Packages 2025 | Compare Best Deals',
@@ -22,10 +24,9 @@ export const metadata: Metadata = {
     description:
       'Explore and compare hundreds of Hajj and Umrah packages from verified travel agents.',
     type: 'website',
-    // url: "https://your-domain.com/packages", // Recommended: Add your absolute URL here
     images: [
       {
-        url: '/images/og-hajj-umrah.jpg', // Recommended: Add a specific OG image path
+        url: '/images/og-hajj-umrah.jpg',
         width: 1200,
         height: 630,
         alt: 'Hajj and Umrah Packages',
@@ -53,7 +54,29 @@ export const metadata: Metadata = {
   },
 };
 
-const ListingPackagesPage = () => {
+const PAGE_SIZE = 20;
+
+type PageProps = {
+  searchParams: { [key: string]: string | string[] | undefined };
+};
+
+const ListingPackagesPage = async ({ searchParams }: PageProps) => {
+  const getParam = (key: string): string | null => {
+    const v = searchParams[key];
+    if (Array.isArray(v)) return v[0] ?? null;
+    return v ?? null;
+  };
+
+  const { payload, sort } = buildPackagesQueryArgs(getParam);
+
+  let initialData: Package[] = [];
+  try {
+    initialData = await fetchPackages({ payload, page: 0, pageSize: PAGE_SIZE, sort });
+  } catch {
+    // Fail gracefully — client will retry
+    initialData = [];
+  }
+
   // JSON-LD Structured Data for SEO
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -61,7 +84,7 @@ const ListingPackagesPage = () => {
     name: 'Hajj & Umrah Packages',
     description:
       'Explore and compare hundreds of Hajj and Umrah packages from verified travel agents.',
-    url: 'https://your-domain.com/packages', // Replace with your actual domain
+    url: 'https://your-domain.com/packages',
   };
 
   return (
@@ -75,7 +98,7 @@ const ListingPackagesPage = () => {
       </div>
 
       <div className="container relative min-h-screen">
-        <SectionGridFilterCard className="pb-24 lg:pb-28" />
+        <SectionGridFilterCard className="pb-24 lg:pb-28" initialData={initialData} />
       </div>
     </div>
   );
