@@ -314,27 +314,19 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   );
   const formattedPrice = `INR ${pricePerPerson.toLocaleString('en-IN')}`;
 
+  // Slim checkout URL: only what isn't derivable from the package row.
+  // package_id identifies the package; everything else (slug, agent_id, agent_name)
+  // is read from the DB by the checkout page.
   const checkoutParams = new URLSearchParams();
   if (package_details?.id) checkoutParams.set('package_id', String(package_details.id));
-  checkoutParams.set('sharing', String(sharingCount));
   checkoutParams.set('guests', String(numberOfGuests));
-  checkoutParams.set('slug', slug);
-  checkoutParams.set('agent_name', agentName);
-  if (isUuid(agentAuthUserId)) {
-    checkoutParams.set('agent_id', String(agentAuthUserId));
-  } else if (isUuid(String(package_details?.agent_id || ''))) {
-    checkoutParams.set('agent_id', String(package_details.agent_id));
-  }
+  checkoutParams.set('sharing', String(sharingCount));
   const checkoutUrl = `/checkout?${checkoutParams.toString()}`;
 
-  const redirectQuery = new URLSearchParams();
-  redirectQuery.set('guests', String(numberOfGuests));
-  redirectQuery.set('sharing', String(sharingCount));
-  const redirectPath = `/${agentName}/${slug}?${redirectQuery.toString()}`;
-
+  // Logged-out users go through login first, then land directly on /checkout
   const reserveHref = isLoggedIn
     ? checkoutUrl
-    : `/login?redirect=${encodeURIComponent(redirectPath)}`;
+    : `/login?redirect=${encodeURIComponent(checkoutUrl)}`;
 
   const purchaseSummaryProps = {
     sharingRates: sharingRateList,

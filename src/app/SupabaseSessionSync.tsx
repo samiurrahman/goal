@@ -2,6 +2,7 @@
 import { useEffect } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken } from '@/utils/authToken';
+import { insertAgentWithUniqueSlug } from '@/lib/slug';
 
 type AuthMeta = {
   full_name?: string | null;
@@ -87,14 +88,20 @@ export default function SupabaseSessionSync() {
         profile_image: pictureFromMeta || null,
       });
 
-      // Mirror the agent signup path
+      // Mirror the agent signup path (retry-safe on slug race)
       if (resolvedType === 'agent') {
         const email = session.user.email || '';
-        await supabase.from('agents').insert({
-          auth_user_id: session.user.id,
-          email_id: email,
-          name: metaFullName || email.split('@')[0],
-        });
+        const displayName = metaFullName || email.split('@')[0] || 'agent';
+        try {
+          await insertAgentWithUniqueSlug(displayName, {
+            auth_user_id: session.user.id,
+            email_id: email,
+            name: displayName,
+            known_as: displayName,
+          });
+        } catch (err) {
+          console.error('Failed to allocate agent slug on OAuth signup:', err);
+        }
       }
     });
   }, []);

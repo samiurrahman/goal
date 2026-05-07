@@ -46,7 +46,7 @@ const makeCloneTitle = (title: string) => `${title} Copy`;
 
 const makeCloneSlug = (slug: string | null, title: string, packageId: number) => {
   const base = slugify((slug || '').trim() || title.trim() || `package-${packageId}`);
-  return `${base}-draft-${Date.now()}`;
+  return `${base}-${Date.now()}`;
 };
 
 const LOADER_CARD_COUNT = 6;
@@ -123,8 +123,15 @@ const ListedPackagesPage = () => {
       let resolvedSlug = (agentRow.slug || '').trim();
       if (!resolvedSlug) {
         const sourceName = (agentRow.known_as || '').trim() || user.email || user.id;
-        resolvedSlug = slugify(sourceName);
-        await supabase.from('agents').update({ slug: resolvedSlug }).eq('id', agentRow.id);
+        try {
+          const { allocateAgentSlug } = await import('@/lib/slug');
+          resolvedSlug = await allocateAgentSlug(sourceName);
+          await supabase.from('agents').update({ slug: resolvedSlug }).eq('id', agentRow.id);
+        } catch (err) {
+          toast.error('Failed to set up your agent URL. Please try again.');
+          console.error('agent slug allocation failed:', err);
+          return;
+        }
       }
 
       setAgentUUID(user.id);

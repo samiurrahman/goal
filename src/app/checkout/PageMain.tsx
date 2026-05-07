@@ -62,20 +62,17 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
 
   const guestsFromUrl = Number(searchParams.get('guests'));
   const sharingFromUrl = Number(searchParams.get('sharing'));
-  const slugFromUrl = searchParams.get('slug');
-  const agentNameFromUrl = searchParams.get('agent_name');
-  const agentIdFromUrl = searchParams.get('agent_id');
+  const packageIdFromUrl = (searchParams.get('package_id') || '').trim();
   const initialAdults = Number.isFinite(guestsFromUrl) && guestsFromUrl > 0 ? guestsFromUrl : 2;
 
   const { data: packageDetails } = useQuery<PackageDetails | null>({
-    queryKey: ['package_details', slugFromUrl, agentNameFromUrl],
-    enabled: !!slugFromUrl && !!agentNameFromUrl,
+    queryKey: ['package_details', packageIdFromUrl],
+    enabled: !!packageIdFromUrl,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('packages')
         .select('*')
-        .eq('slug', slugFromUrl)
-        .eq('agent_name', agentNameFromUrl)
+        .eq('id', packageIdFromUrl)
         .single();
 
       if (error) throw error;
@@ -431,14 +428,17 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       return;
     }
 
-    if (!packageDetails?.id || !slugFromUrl) {
+    if (!packageDetails?.id) {
       console.error('Missing package context for booking creation.');
       return;
     }
 
-    let resolvedAgentId = String(agentIdFromUrl || packageDetails.agent_id || '').trim();
-    const resolvedAgentName = String(agentNameFromUrl || packageDetails.agent_name || '').trim();
+    const resolvedSlug = String(packageDetails.slug || '').trim();
+    let resolvedAgentId = String(packageDetails.agent_id || '').trim();
+    const resolvedAgentName = String(packageDetails.agent_name || '').trim();
 
+    // Backward compat: a few legacy package rows have `agent_name` (slug) but
+    // a non-UUID `agent_id`. Resolve via the agents table by slug.
     if (!isUuid(resolvedAgentId) && resolvedAgentName) {
       const { data: agentBySlug } = await supabase
         .from('agents')
@@ -452,8 +452,8 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       }
     }
 
-    if (!resolvedAgentName || !isUuid(resolvedAgentId)) {
-      console.error('Missing agent details for booking creation.');
+    if (!resolvedSlug || !resolvedAgentName || !isUuid(resolvedAgentId)) {
+      console.error('Missing agent/package details for booking creation.');
       return;
     }
 
@@ -501,7 +501,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           agent_id: resolvedAgentId,
           agent_name: resolvedAgentName,
           package_id: packageDetails.id,
-          slug: slugFromUrl,
+          slug: resolvedSlug,
           guests: guestForms,
           sharing: sharingCount,
           booking_mobile: bookingMobile.trim(),
@@ -520,19 +520,8 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
 
     const params = new URLSearchParams();
 
-    if (slugFromUrl) {
-      params.set('slug', slugFromUrl);
-    }
-    if (agentNameFromUrl) {
-      params.set('agent_name', agentNameFromUrl);
-    }
-    if (agentIdFromUrl) {
-      params.set('agent_id', agentIdFromUrl);
-    } else if (resolvedAgentId) {
-      params.set('agent_id', resolvedAgentId);
-    }
+    if (packageDetails?.id) params.set('package_id', String(packageDetails.id));
     params.set('booking_id', String(createdBooking.id));
-
     params.set('guests', String(totalGuests));
     params.set('sharing', String(sharingCount));
     params.set('booking_mobile', bookingMobile.trim());
@@ -566,7 +555,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
               <div className="flex justify-between gap-4">
                 <span>Agent Name</span>
                 <span className="text-right text-neutral-900 dark:text-neutral-100">
-                  {packageDetails?.agent_name ?? agentNameFromUrl ?? 'Package'}
+                  {packageDetails?.agent_name ?? 'Package'}
                 </span>
               </div>
               <div className="flex justify-between gap-4">
@@ -640,8 +629,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   };
 
   const renderMain = () => {
-    const packageDetailHref =
-      slugFromUrl && agentNameFromUrl ? `/${agentNameFromUrl}/${slugFromUrl}` : undefined;
+    const pkgSlug = packageDetails?.slug ?? '';
+    const pkgAgent = packageDetails?.agent_name ?? '';
+    const packageDetailHref = pkgSlug && pkgAgent ? `/${pkgAgent}/${pkgSlug}` : undefined;
 
     return (
       <>
@@ -649,11 +639,11 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           items={[
             { label: 'Home', href: '/' },
             { label: 'Packages', href: '/packages' },
-            ...(slugFromUrl
+            ...(pkgSlug
               ? [
                   packageDetailHref
-                    ? { label: slugFromUrl, href: packageDetailHref }
-                    : { label: slugFromUrl },
+                    ? { label: pkgSlug, href: packageDetailHref }
+                    : { label: pkgSlug },
                 ]
               : []),
             { label: 'Checkout' },

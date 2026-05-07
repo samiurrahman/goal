@@ -14,6 +14,7 @@ import ImageUpload from '@/components/ImageUpload';
 import { supabase } from '@/utils/supabaseClient';
 import { uploadImageToStorage } from '@/utils/supabaseStorageHelper';
 import { useCities } from '@/hooks/useCities';
+import { allocatePackageSlug, slugify as slugifyShared } from '@/lib/slug';
 
 type WizardStep = 'meta' | 'itinerary' | 'amenities' | 'stay' | 'policies' | 'media';
 
@@ -533,14 +534,39 @@ const AddPackageWizardModal = ({
       return;
     }
 
-    const packageSlug = slugify(meta.title);
-    if (!packageSlug) {
+    if (!slugifyShared(meta.title)) {
       toast.error('Slug is invalid.');
       setStep('meta');
       return;
     }
 
     setIsSaving(true);
+
+    // Allocate a unique slug scoped to this agent.
+    // - For edits, keep the existing slug (don't break shared URLs).
+    // - For new packages, prefer a user-edited slug field, fall back to title.
+    const userSlugInput = (meta.slug || '').trim();
+    const slugSource = userSlugInput || meta.title;
+    let packageSlug: string;
+    try {
+      if (editPackageId) {
+        const { data: existing } = await supabase
+          .from('packages')
+          .select('slug')
+          .eq('id', editPackageId)
+          .maybeSingle();
+        packageSlug =
+          (existing?.slug && String(existing.slug).trim()) ||
+          (await allocatePackageSlug(agentAuthUserId, slugSource));
+      } else {
+        packageSlug = await allocatePackageSlug(agentAuthUserId, slugSource);
+      }
+    } catch (slugErr) {
+      const message = slugErr instanceof Error ? slugErr.message : 'Failed to allocate slug';
+      toast.error(message);
+      setIsSaving(false);
+      return;
+    }
 
     const normalizedRates = sharingRates
       .filter((rate) => Number(rate.value) > 0)
@@ -815,6 +841,20 @@ const AddPackageWizardModal = ({
                         value={meta.title}
                         onChange={handleMetaChange}
                       />
+                      {(meta.title.trim() || meta.slug.trim()) && agentSlug ? (
+                        <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                          Your URL will be{' '}
+                          <span className="font-mono text-neutral-700 dark:text-neutral-300">
+                            searchumrah.com/{agentSlug}/
+                            {slugifyShared(meta.slug.trim() || meta.title)}
+                          </span>
+                          {!editPackageId ? (
+                            <span className="block text-neutral-400 dark:text-neutral-500 mt-0.5">
+                              A `-2`, `-3`, … suffix is added automatically if this slug is already in use.
+                            </span>
+                          ) : null}
+                        </p>
+                      ) : null}
                     </div>
                     <div className="md:col-span-2">
                       <Label>Short Description</Label>

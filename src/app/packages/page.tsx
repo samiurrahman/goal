@@ -88,12 +88,13 @@ const ListingPackagesPage = async ({ searchParams }: PageProps) => {
   };
 
   return (
-    <div className={`nc-ListingPackagesPage relative overflow-hidden`}>
+    <div className={`nc-ListingPackagesPage relative overflow-x-clip`}>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <div className="sticky top-0 z-0">
+      {/* Decorative background — pinned to viewport so it doesn't scroll with content */}
+      <div className="fixed inset-x-0 top-0 -z-10 pointer-events-none">
         <BgGlassmorphism />
       </div>
 

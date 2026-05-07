@@ -207,7 +207,14 @@ export default function ListingPage() {
     let agentSlug = (agentRow.slug || '').trim();
     if (!agentSlug) {
       const sourceName = (agentRow.known_as || '').trim() || user.email || user.id;
-      agentSlug = slugify(sourceName);
+      try {
+        const { allocateAgentSlug } = await import('@/lib/slug');
+        agentSlug = await allocateAgentSlug(sourceName);
+      } catch (err) {
+        toast.error('Failed to allocate agent URL: ' + (err instanceof Error ? err.message : 'Unknown error'));
+        setLoading(false);
+        return;
+      }
       const { error: slugUpdateError } = await supabase
         .from('agents')
         .update({ slug: agentSlug, auth_user_id: user.id })

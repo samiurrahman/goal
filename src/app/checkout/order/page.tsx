@@ -8,7 +8,6 @@ import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type { PackageDetails } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
-import StartRating from '@/components/StartRating';
 
 type GuestForm = {
   title: 'Mr' | 'Mrs' | 'Ms';
@@ -27,23 +26,20 @@ type SharingRate = {
 const CheckoutOrderPage: FC = () => {
   const searchParams = useSearchParams();
 
-  const slug = searchParams.get('slug');
-  const agentName = searchParams.get('agent_name');
-  const agentId = searchParams.get('agent_id');
+  const packageIdFromUrl = (searchParams.get('package_id') || '').trim();
   const guestsFromUrl = Number(searchParams.get('guests'));
   const sharingFromUrl = Number(searchParams.get('sharing'));
   const bookingMobile = searchParams.get('booking_mobile') ?? '';
   const guestFormsRaw = searchParams.get('guest_forms');
 
   const { data: packageDetails } = useQuery<PackageDetails | null>({
-    queryKey: ['order_package_details', slug, agentName],
-    enabled: !!slug && !!agentName,
+    queryKey: ['order_package_details', packageIdFromUrl],
+    enabled: !!packageIdFromUrl,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('packages')
         .select('*')
-        .eq('slug', slug)
-        .eq('agent_name', agentName)
+        .eq('id', packageIdFromUrl)
         .single();
 
       if (error) throw error;
@@ -62,6 +58,9 @@ const CheckoutOrderPage: FC = () => {
       return data;
     },
   });
+
+  const slug = packageDetails?.slug ?? null;
+  const agentName = packageDetails?.agent_name ?? null;
 
   const guestForms = useMemo<GuestForm[]>(() => {
     try {
@@ -144,15 +143,6 @@ const CheckoutOrderPage: FC = () => {
       <main className="container mt-11 mb-24 lg:mb-32 ">
         <div className="max-w-4xl mx-auto">
           <div className="w-full flex flex-col sm:rounded-2xl space-y-10 px-0 sm:p-6 xl:p-8">
-            <div>
-              <h2 className="text-3xl lg:text-4xl font-semibold">Order Preview</h2>
-              <p className="mt-3 text-neutral-500 dark:text-neutral-400">
-                Review the final booking details before moving to payment.
-              </p>
-            </div>
-
-            <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
-
             <div className="space-y-6">
               <h3 className="text-2xl font-semibold">Your booking</h3>
               <div className="flex flex-col sm:flex-row sm:items-center">
@@ -180,8 +170,6 @@ const CheckoutOrderPage: FC = () => {
                       ? `${packageDetails.departure_city} - ${packageDetails.arrival_city}`
                       : 'TBD'}
                   </span>
-                  <div className="w-10 border-b border-neutral-200 dark:border-neutral-700"></div>
-                  <StartRating />
                 </div>
               </div>
               <div className="mt-6 border border-neutral-200 dark:border-neutral-700 rounded-3xl flex flex-col sm:flex-row divide-y sm:divide-x sm:divide-y-0 divide-neutral-200 dark:divide-neutral-700">
@@ -330,16 +318,12 @@ const CheckoutOrderPage: FC = () => {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3">
-              <ButtonPrimary href="/booking-success">Proceed to Payment</ButtonPrimary>
+              <ButtonPrimary href="/my-bookings">Go to bookings</ButtonPrimary>
               <Link
-                href={
-                  slug && agentName
-                    ? `/checkout?slug=${slug}&agent_name=${agentName}${agentId ? `&agent_id=${agentId}` : ''}&guests=${totalGuests}&sharing=${selectedRate?.people ?? sharingFromUrl}`
-                    : '/checkout'
-                }
+                href="/packages"
                 className="inline-flex items-center justify-center px-6 py-4 rounded-full border border-neutral-300 dark:border-neutral-700 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800"
               >
-                Back to checkout
+                Make another booking
               </Link>
             </div>
           </div>

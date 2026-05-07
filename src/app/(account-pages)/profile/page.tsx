@@ -15,6 +15,7 @@ import Checkbox from '@/shared/Checkbox';
 import Textarea from '@/shared/Textarea';
 import type { Agent, AgentInfoFeature, TwMainColor } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
+import { slugify, RESERVED_AGENT_SLUGS } from '@/lib/slug';
 
 interface CityRecord {
   id: string | number;
@@ -25,6 +26,7 @@ interface CityRecord {
 interface AgentProfileFormState {
   name: string;
   known_as: string;
+  slug: string;
   contact_number: string;
   alternate_number: string;
   whatsapp_url: string;
@@ -51,6 +53,7 @@ const AgentProfilePage = () => {
   const [form, setForm] = useState<AgentProfileFormState>({
     name: '',
     known_as: '',
+    slug: '',
     contact_number: '',
     alternate_number: '',
     whatsapp_url: '',
@@ -131,6 +134,7 @@ const AgentProfilePage = () => {
       setForm({
         name: agentProfile?.name || '',
         known_as: agentProfile?.known_as || '',
+        slug: agentProfile?.slug || '',
         contact_number: agentProfile?.contact_number || '',
         alternate_number: agentProfile?.alternate_number || '',
         whatsapp_url: agentProfile?.whatsapp_url || '',
@@ -220,6 +224,51 @@ const AgentProfilePage = () => {
 
     const experiencePayload = experienceField ? { [experienceField]: form.experience.trim() } : {};
 
+    // Slug change handling — validate, check uniqueness, record redirect, then update
+    const oldSlug = (agent.slug || '').trim().toLowerCase();
+    const desiredSlug = form.slug.trim().toLowerCase();
+    let slugUpdate: Record<string, string> = {};
+
+    if (desiredSlug && desiredSlug !== oldSlug) {
+      if (RESERVED_AGENT_SLUGS.has(desiredSlug)) {
+        setIsSaving(false);
+        toast.error('That URL is reserved by the system. Please pick a different one.');
+        return;
+      }
+      if (desiredSlug !== slugify(desiredSlug) || desiredSlug.length < 2) {
+        setIsSaving(false);
+        toast.error('Invalid URL. Use lowercase letters, numbers, and hyphens only.');
+        return;
+      }
+
+      // Uniqueness check (different agent already owns it)
+      const { data: existing } = await supabase
+        .from('agents')
+        .select('id')
+        .eq('slug', desiredSlug)
+        .neq('id', agent.id)
+        .maybeSingle();
+      if (existing) {
+        setIsSaving(false);
+        toast.error('That URL is already taken by another agent. Please pick a different one.');
+        return;
+      }
+
+      slugUpdate = { slug: desiredSlug };
+
+      // Record the old → new mapping so old URLs can be 301-redirected.
+      // If the redirects table doesn't exist yet (SQL not applied), we
+      // ignore the failure; the slug update itself still proceeds.
+      if (oldSlug) {
+        const { error: redirectError } = await supabase
+          .from('agent_slug_redirects')
+          .insert({ old_slug: oldSlug, new_slug: desiredSlug, agent_id: agent.id });
+        if (redirectError && !/does not exist|relation/i.test(redirectError.message || '')) {
+          console.warn('Could not record slug redirect:', redirectError.message);
+        }
+      }
+    }
+
     const { data, error } = await supabase
       .from('agents')
       .update({
@@ -239,6 +288,7 @@ const AgentProfilePage = () => {
         banner_image: form.banner_image.trim() || null,
         about_us: form.about_us,
         ...experiencePayload,
+        ...slugUpdate,
       })
       .eq('id', agent.id)
       .select('*')
@@ -247,12 +297,21 @@ const AgentProfilePage = () => {
     setIsSaving(false);
 
     if (error) {
+      // Likely a unique-violation race — the user got beaten to that slug
+      if (error.code === '23505' || /duplicate|unique/i.test(error.message || '')) {
+        toast.error('That URL was just taken by someone else. Please pick a different one.');
+        return;
+      }
       toast.error(`Failed to update profile: ${error.message}`);
       return;
     }
 
     setAgent((data as Agent | null) ?? agent);
-    toast.success('Profile updated successfully.');
+    toast.success(
+      slugUpdate.slug
+        ? `Profile updated. Your public URL is now searchumrah.com/${slugUpdate.slug}`
+        : 'Profile updated successfully.'
+    );
     router.refresh();
   };
 
@@ -381,6 +440,69 @@ const AgentProfilePage = () => {
                   onChange={(e) => updateField('known_as', e.target.value)}
                   placeholder="Public profile name"
                 />
+              </div>
+
+              <div className="md:col-span-2">
+                <Label>Public URL</Label>
+                <div className="mt-1.5 flex items-stretch rounded-2xl border border-neutral-300 dark:border-neutral-600 overflow-hidden focus-within:ring-2 focus-within:ring-primary-500">
+                  <span className="inline-flex items-center px-3 bg-neutral-50 dark:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400 border-r border-neutral-300 dark:border-neutral-600 select-none whitespace-nowrap">
+                    searchumrah.com/
+                  </span>
+                  <input
+                    type="text"
+                    inputMode="url"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    value={form.slug}
+                    onChange={(e) => updateField('slug', slugify(e.target.value))}
+                    placeholder="your-business-name"
+                    className="flex-1 px-3 py-3 bg-transparent text-sm focus:outline-none"
+                  />
+                </div>
+
+                {(() => {
+                  const trimmed = form.slug.trim();
+                  const original = (agent?.slug || '').trim();
+                  const isReserved = trimmed.length > 0 && RESERVED_AGENT_SLUGS.has(trimmed);
+                  const isInvalid = trimmed.length > 0 && trimmed !== slugify(trimmed);
+                  const hasChanged = trimmed.length > 0 && trimmed !== original;
+
+                  if (isReserved) {
+                    return (
+                      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                        <i className="las la-exclamation-circle mr-1" />
+                        That URL is reserved by the system. Please pick a different one.
+                      </p>
+                    );
+                  }
+                  if (isInvalid) {
+                    return (
+                      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                        <i className="las la-exclamation-circle mr-1" />
+                        Use lowercase letters, numbers, and hyphens only.
+                      </p>
+                    );
+                  }
+                  if (hasChanged) {
+                    return (
+                      <p className="mt-1.5 text-xs rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-amber-800 dark:text-amber-200">
+                        <i className="las la-exclamation-triangle mr-1" />
+                        Heads up — changing your URL means anyone who already has the old link
+                        (Google, social media, WhatsApp shares) will land on a 404 unless we set up
+                        a redirect. Old URL: <span className="font-mono">/{original}</span>
+                      </p>
+                    );
+                  }
+                  return (
+                    <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                      Your public agent page is{' '}
+                      <span className="font-mono text-neutral-700 dark:text-neutral-300">
+                        searchumrah.com/{trimmed || original}
+                      </span>
+                    </p>
+                  );
+                })()}
               </div>
 
               <div>

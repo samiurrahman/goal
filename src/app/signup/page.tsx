@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken } from '@/utils/authToken';
+import { insertAgentWithUniqueSlug, ReservedSlugError } from '@/lib/slug';
 import googleSvg from '@/images/Google.svg';
 import Input from '@/shared/Input';
 import ButtonPrimary from '@/shared/ButtonPrimary';
@@ -63,15 +64,25 @@ const PageSignUp = () => {
         toast.error('Account created, but profile setup failed. Please contact support.');
         return;
       }
-      // If agent, create agents row
+      // If agent, create agents row with a unique slug (retry-safe on race)
       if (userType === 'agent') {
-        const { error: agentError } = await supabase.from('agents').insert({
-          auth_user_id: data.user.id,
-          email_id: email,
-          name: email.split('@')[0],
-        });
-        if (agentError) {
-          toast.error('Account created, but agent profile setup failed. Please contact support.');
+        const baseName = email.split('@')[0] || 'agent';
+        try {
+          const { error: agentError } = await insertAgentWithUniqueSlug(baseName, {
+            auth_user_id: data.user.id,
+            email_id: email,
+            name: baseName,
+          });
+          if (agentError) {
+            toast.error('Account created, but agent profile setup failed. Please contact support.');
+            return;
+          }
+        } catch (slugErr) {
+          if (slugErr instanceof ReservedSlugError) {
+            toast.error('That username is reserved. Please contact support to set up your agent profile.');
+          } else {
+            toast.error('Account created, but slug allocation failed. Please contact support.');
+          }
           return;
         }
       }

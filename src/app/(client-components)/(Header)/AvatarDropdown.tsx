@@ -8,7 +8,7 @@ import { supabase } from '@/utils/supabaseClient';
 import { removeAccessToken } from '@/utils/authToken';
 import { resolvePublicImageUrl } from '@/utils/supabaseStorageHelper';
 import useOutsideAlerter from '@/hooks/useOutsideAlerter';
-import { isProtectedRoute } from '@/constants/protectedRoutes';
+import { shouldRedirectHomeOnLogout } from '@/constants/protectedRoutes';
 import type { User } from '@supabase/supabase-js';
 interface Props {
   className?: string;
@@ -223,7 +223,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
       setIsAuthReady(true);
       setIsSigningOut(false);
 
-      if (isProtectedRoute(pathname)) {
+      if (shouldRedirectHomeOnLogout(pathname)) {
         router.push('/');
       }
     };

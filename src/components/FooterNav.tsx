@@ -14,7 +14,7 @@ import Avatar from '@/shared/Avatar';
 import SwitchDarkMode2 from '@/shared/SwitchDarkMode2';
 import { supabase } from '@/utils/supabaseClient';
 import { removeAccessToken } from '@/utils/authToken';
-import { isProtectedRoute } from '@/constants/protectedRoutes';
+import { shouldRedirectHomeOnLogout } from '@/constants/protectedRoutes';
 import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
 import isInViewport from '@/utils/isInViewport';
 
@@ -347,7 +347,7 @@ const FooterNav = () => {
       setMenuOpen(false);
       setIsSigningOut(false);
 
-      if (isProtectedRoute(pathname)) {
+      if (shouldRedirectHomeOnLogout(pathname)) {
         router.push('/');
       }
     };
