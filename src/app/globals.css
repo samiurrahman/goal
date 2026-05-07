@@ -6,7 +6,10 @@ html,
 body {
   width: 100%;
   max-width: 100%;
-  overflow-x: hidden;
+  /* Use `clip` (not `hidden`) so we still suppress accidental horizontal scroll
+     without creating a scroll container — `overflow: hidden` on the root would
+     break `position: sticky` for every descendant. */
+  overflow-x: clip;
 }
 
 * {
