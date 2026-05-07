@@ -14,7 +14,7 @@ const SectionTopCitiesMobile = () => {
 
   return (
     <section className="mt-6">
-      <h2 className="px-4 text-lg font-semibold text-neutral-900 dark:text-neutral-100">
+      <h2 className="px-4 text-lg font-medium text-neutral-900 dark:text-neutral-100">
         Top destinations
       </h2>
 
@@ -50,7 +50,7 @@ const SectionTopCitiesMobile = () => {
                 <div className="px-3 py-2.5">
                   <div className="flex items-center text-neutral-900 dark:text-neutral-100">
                     <MapPinIcon className="w-4 h-4 text-primary-6000 flex-shrink-0" />
-                    <span className="ml-1 text-sm font-semibold truncate">{city}</span>
+                    <span className="ml-1 text-sm font-light truncate">{city}</span>
                   </div>
                   <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">
                     {count} {count === 1 ? 'package' : 'packages'}
