@@ -7,8 +7,13 @@ import Link from 'next/link';
 import Image from 'next/image';
 import bannerImage from '@/images/hero-right1.png';
 import Badge from '@/shared/Badge';
+import { getOptimizedImageUrl } from '@/lib/imageUrl';
+
+const FALLBACK_BLUR_DATA_URL =
+  'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
 import SocialsList from '@/shared/SocialsList';
 import StartRating from '@/components/StartRating';
+import GovtVerifiedBadge from '@/components/GovtVerifiedBadge';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
 import SectionGridFeaturePlaces from './(components)/SectionGridFeaturePlaces';
 import ReviewsSection from './(components)/ReviewsSection';
@@ -17,7 +22,9 @@ export interface AgentDetailsProps {
   params: { agentName: string };
 }
 
-export const dynamic = 'force-dynamic';
+// Re-render at most once per minute. Agent profile data changes rarely;
+// this is a huge perf win over `force-dynamic` for repeat visits.
+export const revalidate = 60;
 
 const sanitizeProfileMarkup = (markup: string) => {
   if (!markup) return '';
@@ -29,11 +36,14 @@ const sanitizeProfileMarkup = (markup: string) => {
 };
 
 const getAgentBySlug = async (agentName: string): Promise<Agent | null> => {
+  // Keep `*` here: the schema has variable optional columns
+  // (experience_years vs years_of_experience etc.) — listing them risks errors
+  // on installations that haven't migrated. The agent row is small (~1KB).
   const { data: agentData } = await supabase
     .from('agents')
     .select('*')
     .eq('slug', agentName)
-    .single();
+    .maybeSingle();
 
   const agentDetails = (agentData as Agent | null) ?? null;
   if (!agentDetails) return null;
@@ -78,84 +88,72 @@ const normalizeExternalLink = (value?: string | null) => {
   return `https://${trimmed}`;
 };
 
+type ReviewRow = {
+  id: number | string;
+  agent_id: string;
+  user_id: string | null;
+  user_email: string | null;
+  user_name: string | null;
+  user_profile_image: string | null;
+  rating: number;
+  review_text: string;
+  created_at: string;
+  updated_at: string | null;
+};
+
+type UserDetailsLite = {
+  auth_user_id: string;
+  first_name: string | null;
+  last_name: string | null;
+  profile_image: string | null;
+};
+
 const getReviewsForAgent = async (agentId: string): Promise<AgentReview[]> => {
-  try {
-    // Fetch reviews for the agent
-    let reviewsQuery: any = await supabase
-      .from('agent_reviews')
-      .select(
-        'id, agent_id, user_id, user_email, user_name, user_profile_image, rating, review_text, created_at, updated_at'
-      )
-      .eq('agent_id', agentId)
-      .order('created_at', { ascending: false });
+  const { data: reviewsData, error: reviewsError } = await supabase
+    .from('agent_reviews')
+    .select(
+      'id, agent_id, user_id, user_email, user_name, user_profile_image, rating, review_text, created_at, updated_at'
+    )
+    .eq('agent_id', agentId)
+    .order('created_at', { ascending: false });
 
-    // Fallback for missing identity columns
-    const missingIdentityColumnsError =
-      !!reviewsQuery.error &&
-      (reviewsQuery.error.code === '42703' ||
-        String(reviewsQuery.error.message || '')
-          .toLowerCase()
-          .includes('column'));
-
-    if (missingIdentityColumnsError) {
-      reviewsQuery = await supabase
-        .from('agent_reviews')
-        .select('id, agent_id, user_id, rating, review_text, created_at, updated_at')
-        .eq('agent_id', agentId)
-        .order('created_at', { ascending: false });
-    }
-
-    const { data: reviews, error: reviewsError } = reviewsQuery;
-
-    if (reviewsError) {
-      console.error('Error fetching reviews:', reviewsError);
-      return [];
-    }
-
-    // Enrich reviews with user profile data
-    const reviewRows = (reviews || []) as Record<string, any>[];
-    const userIds = Array.from(
-      new Set(reviewRows.map((review) => review.user_id).filter((value) => !!value))
-    );
-
-    let profileByUserId = new Map<string, Record<string, any>>();
-
-    if (userIds.length > 0) {
-      const { data: profiles } = await supabase
-        .from('user_details')
-        .select('auth_user_id, first_name, last_name, profile_image')
-        .in('auth_user_id', userIds);
-
-      if (profiles) {
-        profileByUserId = new Map<string, Record<string, any>>(
-          profiles.map((profile) => [
-            profile.auth_user_id as string,
-            profile as Record<string, any>,
-          ])
-        );
-      }
-    }
-
-    const enrichedReviews = reviewRows.map((review) => {
-      const normalized = normalizeReview(review);
-      const profile = profileByUserId.get(review.user_id as string);
-
-      if (!profile) {
-        return normalized;
-      }
-
-      return {
-        ...normalized,
-        user_name: buildReviewerName(profile),
-        user_profile_image: (profile.profile_image as string | null) || null,
-      };
-    });
-
-    return enrichedReviews as AgentReview[];
-  } catch (error) {
-    console.error('Error fetching reviews for agent:', error);
+  if (reviewsError) {
+    console.error('Error fetching reviews:', reviewsError);
     return [];
   }
+
+  const reviewRows = (reviewsData ?? []) as ReviewRow[];
+  if (reviewRows.length === 0) return [];
+
+  // Enrich any rows missing user_name / user_profile_image with a single
+  // user_details lookup. (Newer rows have these denormalized already.)
+  const needsEnrichment = reviewRows.filter(
+    (r) => r.user_id && (!r.user_name || !r.user_profile_image)
+  );
+  const userIds = Array.from(new Set(needsEnrichment.map((r) => r.user_id as string)));
+
+  let profileByUserId = new Map<string, UserDetailsLite>();
+  if (userIds.length > 0) {
+    const { data: profiles } = await supabase
+      .from('user_details')
+      .select('auth_user_id, first_name, last_name, profile_image')
+      .in('auth_user_id', userIds);
+
+    profileByUserId = new Map(
+      ((profiles ?? []) as UserDetailsLite[]).map((p) => [p.auth_user_id, p])
+    );
+  }
+
+  return reviewRows.map((review) => {
+    const normalized = normalizeReview(review);
+    const profile = review.user_id ? profileByUserId.get(review.user_id) : undefined;
+    if (!profile) return normalized;
+    return {
+      ...normalized,
+      user_name: normalized.user_name === 'User' ? buildReviewerName(profile) : normalized.user_name,
+      user_profile_image: normalized.user_profile_image || profile.profile_image || null,
+    };
+  }) as AgentReview[];
 };
 
 export const generateMetadata = async ({ params }: AgentDetailsProps): Promise<Metadata> => {
@@ -193,20 +191,16 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
     // Add more fields as needed
   };
 
-  // Fetch all packages for this agent
+  // Fetch packages + reviews in parallel once we know the agent id
   let agentPackages: Package[] = [];
-  if (agentDetails?.id) {
-    const { data: packagesData } = await supabase
-      .from('packages')
-      .select('*')
-      .eq('agent_id', agentDetails.id);
-    agentPackages = (packagesData as Package[] | null) ?? [];
-  }
-
-  // Fetch reviews for this agent
   let agentReviews: AgentReview[] = [];
   if (agentDetails?.id) {
-    agentReviews = await getReviewsForAgent(agentDetails.id);
+    const [packagesResult, reviews] = await Promise.all([
+      supabase.from('packages').select('*').eq('agent_id', agentDetails.id),
+      getReviewsForAgent(String(agentDetails.id)),
+    ]);
+    agentPackages = (packagesResult.data as Package[] | null) ?? [];
+    agentReviews = reviews;
   }
 
   const agentLocation = [agentDetails?.city, agentDetails?.state, agentDetails?.country]
@@ -284,11 +278,26 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
             <section className="overflow-hidden rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg">
               <div className="relative h-60 md:h-60 w-full">
                 <Image
-                  src={bannerSrc}
+                  src={
+                    typeof bannerSrc === 'string'
+                      ? getOptimizedImageUrl(bannerSrc, {
+                          width: 1600,
+                          height: 480,
+                          resize: 'cover',
+                          quality: 78,
+                        }) || bannerSrc
+                      : bannerSrc
+                  }
                   alt={agentDetails?.known_as || 'Agent cover'}
                   fill
                   className="object-cover"
                   sizes="100vw"
+                  quality={78}
+                  priority
+                  placeholder="blur"
+                  blurDataURL={
+                    typeof bannerSrc === 'string' ? FALLBACK_BLUR_DATA_URL : undefined
+                  }
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
                 {socialLinks.length > 0 && (
@@ -323,28 +332,26 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                       }
                       color="blue"
                     />
-                    {isGovVerified && (
-                      <Badge
-                        name={
-                          <span className="inline-flex items-center gap-1.5">
-                            <i className="las la-check-circle text-sm" />
-                            Government Verified
-                          </span>
-                        }
-                        color="green"
-                      />
-                    )}
+                    {isGovVerified && <GovtVerifiedBadge />}
                   </div>
                 </div>
                 <div className="absolute left-4 right-4 md:right-auto md:left-8 bottom-0 translate-y-1/2 z-20 flex items-center gap-3 md:gap-5 rounded-2xl bg-white/95 dark:bg-neutral-900/95 px-3 py-2 shadow-md border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm lg:max-w-[58vw]">
                   {agentDetails?.profile_image ? (
                     <div className="relative h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-full border-[4px] border-white dark:border-neutral-900 shadow-lg shrink-0">
                       <Image
-                        src={agentDetails.profile_image}
+                        src={
+                          getOptimizedImageUrl(agentDetails.profile_image, {
+                            width: 192,
+                            height: 192,
+                            resize: 'cover',
+                            quality: 75,
+                          }) || agentDetails.profile_image
+                        }
                         alt={agentDetails.known_as || 'Agent'}
                         fill
                         className="object-cover"
                         sizes="96px"
+                        quality={75}
                       />
                     </div>
                   ) : (
@@ -398,17 +405,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                       }
                       color="blue"
                     />
-                    {isGovVerified && (
-                      <Badge
-                        name={
-                          <span className="inline-flex items-center gap-1.5">
-                            <i className="las la-check-circle text-sm" />
-                            Government Verified
-                          </span>
-                        }
-                        color="green"
-                      />
-                    )}
+                    {isGovVerified && <GovtVerifiedBadge />}
                   </div>
                 </div>
 
@@ -466,6 +463,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
             <SectionOurFeatures agentName={agentDetails?.known_as} agent={agentDetails} />
             <SectionGridFeaturePlaces
               packages={agentPackages ?? []}
+              agent={agentDetails}
               heading="Our Packages"
               tabs={['Umrah', 'Hajj']}
             />

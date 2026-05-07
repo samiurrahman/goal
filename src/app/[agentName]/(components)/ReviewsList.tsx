@@ -1,5 +1,6 @@
 import { AgentReview } from '@/data/types';
 import Image from 'next/image';
+import { getOptimizedImageUrl } from '@/lib/imageUrl';
 
 interface ReviewsListProps {
   agentName: string;
@@ -81,11 +82,19 @@ export default function ReviewsList({ agentName, reviews }: ReviewsListProps) {
               <div className="h-14 w-14 rounded-full flex-shrink-0 overflow-hidden">
                 {hasProfileImage ? (
                   <Image
-                    src={review.user_profile_image as string}
+                    src={
+                      getOptimizedImageUrl(review.user_profile_image, {
+                        width: 112,
+                        height: 112,
+                        resize: 'cover',
+                        quality: 70,
+                      }) || (review.user_profile_image as string)
+                    }
                     alt={displayName}
                     width={56}
                     height={56}
                     className="h-full w-full object-cover"
+                    quality={70}
                   />
                 ) : (
                   <div
