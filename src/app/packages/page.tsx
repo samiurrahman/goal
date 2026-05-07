@@ -6,37 +6,37 @@ import { buildPackagesQueryArgs, fetchPackages } from '@/lib/queries/packages';
 import { Package } from '@/data/types';
 
 export const metadata: Metadata = {
-  title: 'Hajj & Umrah Packages 2025 | Compare Best Deals',
+  title: 'Umrah Packages 2025 | Compare Best Deals',
   description:
-    'Explore and compare hundreds of Hajj and Umrah packages from verified travel agents. Find the best deals on hotels near Haram in Makkah and Madinah.',
+    'Explore and compare hundreds of Umrah packages from verified travel agents. Find the best deals on hotels near Haram in Makkah and Madinah.',
   keywords: [
-    'Hajj packages 2025',
+    'Umrah packages 2025',
     'Umrah packages',
     'Makkah hotels',
     'Madinah hotels',
     'compare packages',
-    'best Hajj deals',
+    'best Umrah deals',
     'Ramadan Umrah',
     'Cheap Umrah packages',
   ],
   openGraph: {
-    title: 'Hajj & Umrah Packages 2025 | Compare Best Deals',
+    title: 'Umrah Packages 2025 | Compare Best Deals',
     description:
-      'Explore and compare hundreds of Hajj and Umrah packages from verified travel agents.',
+      'Explore and compare hundreds of Umrah packages from verified travel agents.',
     type: 'website',
     images: [
       {
-        url: '/images/og-hajj-umrah.jpg',
+        url: '/images/og-umrah.jpg',
         width: 1200,
         height: 630,
-        alt: 'Hajj and Umrah Packages',
+        alt: 'Umrah Packages',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Hajj & Umrah Packages 2025',
-    description: 'Find the best spiritual journey packages for Hajj and Umrah.',
+    title: 'Umrah Packages 2025',
+    description: 'Find the best spiritual journey packages for Umrah.',
   },
   robots: {
     index: true,
@@ -81,10 +81,10 @@ const ListingPackagesPage = async ({ searchParams }: PageProps) => {
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': 'CollectionPage',
-    name: 'Hajj & Umrah Packages',
+    name: 'Umrah Packages',
     description:
-      'Explore and compare hundreds of Hajj and Umrah packages from verified travel agents.',
-    url: 'https://your-domain.com/packages',
+      'Explore and compare hundreds of Umrah packages from verified travel agents.',
+    url: 'https://searchumrah.com/packages',
   };
 
   return (

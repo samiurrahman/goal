@@ -13,10 +13,10 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
       structuredData = {
         '@context': 'https://schema.org',
         '@type': 'Organization',
-        name: data.name || 'Hajjscanner',
+        name: data.name || 'Searchumrah',
         url: data.url || process.env.NEXT_PUBLIC_SITE_URL,
         logo: data.logo || `${process.env.NEXT_PUBLIC_SITE_URL}/logo.png`,
-        description: data.description || 'Premium Hajj & Umrah travel booking platform',
+        description: data.description || 'Premium Umrah travel booking platform',
         contactPoint: {
           '@type': 'ContactPoint',
           telephone: data.telephone || '+1-XXX-XXX-XXXX',
@@ -31,9 +31,9 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
       structuredData = {
         '@context': 'https://schema.org',
         '@type': 'WebSite',
-        name: data.name || 'Hajjscanner',
+        name: data.name || 'Searchumrah',
         url: data.url || process.env.NEXT_PUBLIC_SITE_URL,
-        description: data.description || 'Book Hajj and Umrah packages online',
+        description: data.description || 'Book Umrah packages online',
         potentialAction: {
           '@type': 'SearchAction',
           target: {
@@ -64,7 +64,7 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
       structuredData = {
         '@context': 'https://schema.org',
         '@type': 'TravelAgency',
-        name: data.name || 'Hajjscanner',
+        name: data.name || 'Searchumrah',
         description: data.description,
         url: data.url,
         image: data.image,
@@ -83,7 +83,7 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
         image: data.image,
         brand: {
           '@type': 'Brand',
-          name: data.brand || 'Hajjscanner',
+          name: data.brand || 'Searchumrah',
         },
         offers: {
           '@type': 'Offer',
@@ -94,7 +94,7 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
           availability: 'https://schema.org/InStock',
           seller: {
             '@type': 'Organization',
-            name: data.seller || 'Hajjscanner',
+            name: data.seller || 'Searchumrah',
           },
         },
         aggregateRating: data.rating

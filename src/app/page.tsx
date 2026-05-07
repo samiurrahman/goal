@@ -39,7 +39,7 @@ function PageHome() {
             <div className="flex justify-center">
               <Image
                 src={ourFeaturesImg}
-                alt="Hajj & Umrah journey illustration"
+                alt="Umrah journey illustration"
                 priority
                 className="w-64 h-auto"
               />

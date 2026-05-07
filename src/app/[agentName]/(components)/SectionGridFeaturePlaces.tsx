@@ -16,7 +16,7 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
   packages = [],
   heading = 'Our Packages',
   subHeading = '',
-  tabs = ['Umrah', 'Hajj'],
+  tabs = ['Umrah'],
   agent = null,
 }) => {
   return (

@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hajjscanner.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
   const packageUrl = `${baseUrl}/${agentName}/${slug}`;
 
   return {
@@ -37,7 +37,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       pkg.title,
       `${pkg.total_duration_days} days package`,
       pkg.agent_name || '',
-      'Hajj package',
       'Umrah package',
       pkg.departure_city || '',
       pkg.makkah_hotel_name || '',
@@ -45,7 +44,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     ],
     openGraph: {
       title: `${pkg.title} - ${pkg.currency}${pkg.price_per_person}`,
-      description: pkg.short_description || `${pkg.total_duration_days} days Hajj/Umrah package`,
+      description: pkg.short_description || `${pkg.total_duration_days} days Umrah package`,
       type: 'website',
       url: packageUrl,
       images: [

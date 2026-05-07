@@ -52,7 +52,7 @@ const makeCloneSlug = (slug: string | null, title: string, packageId: number) =>
 const LOADER_CARD_COUNT = 6;
 
 const ListedPackagesPage = () => {
-  const categories = ['Umrah', 'Hajj'];
+  const categories = ['Umrah'];
   const router = useRouter();
   const queryClient = useQueryClient();
   const [agentUUID, setAgentUUID] = useState<string | null>(null);
@@ -430,12 +430,6 @@ const ListedPackagesPage = () => {
                 No packages listed yet.
               </p>
             )}
-          </Tab.Panel>
-
-          <Tab.Panel className="mt-8">
-            <p className="text-sm text-neutral-500 dark:text-neutral-400">
-              No Hajj packages listed yet.
-            </p>
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>

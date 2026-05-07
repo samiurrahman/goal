@@ -159,10 +159,10 @@ const getReviewsForAgent = async (agentId: string): Promise<AgentReview[]> => {
 export const generateMetadata = async ({ params }: AgentDetailsProps): Promise<Metadata> => {
   const agentDetails = await getAgentBySlug(params.agentName);
   const title = agentDetails?.known_as
-    ? `${agentDetails.known_as} | HajjScanner`
-    : 'Agent Profile | HajjScanner';
+    ? `${agentDetails.known_as} | Searchumrah`
+    : 'Agent Profile | Searchumrah';
   const description =
-    agentDetails?.about_us || 'Explore trusted Hajj and Umrah packages from verified agents.';
+    agentDetails?.about_us || 'Explore trusted Umrah packages from verified agents.';
 
   return {
     title,
@@ -171,7 +171,7 @@ export const generateMetadata = async ({ params }: AgentDetailsProps): Promise<M
       title,
       description,
       type: 'profile',
-      url: `https://www.hajjscanner.com/${params.agentName}`,
+      url: `https://www.searchumrah.com/${params.agentName}`,
       images: agentDetails?.profile_image ? [{ url: agentDetails.profile_image }] : undefined,
     },
   };
@@ -185,7 +185,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
     '@context': 'https://schema.org',
     '@type': 'Person', // or "Organization" if more appropriate
     name: agentDetails?.known_as,
-    url: `https://www.hajjscanner.com/${agentDetails?.slug}`,
+    url: `https://www.searchumrah.com/${agentDetails?.slug}`,
     description: agentDetails?.about_us,
     image: agentDetails?.profile_image, // URL to agent's image
     // Add more fields as needed
@@ -465,7 +465,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
               packages={agentPackages ?? []}
               agent={agentDetails}
               heading="Our Packages"
-              tabs={['Umrah', 'Hajj']}
+              tabs={['Umrah']}
             />
           </div>
 

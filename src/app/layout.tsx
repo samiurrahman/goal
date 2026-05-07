@@ -22,36 +22,31 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://hajjscanner.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com'),
   title: {
-    default: 'Hajj & Umrah Packages | Best Islamic Travel Deals',
-    template: '%s | Hajjscanner',
+    default: 'Umrah Packages | Best Islamic Travel Deals',
+    template: '%s | Searchumrah',
   },
   description:
-    'Discover affordable Hajj and Umrah packages with Hajjscanner. Compare prices from verified travel agents, and plan your spiritual journey with ease.',
+    'Discover affordable Umrah packages with Searchumrah. Compare prices from verified travel agents, and plan your spiritual journey with ease.',
   keywords: [
-    'Hajj packages',
     'Umrah packages',
     'Islamic travel',
     'Makkah hotels',
     'Madinah hotels',
-    'Hajj deals',
-    'Hajj booking',
     'Umrah deals',
     'pilgrimage packages',
-    'hajj scanner',
     'umrah scanner',
-    'best hajj packages',
+    'search umrah',
+    'best umrah packages',
     'affordable umrah packages',
-    'compare hajj prices',
     'compare umrah prices',
-    'hajj travel agents',
     'umrah travel agents',
     'spiritual journey',
   ],
-  authors: [{ name: 'Hajjscanner' }],
-  creator: 'Hajjscanner',
-  publisher: 'Hajjscanner',
+  authors: [{ name: 'Searchumrah' }],
+  creator: 'Searchumrah',
+  publisher: 'Searchumrah',
   robots: {
     index: true,
     follow: true,
@@ -66,27 +61,27 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://hajjscanner.com',
-    siteName: 'Hajjscanner',
-    title: 'Premium Hajj & Umrah Packages',
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com',
+    siteName: 'Searchumrah',
+    title: 'Premium Umrah Packages',
     description:
-      'Discover affordable Hajj and Umrah packages with Hajjscanner. Compare prices from verified travel agents and plan your spiritual journey.',
+      'Discover affordable Umrah packages with Searchumrah. Compare prices from verified travel agents and plan your spiritual journey.',
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'Hajj & Umrah Packages',
+        alt: 'Umrah Packages',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Premium Hajj & Umrah Packages',
+    title: 'Premium Umrah Packages',
     description:
-      'Discover affordable Hajj and Umrah packages. Compare prices and book your spiritual journey.',
+      'Discover affordable Umrah packages. Compare prices and book your spiritual journey.',
     images: ['/og-image.jpg'],
-    creator: '@hajjscanner',
+    creator: '@searchumrah',
   },
   verification: {
     google: 'your-google-verification-code',
@@ -101,7 +96,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://hajjscanner.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
 
   return (
     <html lang="en" className={poppins.className}>
@@ -109,11 +104,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <StructuredData
           type="Organization"
           data={{
-            name: 'Hajjscanner',
+            name: 'Searchumrah',
             url: baseUrl,
             logo: `${baseUrl}/logo.png`,
             description:
-              'Premium Hajj & Umrah travel booking platform connecting pilgrims with verified travel agents',
+              'Premium Umrah travel booking platform connecting pilgrims with verified travel agents',
             telephone: '+1-XXX-XXX-XXXX',
             socialLinks: [
               // Add your social media links here
@@ -125,9 +120,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <StructuredData
           type="WebSite"
           data={{
-            name: 'Hajjscanner',
+            name: 'Searchumrah',
             url: baseUrl,
-            description: 'Book Hajj and Umrah packages online with verified travel agents',
+            description: 'Book Umrah packages online with verified travel agents',
           }}
         />
       </head>

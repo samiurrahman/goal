@@ -18,7 +18,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(Math.max(val
 
 const buildReserveHref = (baseHref: string, guests: number, sharing: number) => {
   try {
-    const dummyOrigin = 'https://local.hajjscanner';
+    const dummyOrigin = 'https://local.searchumrah';
     const url = new URL(baseHref, dummyOrigin);
 
     if (url.pathname === '/login') {

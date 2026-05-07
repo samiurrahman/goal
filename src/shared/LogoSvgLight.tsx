@@ -7,7 +7,7 @@ const LogoSvgLight = () => {
       viewBox="0 0 200 40"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
-      aria-label="Hajjscanner"
+      aria-label="Searchumrah"
     >
       <g>
         <rect x="2" y="6" width="32" height="32" rx="6" fill="#F8FAFC" />
@@ -23,9 +23,9 @@ const LogoSvgLight = () => {
         fill="#F8FAFC"
         letterSpacing="-0.5"
       >
-        Hajj
+        Search
         <tspan fontWeight="500" fill="#A5B4FC">
-          scanner
+          umrah
         </tspan>
       </text>
     </svg>
