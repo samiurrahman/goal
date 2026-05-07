@@ -74,7 +74,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
   return (
     <div className={`nc-SectionGridFilterCard ${className}`} data-nc-id="SectionGridFilterCard">
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Packages' }]} className="mt-4" />
-      <div className="mb-4 lg:mb-6 mt-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="relative z-30 mb-4 lg:mb-6 mt-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0 flex-grow">
           <TabFilters />
         </div>

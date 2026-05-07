@@ -1,12 +1,15 @@
 'use client';
 
-import React, { Fragment, useState } from 'react';
+import React, { Fragment } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import Slider from 'rc-slider';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSingleValueFilter } from '@/hooks/filters/useSingleValueFilter';
 import XClearIcon from './XClearIcon';
+
+const PRICE_MIN = 30000;
+const PRICE_MAX = 300000;
 
 function formatIndianPrice(val: number) {
   if (val < 100000) return `${Math.round(val / 1000)}K`;
@@ -16,35 +19,34 @@ function formatIndianPrice(val: number) {
 }
 
 const PriceFilter = () => {
-  const [rangePrices, setRangePrices] = useState([30000, 40000]);
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const handleApplyPrice = (close: () => void) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('price', rangePrices[1].toString());
-    router.replace(window.location.pathname + '?' + params.toString());
-    close();
-  };
-
-  const handleClearPrice = (close: () => void) => {
-    setRangePrices([30000, 40000]);
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('price');
-    router.replace(window.location.pathname + '?' + params.toString());
-    close();
-  };
+  const filter = useSingleValueFilter('price', PRICE_MAX);
 
   return (
     <Popover className="relative">
       {({ open, close }) => (
         <>
           <Popover.Button
-            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-primary-500 bg-primary-50 text-primary-700 focus:outline-none `}
+            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border focus:outline-none
+              ${open ? '!border-primary-500' : ''}
+              ${
+                filter.isActive
+                  ? '!border-primary-500 bg-primary-50 text-primary-700'
+                  : 'border-neutral-300 dark:border-neutral-700'
+              }`}
           >
             <span>Price</span>
-            <XClearIcon />
+            {!filter.isActive ? (
+              <i className="las la-angle-down ml-2"></i>
+            ) : (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  filter.clear();
+                }}
+              >
+                <XClearIcon />
+              </span>
+            )}
           </Popover.Button>
           <Transition
             as={Fragment}
@@ -62,27 +64,33 @@ const PriceFilter = () => {
                     <span className="font-medium">
                       Price per person{' '}
                       <span className="text-sm font-normal ml-1 text-primary-500">
-                        ₹ {formatIndianPrice(rangePrices[1])}
+                        ₹ {formatIndianPrice(filter.value)}
                       </span>
                     </span>
                     <Slider
-                      min={30000}
-                      max={300000}
+                      min={PRICE_MIN}
+                      max={PRICE_MAX}
                       step={5000}
-                      value={rangePrices[1]}
-                      onChange={(val) => setRangePrices([30000, val as number])}
+                      value={filter.value}
+                      onChange={(val) => filter.setValue(val as number)}
                     />
                   </div>
                 </div>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird
-                    onClick={() => handleClearPrice(close)}
+                    onClick={() => {
+                      filter.clear();
+                      close();
+                    }}
                     sizeClass="px-4 py-2 sm:px-5"
                   >
                     Clear
                   </ButtonThird>
                   <ButtonPrimary
-                    onClick={() => handleApplyPrice(close)}
+                    onClick={() => {
+                      filter.apply();
+                      close();
+                    }}
                     sizeClass="px-4 py-2 sm:px-5"
                   >
                     Apply

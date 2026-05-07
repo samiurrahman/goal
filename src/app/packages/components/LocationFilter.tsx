@@ -1,34 +1,27 @@
 'use client';
 
-import React, { Fragment, useState, useEffect, useMemo } from 'react';
+import React, { Fragment, useState, useMemo } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import Checkbox from '@/shared/Checkbox';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useCities } from '@/hooks/useCities';
+import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
 import XClearIcon from './XClearIcon';
 
-type City = { id: string; name: string; state?: string };
+type City = { id: string; name: string; state?: string | null };
 
 const LocationFilter = () => {
-  const [locationStates, setLocationStates] = useState<string[]>([]);
+  const filter = useMultiSelectFilter('location');
   const [locationSearch, setLocationSearch] = useState('');
   const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
+  const [hasOpened, setHasOpened] = useState(false);
 
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const { data: cities, error: citiesError, isLoading: citiesLoading } = useCities();
-
-  useEffect(() => {
-    const urlLocation = searchParams.get('location');
-    if (urlLocation) {
-      setLocationStates(urlLocation.split(','));
-    } else {
-      setLocationStates([]);
-    }
-  }, [searchParams]);
+  const {
+    data: cities,
+    error: citiesError,
+    isLoading: citiesLoading,
+  } = useCities({ enabled: hasOpened });
 
   const debouncedLocationSearchUpdater = useMemo(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -50,51 +43,32 @@ const LocationFilter = () => {
     [cities, debouncedLocationSearch]
   );
 
-  const handleChangeLocation = (checked: boolean, name: string) => {
-    if (checked) {
-      setLocationStates((prev) => [...prev, name]);
-    } else {
-      setLocationStates((prev) => prev.filter((i) => i !== name));
-    }
-  };
-
-  const handleApplyLocation = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (locationStates.length > 0) {
-      params.set('location', locationStates.join(','));
-    } else {
-      params.delete('location');
-    }
-    router.replace(window.location.pathname + '?' + params.toString());
-  };
-
-  const handleClearLocationFilter = () => {
-    setLocationStates([]);
-    setLocationSearch('');
-    setDebouncedLocationSearch('');
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('location');
-    router.replace(window.location.pathname + '?' + params.toString());
-  };
-
   return (
     <Popover className="relative">
       {({ open, close }) => (
         <>
           <Popover.Button
+            onClick={() => setHasOpened(true)}
             className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 focus:outline-none
              ${open ? '!border-primary-500 ' : ''}
-              ${!!locationStates.length ? '!border-primary-500 bg-primary-50' : ''}
+              ${filter.isActive ? '!border-primary-500 bg-primary-50' : ''}
               `}
           >
             <span>Location</span>
-            {!locationStates.length ? (
+            {filter.count > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary-500 text-[10px] font-semibold text-white">
+                {filter.count}
+              </span>
+            )}
+            {!filter.isActive ? (
               <i className="las la-angle-down ml-2"></i>
             ) : (
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleClearLocationFilter();
+                  filter.clear();
+                  setLocationSearch('');
+                  setDebouncedLocationSearch('');
                 }}
               >
                 <XClearIcon />
@@ -142,15 +116,17 @@ const LocationFilter = () => {
                       key={item.id}
                       name={item.name}
                       label={item.name + (item.state ? ', ' + item.state : '')}
-                      defaultChecked={locationStates.includes(item.name)}
-                      onChange={(checked) => handleChangeLocation(checked, item.name)}
+                      defaultChecked={filter.selected.includes(item.name)}
+                      onChange={(checked) => filter.toggle(checked, item.name)}
                     />
                   ))}
                 </div>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird
                     onClick={() => {
-                      handleClearLocationFilter();
+                      filter.clear();
+                      setLocationSearch('');
+                      setDebouncedLocationSearch('');
                       close();
                     }}
                     sizeClass="px-4 py-2 sm:px-5"
@@ -159,7 +135,7 @@ const LocationFilter = () => {
                   </ButtonThird>
                   <ButtonPrimary
                     onClick={() => {
-                      handleApplyLocation();
+                      filter.apply();
                       close();
                     }}
                     sizeClass="px-4 py-2 sm:px-5"

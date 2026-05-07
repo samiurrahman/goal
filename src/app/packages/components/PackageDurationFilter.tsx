@@ -1,59 +1,48 @@
 'use client';
 
-import React, { Fragment, useState, useEffect } from 'react';
+import React, { Fragment } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import Slider from 'rc-slider';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSingleValueFilter } from '@/hooks/filters/useSingleValueFilter';
 import XClearIcon from './XClearIcon';
 
+const DURATION_MAX = 60;
+
 const PackageDurationFilter = () => {
-  const [sliderValue, setSliderValue] = useState(10);
+  const filter = useSingleValueFilter('total_duration_days', DURATION_MAX);
 
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const urlValue = searchParams.get('total_duration_days');
-    if (urlValue) {
-      setSliderValue(Number(urlValue));
-    } else {
-      setSliderValue(10);
-    }
-  }, [searchParams]);
-
-  const handleApplyPackageDuration = (close: () => void) => {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set('total_duration_days', sliderValue.toString());
-    router.replace(window.location.pathname + '?' + params.toString());
-    close();
-  };
-
-  const handleClearPackageDuration = (close: () => void) => {
-    setSliderValue(10);
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('total_duration_days');
-    router.replace(window.location.pathname + '?' + params.toString());
-    close();
-  };
-
-  let tripTimeText = `${sliderValue} days`;
-  if (sliderValue === 30) {
-    tripTimeText = '1 month';
-  } else if (sliderValue > 30) {
-    tripTimeText = `1 month ${sliderValue - 30} days`;
-  }
+  let tripTimeText = `${filter.value} days`;
+  if (filter.value === 30) tripTimeText = '1 month';
+  else if (filter.value > 30) tripTimeText = `1 month ${filter.value - 30} days`;
 
   return (
     <Popover className="relative">
       {({ open, close }) => (
         <>
           <Popover.Button
-            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-primary-500 bg-primary-50 text-primary-700 focus:outline-none `}
+            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border focus:outline-none
+              ${open ? '!border-primary-500' : ''}
+              ${
+                filter.isActive
+                  ? '!border-primary-500 bg-primary-50 text-primary-700'
+                  : 'border-neutral-300 dark:border-neutral-700'
+              }`}
           >
             <span>Package Duration</span>
-            <XClearIcon />
+            {!filter.isActive ? (
+              <i className="las la-angle-down ml-2"></i>
+            ) : (
+              <span
+                onClick={(e) => {
+                  e.stopPropagation();
+                  filter.clear();
+                }}
+              >
+                <XClearIcon />
+              </span>
+            )}
           </Popover.Button>
           <Transition
             as={Fragment}
@@ -76,25 +65,29 @@ const PackageDurationFilter = () => {
                     </div>
                     <Slider
                       min={1}
-                      max={60}
-                      value={sliderValue}
+                      max={DURATION_MAX}
+                      value={filter.value}
                       onChange={(value) => {
-                        if (typeof value === 'number') {
-                          setSliderValue(value);
-                        }
+                        if (typeof value === 'number') filter.setValue(value);
                       }}
                     />
                   </div>
                 </div>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird
-                    onClick={() => handleClearPackageDuration(close)}
+                    onClick={() => {
+                      filter.clear();
+                      close();
+                    }}
                     sizeClass="px-4 py-2 sm:px-5"
                   >
                     Clear
                   </ButtonThird>
                   <ButtonPrimary
-                    onClick={() => handleApplyPackageDuration(close)}
+                    onClick={() => {
+                      filter.apply();
+                      close();
+                    }}
                     sizeClass="px-4 py-2 sm:px-5"
                   >
                     Apply

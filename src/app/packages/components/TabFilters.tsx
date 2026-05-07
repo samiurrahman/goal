@@ -8,7 +8,8 @@ import MonthFilter from './MonthFilter';
 import PackageDurationFilter from './PackageDurationFilter';
 import PriceFilter from './PriceFilter';
 import HotelDistanceFilter from './HotelDistanceFilter';
-import StopPointsFilter from './StopPointsFilter';
+// StopPointsFilter is intentionally not rendered: no backing column on `packages` yet.
+// Re-enable once a `stops` column + filter are added.
 
 const MobileFiltersModal = dynamic(() => import('./MobileFiltersModal'), {
   ssr: false,
@@ -28,7 +29,6 @@ const TabFilters = () => {
         <PackageDurationFilter />
         <PriceFilter />
         <HotelDistanceFilter />
-        <StopPointsFilter />
       </div>
 
       {/* FOR MOBILE / TABLET */}

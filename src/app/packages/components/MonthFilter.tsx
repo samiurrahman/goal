@@ -1,53 +1,16 @@
 'use client';
 
-import React, { Fragment, useState, useEffect } from 'react';
+import React, { Fragment } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import Checkbox from '@/shared/Checkbox';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { MONTHS_LIST } from '@/contains/contants';
+import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
 import XClearIcon from './XClearIcon';
 
 const MonthFilter = () => {
-  const [monthStates, setMonthStates] = useState<string[]>([]);
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  useEffect(() => {
-    const urlMonth = searchParams.get('month');
-    if (urlMonth) {
-      setMonthStates(urlMonth.split(','));
-    } else {
-      setMonthStates([]);
-    }
-  }, [searchParams]);
-
-  const handleChangeMonth = (checked: boolean, name: string) => {
-    if (checked) {
-      setMonthStates((prev) => [...prev, name]);
-    } else {
-      setMonthStates((prev) => prev.filter((i) => i !== name));
-    }
-  };
-
-  const handleApplyMonth = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (monthStates.length > 0) {
-      params.set('month', monthStates.join(','));
-    } else {
-      params.delete('month');
-    }
-    router.replace(window.location.pathname + '?' + params.toString());
-  };
-
-  const handleClearMonthFilter = () => {
-    setMonthStates([]);
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('month');
-    router.replace(window.location.pathname + '?' + params.toString());
-  };
+  const filter = useMultiSelectFilter('month');
 
   return (
     <Popover className="relative">
@@ -56,17 +19,22 @@ const MonthFilter = () => {
           <Popover.Button
             className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 focus:outline-none
              ${open ? '!border-primary-500 ' : ''}
-              ${!!monthStates.length ? '!border-primary-500 bg-primary-50' : ''}
+              ${filter.isActive ? '!border-primary-500 bg-primary-50' : ''}
               `}
           >
             <span>Month</span>
-            {!monthStates.length ? (
+            {filter.count > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary-500 text-[10px] font-semibold text-white">
+                {filter.count}
+              </span>
+            )}
+            {!filter.isActive ? (
               <i className="las la-angle-down ml-2"></i>
             ) : (
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleClearMonthFilter();
+                  filter.clear();
                 }}
               >
                 <XClearIcon />
@@ -90,15 +58,15 @@ const MonthFilter = () => {
                       key={month}
                       name={month}
                       label={month}
-                      defaultChecked={monthStates.includes(month)}
-                      onChange={(checked) => handleChangeMonth(checked, month)}
+                      defaultChecked={filter.selected.includes(month)}
+                      onChange={(checked) => filter.toggle(checked, month)}
                     />
                   ))}
                 </div>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird
                     onClick={() => {
-                      handleClearMonthFilter();
+                      filter.clear();
                       close();
                     }}
                     sizeClass="px-4 py-2 sm:px-5"
@@ -107,7 +75,7 @@ const MonthFilter = () => {
                   </ButtonThird>
                   <ButtonPrimary
                     onClick={() => {
-                      handleApplyMonth();
+                      filter.apply();
                       close();
                     }}
                     sizeClass="px-4 py-2 sm:px-5"

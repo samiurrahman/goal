@@ -7,14 +7,20 @@ import ButtonThird from '@/shared/ButtonThird';
 import ButtonClose from '@/shared/ButtonClose';
 import Checkbox from '@/shared/Checkbox';
 import Slider from 'rc-slider';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useCities } from '@/hooks/useCities';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabaseClient';
-import { MONTHS_LIST, STOP_POINTS } from '@/contains/contants';
+import { MONTHS_LIST } from '@/contains/contants';
+import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
+import { useSingleValueFilter } from '@/hooks/filters/useSingleValueFilter';
+import { useHotelDistanceFilter } from '@/hooks/filters/useHotelDistanceFilter';
 
-type City = { id: string; name: string; state?: string };
+type City = { id: string; name: string; state?: string | null };
 type Agent = { id: string; known_as: string; slug: string };
+
+const PRICE_MAX = 300000;
+const DURATION_MAX = 60;
+const DISTANCE_MAX = 5000;
 
 function formatDistance(val: number) {
   if (val < 1000) return `${val} m`;
@@ -35,73 +41,72 @@ interface MobileFiltersModalProps {
   onClose: () => void;
 }
 
-const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
+const SectionHeader = ({
+  title,
+  active,
+  onClear,
+}: {
+  title: string;
+  active: boolean;
+  onClear: () => void;
+}) => (
+  <div className="flex items-center justify-between mb-4">
+    <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-100">{title}</h3>
+    {active && (
+      <button
+        onClick={onClear}
+        className="text-xs text-primary-600 dark:text-primary-400 underline underline-offset-2 hover:text-primary-800 focus:outline-none"
+      >
+        Clear
+      </button>
+    )}
+  </div>
+);
 
-  // ── Filter state ──────────────────────────────────────────────────────────
-  const [locationStates, setLocationStates] = useState<string[]>([]);
+const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
+  // ── Shared filter hooks ──────────────────────────────────────────────────
+  const location = useMultiSelectFilter('location');
+  const agent = useMultiSelectFilter('agent_name');
+  const month = useMultiSelectFilter('month');
+  const duration = useSingleValueFilter('total_duration_days', DURATION_MAX);
+  const price = useSingleValueFilter('price', PRICE_MAX);
+  const hotelDistance = useHotelDistanceFilter(DISTANCE_MAX);
+
+  // Local-only search state for the city/agent typeahead
   const [locationSearch, setLocationSearch] = useState('');
   const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
-
-  const [agentStates, setAgentStates] = useState<string[]>([]);
   const [agentSearch, setAgentSearch] = useState('');
   const [debouncedAgentSearch, setDebouncedAgentSearch] = useState('');
 
-  const [monthStates, setMonthStates] = useState<string[]>([]);
-
-  const [durationValue, setDurationValue] = useState(10);
-
-  const [rangePrices, setRangePrices] = useState([30000, 40000]);
-
-  const [makkahDistance, setMakkahDistance] = useState(10);
-  const [madinaDistance, setMadinaDistance] = useState(10);
-
-  const [stopPontsStates, setStopPontsStates] = useState<string[]>([]);
-
-  // ── Sync from URL when modal opens ────────────────────────────────────────
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const urlLocation = searchParams.get('location');
-    setLocationStates(urlLocation ? urlLocation.split(',') : []);
-
-    const urlAgent = searchParams.get('agent_name');
-    setAgentStates(urlAgent ? urlAgent.split(',') : []);
-
-    const urlMonth = searchParams.get('month');
-    setMonthStates(urlMonth ? urlMonth.split(',') : []);
-
-    const urlDuration = searchParams.get('total_duration_days');
-    setDurationValue(urlDuration ? Number(urlDuration) : 10);
-
-    const urlPrice = searchParams.get('price');
-    setRangePrices([30000, urlPrice ? Number(urlPrice) : 40000]);
-
-    const urlMakkah = searchParams.get('makkah_hotel_distance_m');
-    setMakkahDistance(urlMakkah ? Number(urlMakkah) : 10);
-
-    const urlMadina = searchParams.get('madinah_hotel_distance_m');
-    setMadinaDistance(urlMadina ? Number(urlMadina) : 10);
-  }, [isOpen, searchParams]);
-
-  // ── Data fetching ─────────────────────────────────────────────────────────
-  const { data: cities, isLoading: citiesLoading, error: citiesError } = useCities();
+  // ── Data fetching (only when the modal is open) ──────────────────────────
+  const {
+    data: cities,
+    isLoading: citiesLoading,
+    error: citiesError,
+  } = useCities({ enabled: isOpen });
 
   const {
     data: agents,
     isLoading: agentsLoading,
     error: agentsError,
   } = useQuery<Agent[], Error>({
-    queryKey: ['agents'],
+    queryKey: ['agents', 'filter-list'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('agents').select('id, known_as, slug');
+      const { data, error } = await supabase
+        .from('agents')
+        .select('id, known_as, slug')
+        .not('slug', 'is', null)
+        .not('known_as', 'is', null)
+        .order('known_as', { ascending: true });
       if (error) throw error;
-      return data as Agent[];
+      return (data ?? []) as Agent[];
     },
+    enabled: isOpen,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
-  // ── Debounce helpers ──────────────────────────────────────────────────────
+  // ── Debounce helpers ─────────────────────────────────────────────────────
   const debouncedLocationSearchUpdater = useMemo(() => {
     let timer: ReturnType<typeof setTimeout>;
     return (val: string) => {
@@ -117,6 +122,16 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
       timer = setTimeout(() => setDebouncedAgentSearch(val), 300);
     };
   }, []);
+
+  // Reset typeahead inputs when the modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setLocationSearch('');
+      setDebouncedLocationSearch('');
+      setAgentSearch('');
+      setDebouncedAgentSearch('');
+    }
+  }, [isOpen]);
 
   const filteredCities = useMemo(
     () =>
@@ -138,82 +153,41 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
     [agents, debouncedAgentSearch]
   );
 
-  // ── Duration label ─────────────────────────────────────────────────────────
-  let durationText = `${durationValue} days`;
-  if (durationValue === 30) durationText = '1 month';
-  else if (durationValue > 30) durationText = `1 month ${durationValue - 30} days`;
+  // ── Duration label ───────────────────────────────────────────────────────
+  let durationText = `${duration.value} days`;
+  if (duration.value === 30) durationText = '1 month';
+  else if (duration.value > 30) durationText = `1 month ${duration.value - 30} days`;
 
-  // ── Apply all at once ─────────────────────────────────────────────────────
+  // ── Apply / Clear all ────────────────────────────────────────────────────
   const handleApplyAll = () => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (locationStates.length > 0) params.set('location', locationStates.join(','));
-    else params.delete('location');
-
-    if (agentStates.length > 0) params.set('agent_name', agentStates.join(','));
-    else params.delete('agent_name');
-
-    if (monthStates.length > 0) params.set('month', monthStates.join(','));
-    else params.delete('month');
-
-    params.set('total_duration_days', durationValue.toString());
-    params.set('price', rangePrices[1].toString());
-    params.set('makkah_hotel_distance_m', makkahDistance.toString());
-    params.set('madinah_hotel_distance_m', madinaDistance.toString());
-
-    router.replace(window.location.pathname + '?' + params.toString());
+    location.apply();
+    agent.apply();
+    month.apply();
+    // Single-value filters: only commit when the user has actually moved them
+    // off the default (otherwise we'd add unnecessary URL noise).
+    if (duration.value !== DURATION_MAX) duration.apply();
+    else duration.clear();
+    if (price.value !== PRICE_MAX) price.apply();
+    else price.clear();
+    if (hotelDistance.makkah !== DISTANCE_MAX || hotelDistance.madinah !== DISTANCE_MAX)
+      hotelDistance.apply();
+    else hotelDistance.clear();
     onClose();
   };
 
-  // ── Clear all ─────────────────────────────────────────────────────────────
   const handleClearAll = () => {
-    setLocationStates([]);
+    location.clear();
+    agent.clear();
+    month.clear();
+    duration.clear();
+    price.clear();
+    hotelDistance.clear();
     setLocationSearch('');
     setDebouncedLocationSearch('');
-    setAgentStates([]);
     setAgentSearch('');
     setDebouncedAgentSearch('');
-    setMonthStates([]);
-    setDurationValue(10);
-    setRangePrices([30000, 40000]);
-    setMakkahDistance(10);
-    setMadinaDistance(10);
-    setStopPontsStates([]);
-
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('location');
-    params.delete('agent_name');
-    params.delete('month');
-    params.delete('total_duration_days');
-    params.delete('price');
-    params.delete('makkah_hotel_distance_m');
-    params.delete('madinah_hotel_distance_m');
-    router.replace(window.location.pathname + '?' + params.toString());
     onClose();
   };
-
-  // ── Section heading + optional clear ──────────────────────────────────────
-  const SectionHeader = ({
-    title,
-    active,
-    onClear,
-  }: {
-    title: string;
-    active: boolean;
-    onClear: () => void;
-  }) => (
-    <div className="flex items-center justify-between mb-4">
-      <h3 className="text-base font-semibold text-neutral-800 dark:text-neutral-100">{title}</h3>
-      {active && (
-        <button
-          onClick={onClear}
-          className="text-xs text-primary-600 dark:text-primary-400 underline underline-offset-2 hover:text-primary-800 focus:outline-none"
-        >
-          Clear
-        </button>
-      )}
-    </div>
-  );
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
@@ -248,7 +222,7 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
           >
             <div className="relative z-10 inline-flex flex-col align-middle py-4 px-2 h-screen w-full max-w-4xl">
               <div className="flex flex-col w-full h-full text-left overflow-hidden rounded-2xl bg-white dark:bg-neutral-900 dark:border dark:border-neutral-700 dark:text-neutral-100 shadow-xl">
-                {/* ── Header ───────────────────────────────────────────────── */}
+                {/* Header */}
                 <div className="relative flex-shrink-0 px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 text-center">
                   <Dialog.Title
                     as="h3"
@@ -261,20 +235,16 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                   </span>
                 </div>
 
-                {/* ── Body ─────────────────────────────────────────────────── */}
+                {/* Body */}
                 <div className="flex-grow overflow-y-auto">
-                  {/*
-                    Portrait  (default)  → 1 column, sections separated by dividers
-                    Landscape / sm+      → 2-column grid, dividers between columns
-                  */}
                   <div className="px-4 sm:px-6 py-4 grid grid-cols-1 sm:grid-cols-2 gap-0 sm:gap-x-8 divide-y divide-neutral-200 dark:divide-neutral-800 sm:divide-y-0">
-                    {/* ── Location ──────────────────────────────────────── */}
+                    {/* Location */}
                     <section className="py-5 sm:py-4 sm:border-b sm:border-neutral-200 sm:dark:border-neutral-800">
                       <SectionHeader
                         title="Location"
-                        active={locationStates.length > 0}
+                        active={location.isActive}
                         onClear={() => {
-                          setLocationStates([]);
+                          location.clear();
                           setLocationSearch('');
                           setDebouncedLocationSearch('');
                         }}
@@ -303,24 +273,20 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                             key={item.id}
                             name={item.name}
                             label={item.name + (item.state ? ', ' + item.state : '')}
-                            defaultChecked={locationStates.includes(item.name)}
-                            onChange={(checked) =>
-                              setLocationStates((prev) =>
-                                checked ? [...prev, item.name] : prev.filter((i) => i !== item.name)
-                              )
-                            }
+                            defaultChecked={location.selected.includes(item.name)}
+                            onChange={(checked) => location.toggle(checked, item.name)}
                           />
                         ))}
                       </div>
                     </section>
 
-                    {/* ── Agent ─────────────────────────────────────────── */}
+                    {/* Agent */}
                     <section className="py-5 sm:py-4 sm:border-b sm:border-neutral-200 sm:dark:border-neutral-800">
                       <SectionHeader
                         title="Agent"
-                        active={agentStates.length > 0}
+                        active={agent.isActive}
                         onClear={() => {
-                          setAgentStates([]);
+                          agent.clear();
                           setAgentSearch('');
                           setDebouncedAgentSearch('');
                         }}
@@ -349,55 +315,47 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                             key={item.id}
                             name={item.known_as}
                             label={item.known_as}
-                            defaultChecked={agentStates.includes(item.slug)}
-                            onChange={(checked) =>
-                              setAgentStates((prev) =>
-                                checked ? [...prev, item.slug] : prev.filter((i) => i !== item.slug)
-                              )
-                            }
+                            defaultChecked={agent.selected.includes(item.slug)}
+                            onChange={(checked) => agent.toggle(checked, item.slug)}
                           />
                         ))}
                       </div>
                     </section>
 
-                    {/* ── Month ─────────────────────────────────────────── */}
+                    {/* Month */}
                     <section className="py-5 sm:py-4 sm:border-b sm:border-neutral-200 sm:dark:border-neutral-800">
                       <SectionHeader
                         title="Month"
-                        active={monthStates.length > 0}
-                        onClear={() => setMonthStates([])}
+                        active={month.isActive}
+                        onClear={() => month.clear()}
                       />
                       <div className="grid grid-cols-3 gap-2">
-                        {MONTHS_LIST.map((month) => (
+                        {MONTHS_LIST.map((m) => (
                           <Checkbox
-                            key={month}
-                            name={month}
-                            label={month}
-                            defaultChecked={monthStates.includes(month)}
-                            onChange={(checked) =>
-                              setMonthStates((prev) =>
-                                checked ? [...prev, month] : prev.filter((m) => m !== month)
-                              )
-                            }
+                            key={m}
+                            name={m}
+                            label={m}
+                            defaultChecked={month.selected.includes(m)}
+                            onChange={(checked) => month.toggle(checked, m)}
                           />
                         ))}
                       </div>
                     </section>
 
-                    {/* ── Package Duration ──────────────────────────────── */}
+                    {/* Package Duration */}
                     <section className="py-5 sm:py-4 sm:border-b sm:border-neutral-200 sm:dark:border-neutral-800">
                       <SectionHeader
                         title="Package Duration"
-                        active={durationValue !== 10}
-                        onClear={() => setDurationValue(10)}
+                        active={duration.isActive}
+                        onClear={() => duration.clear()}
                       />
                       <p className="text-sm text-primary-500 mb-4">{durationText}</p>
                       <Slider
                         min={1}
-                        max={60}
-                        value={durationValue}
+                        max={DURATION_MAX}
+                        value={duration.value}
                         onChange={(value) => {
-                          if (typeof value === 'number') setDurationValue(value);
+                          if (typeof value === 'number') duration.setValue(value);
                         }}
                       />
                       <div className="flex justify-between text-xs text-neutral-400 mt-1">
@@ -406,22 +364,22 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                       </div>
                     </section>
 
-                    {/* ── Price ─────────────────────────────────────────── */}
+                    {/* Price */}
                     <section className="py-5 sm:py-4">
                       <SectionHeader
                         title="Price per person"
-                        active={rangePrices[1] !== 40000}
-                        onClear={() => setRangePrices([30000, 40000])}
+                        active={price.isActive}
+                        onClear={() => price.clear()}
                       />
                       <p className="text-sm text-primary-500 mb-4">
-                        Up to ₹ {formatIndianPrice(rangePrices[1])}
+                        Up to ₹ {formatIndianPrice(price.value)}
                       </p>
                       <Slider
                         min={30000}
-                        max={300000}
+                        max={PRICE_MAX}
                         step={5000}
-                        value={rangePrices[1]}
-                        onChange={(val) => setRangePrices([30000, val as number])}
+                        value={price.value}
+                        onChange={(val) => price.setValue(val as number)}
                       />
                       <div className="flex justify-between text-xs text-neutral-400 mt-1">
                         <span>₹ 30K</span>
@@ -429,30 +387,27 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                       </div>
                     </section>
 
-                    {/* ── Hotel Distance ────────────────────────────────── */}
-                    <section className="py-5 sm:py-4">
+                    {/* Hotel Distance */}
+                    <section className="py-5 sm:py-4 sm:col-span-2 sm:border-t sm:border-neutral-200 sm:dark:border-neutral-800">
                       <SectionHeader
                         title="Hotel Distance"
-                        active={makkahDistance !== 10 || madinaDistance !== 10}
-                        onClear={() => {
-                          setMakkahDistance(10);
-                          setMadinaDistance(10);
-                        }}
+                        active={hotelDistance.isActive}
+                        onClear={() => hotelDistance.clear()}
                       />
                       <div className="space-y-5">
                         <div>
                           <p className="text-sm font-medium mb-1">
                             Makkah{' '}
                             <span className="text-primary-500 font-normal">
-                              {formatDistance(makkahDistance)}
+                              {formatDistance(hotelDistance.makkah)}
                             </span>
                           </p>
                           <Slider
                             min={0}
-                            max={5000}
+                            max={DISTANCE_MAX}
                             step={50}
-                            value={makkahDistance}
-                            onChange={(val) => setMakkahDistance(val as number)}
+                            value={hotelDistance.makkah}
+                            onChange={(val) => hotelDistance.setMakkah(val as number)}
                           />
                           <div className="flex justify-between text-xs text-neutral-400 mt-1">
                             <span>0 m</span>
@@ -463,15 +418,15 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                           <p className="text-sm font-medium mb-1">
                             Madina{' '}
                             <span className="text-primary-500 font-normal">
-                              {formatDistance(madinaDistance)}
+                              {formatDistance(hotelDistance.madinah)}
                             </span>
                           </p>
                           <Slider
                             min={0}
-                            max={5000}
+                            max={DISTANCE_MAX}
                             step={50}
-                            value={madinaDistance}
-                            onChange={(val) => setMadinaDistance(val as number)}
+                            value={hotelDistance.madinah}
+                            onChange={(val) => hotelDistance.setMadinah(val as number)}
                           />
                           <div className="flex justify-between text-xs text-neutral-400 mt-1">
                             <span>0 m</span>
@@ -480,34 +435,10 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                         </div>
                       </div>
                     </section>
-
-                    {/* ── Stop Points ── full-width on both layouts ──────── */}
-                    <section className="py-5 sm:py-4 sm:col-span-2 sm:border-t sm:border-neutral-200 sm:dark:border-neutral-800">
-                      <SectionHeader
-                        title="Flight Stop"
-                        active={stopPontsStates.length > 0}
-                        onClear={() => setStopPontsStates([])}
-                      />
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                        {STOP_POINTS.map((item) => (
-                          <Checkbox
-                            key={item.name}
-                            name={item.name}
-                            label={item.name}
-                            defaultChecked={stopPontsStates.includes(item.name)}
-                            onChange={(checked) =>
-                              setStopPontsStates((prev) =>
-                                checked ? [...prev, item.name] : prev.filter((i) => i !== item.name)
-                              )
-                            }
-                          />
-                        ))}
-                      </div>
-                    </section>
                   </div>
                 </div>
 
-                {/* ── Footer ───────────────────────────────────────────────── */}
+                {/* Footer */}
                 <div className="flex-shrink-0 px-4 sm:px-6 py-4 border-t border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900 flex items-center justify-between gap-3">
                   <ButtonThird onClick={handleClearAll} sizeClass="px-5 py-2.5">
                     Clear all

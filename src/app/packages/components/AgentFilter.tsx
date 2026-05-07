@@ -5,32 +5,38 @@ import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import Checkbox from '@/shared/Checkbox';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabaseClient';
+import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
 import XClearIcon from './XClearIcon';
 
 type Agent = { id: string; known_as: string; slug: string };
 
 const AgentFilter = () => {
-  const [agentStates, setAgentStates] = useState<string[]>([]);
+  const filter = useMultiSelectFilter('agent_name');
   const [agentSearch, setAgentSearch] = useState('');
   const [debouncedAgentSearch, setDebouncedAgentSearch] = useState('');
-
-  const router = useRouter();
-  const searchParams = useSearchParams();
+  const [hasOpened, setHasOpened] = useState(false);
 
   const {
     data: agents,
     isLoading: agentsLoading,
     error: agentsError,
   } = useQuery<Agent[], Error>({
-    queryKey: ['agents'],
+    queryKey: ['agents', 'filter-list'],
     queryFn: async () => {
-      const { data, error } = await supabase.from('agents').select('id, known_as, slug');
+      const { data, error } = await supabase
+        .from('agents')
+        .select('id, known_as, slug')
+        .not('slug', 'is', null)
+        .not('known_as', 'is', null)
+        .order('known_as', { ascending: true });
       if (error) throw error;
-      return data as Agent[];
+      return (data ?? []) as Agent[];
     },
+    enabled: hasOpened,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 
   const debouncedAgentSearchUpdater = useMemo(() => {
@@ -49,51 +55,32 @@ const AgentFilter = () => {
     [agents, debouncedAgentSearch]
   );
 
-  const handleChangeAgent = (checked: boolean, name: string) => {
-    if (checked) {
-      setAgentStates((prev) => [...prev, name]);
-    } else {
-      setAgentStates((prev) => prev.filter((i) => i !== name));
-    }
-  };
-
-  const handleApplyAgent = () => {
-    const params = new URLSearchParams(searchParams.toString());
-    if (agentStates.length > 0) {
-      params.set('agent_name', agentStates.join(','));
-    } else {
-      params.delete('agent_name');
-    }
-    router.replace(window.location.pathname + '?' + params.toString());
-  };
-
-  const handleClearAgentFilter = () => {
-    setAgentStates([]);
-    setAgentSearch('');
-    setDebouncedAgentSearch('');
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete('agent_name');
-    router.replace(window.location.pathname + '?' + params.toString());
-  };
-
   return (
     <Popover className="relative">
       {({ open, close }) => (
         <>
           <Popover.Button
+            onClick={() => setHasOpened(true)}
             className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 focus:outline-none
              ${open ? '!border-primary-500 ' : ''}
-              ${!!agentStates.length ? '!border-primary-500 bg-primary-50' : ''}
+              ${filter.isActive ? '!border-primary-500 bg-primary-50' : ''}
               `}
           >
             <span>Agent</span>
-            {!agentStates.length ? (
+            {filter.count > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary-500 text-[10px] font-semibold text-white">
+                {filter.count}
+              </span>
+            )}
+            {!filter.isActive ? (
               <i className="las la-angle-down ml-2"></i>
             ) : (
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleClearAgentFilter();
+                  filter.clear();
+                  setAgentSearch('');
+                  setDebouncedAgentSearch('');
                 }}
               >
                 <XClearIcon />
@@ -141,15 +128,17 @@ const AgentFilter = () => {
                       key={item.id}
                       name={item.known_as}
                       label={item.known_as}
-                      defaultChecked={agentStates.includes(item.slug)}
-                      onChange={(checked) => handleChangeAgent(checked, item.slug)}
+                      defaultChecked={filter.selected.includes(item.slug)}
+                      onChange={(checked) => filter.toggle(checked, item.slug)}
                     />
                   ))}
                 </div>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird
                     onClick={() => {
-                      handleClearAgentFilter();
+                      filter.clear();
+                      setAgentSearch('');
+                      setDebouncedAgentSearch('');
                       close();
                     }}
                     sizeClass="px-4 py-2 sm:px-5"
@@ -158,7 +147,7 @@ const AgentFilter = () => {
                   </ButtonThird>
                   <ButtonPrimary
                     onClick={() => {
-                      handleApplyAgent();
+                      filter.apply();
                       close();
                     }}
                     sizeClass="px-4 py-2 sm:px-5"
