@@ -4,12 +4,21 @@ import { useEffect, useState } from 'react';
 import ReviewForm from './ReviewForm';
 import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
 import { supabase } from '@/utils/supabaseClient';
+import type { AgentReview } from '@/data/types';
 
 interface ReviewFormWithAuthProps {
   agentId: string;
+  editingReview?: AgentReview | null;
+  onCancelEdit?: () => void;
+  onSubmitted?: () => void;
 }
 
-export default function ReviewFormWithAuth({ agentId }: ReviewFormWithAuthProps) {
+export default function ReviewFormWithAuth({
+  agentId,
+  editingReview,
+  onCancelEdit,
+  onSubmitted,
+}: ReviewFormWithAuthProps) {
   const { isLoggedIn, isAuthReady } = useSupabaseIsLoggedIn();
   const [reviewAccess, setReviewAccess] = useState<'loading' | 'login' | 'allowed' | 'blocked'>(
     'loading'
@@ -46,7 +55,6 @@ export default function ReviewFormWithAuth({ agentId }: ReviewFormWithAuthProps)
         .eq('auth_user_id', user.id)
         .maybeSingle();
 
-      // If lookup fails, default to allowed and let server-side guard enforce final validation.
       if (userDetailsError) {
         if (mounted) setReviewAccess('allowed');
         return;
@@ -67,12 +75,18 @@ export default function ReviewFormWithAuth({ agentId }: ReviewFormWithAuthProps)
   const showLoadingState = reviewAccess === 'loading';
 
   if (showLoadingState) {
-    // Placeholder skeleton for loading
     return <div className="h-32 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse" />;
   }
 
   if (reviewAccess === 'allowed') {
-    return <ReviewForm agentId={agentId} />;
+    return (
+      <ReviewForm
+        agentId={agentId}
+        editingReview={editingReview ?? null}
+        onCancelEdit={onCancelEdit}
+        onReviewSubmitted={onSubmitted}
+      />
+    );
   }
 
   if (reviewAccess === 'blocked') {

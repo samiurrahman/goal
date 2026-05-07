@@ -1,3 +1,5 @@
+'use client';
+
 import { AgentReview } from '@/data/types';
 import Image from 'next/image';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
@@ -5,6 +7,9 @@ import { getOptimizedImageUrl } from '@/lib/imageUrl';
 interface ReviewsListProps {
   agentName: string;
   reviews: AgentReview[];
+  currentUserId?: string | null;
+  onEditReview?: (review: AgentReview) => void;
+  editingReviewId?: string | null;
 }
 
 const StarDisplay = ({ rating }: { rating: number }) => {
@@ -49,7 +54,13 @@ const getAvatarColor = (email: string) => {
   return colors[hash % colors.length];
 };
 
-export default function ReviewsList({ agentName, reviews }: ReviewsListProps) {
+export default function ReviewsList({
+  agentName,
+  reviews,
+  currentUserId,
+  onEditReview,
+  editingReviewId,
+}: ReviewsListProps) {
   if (reviews.length === 0) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -74,6 +85,8 @@ export default function ReviewsList({ agentName, reviews }: ReviewsListProps) {
         const avatarColor = getAvatarColor(review.user_email);
         const displayName = review.user_name || review.user_email?.split('@')[0] || 'Anonymous';
         const hasProfileImage = !!review.user_profile_image;
+        const isOwn = !!currentUserId && review.user_id === currentUserId;
+        const isEditingThis = !!editingReviewId && String(review.id) === editingReviewId;
 
         return (
           <div key={review.id} className="py-8">
@@ -107,16 +120,32 @@ export default function ReviewsList({ agentName, reviews }: ReviewsListProps) {
 
               {/* Review Content */}
               <div className="flex-1 min-w-0">
-                {/* Header: Name and Review Title */}
+                {/* Header: Name + Edit affordance */}
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <div>
-                    <h4 className="font-semibold text-neutral-900 dark:text-white">
-                      {displayName}
+                  <div className="min-w-0">
+                    <h4 className="font-semibold text-neutral-900 dark:text-white inline-flex items-center gap-2">
+                      <span className="truncate">{displayName}</span>
+                      {isOwn ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-[10px] font-semibold uppercase tracking-wider">
+                          You
+                        </span>
+                      ) : null}
                     </h4>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       review in {agentName}
                     </p>
                   </div>
+                  {isOwn && onEditReview ? (
+                    <button
+                      type="button"
+                      onClick={() => onEditReview(review)}
+                      disabled={isEditingThis}
+                      className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 dark:text-primary-300 hover:text-primary-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary-500 rounded px-2 py-1 -mr-2"
+                    >
+                      <i className="las la-pen text-base" aria-hidden="true"></i>
+                      {isEditingThis ? 'Editing…' : 'Edit'}
+                    </button>
+                  ) : null}
                 </div>
 
                 {/* Date and Rating */}
@@ -128,7 +157,9 @@ export default function ReviewsList({ agentName, reviews }: ReviewsListProps) {
                 </div>
 
                 {/* Review Text */}
-                <p className="text-gray-700 dark:text-gray-300 leading-6">{review.review_text}</p>
+                <p className="text-gray-700 dark:text-gray-300 leading-6 whitespace-pre-wrap">
+                  {review.review_text}
+                </p>
               </div>
             </div>
           </div>

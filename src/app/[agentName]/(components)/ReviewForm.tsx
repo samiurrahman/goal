@@ -1,13 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { supabase } from '@/utils/supabaseClient';
+import type { AgentReview } from '@/data/types';
 
 interface ReviewFormProps {
   agentId: string;
+  editingReview?: AgentReview | null;
   onReviewSubmitted?: () => void;
+  onCancelEdit?: () => void;
 }
 
 const StarRating = ({
@@ -43,11 +46,30 @@ const StarRating = ({
   );
 };
 
-export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormProps) {
+export default function ReviewForm({
+  agentId,
+  editingReview,
+  onReviewSubmitted,
+  onCancelEdit,
+}: ReviewFormProps) {
+  const isEditing = !!editingReview;
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
   const [formError, setFormError] = useState<string>('');
   const queryClient = useQueryClient();
+
+  // When the parent switches into "edit this review" mode, prefill the inputs.
+  useEffect(() => {
+    if (editingReview) {
+      setRating(Number(editingReview.rating) || 0);
+      setReviewText(editingReview.review_text || '');
+      setFormError('');
+    } else {
+      setRating(0);
+      setReviewText('');
+      setFormError('');
+    }
+  }, [editingReview]);
 
   const submitReviewMutation = useMutation({
     mutationFn: async () => {
@@ -87,7 +109,7 @@ export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormPro
           const error = await response.json();
           message = error?.error || message;
         } catch {
-          // keep fallback message
+          /* keep fallback */
         }
         throw new Error(message);
       }
@@ -96,7 +118,7 @@ export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormPro
     },
     onSuccess: () => {
       setFormError('');
-      toast.success('Review submitted successfully!');
+      toast.success(isEditing ? 'Review updated successfully!' : 'Review submitted successfully!');
       setRating(0);
       setReviewText('');
       queryClient.invalidateQueries({ queryKey: ['agentReviews', agentId] });
@@ -110,7 +132,6 @@ export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormPro
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
     setFormError('');
 
     if (rating === 0) {
@@ -128,14 +149,31 @@ export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormPro
     submitReviewMutation.mutate();
   };
 
+  const handleCancel = () => {
+    if (isEditing && onCancelEdit) {
+      onCancelEdit();
+      return;
+    }
+    setRating(0);
+    setReviewText('');
+    setFormError('');
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
       className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-6 mb-8"
     >
-      <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-4">
-        Share Your Experience
-      </h3>
+      <div className="flex items-center justify-between gap-3 mb-4">
+        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">
+          {isEditing ? 'Edit Your Review' : 'Share Your Experience'}
+        </h3>
+        {isEditing ? (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-[10px] font-semibold uppercase tracking-wider">
+            Editing
+          </span>
+        ) : null}
+      </div>
 
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -172,10 +210,7 @@ export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormPro
       <div className="flex justify-end gap-3">
         <button
           type="button"
-          onClick={() => {
-            setRating(0);
-            setReviewText('');
-          }}
+          onClick={handleCancel}
           className="px-4 py-2 text-gray-700 dark:text-gray-300 bg-gray-100 dark:bg-neutral-800 rounded-lg hover:bg-gray-200 dark:hover:bg-neutral-700 transition-colors"
         >
           Cancel
@@ -185,7 +220,13 @@ export default function ReviewForm({ agentId, onReviewSubmitted }: ReviewFormPro
           disabled={submitReviewMutation.isPending}
           className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors disabled:cursor-not-allowed"
         >
-          {submitReviewMutation.isPending ? 'Submitting...' : 'Submit Review'}
+          {submitReviewMutation.isPending
+            ? isEditing
+              ? 'Updating...'
+              : 'Submitting...'
+            : isEditing
+              ? 'Update Review'
+              : 'Submit Review'}
         </button>
       </div>
     </form>

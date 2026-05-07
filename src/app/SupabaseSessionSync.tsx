@@ -3,9 +3,29 @@ import { useEffect } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken } from '@/utils/authToken';
 
+type AuthMeta = {
+  full_name?: string | null;
+  name?: string | null;
+  given_name?: string | null;
+  family_name?: string | null;
+  picture?: string | null;
+  avatar_url?: string | null;
+};
+
+const splitName = (full?: string | null) => {
+  const parts = (full || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return { first: '', last: '' };
+  if (parts.length === 1) return { first: parts[0], last: '' };
+  return { first: parts[0], last: parts.slice(1).join(' ') };
+};
+
 /**
- * Syncs Supabase session on mount — stores access token and creates user_details/agents rows
- * after OAuth redirect if they don't exist yet (uses ?userType= query param).
+ * Syncs Supabase session on mount:
+ *  - stores access token cookie
+ *  - on first OAuth signup (?userType=...), creates user_details (and agents) rows
+ *  - on every login, backfills empty first_name / last_name / profile_image
+ *    from the auth provider's metadata (Google etc.) so the user doesn't appear
+ *    as "User" in reviews.
  */
 export default function SupabaseSessionSync() {
   useEffect(() => {
@@ -17,42 +37,63 @@ export default function SupabaseSessionSync() {
         storeAccessToken(session.access_token);
       }
 
-      // Read userType from URL query param (set by signup page before OAuth redirect)
+      const meta = (session.user.user_metadata || {}) as AuthMeta;
+      const metaFullName = meta.full_name || meta.name || '';
+      const metaSplit = splitName(metaFullName);
+      const firstFromMeta = meta.given_name || metaSplit.first || '';
+      const lastFromMeta = meta.family_name || metaSplit.last || '';
+      const pictureFromMeta = meta.picture || meta.avatar_url || '';
+
+      // Read userType from URL (set by signup page before OAuth redirect).
       const urlParams = new URLSearchParams(window.location.search);
-      const userType = urlParams.get('userType');
-      if (!userType) return;
+      const userTypeParam = urlParams.get('userType');
+      if (userTypeParam) {
+        urlParams.delete('userType');
+        const newUrl = urlParams.toString()
+          ? `${window.location.pathname}?${urlParams.toString()}`
+          : window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+      }
 
-      // Clean up URL query param
-      urlParams.delete('userType');
-      const newUrl = urlParams.toString()
-        ? `${window.location.pathname}?${urlParams.toString()}`
-        : window.location.pathname;
-      window.history.replaceState({}, '', newUrl);
-
-      // Check if user_details row already exists
+      // Look up existing user_details row
       const { data: existing } = await supabase
         .from('user_details')
-        .select('id')
+        .select('id, first_name, last_name, profile_image, user_type')
         .eq('auth_user_id', session.user.id)
-        .single();
+        .maybeSingle();
 
-      if (existing) return; // Already set up, nothing to do
+      if (existing) {
+        // Backfill empty identity fields only — don't overwrite anything the
+        // user has explicitly set.
+        const updates: Record<string, string | null> = {};
+        if (!existing.first_name && firstFromMeta) updates.first_name = firstFromMeta;
+        if (!existing.last_name && lastFromMeta) updates.last_name = lastFromMeta;
+        if (!existing.profile_image && pictureFromMeta) updates.profile_image = pictureFromMeta;
 
-      const resolvedType = userType === 'agent' ? 'agent' : 'user';
+        if (Object.keys(updates).length > 0) {
+          await supabase.from('user_details').update(updates).eq('id', existing.id);
+        }
+        return;
+      }
 
-      // Create user_details row
+      // No row yet — create one. Default user_type to 'user' if no signup param.
+      const resolvedType = userTypeParam === 'agent' ? 'agent' : 'user';
+
       await supabase.from('user_details').insert({
         auth_user_id: session.user.id,
         user_type: resolvedType,
+        first_name: firstFromMeta || null,
+        last_name: lastFromMeta || null,
+        profile_image: pictureFromMeta || null,
       });
 
-      // If agent, create agents row
+      // Mirror the agent signup path
       if (resolvedType === 'agent') {
         const email = session.user.email || '';
         await supabase.from('agents').insert({
           auth_user_id: session.user.id,
           email_id: email,
-          name: session.user.user_metadata?.full_name || email.split('@')[0],
+          name: metaFullName || email.split('@')[0],
         });
       }
     });
