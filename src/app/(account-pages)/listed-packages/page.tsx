@@ -255,15 +255,15 @@ const ListedPackagesPage = () => {
       </div>
 
       <Tab.Group>
-        <Tab.List className="flex space-x-1 overflow-x-auto">
+        <Tab.List className="inline-flex items-center gap-1 rounded-full bg-neutral-100 dark:bg-neutral-800 p-1">
           {categories.map((item) => (
             <Tab key={item} as={Fragment}>
               {({ selected }) => (
                 <button
-                  className={`flex-shrink-0 block !leading-none font-medium px-5 py-2.5 text-sm sm:text-base sm:px-6 sm:py-3 capitalize rounded-full focus:outline-none ${
+                  className={`flex-shrink-0 block !leading-none font-medium px-5 py-2.5 text-sm sm:text-base sm:px-6 sm:py-3 capitalize rounded-full focus:outline-none transition ${
                     selected
-                      ? 'bg-secondary-900 text-secondary-50'
-                      : 'text-neutral-500 dark:text-neutral-400 dark:hover:text-neutral-100 hover:text-neutral-900 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                      ? 'bg-white text-neutral-900 shadow-sm dark:bg-neutral-900 dark:text-neutral-50'
+                      : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
                   }`}
                 >
                   {item}

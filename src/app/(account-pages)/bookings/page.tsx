@@ -213,15 +213,15 @@ const AgentBookingsPage = () => {
     <div className="space-y-6 sm:space-y-8">
       <Toaster position="top-center" />
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <ul className="flex items-center space-x-3 sm:space-x-5 overflow-x-auto hiddenScrollbar">
+        <ul className="inline-flex items-center gap-1 rounded-full bg-neutral-100 dark:bg-neutral-800 p-1">
           <li>
             <button
               type="button"
               onClick={() => setActiveTab('pending')}
-              className={`px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition-colors ${
+              className={`block !leading-none px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition focus:outline-none ${
                 activeTab === 'pending'
-                  ? 'bg-secondary-900 text-secondary-50'
-                  : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+                  ? 'bg-white text-neutral-900 shadow-sm dark:bg-neutral-900 dark:text-neutral-50'
+                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
               }`}
             >
               Pending({pendingCount})
@@ -231,10 +231,10 @@ const AgentBookingsPage = () => {
             <button
               type="button"
               onClick={() => setActiveTab('confirmed')}
-              className={`px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition-colors ${
+              className={`block !leading-none px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition focus:outline-none ${
                 activeTab === 'confirmed'
-                  ? 'bg-secondary-900 text-secondary-50'
-                  : 'text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300'
+                  ? 'bg-white text-neutral-900 shadow-sm dark:bg-neutral-900 dark:text-neutral-50'
+                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
               }`}
             >
               Confirmed({confirmedCount})
