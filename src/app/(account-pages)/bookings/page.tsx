@@ -1,10 +1,36 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import Link from 'next/link';
+import { ChevronDownIcon, ChevronUpIcon, MagnifyingGlassIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { supabase } from '@/utils/supabaseClient';
 import toast, { Toaster } from 'react-hot-toast';
 import ButtonPrimary from '@/shared/ButtonPrimary';
+
+const formatBookingRef = (id: number) => `#${id}`;
+
+const MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December',
+];
+
+const monthKey = (year: number, month: number) => `${year}-${month}`;
+
+/** Group bookings into a year → month → bookings tree using `created_at`. */
+const groupByYearMonth = (rows: { id: number; created_at: string }[]) => {
+  const tree = new Map<number, Map<number, number[]>>();
+  for (const row of rows) {
+    const d = new Date(row.created_at);
+    if (Number.isNaN(d.getTime())) continue;
+    const y = d.getFullYear();
+    const m = d.getMonth();
+    if (!tree.has(y)) tree.set(y, new Map());
+    const months = tree.get(y)!;
+    if (!months.has(m)) months.set(m, []);
+    months.get(m)!.push(row.id);
+  }
+  return tree;
+};
 
 type BookingRow = {
   id: number;
@@ -52,6 +78,40 @@ const AgentBookingsPage = () => {
   const [activeTab, setActiveTab] = useState<'pending' | 'confirmed'>('pending');
   const [refreshKey, setRefreshKey] = useState(0);
   const [agentUserId, setAgentUserId] = useState<string | null>(null);
+
+  // Search (DB-driven) state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<BookingRow[]>([]);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
+
+  // Year / month collapsibles
+  const now = new Date();
+  const [expandedYears, setExpandedYears] = useState<Set<number>>(
+    () => new Set([now.getFullYear()])
+  );
+  const [expandedMonths, setExpandedMonths] = useState<Set<string>>(
+    () => new Set([monthKey(now.getFullYear(), now.getMonth())])
+  );
+
+  const toggleYear = (year: number) => {
+    setExpandedYears((prev) => {
+      const next = new Set(prev);
+      if (next.has(year)) next.delete(year);
+      else next.add(year);
+      return next;
+    });
+  };
+
+  const toggleMonth = (year: number, month: number) => {
+    setExpandedMonths((prev) => {
+      const k = monthKey(year, month);
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
+  };
 
   // Realtime subscription — scoped to this agent's bookings rows
   useEffect(() => {
@@ -191,6 +251,36 @@ const AgentBookingsPage = () => {
     setBookings((prev) =>
       prev.map((item) => (item.id === bookingId ? { ...item, status: 'confirmed' } : item))
     );
+
+    // Auto-open the next pending booking (in display order — newest first)
+    const idx = bookings.findIndex((b) => b.id === bookingId);
+    let nextPendingId: number | undefined;
+    if (idx !== -1) {
+      for (let i = idx + 1; i < bookings.length; i++) {
+        if ((bookings[i].status || '').toLowerCase() === 'pending') {
+          nextPendingId = bookings[i].id;
+          break;
+        }
+      }
+      // If none after, fall back to any pending earlier in the list
+      if (nextPendingId === undefined) {
+        for (let i = 0; i < idx; i++) {
+          if ((bookings[i].status || '').toLowerCase() === 'pending') {
+            nextPendingId = bookings[i].id;
+            break;
+          }
+        }
+      }
+    }
+
+    setExpandedIds((prev) => {
+      const without = prev.filter((x) => x !== bookingId);
+      if (nextPendingId !== undefined && !without.includes(nextPendingId)) {
+        return [...without, nextPendingId];
+      }
+      return without;
+    });
+
     toast.success('Booking confirmed.');
   };
 
@@ -204,10 +294,68 @@ const AgentBookingsPage = () => {
     [bookings]
   );
 
-  const visibleBookings = useMemo(
+  // Debounce search input → DB query
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedQuery(searchQuery.trim()), 300);
+    return () => clearTimeout(handle);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const run = async () => {
+      const raw = debouncedQuery.replace(/^#/, '').trim();
+      if (!raw || !agentUserId) {
+        setSearchResults([]);
+        return;
+      }
+      const id = Number(raw);
+      if (!Number.isInteger(id) || id <= 0) {
+        // Non-numeric input — no results (booking IDs are numeric)
+        setSearchResults([]);
+        return;
+      }
+      setIsSearchLoading(true);
+      const { data, error } = await supabase
+        .from('bookings')
+        .select(
+          'id, auth_user_id, agent_id, package_id, slug, guests, sharing, booking_mobile, total_amount, currency, status, agent_name, created_at'
+        )
+        .eq('agent_id', agentUserId)
+        .eq('id', id)
+        .order('created_at', { ascending: false });
+      if (cancelled) return;
+      if (error) {
+        console.error('Booking search failed:', error.message);
+        setSearchResults([]);
+      } else {
+        setSearchResults((data || []) as BookingRow[]);
+      }
+      setIsSearchLoading(false);
+    };
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedQuery, agentUserId]);
+
+  const isSearching = debouncedQuery.length > 0;
+
+  const tabFilteredBookings = useMemo(
     () => bookings.filter((item) => (item.status || '').toLowerCase() === activeTab),
     [activeTab, bookings]
   );
+
+  const groupedTree = useMemo(() => groupByYearMonth(tabFilteredBookings), [tabFilteredBookings]);
+  const sortedYears = useMemo(
+    () => Array.from(groupedTree.keys()).sort((a, b) => b - a),
+    [groupedTree]
+  );
+
+  const bookingById = useMemo(() => {
+    const m = new Map<number, BookingRow>();
+    for (const b of tabFilteredBookings) m.set(b.id, b);
+    return m;
+  }, [tabFilteredBookings]);
 
   return (
     <div className="space-y-6 sm:space-y-8">
@@ -243,6 +391,33 @@ const AgentBookingsPage = () => {
         </ul>
       </div>
 
+      {/* Booking ID search */}
+      <div className="relative max-w-md">
+        <span className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-neutral-400">
+          <MagnifyingGlassIcon className="w-5 h-5" />
+        </span>
+        <input
+          type="text"
+          inputMode="search"
+          autoComplete="off"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search by Booking ID (e.g. 29)"
+          className="w-full pl-10 pr-10 py-2.5 rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          aria-label="Search bookings by ID"
+        />
+        {searchQuery ? (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="absolute inset-y-0 right-3 flex items-center text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+            aria-label="Clear search"
+          >
+            <XMarkIcon className="w-5 h-5" />
+          </button>
+        ) : null}
+      </div>
+
       {isLoading ? (
         <div className="space-y-4">
           {Array.from({ length: LOADER_CARD_COUNT }).map((_, index) => (
@@ -269,128 +444,103 @@ const AgentBookingsPage = () => {
             </div>
           ))}
         </div>
+      ) : isSearching ? (
+        // Search results — flat list, ignores tabs
+        isSearchLoading ? (
+          <div className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-5">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">Searching…</p>
+          </div>
+        ) : searchResults.length === 0 ? (
+          <div className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-5">
+            <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              No booking found for &quot;{debouncedQuery}&quot;.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {searchResults.map((booking) => renderBookingCard(booking))}
+          </div>
+        )
       ) : bookings.length === 0 ? (
         <div className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-5">
           <p className="text-sm text-neutral-500 dark:text-neutral-400">No bookings found.</p>
         </div>
-      ) : visibleBookings.length === 0 ? (
+      ) : tabFilteredBookings.length === 0 ? (
         <div className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-5">
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             No {activeTab} bookings found.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {visibleBookings.map((booking) => {
-            const guests = Array.isArray(booking.guests) ? booking.guests : [];
-            const isExpanded = expandedIds.includes(booking.id);
-            const status = (booking.status || 'pending').toLowerCase();
-            const userInfo = userDetailsByAuth[booking.auth_user_id];
-            const userName = [userInfo?.first_name, userInfo?.last_name]
-              .filter(Boolean)
-              .join(' ')
-              .trim();
-            const firstGuestName =
-              guests.find((guest) => (guest?.name || '').trim())?.name?.trim() || '';
-            const bookedByUserName = userName || firstGuestName || 'User';
-
+        // Grouped view: year (collapsible) → month (collapsible) → bookings
+        <div className="space-y-3">
+          {sortedYears.map((year) => {
+            const months = groupedTree.get(year)!;
+            const sortedMonths = Array.from(months.keys()).sort((a, b) => b - a);
+            const yearTotal = Array.from(months.values()).reduce((acc, ids) => acc + ids.length, 0);
+            const isYearOpen = expandedYears.has(year);
             return (
               <div
-                key={booking.id}
-                className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5"
+                key={year}
+                className="rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 overflow-hidden"
               >
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                  <div>
-                    <h3 className="text-lg font-semibold">{booking.slug || 'Package booking'}</h3>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                      User: {bookedByUserName}
-                    </p>
-                  </div>
-
+                <button
+                  type="button"
+                  onClick={() => toggleYear(year)}
+                  className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-neutral-50 dark:hover:bg-neutral-800 focus:outline-none"
+                  aria-expanded={isYearOpen}
+                >
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${statusClass[status] || 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300'}`}
-                    >
-                      {status}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => toggle(booking.id)}
-                      className="inline-flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-                      aria-label={
-                        isExpanded ? 'Collapse booking details' : 'Expand booking details'
-                      }
-                    >
-                      {isExpanded ? (
-                        <ChevronUpIcon className="w-5 h-5" />
-                      ) : (
-                        <ChevronDownIcon className="w-5 h-5" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                  <div>
-                    <p className="text-neutral-500 dark:text-neutral-400">User name</p>
-                    <p className="font-medium">{bookedByUserName}</p>
-                  </div>
-                  <div>
-                    <p className="text-neutral-500 dark:text-neutral-400">Booking mobile</p>
-                    <p className="font-medium">
-                      {booking.booking_mobile || userInfo?.phone || 'TBD'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-neutral-500 dark:text-neutral-400">Sharing</p>
-                    <p className="font-medium">{booking.sharing} person</p>
-                  </div>
-                  <div>
-                    <p className="text-neutral-500 dark:text-neutral-400">Total</p>
-                    <p className="font-medium">
-                      {booking.currency} {Number(booking.total_amount || 0).toLocaleString('en-IN')}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-neutral-500 dark:text-neutral-400">Booked on</p>
-                    <p className="font-medium">
-                      {new Date(booking.created_at).toLocaleDateString('en-IN')}
-                    </p>
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="mt-4 space-y-4 border-t border-neutral-200 dark:border-neutral-700 pt-4">
-                    <div className="space-y-2">
-                      <p className="text-sm font-medium">Travellers</p>
-                      {guests.length === 0 ? (
-                        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                          No traveller data
-                        </p>
-                      ) : (
-                        guests.map((guest, index) => (
-                          <div
-                            key={`${booking.id}-guest-${index}`}
-                            className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-3 text-sm"
-                          >
-                            <p className="font-medium">
-                              {guest.title || ''} {guest.name || `Guest ${index + 1}`}
-                            </p>
-                            <p className="text-neutral-500 dark:text-neutral-400">
-                              Age: {guest.age || 'TBD'}
-                            </p>
-                          </div>
-                        ))
-                      )}
-                    </div>
-
-                    {status !== 'confirmed' && (
-                      <div className="pt-1">
-                        <ButtonPrimary type="button" onClick={() => handleConfirm(booking.id)}>
-                          Confirm Booking
-                        </ButtonPrimary>
-                      </div>
+                    {isYearOpen ? (
+                      <ChevronUpIcon className="w-5 h-5 text-neutral-500" />
+                    ) : (
+                      <ChevronDownIcon className="w-5 h-5 text-neutral-500" />
                     )}
+                    <span className="text-lg font-semibold">{year}</span>
+                  </div>
+                  <span className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                    {yearTotal} booking{yearTotal === 1 ? '' : 's'}
+                  </span>
+                </button>
+
+                {isYearOpen && (
+                  <div className="border-t border-neutral-200 dark:border-neutral-700 divide-y divide-neutral-200 dark:divide-neutral-800">
+                    {sortedMonths.map((month) => {
+                      const ids = months.get(month) || [];
+                      const isMonthOpen = expandedMonths.has(monthKey(year, month));
+                      return (
+                        <div key={`${year}-${month}`} className="bg-neutral-50/50 dark:bg-neutral-900/50">
+                          <button
+                            type="button"
+                            onClick={() => toggleMonth(year, month)}
+                            className="w-full flex items-center justify-between gap-3 px-5 py-3 text-left hover:bg-neutral-100/60 dark:hover:bg-neutral-800/60 focus:outline-none"
+                            aria-expanded={isMonthOpen}
+                          >
+                            <div className="flex items-center gap-3">
+                              {isMonthOpen ? (
+                                <ChevronUpIcon className="w-4 h-4 text-neutral-400" />
+                              ) : (
+                                <ChevronDownIcon className="w-4 h-4 text-neutral-400" />
+                              )}
+                              <span className="text-sm font-medium text-neutral-700 dark:text-neutral-200">
+                                {MONTH_NAMES[month]}
+                              </span>
+                            </div>
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {ids.length} booking{ids.length === 1 ? '' : 's'}
+                            </span>
+                          </button>
+                          {isMonthOpen && (
+                            <div className="px-3 sm:px-4 pb-4 pt-1 space-y-3">
+                              {ids
+                                .map((id) => bookingById.get(id))
+                                .filter((b): b is BookingRow => !!b)
+                                .map((booking) => renderBookingCard(booking))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -400,6 +550,135 @@ const AgentBookingsPage = () => {
       )}
     </div>
   );
+
+  function renderBookingCard(booking: BookingRow) {
+    const guests = Array.isArray(booking.guests) ? booking.guests : [];
+    const isExpanded = expandedIds.includes(booking.id);
+    const status = (booking.status || 'pending').toLowerCase();
+    const userInfo = userDetailsByAuth[booking.auth_user_id];
+    const userName = [userInfo?.first_name, userInfo?.last_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    const firstGuestName =
+      guests.find((guest) => (guest?.name || '').trim())?.name?.trim() || '';
+    const bookedByUserName = userName || firstGuestName || 'User';
+
+    return (
+      <div
+        key={booking.id}
+        className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5"
+      >
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="min-w-0">
+            {booking.agent_name && booking.slug ? (
+              <Link
+                href={`/${booking.agent_name}/${booking.slug}`}
+                className="text-lg font-semibold text-neutral-900 dark:text-neutral-100 hover:underline hover:text-primary-700 dark:hover:text-primary-300 truncate block"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {booking.slug}
+              </Link>
+            ) : (
+              <h3 className="text-lg font-semibold truncate">
+                {booking.slug || 'Package booking'}
+              </h3>
+            )}
+            <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400 flex flex-wrap items-center gap-x-2 gap-y-0.5">
+              <span>User: {bookedByUserName}</span>
+              <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-600">·</span>
+              <span className="font-mono text-xs">{formatBookingRef(booking.id)}</span>
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <span
+              className={`px-3 py-1 rounded-full text-xs font-medium ${statusClass[status] || 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300'}`}
+            >
+              {status}
+            </span>
+            <button
+              type="button"
+              onClick={() => toggle(booking.id)}
+              className="inline-flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+              aria-label={isExpanded ? 'Collapse booking details' : 'Expand booking details'}
+            >
+              {isExpanded ? (
+                <ChevronUpIcon className="w-5 h-5" />
+              ) : (
+                <ChevronDownIcon className="w-5 h-5" />
+              )}
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+          <div>
+            <p className="text-neutral-500 dark:text-neutral-400">User name</p>
+            <p className="font-medium">{bookedByUserName}</p>
+          </div>
+          <div>
+            <p className="text-neutral-500 dark:text-neutral-400">Booking mobile</p>
+            <p className="font-medium">
+              {booking.booking_mobile || userInfo?.phone || 'TBD'}
+            </p>
+          </div>
+          <div>
+            <p className="text-neutral-500 dark:text-neutral-400">Sharing</p>
+            <p className="font-medium">{booking.sharing} person</p>
+          </div>
+          <div>
+            <p className="text-neutral-500 dark:text-neutral-400">Total</p>
+            <p className="font-medium">
+              {booking.currency} {Number(booking.total_amount || 0).toLocaleString('en-IN')}
+            </p>
+          </div>
+          <div>
+            <p className="text-neutral-500 dark:text-neutral-400">Booked on</p>
+            <p className="font-medium">
+              {new Date(booking.created_at).toLocaleDateString('en-IN')}
+            </p>
+          </div>
+        </div>
+
+        {isExpanded && (
+          <div className="mt-4 space-y-4 border-t border-neutral-200 dark:border-neutral-700 pt-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Travellers</p>
+              {guests.length === 0 ? (
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  No traveller data
+                </p>
+              ) : (
+                guests.map((guest, index) => (
+                  <div
+                    key={`${booking.id}-guest-${index}`}
+                    className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-3 text-sm"
+                  >
+                    <p className="font-medium">
+                      {guest.title || ''} {guest.name || `Guest ${index + 1}`}
+                    </p>
+                    <p className="text-neutral-500 dark:text-neutral-400">
+                      Age: {guest.age || 'TBD'}
+                    </p>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {status !== 'confirmed' && (
+              <div className="pt-1">
+                <ButtonPrimary type="button" onClick={() => handleConfirm(booking.id)}>
+                  Confirm Booking
+                </ButtonPrimary>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  }
 };
 
 export default AgentBookingsPage;
