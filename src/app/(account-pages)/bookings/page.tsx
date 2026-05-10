@@ -18,8 +18,18 @@ import ButtonPrimary from '@/shared/ButtonPrimary';
 const formatBookingRef = (id: number) => `#${id}`;
 
 const MONTH_NAMES = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+  'January',
+  'February',
+  'March',
+  'April',
+  'May',
+  'June',
+  'July',
+  'August',
+  'September',
+  'October',
+  'November',
+  'December',
 ];
 
 const monthKey = (year: number, month: number) => `${year}-${month}`;
@@ -383,9 +393,7 @@ const AgentBookingsPage = () => {
   const monthsForSelectedYear = groupedTree.get(selectedYear);
   const sortedMonthsForYear = useMemo(
     () =>
-      monthsForSelectedYear
-        ? Array.from(monthsForSelectedYear.keys()).sort((a, b) => b - a)
-        : [],
+      monthsForSelectedYear ? Array.from(monthsForSelectedYear.keys()).sort((a, b) => b - a) : [],
     [monthsForSelectedYear]
   );
 
@@ -517,7 +525,9 @@ const AgentBookingsPage = () => {
             <Menu as="div" className="relative inline-block text-left">
               <Menu.Button className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:border-primary-500 hover:text-primary-700 dark:hover:text-primary-300 focus:outline-none transition-colors">
                 <CalendarDaysIcon className="w-4 h-4" />
-                <span className="hidden sm:inline text-neutral-500 dark:text-neutral-400">Year:</span>
+                <span className="hidden sm:inline text-neutral-500 dark:text-neutral-400">
+                  Year:
+                </span>
                 <span className="font-medium">{selectedYear}</span>
                 <ChevronDownIcon className="w-4 h-4" aria-hidden="true" />
               </Menu.Button>
@@ -629,12 +639,8 @@ const AgentBookingsPage = () => {
     const isExpanded = expandedIds.includes(booking.id);
     const status = (booking.status || 'pending').toLowerCase();
     const userInfo = userDetailsByAuth[booking.auth_user_id];
-    const userName = [userInfo?.first_name, userInfo?.last_name]
-      .filter(Boolean)
-      .join(' ')
-      .trim();
-    const firstGuestName =
-      guests.find((guest) => (guest?.name || '').trim())?.name?.trim() || '';
+    const userName = [userInfo?.first_name, userInfo?.last_name].filter(Boolean).join(' ').trim();
+    const firstGuestName = guests.find((guest) => (guest?.name || '').trim())?.name?.trim() || '';
     const bookedByUserName = userName || firstGuestName || 'User';
 
     return (
@@ -660,7 +666,9 @@ const AgentBookingsPage = () => {
             )}
             <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400 flex flex-wrap items-center gap-x-2 gap-y-0.5">
               <span>User: {bookedByUserName}</span>
-              <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-600">·</span>
+              <span aria-hidden="true" className="text-neutral-300 dark:text-neutral-600">
+                ·
+              </span>
               <span className="font-mono text-xs">{formatBookingRef(booking.id)}</span>
             </p>
           </div>
@@ -693,9 +701,7 @@ const AgentBookingsPage = () => {
           </div>
           <div>
             <p className="text-neutral-500 dark:text-neutral-400">Booking mobile</p>
-            <p className="font-medium">
-              {booking.booking_mobile || userInfo?.phone || 'TBD'}
-            </p>
+            <p className="font-medium">{booking.booking_mobile || userInfo?.phone || 'TBD'}</p>
           </div>
           <div>
             <p className="text-neutral-500 dark:text-neutral-400">Sharing</p>
@@ -720,9 +726,7 @@ const AgentBookingsPage = () => {
             <div className="space-y-2">
               <p className="text-sm font-medium">Travellers</p>
               {guests.length === 0 ? (
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                  No traveller data
-                </p>
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">No traveller data</p>
               ) : (
                 guests.map((guest, index) => (
                   <div

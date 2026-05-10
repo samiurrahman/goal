@@ -83,13 +83,13 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
         <div className="w-full border-b border-neutral-200 dark:border-neutral-700" />
 
         <div className="p-3 flex items-center justify-between">
-          <span className="font-medium text-neutral-800 dark:text-neutral-200">Sharing</span>
+          <span className="font-medium text-neutral-800 dark:text-neutral-200">Sharing Room</span>
           <div className="flex items-center gap-2">
             <form method="get">
               <input type="hidden" name="guests" value={numberOfGuests} />
               <button
                 type="submit"
-                name="sharing"
+                name="sharing Room"
                 value={clamp(sharingCount - 1, 2, 5)}
                 className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
               >
@@ -101,7 +101,7 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
               <input type="hidden" name="guests" value={numberOfGuests} />
               <button
                 type="submit"
-                name="sharing"
+                name="sharing RoomRate"
                 value={clamp(sharingCount + 1, 2, 5)}
                 className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
               >
@@ -135,7 +135,7 @@ const PurchaseSummary: React.FC<PurchaseSummaryProps> = ({
         href={reserveHref}
         className="ttnc-ButtonPrimary disabled:bg-opacity-70 bg-primary-6000 hover:bg-primary-700 text-neutral-50 relative h-auto inline-flex items-center justify-center rounded-full transition-colors text-sm sm:text-base font-medium px-4 py-3 sm:px-6"
       >
-        Reserve
+        Send enquiry
       </Link>
     </div>
   );

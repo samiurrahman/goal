@@ -86,7 +86,7 @@ const MobileFooterSticky = ({
             onClick={() => setIsExpanded(true)}
             className="ttnc-ButtonPrimary disabled:bg-opacity-70 bg-primary-6000 hover:bg-primary-700 text-neutral-50 relative h-auto inline-flex items-center justify-center rounded-2xl transition-colors text-sm sm:text-base font-medium px-5 sm:px-7 py-3"
           >
-            Reserve
+            Send enquiry
           </button>
         </div>
       </div>
