@@ -92,9 +92,9 @@ async function PageHome() {
           </div>
 
           {/* Hero stats */}
-          <dl className="mt-10 lg:mt-12 grid grid-cols-2 md:grid-cols-4 gap-5 md:gap-8">
+          <dl className="mt-10 lg:mt-12 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-14 mx-auto justify-center max-w-screen-md">
             {[
-              { v: '240+', k: 'Verified agents' },
+              { v: '540+', k: 'Verified agents' },
               { v: '38,400', k: 'Pilgrims served' },
               { v: '4.8 ★', k: 'Avg agent rating' },
               { v: '~ 4 hrs', k: 'Avg reply time' },
