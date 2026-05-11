@@ -643,14 +643,40 @@ const AddPackageWizardModal = ({
       thumbnail_url: editPackageId ? currentImageUrl || null : null,
     };
 
-    const { data: packageData, error: packageError } = editPackageId
-      ? await supabase
-          .from('packages')
-          .update(packagePayload)
-          .eq('id', editPackageId)
-          .select()
-          .single()
-      : await supabase.from('packages').insert([packagePayload]).select().single();
+    const runSave = async (payload: Record<string, unknown>) => {
+      return editPackageId
+        ? await supabase
+            .from('packages')
+            .update(payload)
+            .eq('id', editPackageId)
+            .select()
+            .single()
+        : await supabase.from('packages').insert([payload]).select().single();
+    };
+
+    let { data: packageData, error: packageError } = await runSave(packagePayload);
+
+    // The `tags` column was added in a later migration. If the host hasn't
+    // applied it yet (Supabase responds with PGRST204 / "column not found"),
+    // strip `tags` and retry so the save still succeeds. Agents will need to
+    // run the migration to actually persist chip selections.
+    const errMsg = packageError?.message || '';
+    const isMissingTagsColumn =
+      packageError?.code === 'PGRST204' ||
+      (/tags/i.test(errMsg) && /(column|find|not found|does not exist)/i.test(errMsg));
+
+    if (packageError && isMissingTagsColumn && 'tags' in packagePayload) {
+      const { tags: _tags, ...payloadWithoutTags } = packagePayload as { tags?: unknown } & Record<
+        string,
+        unknown
+      >;
+      console.warn(
+        'packages.tags column missing — retrying save without tags. Apply migration 20260511010000_add_tags_to_packages.sql to persist chip selections.'
+      );
+      const retry = await runSave(payloadWithoutTags);
+      packageData = retry.data;
+      packageError = retry.error;
+    }
 
     if (packageError || !packageData) {
       setIsSaving(false);

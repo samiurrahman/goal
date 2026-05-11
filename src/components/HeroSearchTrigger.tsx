@@ -82,7 +82,7 @@ const HeroSearchTrigger = () => {
       >
         <MapPinIcon className="w-5 h-5 text-primary-700" />
         <div className="min-w-0">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-500 dark:text-neutral-400">
+          <div className="text-xs font-light text-neutral-500 dark:text-neutral-400">
             Departure city
           </div>
           <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
@@ -98,7 +98,7 @@ const HeroSearchTrigger = () => {
       >
         <CalendarDaysIcon className="w-5 h-5 text-primary-700" />
         <div className="min-w-0">
-          <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-500 dark:text-neutral-400">
+          <div className="text-xs font-light text-neutral-500 dark:text-neutral-400">
             Travel month
           </div>
           <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">

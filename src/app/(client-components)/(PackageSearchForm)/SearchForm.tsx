@@ -67,10 +67,10 @@ const SearchForm = () => {
             >
               <MapPinIcon className="w-5 h-5 text-primary-700 flex-shrink-0" />
               <span className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-900 dark:text-neutral-100">
+                <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                   Location
                 </span>
-                <span className="text-sm text-neutral-700 dark:text-neutral-300 truncate">
+                <span className="text-xs font-light text-neutral-500 dark:text-neutral-400 truncate">
                   {locationValue || 'Where from?'}
                 </span>
               </span>
@@ -155,10 +155,10 @@ const SearchForm = () => {
             >
               <CalendarDaysIcon className="w-5 h-5 text-primary-700 flex-shrink-0" />
               <span className="flex flex-col gap-0.5 min-w-0">
-                <span className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-900 dark:text-neutral-100">
+                <span className="text-sm font-medium text-neutral-900 dark:text-neutral-100">
                   Travel month
                 </span>
-                <span className="text-sm text-neutral-700 dark:text-neutral-300 truncate">
+                <span className="text-xs font-light text-neutral-500 dark:text-neutral-400 truncate">
                   {monthLabel || 'Any month'}
                 </span>
               </span>
