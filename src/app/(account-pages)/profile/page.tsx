@@ -17,6 +17,76 @@ import type { Agent, AgentInfoFeature, TwMainColor } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 import { slugify, RESERVED_AGENT_SLUGS } from '@/lib/slug';
 
+// When an agent updates slug / known_as / profile_image, propagate the new
+// values to the denormalized copies on packages, package_details and bookings.
+// Best-effort: failures are logged but don't surface as errors to the user.
+const syncDenormalizedAgentFields = async ({
+  authUserId,
+  oldSlug,
+  newSlug,
+  oldKnownAs,
+  newKnownAs,
+  oldProfileImage,
+  newProfileImage,
+}: {
+  authUserId: string | null;
+  oldSlug: string;
+  newSlug: string;
+  oldKnownAs: string;
+  newKnownAs: string;
+  oldProfileImage: string;
+  newProfileImage: string | null;
+}) => {
+  if (!authUserId) return;
+
+  const slugChanged = !!newSlug && newSlug !== oldSlug;
+  const knownAsChanged = newKnownAs !== oldKnownAs;
+  const profileImageChanged = (newProfileImage || '') !== oldProfileImage;
+  if (!slugChanged && !knownAsChanged && !profileImageChanged) return;
+
+  const packagesPayload: Record<string, string | null> = {};
+  if (slugChanged) packagesPayload.agent_name = newSlug;
+  if (knownAsChanged) packagesPayload.agent_known_as = newKnownAs;
+  if (profileImageChanged) packagesPayload.agent_profile_image = newProfileImage;
+
+  if (Object.keys(packagesPayload).length > 0) {
+    const { error } = await supabase
+      .from('packages')
+      .update(packagesPayload)
+      .eq('agent_id', authUserId);
+    if (error) console.warn('Failed to sync agent fields on packages:', error.message);
+  }
+
+  // bookings only has agent_name (the slug)
+  if (slugChanged) {
+    const { error } = await supabase
+      .from('bookings')
+      .update({ agent_name: newSlug })
+      .eq('agent_id', authUserId);
+    if (error) console.warn('Failed to sync agent_name on bookings:', error.message);
+  }
+
+  // package_details may carry a denormalized agent_name on some installations.
+  // Look up this agent's package IDs first; if any column is missing the
+  // update simply errors and we ignore it (best-effort).
+  if (slugChanged) {
+    const { data: pkgRows } = await supabase
+      .from('packages')
+      .select('id')
+      .eq('agent_id', authUserId);
+    const packageIds = (pkgRows || []).map((row: { id: number | string }) => row.id);
+    if (packageIds.length > 0) {
+      const { error } = await supabase
+        .from('package_details')
+        .update({ agent_name: newSlug })
+        .in('package_id', packageIds);
+      if (error && !/column .* does not exist/i.test(error.message || '')) {
+        console.warn('Failed to sync agent_name on package_details:', error.message);
+      }
+    }
+  }
+};
+
 interface CityRecord {
   id: string | number;
   name: string;
@@ -307,6 +377,21 @@ const AgentProfilePage = () => {
     }
 
     setAgent((data as Agent | null) ?? agent);
+
+    // Sync denormalized agent fields to packages / package_details / bookings.
+    // Packages and bookings reference auth.users via agent_id, so we filter by
+    // the agent's auth_user_id (not the agents.id row UUID).
+    await syncDenormalizedAgentFields({
+      authUserId:
+        ((data as Agent | null)?.auth_user_id ?? (agent as Agent | null)?.auth_user_id) || null,
+      oldSlug,
+      newSlug: slugUpdate.slug || oldSlug,
+      oldKnownAs: (agent.known_as || '').trim(),
+      newKnownAs: form.known_as.trim(),
+      oldProfileImage: (agent.profile_image || '').trim(),
+      newProfileImage: (form.profile_image || '').trim() || null,
+    });
+
     toast.success(
       slugUpdate.slug
         ? `Profile updated. Your public URL is now searchumrah.com/${slugUpdate.slug}`
