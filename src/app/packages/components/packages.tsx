@@ -9,6 +9,7 @@ import { MadinaIcon, MakkahIcon } from '@/components/icons/icons';
 import Avatar from '@/shared/Avatar';
 import GovtVerifiedBadge from '@/components/GovtVerifiedBadge';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
+import ShareButton from '@/shared/ShareButton';
 
 // Neutral 2x2 gray JPEG used as fallback blur for packages without a stored LQIP
 const FALLBACK_BLUR_DATA_URL =
@@ -144,6 +145,18 @@ const Packages: FC<PackagesProps> = ({
           <div className="absolute left-3 top-3">
             <GovtVerifiedBadge />
           </div>
+
+          {packageHref !== '/packages' ? (
+            <div className="absolute right-3 top-3 z-20">
+              <ShareButton
+                url={packageHref}
+                title={title}
+                iconOnly
+                className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm shadow-sm"
+                ariaLabel="Share package"
+              />
+            </div>
+          ) : null}
         </div>
 
         <div className="flex flex-grow flex-col gap-3 p-4 sm:p-5 min-w-0">

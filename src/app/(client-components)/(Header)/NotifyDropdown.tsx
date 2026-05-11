@@ -18,6 +18,8 @@ type BookingRow = {
   created_at: string;
   readByAgent: boolean;
   readByUser: boolean;
+  cancellation_reason?: string | null;
+  cancelled_by?: 'agent' | 'user' | null;
 };
 
 type AgentRow = {
@@ -189,7 +191,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
         const { data: rows, error: rowsError } = await supabase
           .from('bookings')
           .select(
-            'id, auth_user_id, agent_id, agent_name, status, created_at, readByAgent, readByUser'
+            'id, auth_user_id, agent_id, agent_name, status, created_at, readByAgent, readByUser, cancellation_reason, cancelled_by'
           )
           .eq('agent_id', user.id)
           .eq('readByAgent', false)
@@ -231,12 +233,16 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
           const customerName =
             [customer?.first_name || '', customer?.last_name || ''].join(' ').trim() ||
             'A traveler';
+          const isUserCancellation =
+            (item.status || '').toLowerCase() === 'cancelled' && item.cancelled_by === 'user';
 
           return {
-            id: `agent-${item.id}-${item.created_at}`,
+            id: `agent-${item.id}-${item.created_at}${isUserCancellation ? '-cancelled' : ''}`,
             bookingId: item.id,
             name: customerName,
-            description: 'New booking received. Please review and confirm it.',
+            description: isUserCancellation
+              ? `${customerName} cancelled their booking.`
+              : 'New booking received. Please review and confirm it.',
             time: formatTimeAgo(item.created_at),
             href: '/bookings',
             avatar: null,
@@ -286,6 +292,46 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
               });
             }
           )
+          .on(
+            'postgres_changes',
+            {
+              event: 'UPDATE',
+              schema: 'public',
+              table: 'bookings',
+              filter: `agent_id=eq.${user.id}`,
+            },
+            async (payload) => {
+              const previous = payload.old as BookingRow;
+              const current = payload.new as BookingRow;
+              if ((current.status || '').toLowerCase() !== 'cancelled') return;
+              if (current.cancelled_by !== 'user') return;
+              if ((previous.status || '').toLowerCase() === 'cancelled') return;
+
+              let customerName = 'A traveler';
+              const { data: customer } = await supabase
+                .from('user_details')
+                .select('first_name, last_name')
+                .eq('auth_user_id', current.auth_user_id)
+                .maybeSingle();
+              if (customer) {
+                customerName =
+                  [customer.first_name || '', customer.last_name || ''].join(' ').trim() ||
+                  customerName;
+              }
+
+              pushNotification({
+                id: `agent-${current.id}-${current.created_at}-cancelled`,
+                bookingId: current.id,
+                name: customerName,
+                description: `${customerName} cancelled their booking.`,
+                time: 'Just now',
+                href: '/bookings',
+                avatar: null,
+                target: 'agent',
+                isRead: false,
+              });
+            }
+          )
           .subscribe();
 
         return () => {
@@ -296,10 +342,10 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
       const { data: rows, error: rowsError } = await supabase
         .from('bookings')
         .select(
-          'id, auth_user_id, agent_id, agent_name, status, created_at, readByAgent, readByUser'
+          'id, auth_user_id, agent_id, agent_name, status, created_at, readByAgent, readByUser, cancellation_reason, cancelled_by'
         )
         .eq('auth_user_id', user.id)
-        .eq('status', 'confirmed')
+        .in('status', ['confirmed', 'cancelled'])
         .eq('readByUser', false)
         .order('created_at', { ascending: false })
         .limit(20);
@@ -312,7 +358,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
           .from('bookings')
           .select('id, auth_user_id, agent_id, agent_name, status, created_at')
           .eq('auth_user_id', user.id)
-          .eq('status', 'confirmed')
+          .in('status', ['confirmed', 'cancelled'])
           .order('created_at', { ascending: false })
           .limit(20);
 
@@ -320,6 +366,12 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
           (item) => ({ ...item, readByAgent: false, readByUser: false })
         );
       }
+
+      // Drop user-cancellations from the user's own notification feed (they triggered it).
+      parsedRows = parsedRows.filter(
+        (item) =>
+          (item.status || '').toLowerCase() !== 'cancelled' || item.cancelled_by !== 'user'
+      );
 
       const agentIds = Array.from(new Set(parsedRows.map((item) => item.agent_id).filter(Boolean)));
 
@@ -339,11 +391,15 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
 
       const mapped = parsedRows.map((item) => {
         const agent = agentById[item.agent_id];
+        const agentDisplayName = (agent?.known_as || item.agent_name || 'Your agent').trim();
+        const isCancellation = (item.status || '').toLowerCase() === 'cancelled';
         return {
-          id: `user-${item.id}-${item.created_at}`,
+          id: `user-${item.id}-${item.created_at}${isCancellation ? '-cancelled' : ''}`,
           bookingId: item.id,
-          name: (agent?.known_as || item.agent_name || 'Your agent').trim(),
-          description: 'Your booking is confirmed. Enjoy!!!',
+          name: agentDisplayName,
+          description: isCancellation
+            ? `${agentDisplayName} cancelled your booking.${item.cancellation_reason ? ` Reason: ${item.cancellation_reason}` : ''}`
+            : 'Your booking is confirmed. Enjoy!!!',
           time: formatTimeAgo(item.created_at),
           href: '/my-bookings',
           avatar: agent?.profile_image || null,
@@ -367,8 +423,16 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
           async (payload) => {
             const previous = payload.old as BookingRow;
             const current = payload.new as BookingRow;
-            if ((current.status || '').toLowerCase() !== 'confirmed') return;
-            if ((previous.status || '').toLowerCase() === 'confirmed') return;
+            const status = (current.status || '').toLowerCase();
+            const previousStatus = (previous.status || '').toLowerCase();
+
+            const isFreshConfirm = status === 'confirmed' && previousStatus !== 'confirmed';
+            const isAgentCancellation =
+              status === 'cancelled' &&
+              previousStatus !== 'cancelled' &&
+              current.cancelled_by === 'agent';
+
+            if (!isFreshConfirm && !isAgentCancellation) return;
 
             let name = current.agent_name || 'Your agent';
             let avatar: string | null = null;
@@ -383,10 +447,12 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
             if (agent?.profile_image) avatar = agent.profile_image;
 
             pushNotification({
-              id: `user-${current.id}-${current.created_at}`,
+              id: `user-${current.id}-${current.created_at}${isAgentCancellation ? '-cancelled' : ''}`,
               bookingId: current.id,
               name,
-              description: 'Your booking is confirmed. Enjoy!!!',
+              description: isAgentCancellation
+                ? `${name} cancelled your booking.${current.cancellation_reason ? ` Reason: ${current.cancellation_reason}` : ''}`
+                : 'Your booking is confirmed. Enjoy!!!',
               time: 'Just now',
               href: '/my-bookings',
               avatar,

@@ -100,7 +100,16 @@ export async function fetchPackages(args: {
 }): Promise<Package[]> {
   const { payload, page, pageSize, sort } = args;
 
-  let query = supabase.from('packages').select(PACKAGE_FIELDS).eq('published', true);
+  // Safety net for cases where an agent never logs in to trigger auto-unpublish:
+  // hide packages whose departure_date is already in the past.
+  const today = new Date();
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+
+  let query = supabase
+    .from('packages')
+    .select(PACKAGE_FIELDS)
+    .eq('published', true)
+    .gte('departure_date', todayStr);
 
   if (payload.location?.length) {
     query =

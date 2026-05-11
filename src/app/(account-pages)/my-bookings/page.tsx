@@ -1,9 +1,35 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import React, { Fragment, useEffect, useMemo, useState } from 'react';
+import { ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { Dialog, Transition } from '@headlessui/react';
 import { supabase } from '@/utils/supabaseClient';
 import toast, { Toaster } from 'react-hot-toast';
+import ButtonPrimary from '@/shared/ButtonPrimary';
+import ButtonSecondary from '@/shared/ButtonSecondary';
+
+const sendWhatsApp = (
+  to: string | undefined | null,
+  templateName: string,
+  params: string[]
+) => {
+  const phone = (to || '').trim();
+  if (!phone) return;
+  fetch('/api/whatsapp/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: phone,
+      template: { name: templateName, language: 'en_US', params },
+    }),
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        console.error('WhatsApp send failed:', await res.text());
+      }
+    })
+    .catch((err) => console.error('WhatsApp request error:', err));
+};
 
 type BookingRow = {
   id: number;
@@ -18,6 +44,8 @@ type BookingRow = {
   status: 'pending' | 'confirmed' | 'cancelled' | string;
   agent_name: string;
   created_at: string;
+  cancellation_reason: string | null;
+  cancelled_by: 'agent' | 'user' | null;
 };
 
 type PackageLite = {
@@ -33,6 +61,7 @@ type PackageLite = {
 type AgentLite = {
   auth_user_id: string;
   known_as: string | null;
+  contact_number?: string | null;
 };
 
 const statusClass: Record<string, string> = {
@@ -49,7 +78,9 @@ const MyBookingsPage = () => {
   const [packagesById, setPackagesById] = useState<Record<number, PackageLite>>({});
   const [agentsByAuthId, setAgentsByAuthId] = useState<Record<string, AgentLite>>({});
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
-  const [activeTab, setActiveTab] = useState<'pending' | 'confirmed'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'cancelled'>('pending');
+  const [cancellingBooking, setCancellingBooking] = useState<BookingRow | null>(null);
+  const [isCancelSubmitting, setIsCancelSubmitting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
@@ -98,7 +129,7 @@ const MyBookingsPage = () => {
       const { data: bookingRows, error: bookingsError } = await supabase
         .from('bookings')
         .select(
-          'id, agent_id, package_id, slug, guests, sharing, booking_mobile, total_amount, currency, status, agent_name, created_at'
+          'id, agent_id, package_id, slug, guests, sharing, booking_mobile, total_amount, currency, status, agent_name, created_at, cancellation_reason, cancelled_by'
         )
         .eq('auth_user_id', user.id)
         .order('created_at', { ascending: false });
@@ -122,7 +153,7 @@ const MyBookingsPage = () => {
       if (agentAuthIds.length > 0) {
         const { data: agentRows } = await supabase
           .from('agents')
-          .select('auth_user_id, known_as')
+          .select('auth_user_id, known_as, contact_number')
           .in('auth_user_id', agentAuthIds);
 
         const mappedAgents: Record<string, AgentLite> = {};
@@ -183,6 +214,68 @@ const MyBookingsPage = () => {
     [bookings]
   );
 
+  const cancelledCount = useMemo(
+    () => bookings.filter((item) => (item.status || '').toLowerCase() === 'cancelled').length,
+    [bookings]
+  );
+
+  const closeCancel = () => {
+    if (isCancelSubmitting) return;
+    setCancellingBooking(null);
+  };
+
+  const handleCancelSubmit = async () => {
+    if (!cancellingBooking) return;
+
+    setIsCancelSubmitting(true);
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+    if (!token) {
+      toast.error('Session expired. Please sign in again.');
+      setIsCancelSubmitting(false);
+      return;
+    }
+
+    const response = await fetch('/api/bookings/cancel', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ bookingId: cancellingBooking.id }),
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      toast.error(`Failed to cancel booking: ${payload?.error || response.statusText}`);
+      setIsCancelSubmitting(false);
+      return;
+    }
+
+    setBookings((prev) =>
+      prev.map((item) =>
+        item.id === cancellingBooking.id
+          ? { ...item, status: 'cancelled', cancelled_by: 'user', cancellation_reason: null }
+          : item
+      )
+    );
+
+    const agentPhone = agentsByAuthId[cancellingBooking.agent_id]?.contact_number || '';
+    sendWhatsApp(agentPhone, 'booking_cancelled_by_user', [
+      cancellingBooking.slug || `Booking #${cancellingBooking.id}`,
+      String(cancellingBooking.id),
+    ]);
+
+    toast.success('Booking cancelled.');
+    setIsCancelSubmitting(false);
+    setCancellingBooking(null);
+    setActiveTab('cancelled');
+  };
+
   const visibleBookings = useMemo(
     () => bookings.filter((item) => (item.status || '').toLowerCase() === activeTab),
     [activeTab, bookings]
@@ -217,6 +310,19 @@ const MyBookingsPage = () => {
               }`}
             >
               Confirmed({confirmedCount})
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={() => setActiveTab('cancelled')}
+              className={`block !leading-none px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition focus:outline-none ${
+                activeTab === 'cancelled'
+                  ? 'bg-white text-neutral-900 shadow-sm dark:bg-neutral-900 dark:text-neutral-50'
+                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+              }`}
+            >
+              Cancelled({cancelledCount})
             </button>
           </li>
         </ul>
@@ -328,6 +434,20 @@ const MyBookingsPage = () => {
                         ? `${pkg.departure_city} - ${pkg.arrival_city}`
                         : 'Route TBD'}
                     </div>
+
+                    {status === 'cancelled' && (
+                      <div className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50/60 dark:bg-red-900/10 p-3 text-sm">
+                        <p className="font-medium text-red-700 dark:text-red-300">
+                          Cancelled by {booking.cancelled_by === 'user' ? 'you' : 'agent'}
+                        </p>
+                        {booking.cancelled_by === 'agent' && booking.cancellation_reason ? (
+                          <p className="mt-1 text-red-700 dark:text-red-300">
+                            Reason: {booking.cancellation_reason}
+                          </p>
+                        ) : null}
+                      </div>
+                    )}
+
                     <div className="space-y-2">
                       <p className="text-sm font-medium">Travellers</p>
                       {guests.length === 0 ? (
@@ -350,6 +470,18 @@ const MyBookingsPage = () => {
                         ))
                       )}
                     </div>
+
+                    {(status === 'pending' || status === 'confirmed') && (
+                      <div className="pt-1">
+                        <ButtonSecondary
+                          type="button"
+                          onClick={() => setCancellingBooking(booking)}
+                          className="!text-red-600 dark:!text-red-400 border border-red-300 dark:border-red-700"
+                        >
+                          Cancel Booking
+                        </ButtonSecondary>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -357,6 +489,70 @@ const MyBookingsPage = () => {
           })}
         </div>
       )}
+
+      <Transition appear show={cancellingBooking !== null} as={Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={closeCancel}>
+          <div className="min-h-screen px-4 text-center">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-75"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-75"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Dialog.Overlay className="fixed inset-0 bg-neutral-900 bg-opacity-50 dark:bg-opacity-80" />
+            </Transition.Child>
+            <span className="inline-block h-screen align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-75"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-75"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <div className="inline-block w-full max-w-md p-6 my-8 text-left align-middle transition-all transform bg-white dark:bg-neutral-900 shadow-xl rounded-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <Dialog.Title className="text-lg font-semibold">Cancel Booking</Dialog.Title>
+                  <button
+                    type="button"
+                    onClick={closeCancel}
+                    className="inline-flex items-center justify-center rounded-xl p-1.5 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Are you sure you want to cancel this booking? The agent will be notified.
+                </p>
+                <div className="mt-6 flex gap-3 justify-end">
+                  <ButtonSecondary
+                    type="button"
+                    onClick={closeCancel}
+                    disabled={isCancelSubmitting}
+                    className="!text-sm"
+                  >
+                    Keep Booking
+                  </ButtonSecondary>
+                  <ButtonPrimary
+                    type="button"
+                    onClick={handleCancelSubmit}
+                    disabled={isCancelSubmitting}
+                    className="!bg-red-600 hover:!bg-red-700 !text-sm"
+                  >
+                    {isCancelSubmitting ? 'Cancelling…' : 'Cancel Booking'}
+                  </ButtonPrimary>
+                </div>
+              </div>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   );
 };

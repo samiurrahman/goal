@@ -10,10 +10,34 @@ import {
   MagnifyingGlassIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import { Menu, Transition } from '@headlessui/react';
+import { Dialog, Menu, Transition } from '@headlessui/react';
 import { supabase } from '@/utils/supabaseClient';
 import toast, { Toaster } from 'react-hot-toast';
 import ButtonPrimary from '@/shared/ButtonPrimary';
+import ButtonSecondary from '@/shared/ButtonSecondary';
+
+const sendWhatsApp = (
+  to: string | undefined | null,
+  templateName: string,
+  params: string[]
+) => {
+  const phone = (to || '').trim();
+  if (!phone) return;
+  fetch('/api/whatsapp/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      to: phone,
+      template: { name: templateName, language: 'en_US', params },
+    }),
+  })
+    .then(async (res) => {
+      if (!res.ok) {
+        console.error('WhatsApp send failed:', await res.text());
+      }
+    })
+    .catch((err) => console.error('WhatsApp request error:', err));
+};
 
 const formatBookingRef = (id: number) => `#${id}`;
 
@@ -64,7 +88,12 @@ type BookingRow = {
   status: 'pending' | 'confirmed' | 'cancelled' | string;
   agent_name: string;
   created_at: string;
+  cancellation_reason: string | null;
+  cancelled_by: 'agent' | 'user' | null;
 };
+
+const BOOKING_SELECT_COLUMNS =
+  'id, auth_user_id, agent_id, package_id, slug, guests, sharing, booking_mobile, total_amount, currency, status, agent_name, created_at, cancellation_reason, cancelled_by';
 
 type UserDetailsLite = {
   auth_user_id: string;
@@ -93,7 +122,10 @@ const AgentBookingsPage = () => {
   const [bookings, setBookings] = useState<BookingRow[]>([]);
   const [expandedIds, setExpandedIds] = useState<number[]>([]);
   const [userDetailsByAuth, setUserDetailsByAuth] = useState<Record<string, UserDetailsLite>>({});
-  const [activeTab, setActiveTab] = useState<'pending' | 'confirmed'>('pending');
+  const [activeTab, setActiveTab] = useState<'pending' | 'confirmed' | 'cancelled'>('pending');
+  const [rejectingBooking, setRejectingBooking] = useState<BookingRow | null>(null);
+  const [rejectReason, setRejectReason] = useState('');
+  const [isRejectSubmitting, setIsRejectSubmitting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [agentUserId, setAgentUserId] = useState<string | null>(null);
 
@@ -195,9 +227,7 @@ const AgentBookingsPage = () => {
 
     const { data: bookingRows, error: bookingsError } = await supabase
       .from('bookings')
-      .select(
-        'id, auth_user_id, agent_id, package_id, slug, guests, sharing, booking_mobile, total_amount, currency, status, agent_name, created_at'
-      )
+      .select(BOOKING_SELECT_COLUMNS)
       .eq('agent_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -312,6 +342,85 @@ const AgentBookingsPage = () => {
     () => bookings.filter((item) => (item.status || '').toLowerCase() === 'confirmed').length,
     [bookings]
   );
+
+  const cancelledCount = useMemo(
+    () => bookings.filter((item) => (item.status || '').toLowerCase() === 'cancelled').length,
+    [bookings]
+  );
+
+  const openReject = (booking: BookingRow) => {
+    setRejectingBooking(booking);
+    setRejectReason('');
+  };
+
+  const closeReject = () => {
+    if (isRejectSubmitting) return;
+    setRejectingBooking(null);
+    setRejectReason('');
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!rejectingBooking) return;
+    const reason = rejectReason.trim();
+    if (!reason) {
+      toast.error('Please enter a reason.');
+      return;
+    }
+
+    setIsRejectSubmitting(true);
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    const token = session?.access_token;
+    if (!token) {
+      toast.error('Session expired. Please sign in again.');
+      setIsRejectSubmitting(false);
+      return;
+    }
+
+    const response = await fetch('/api/bookings/cancel', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ bookingId: rejectingBooking.id, reason }),
+    });
+
+    if (!response.ok) {
+      const payload = await response.json().catch(() => ({}));
+      toast.error(`Failed to reject booking: ${payload?.error || response.statusText}`);
+      setIsRejectSubmitting(false);
+      return;
+    }
+
+    setBookings((prev) =>
+      prev.map((item) =>
+        item.id === rejectingBooking.id
+          ? {
+              ...item,
+              status: 'cancelled',
+              cancelled_by: 'agent',
+              cancellation_reason: reason,
+            }
+          : item
+      )
+    );
+
+    sendWhatsApp(rejectingBooking.booking_mobile, 'booking_cancelled_by_agent', [
+      rejectingBooking.slug || `Booking #${rejectingBooking.id}`,
+      String(rejectingBooking.id),
+      reason,
+    ]);
+
+    toast.success('Booking rejected.');
+    setIsRejectSubmitting(false);
+    setRejectingBooking(null);
+    setRejectReason('');
+    setActiveTab('cancelled');
+  };
 
   // Debounce search input → DB query
   useEffect(() => {
@@ -432,6 +541,19 @@ const AgentBookingsPage = () => {
               }`}
             >
               Confirmed({confirmedCount})
+            </button>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={() => setActiveTab('cancelled')}
+              className={`block !leading-none px-5 py-2.5 rounded-full text-sm sm:text-base font-medium transition focus:outline-none ${
+                activeTab === 'cancelled'
+                  ? 'bg-white text-neutral-900 shadow-sm dark:bg-neutral-900 dark:text-neutral-50'
+                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+              }`}
+            >
+              Cancelled({cancelledCount})
             </button>
           </li>
         </ul>
@@ -631,6 +753,77 @@ const AgentBookingsPage = () => {
           )}
         </div>
       )}
+
+      <Transition appear show={rejectingBooking !== null} as={Fragment}>
+        <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={closeReject}>
+          <div className="min-h-screen px-4 text-center">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-75"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-75"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Dialog.Overlay className="fixed inset-0 bg-neutral-900 bg-opacity-50 dark:bg-opacity-80" />
+            </Transition.Child>
+            <span className="inline-block h-screen align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-75"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-75"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <div className="inline-block w-full max-w-md p-6 my-8 text-left align-middle transition-all transform bg-white dark:bg-neutral-900 shadow-xl rounded-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <Dialog.Title className="text-lg font-semibold">Reject Booking</Dialog.Title>
+                  <button
+                    type="button"
+                    onClick={closeReject}
+                    className="inline-flex items-center justify-center rounded-xl p-1.5 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+                  The user will see this reason in their bookings list.
+                </p>
+                <textarea
+                  value={rejectReason}
+                  onChange={(e) => setRejectReason(e.target.value)}
+                  rows={4}
+                  placeholder="Reason for rejection (e.g. package sold out)"
+                  className="w-full rounded-xl border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+                />
+                <div className="mt-6 flex gap-3 justify-end">
+                  <ButtonSecondary
+                    type="button"
+                    onClick={closeReject}
+                    disabled={isRejectSubmitting}
+                    className="!text-sm"
+                  >
+                    Cancel
+                  </ButtonSecondary>
+                  <ButtonPrimary
+                    type="button"
+                    onClick={handleRejectSubmit}
+                    disabled={isRejectSubmitting || !rejectReason.trim()}
+                    className="!bg-red-600 hover:!bg-red-700 !text-sm"
+                  >
+                    {isRejectSubmitting ? 'Rejecting…' : 'Reject Booking'}
+                  </ButtonPrimary>
+                </div>
+              </div>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
     </div>
   );
 
@@ -679,6 +872,11 @@ const AgentBookingsPage = () => {
             >
               {status}
             </span>
+            {status === 'cancelled' && booking.cancelled_by === 'user' ? (
+              <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-300 border border-red-200 dark:border-red-900">
+                by user
+              </span>
+            ) : null}
             <button
               type="button"
               onClick={() => toggle(booking.id)}
@@ -744,11 +942,31 @@ const AgentBookingsPage = () => {
               )}
             </div>
 
-            {status !== 'confirmed' && (
-              <div className="pt-1">
+            {status === 'cancelled' && (
+              <div className="rounded-2xl border border-red-200 dark:border-red-900 bg-red-50/60 dark:bg-red-900/10 p-3 text-sm">
+                <p className="font-medium text-red-700 dark:text-red-300">
+                  Cancelled by {booking.cancelled_by === 'user' ? 'user' : 'agent'}
+                </p>
+                {booking.cancellation_reason ? (
+                  <p className="mt-1 text-red-700 dark:text-red-300">
+                    Reason: {booking.cancellation_reason}
+                  </p>
+                ) : null}
+              </div>
+            )}
+
+            {status === 'pending' && (
+              <div className="pt-1 flex flex-wrap gap-2">
                 <ButtonPrimary type="button" onClick={() => handleConfirm(booking.id)}>
                   Confirm Booking
                 </ButtonPrimary>
+                <ButtonSecondary
+                  type="button"
+                  onClick={() => openReject(booking)}
+                  className="!text-red-600 dark:!text-red-400 border border-red-300 dark:border-red-700"
+                >
+                  Reject
+                </ButtonSecondary>
               </div>
             )}
           </div>

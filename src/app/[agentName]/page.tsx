@@ -12,6 +12,7 @@ import { getOptimizedImageUrl } from '@/lib/imageUrl';
 const FALLBACK_BLUR_DATA_URL =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
 import SocialsList from '@/shared/SocialsList';
+import ShareButton from '@/shared/ShareButton';
 import StartRating from '@/components/StartRating';
 import GovtVerifiedBadge from '@/components/GovtVerifiedBadge';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
@@ -267,9 +268,14 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
       />
-      <div className="relative z-20 my-4">
+      <div className="relative z-20 my-4 flex items-center justify-between gap-3">
         <Breadcrumb
           items={[{ label: 'Home', href: '/' }, { label: agentDetails?.known_as ?? '' }]}
+        />
+        <ShareButton
+          url={`/${agentName}`}
+          title={agentDetails?.known_as || 'Agent profile'}
+          ariaLabel="Share agent profile"
         />
       </div>
       <div className="nc-ListingStayDetailPage w-full min-h-screen">

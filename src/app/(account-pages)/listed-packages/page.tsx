@@ -1,16 +1,20 @@
 'use client';
 
-import { Tab } from '@headlessui/react';
+import { Menu, Tab } from '@headlessui/react';
 import { Dialog, Transition } from '@headlessui/react';
 import {
+  ArrowsUpDownIcon,
+  CheckIcon,
   ChevronDownIcon,
   ChevronUpIcon,
   DocumentDuplicateIcon,
+  EyeIcon,
+  EyeSlashIcon,
   PencilSquareIcon,
   TrashIcon,
   XMarkIcon,
 } from '@heroicons/react/24/outline';
-import React, { Fragment, useEffect, useState } from 'react';
+import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package } from '@/data/types';
@@ -18,7 +22,24 @@ import { supabase } from '@/utils/supabaseClient';
 import { useRouter } from 'next/navigation';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonSecondary from '@/shared/ButtonSecondary';
+import ShareButton from '@/shared/ShareButton';
 import toast, { Toaster } from 'react-hot-toast';
+
+type SortKey = 'newest' | 'published' | 'unpublished';
+
+const SORT_LABELS: Record<SortKey, string> = {
+  newest: 'Newest',
+  published: 'Published first',
+  unpublished: 'Unpublished first',
+};
+
+const todayDateString = () => {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+};
 
 const AddPackageWizardModal = dynamic(() => import('./AddPackageWizardModal'), {
   ssr: false,
@@ -60,6 +81,14 @@ const ListedPackagesPage = () => {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [expandedPackageIds, setExpandedPackageIds] = useState<number[]>([]);
   const [deletePendingPackageId, setDeletePendingPackageId] = useState<number | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>('newest');
+  const [origin, setOrigin] = useState<string>('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setOrigin(window.location.origin);
+    }
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -134,6 +163,15 @@ const ListedPackagesPage = () => {
         }
       }
 
+      // Auto-unpublish any of this agent's packages whose departure_date is past.
+      // Fire-and-forget; the packages query below picks up the new state.
+      void supabase
+        .from('packages')
+        .update({ published: false })
+        .eq('agent_id', user.id)
+        .eq('published', true)
+        .lt('departure_date', todayDateString());
+
       setAgentUUID(user.id);
       setAgentSlug(resolvedSlug);
       setIsAuthLoading(false);
@@ -153,6 +191,62 @@ const ListedPackagesPage = () => {
       return data as Package[];
     },
   });
+
+  const { data: bookingCountsByPackage } = useQuery<Record<number, number>>({
+    queryKey: ['agentPackageBookingCounts', agentUUID],
+    enabled: !!agentUUID,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('package_id')
+        .eq('agent_id', agentUUID);
+      if (error) throw error;
+      const counts: Record<number, number> = {};
+      (data || []).forEach((row: { package_id: number | null }) => {
+        if (row.package_id == null) return;
+        counts[row.package_id] = (counts[row.package_id] || 0) + 1;
+      });
+      return counts;
+    },
+  });
+
+  const sortedPackages = useMemo(() => {
+    const list = [...(agentPackages || [])];
+    if (sortKey === 'newest') {
+      list.sort((a, b) => Number(b.id) - Number(a.id));
+    } else if (sortKey === 'published') {
+      list.sort((a, b) => {
+        const ap = a.published === false ? 1 : 0;
+        const bp = b.published === false ? 1 : 0;
+        if (ap !== bp) return ap - bp;
+        return Number(b.id) - Number(a.id);
+      });
+    } else {
+      list.sort((a, b) => {
+        const ap = a.published === false ? 0 : 1;
+        const bp = b.published === false ? 0 : 1;
+        if (ap !== bp) return ap - bp;
+        return Number(b.id) - Number(a.id);
+      });
+    }
+    return list;
+  }, [agentPackages, sortKey]);
+
+  const handleTogglePublished = async (pkg: Package) => {
+    const nextPublished = pkg.published === false;
+    const { error } = await supabase
+      .from('packages')
+      .update({ published: nextPublished })
+      .eq('id', pkg.id);
+
+    if (error) {
+      toast.error('Failed to update visibility: ' + error.message);
+      return;
+    }
+
+    toast.success(nextPublished ? 'Package published.' : 'Package unpublished.');
+    queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
+  };
 
   const handleDelete = async (id: number) => {
     const { error: packageError } = await supabase.from('packages').delete().eq('id', id);
@@ -250,7 +344,50 @@ const ListedPackagesPage = () => {
   return (
     <div className="space-y-6 sm:space-y-8">
       <Toaster position="top-center" />
-      <div className="flex justify-end items-center">
+      <div className="flex justify-between items-center gap-3 flex-wrap">
+        <Menu as="div" className="relative inline-block text-left">
+          <Menu.Button className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:border-primary-500 hover:text-primary-700 dark:hover:text-primary-300 focus:outline-none transition-colors">
+            <ArrowsUpDownIcon className="w-4 h-4" />
+            <span className="hidden sm:inline text-neutral-500 dark:text-neutral-400">Sort:</span>
+            <span className="font-medium">{SORT_LABELS[sortKey]}</span>
+            <ChevronDownIcon className="w-4 h-4" aria-hidden="true" />
+          </Menu.Button>
+          <Transition
+            as={Fragment}
+            enter="transition ease-out duration-150"
+            enterFrom="opacity-0 translate-y-1"
+            enterTo="opacity-100 translate-y-0"
+            leave="transition ease-in duration-100"
+            leaveFrom="opacity-100 translate-y-0"
+            leaveTo="opacity-0 translate-y-1"
+          >
+            <Menu.Items className="absolute left-0 z-20 mt-2 w-56 origin-top-left rounded-2xl bg-white dark:bg-neutral-900 shadow-xl border border-neutral-200 dark:border-neutral-700 focus:outline-none overflow-hidden">
+              <div className="py-2">
+                {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+                  <Menu.Item key={key}>
+                    {({ active }) => (
+                      <button
+                        type="button"
+                        onClick={() => setSortKey(key)}
+                        className={`w-full text-left flex items-center justify-between gap-3 px-4 py-2.5 text-sm transition ${
+                          active ? 'bg-neutral-100 dark:bg-neutral-800' : ''
+                        } ${
+                          sortKey === key
+                            ? 'text-primary-700 dark:text-primary-300 font-medium'
+                            : 'text-neutral-700 dark:text-neutral-200'
+                        }`}
+                      >
+                        <span>{SORT_LABELS[key]}</span>
+                        {sortKey === key ? <CheckIcon className="w-4 h-4" /> : null}
+                      </button>
+                    )}
+                  </Menu.Item>
+                ))}
+              </div>
+            </Menu.Items>
+          </Transition>
+        </Menu>
+
         {agentUUID && agentSlug ? (
           <AddPackageWizardModal
             agentAuthUserId={agentUUID}
@@ -315,13 +452,18 @@ const ListedPackagesPage = () => {
                   </div>
                 ))}
               </div>
-            ) : agentPackages && agentPackages.length > 0 ? (
+            ) : sortedPackages.length > 0 ? (
               <>
                 <div className="space-y-4">
-                  {agentPackages.map((pkg) => (
+                  {sortedPackages.map((pkg) => {
+                    const isUnpublished = pkg.published === false;
+                    const bookingCount = bookingCountsByPackage?.[pkg.id] ?? 0;
+                    const shareUrl =
+                      origin && pkg.slug ? `${origin}/${agentSlug}/${pkg.slug}` : '';
+                    return (
                     <div
                       key={pkg.id}
-                      className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5"
+                      className={`rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5 ${isUnpublished ? 'opacity-60 grayscale' : ''}`}
                     >
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div>
@@ -333,14 +475,45 @@ const ListedPackagesPage = () => {
                           </p>
                         </div>
 
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
                             {(pkg.type || 'UMRAH').toUpperCase()}
                           </span>
-                          {pkg.published === false ? (
-                            <span className="px-3 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300">
-                              Draft
-                            </span>
+                          <span
+                            className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
+                            title={`${bookingCount} booking${bookingCount === 1 ? '' : 's'} for this package`}
+                          >
+                            {bookingCount} booking{bookingCount === 1 ? '' : 's'}
+                          </span>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              isUnpublished
+                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
+                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                            }`}
+                          >
+                            {isUnpublished ? 'Unpublished' : 'Published'}
+                          </span>
+                          <button
+                            className="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
+                            onClick={() => handleTogglePublished(pkg)}
+                            type="button"
+                            aria-label={isUnpublished ? 'Publish package' : 'Unpublish package'}
+                            title={isUnpublished ? 'Publish' : 'Unpublish'}
+                          >
+                            {isUnpublished ? (
+                              <EyeIcon className="w-5 h-5" />
+                            ) : (
+                              <EyeSlashIcon className="w-5 h-5" />
+                            )}
+                          </button>
+                          {shareUrl ? (
+                            <ShareButton
+                              url={shareUrl}
+                              title={pkg.title || `Package ${pkg.id}`}
+                              iconOnly
+                              ariaLabel="Share package link"
+                            />
                           ) : null}
                           <button
                             className="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
@@ -429,7 +602,8 @@ const ListedPackagesPage = () => {
                         </div>
                       )}
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             ) : (
