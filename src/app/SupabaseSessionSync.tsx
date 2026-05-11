@@ -4,6 +4,51 @@ import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken, removeAccessToken } from '@/utils/authToken';
 import { insertAgentWithUniqueSlug } from '@/lib/slug';
 
+// Synchronously write the access-token cookie from whichever source already
+// has the JWT. Supabase's own session loader is async, which on mobile leaves
+// a window where the user is "logged in" client-side but the middleware can't
+// see them. These two helpers close that gap.
+
+const tryWriteCookieFromUrlHash = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  const hash = window.location.hash;
+  if (!hash || !hash.includes('access_token=')) return false;
+  try {
+    const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
+    const token = params.get('access_token');
+    if (token) {
+      storeAccessToken(token);
+      return true;
+    }
+  } catch {
+    // ignore parse errors — fall back to localStorage
+  }
+  return false;
+};
+
+const tryWriteCookieFromLocalStorage = (): boolean => {
+  if (typeof window === 'undefined') return false;
+  try {
+    const keys = Object.keys(window.localStorage).filter(
+      (key) => key.startsWith('sb-') && key.endsWith('-auth-token')
+    );
+    for (const key of keys) {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) continue;
+      const parsed = JSON.parse(raw);
+      const accessToken: string | undefined =
+        parsed?.access_token || parsed?.currentSession?.access_token;
+      if (accessToken) {
+        storeAccessToken(accessToken);
+        return true;
+      }
+    }
+  } catch {
+    // localStorage may be sandboxed (private mode) — fall through
+  }
+  return false;
+};
+
 // Auth user referenced by the current JWT no longer exists in auth.users.
 // The cookie/session is stale — sign out so the next page load starts clean
 // instead of replaying the same failing insert over and over.
@@ -56,13 +101,24 @@ export default function SupabaseSessionSync() {
   // initial login forever — when Supabase auto-refreshes the token, or when
   // the user signs out in another tab, the cookie diverges from the actual
   // session and the middleware bounces logged-in users to /login.
+  //
+  // Only SIGNED_OUT clears the cookie. INITIAL_SESSION can fire briefly with
+  // a null session during OAuth callback hash processing — treating that as a
+  // logout would race with the user clicking a protected link.
   useEffect(() => {
+    // Synchronous best-effort: write the cookie immediately on mount so even
+    // a user who taps a protected link before Supabase finishes loading the
+    // session gets past the middleware on the very next request.
+    tryWriteCookieFromUrlHash() || tryWriteCookieFromLocalStorage();
+
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.access_token) {
         storeAccessToken(session.access_token);
-      } else {
+        return;
+      }
+      if (event === 'SIGNED_OUT') {
         removeAccessToken();
       }
     });
