@@ -92,18 +92,18 @@ async function PageHome() {
           </div>
 
           {/* Hero stats */}
-          <dl className="mt-10 lg:mt-12 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-14 mx-auto justify-center max-w-screen-md">
+          <dl className="mt-10 lg:mt-12 grid grid-cols-2 md:grid-cols-4 gap-8 md:gap-14 mx-auto justify-center max-w-screen-md text-center">
             {[
               { v: '540+', k: 'Verified agents' },
               { v: '38,400', k: 'Pilgrims served' },
               { v: '4.8 ★', k: 'Avg agent rating' },
               { v: '~ 4 hrs', k: 'Avg reply time' },
             ].map((stat) => (
-              <div key={stat.k}>
-                <dt className="text-2xl lg:text-[30px] font-semibold tracking-tight text-white">
+              <div key={stat.k} className="flex flex-col items-center">
+                <dt className="text-2xl lg:text-[30px] font-semibold tracking-tight text-white text-center">
                   {stat.v}
                 </dt>
-                <dd className="text-xs mt-1 text-primary-200 leading-snug">{stat.k}</dd>
+                <dd className="text-xs mt-1 text-primary-200 leading-snug text-center">{stat.k}</dd>
               </div>
             ))}
           </dl>
