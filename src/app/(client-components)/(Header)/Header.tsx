@@ -21,6 +21,11 @@ const Header3 = () => {
 
   const showLoggedInUi = isAuthReady ? isLoggedIn : optimisticLoggedIn;
 
+  // The location banner is only relevant on the home page (it influences the
+  // packages listing the user lands on). Hiding it elsewhere keeps every
+  // other page's header tight + uncluttered.
+  const showLocationBanner = pathname === '/';
+
   // Logged-in users get notify + avatar + hamburger.
   // Logged-out users get a single prominent Sign in CTA.
   const renderActions = () => {
@@ -54,13 +59,26 @@ const Header3 = () => {
           Header grows on desktop to fit the location banner. Mobile keeps the
           tight h-14 row — the banner is hidden there anyway.
         */}
-        <div className="px-4 lg:container h-14 sm:h-16 lg:h-auto lg:py-2 relative flex justify-between items-center gap-4">
+        {/*
+          On home (lg+) the header is locked to 88px so the location banner
+          fits inside without the row collapsing when the banner returns
+          null (which it does after the user grants/denies/dismisses
+          location). Without a fixed height, the dropping banner would
+          shrink the header and visibly jump the page on first paint.
+        */}
+        <div
+          className={`px-4 lg:container h-14 sm:h-16 ${
+            showLocationBanner ? 'lg:h-[88px]' : ''
+          } relative flex justify-between items-center gap-4`}
+        >
           <Logo className="w-36 sm:w-44 flex-shrink-0" />
-          <div className="hidden lg:flex flex-1 justify-center px-4 min-w-0">
-            <div className="w-full max-w-2xl">
-              <LocationDetectBanner />
+          {showLocationBanner ? (
+            <div className="hidden lg:flex flex-1 justify-center px-4 min-w-0">
+              <div className="w-full max-w-2xl">
+                <LocationDetectBanner />
+              </div>
             </div>
-          </div>
+          ) : null}
           <div className="text-neutral-700 dark:text-neutral-100 flex-shrink-0">
             {renderActions()}
           </div>

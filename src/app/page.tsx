@@ -60,7 +60,7 @@ async function PageHome() {
           <HeroSkyline />
         </div>
 
-        <div className="container relative z-10 pt-10 pb-12 lg:pt-20 lg:pb-28">
+        <div className="container relative z-10 pt-10 pb-12 lg:pt-10 lg:pb-28">
           <span className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 pl-1.5 pr-4 py-1.5 text-xs font-medium text-primary-100 mb-5">
             <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-secondary-500 text-white text-[11px] font-bold">
               ✓

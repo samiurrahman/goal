@@ -37,7 +37,11 @@ const FeaturedPackagesSection: FC<FeaturedPackagesSectionProps> = ({ packages })
   }, [activeCity, packages]);
 
   return (
-    <section className="bg-white dark:bg-neutral-900 py-8 lg:py-12">
+    // `min-h-[640px]` reserves enough height so that even before the card
+    // images settle (or if the initial server fetch returned 0 packages),
+    // the "For Agents" section below doesn't briefly jump up and then get
+    // pushed down — i.e. avoids the layout shift the user reported.
+    <section className="bg-white dark:bg-neutral-900 py-8 lg:py-12 min-h-[640px]">
       <div className="container">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8 md:mb-10">
           <div className="max-w-2xl">
