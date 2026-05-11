@@ -47,13 +47,13 @@ const Avatar: FC<AvatarProps> = ({
       )}
       <span className="wil-avatar__name">{name[0]}</span>
 
-      {hasChecked && (
+      {/* {hasChecked && (
         <span
           className={` bg-teal-500 rounded-full text-white text-xs flex items-center justify-center absolute  ${hasCheckedClass}`}
         >
           <i className="las la-check"></i>
         </span>
-      )}
+      )} */}
     </div>
   );
 };

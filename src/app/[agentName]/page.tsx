@@ -196,8 +196,14 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
   let agentPackages: Package[] = [];
   let agentReviews: AgentReview[] = [];
   if (agentDetails?.id) {
+    // packages.agent_id stores the auth user UUID, not the agents row id
+    const packageAgentId = agentDetails.auth_user_id ?? agentDetails.id;
     const [packagesResult, reviews] = await Promise.all([
-      supabase.from('packages').select('*').eq('agent_id', agentDetails.id),
+      supabase
+        .from('packages')
+        .select('*')
+        .eq('agent_id', packageAgentId)
+        .eq('published', true),
       getReviewsForAgent(String(agentDetails.id)),
     ]);
     agentPackages = (packagesResult.data as Package[] | null) ?? [];
@@ -471,12 +477,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
           {/* BOTTOM SECTION: LISTINGS FULL-WIDTH */}
           <div className="lg:col-span-5 gap-12 flex flex-col">
             <SectionOurFeatures agentName={agentDetails?.known_as} agent={agentDetails} />
-            <SectionGridFeaturePlaces
-              packages={agentPackages ?? []}
-              agent={agentDetails}
-              heading="Our Packages"
-              tabs={['Umrah']}
-            />
+            <SectionGridFeaturePlaces packages={agentPackages ?? []} agent={agentDetails} />
           </div>
 
           {/* REVIEWS FULL-WIDTH */}

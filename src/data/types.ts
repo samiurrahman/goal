@@ -3,6 +3,7 @@ import { StaticImageData } from 'next/image';
 // Agent interface for agents table
 export interface Agent {
   id: string; // UUID
+  auth_user_id?: string | null;
   created_at: string;
   rating_avg?: number | null;
   rating_total?: number | null;

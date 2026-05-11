@@ -1,6 +1,4 @@
 import React from 'react';
-import Image from 'next/image';
-import carUtilities8 from '@/images/HIW1.png';
 
 export interface IternaryItemProps {
   fromDate: string;
@@ -10,47 +8,78 @@ export interface IternaryItemProps {
   tripTime: string;
   flightInfo: string;
   nextLegLabel?: string;
-  // Optionally allow icon and image as props in future
 }
 
-const IternaryItem: React.FC<IternaryItemProps> = ({
+interface TimelineItemRenderProps extends IternaryItemProps {
+  isLast?: boolean;
+}
+
+const FlightIcon: React.FC = () => (
+  <svg
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className="w-3 h-3"
+    aria-hidden
+  >
+    <path d="M2 14l9-3 4 8 2-1-3-9 8-3-2-2-9 3-4-3-2 1 3 4-6 5z" />
+  </svg>
+);
+
+const IternaryItem: React.FC<TimelineItemRenderProps> = ({
   fromDate,
   fromLocation,
   toDate,
   toLocation,
   tripTime,
   flightInfo,
+  nextLegLabel,
+  isLast = false,
 }) => {
+  const dayLabel = (fromDate || toDate || '').trim();
+  const title =
+    fromLocation && toLocation
+      ? `${fromLocation} → ${toLocation}`
+      : fromLocation || toLocation || 'Trip leg';
+  const detail = (nextLegLabel || '').trim();
+  const flightParts = [tripTime, flightInfo].map((value) => (value || '').trim()).filter(Boolean);
+
+  const dotColor = isLast
+    ? 'bg-secondary-500 ring-secondary-200'
+    : 'bg-primary-700 ring-primary-200';
+  const dayColor = isLast ? 'text-secondary-700' : 'text-primary-700';
+
   return (
-    <div>
-      <div className="flex flex-col md:flex-row ">
-        <div className="w-24 md:w-20 lg:w-24 flex-shrink-0 md:pt-7">
-          <Image src={carUtilities8} className="w-10" alt="" sizes="40px" width={40} height={40} />
+    <li className="relative pt-1 pb-6 last:pb-0">
+      <span
+        className={`absolute -left-[24px] top-[10px] block w-3 h-3 rounded-full border-[3px] border-white dark:border-neutral-900 ring-2 ${dotColor}`}
+        aria-hidden
+      />
+      {dayLabel ? (
+        <div
+          className={`text-[12px] font-semibold uppercase tracking-[0.08em] ${dayColor}`}
+        >
+          {dayLabel}
         </div>
-        <div className="flex my-5 md:my-0">
-          <div className="flex-shrink-0 flex flex-col items-center py-2">
-            <span className="block w-6 h-6 rounded-full border border-neutral-400"></span>
-            <span className="block flex-grow border-l border-neutral-400 border-dashed my-1"></span>
-            <span className="block w-6 h-6 rounded-full border border-neutral-400"></span>
-          </div>
-          <div className="ml-4 space-y-10 text-sm">
-            <div className="flex flex-col space-y-1">
-              <span className="text-neutral-500 dark:text-neutral-400 text-xs">{fromDate}</span>
-              <span className="text-md font-medium">{fromLocation}</span>
-            </div>
-            <div className="flex flex-col space-y-1">
-              <span className="text-neutral-500 dark:text-neutral-400 text-xs">{toDate}</span>
-              <span className="text-md font-medium">{toLocation}</span>
-            </div>
-          </div>
-        </div>
-        <div className="hidden md:block border-l border-neutral-200 dark:border-neutral-700 md:mx-6 lg:mx-10"></div>
-        <ul className="text-xs text-neutral-500 dark:text-neutral-400 space-y-1 md:space-y-2">
-          <li>Trip time: {tripTime}</li>
-          <li>{flightInfo}</li>
-        </ul>
+      ) : null}
+      <div className="mt-1 text-[16px] font-semibold tracking-tight text-neutral-900 dark:text-neutral-100">
+        {title}
       </div>
-    </div>
+      {detail ? (
+        <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300 leading-relaxed">
+          {detail}
+        </p>
+      ) : null}
+      {flightParts.length > 0 ? (
+        <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-primary-50 text-primary-700 px-3 py-1 text-[12px] font-semibold leading-none tabular-nums">
+          <FlightIcon />
+          {flightParts.join(' · ')}
+        </span>
+      ) : null}
+    </li>
   );
 };
 
