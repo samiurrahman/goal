@@ -4,6 +4,7 @@ import Link from 'next/link';
 import Avatar from '@/shared/Avatar';
 import StartRating from '@/components/StartRating';
 import GovtVerifiedBadge from '@/components/GovtVerifiedBadge';
+import ShareButton from '@/shared/ShareButton';
 import { MakkahIcon, MadinaIcon } from '@/components/icons/icons';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 
@@ -40,6 +41,7 @@ export interface PackageMetaProps {
   agentProfileImage?: string | null;
   agentRatingPoint?: number;
   agentReviewCount?: number;
+  shareUrl?: string;
 }
 
 const PackageMeta: React.FC<PackageMetaProps> = ({
@@ -62,6 +64,7 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
   agentProfileImage,
   agentRatingPoint = 0,
   agentReviewCount = 0,
+  shareUrl,
 }) => {
   return (
     <article className="nc-PackageMeta group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden shadow-sm">
@@ -90,6 +93,18 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
           <div className="absolute left-3 top-3">
             <GovtVerifiedBadge />
           </div>
+
+          {shareUrl ? (
+            <div className="absolute right-3 top-3">
+              <ShareButton
+                url={shareUrl}
+                title={title}
+                iconOnly
+                className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm shadow-sm"
+                ariaLabel="Share package"
+              />
+            </div>
+          ) : null}
         </div>
 
         {/* Content */}

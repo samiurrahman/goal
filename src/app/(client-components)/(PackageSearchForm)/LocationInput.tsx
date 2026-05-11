@@ -4,6 +4,8 @@ import { ClockIcon, MapPinIcon } from '@heroicons/react/24/outline';
 import React, { useState, useRef, useEffect, useCallback, FC } from 'react';
 import ClearDataButton from './ClearDataButton';
 import { useCities } from '@/hooks/useCities';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { matchUserLocationCities } from '@/utils/matchUserLocationCities';
 
 export interface LocationInputProps {
   placeHolder?: string;
@@ -28,6 +30,8 @@ const LocationInput: FC<LocationInputProps> = ({
   const [value, setValue] = useState('');
   const [showPopover, setShowPopover] = useState(autoFocus);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const userInteractedRef = useRef(false);
+  const autoPrefilledRef = useRef(false);
 
   useEffect(() => {
     setShowPopover(autoFocus);
@@ -61,6 +65,7 @@ const LocationInput: FC<LocationInputProps> = ({
   };
 
   const handleSelectLocation = useCallback((item: any) => {
+    userInteractedRef.current = true;
     setValue(item.name + (item.state ? ', ' + item.state : ''));
     setShowPopover(false); // Close the popover after selection
     setFocusedIndex(-1);
@@ -69,6 +74,26 @@ const LocationInput: FC<LocationInputProps> = ({
   }, [onLocationSelect]);
 
   const { data: cities, error, isLoading } = useCities();
+  const { location: userLocation } = useUserLocation();
+
+  // Auto-prefill from a previously detected user location, only once per
+  // mount and only if the user hasn't already interacted with the input.
+  useEffect(() => {
+    if (autoPrefilledRef.current) return;
+    if (userInteractedRef.current) return;
+    if (!userLocation || !cities || cities.length === 0) return;
+
+    const matched = matchUserLocationCities(userLocation, cities);
+    if (matched.length === 0) return;
+
+    const firstName = matched[0];
+    const cityRow = cities.find((c) => c.name === firstName);
+    if (!cityRow) return;
+
+    autoPrefilledRef.current = true;
+    setValue(cityRow.name + (cityRow.state ? ', ' + cityRow.state : ''));
+    if (onLocationSelect) onLocationSelect(cityRow);
+  }, [userLocation, cities, onLocationSelect]);
 
   // Filter cities based on input value
   const filteredCities = value
@@ -176,6 +201,7 @@ const LocationInput: FC<LocationInputProps> = ({
             value={value}
             autoFocus={showPopover}
             onChange={(e) => {
+              userInteractedRef.current = true;
               setValue(e.currentTarget.value);
               setShowPopover(true);
             }}
@@ -187,6 +213,7 @@ const LocationInput: FC<LocationInputProps> = ({
           {((value && showPopover) || (value && !showPopover)) && (
             <ClearDataButton
               onClick={() => {
+                userInteractedRef.current = true;
                 setValue('');
                 setShowPopover(true);
                 if (inputRef.current) inputRef.current.focus();

@@ -81,6 +81,7 @@ const ListedPackagesPage = () => {
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [expandedPackageIds, setExpandedPackageIds] = useState<number[]>([]);
   const [deletePendingPackageId, setDeletePendingPackageId] = useState<number | null>(null);
+  const [unpublishPendingPackage, setUnpublishPendingPackage] = useState<Package | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('newest');
   const [origin, setOrigin] = useState<string>('');
 
@@ -232,8 +233,7 @@ const ListedPackagesPage = () => {
     return list;
   }, [agentPackages, sortKey]);
 
-  const handleTogglePublished = async (pkg: Package) => {
-    const nextPublished = pkg.published === false;
+  const setPackagePublished = async (pkg: Package, nextPublished: boolean) => {
     const { error } = await supabase
       .from('packages')
       .update({ published: nextPublished })
@@ -246,6 +246,23 @@ const ListedPackagesPage = () => {
 
     toast.success(nextPublished ? 'Package published.' : 'Package unpublished.');
     queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
+  };
+
+  const handleTogglePublished = async (pkg: Package) => {
+    if (pkg.published === false) {
+      // Publishing is low-risk — apply directly.
+      await setPackagePublished(pkg, true);
+      return;
+    }
+    // Unpublishing hides the package from users — confirm first.
+    setUnpublishPendingPackage(pkg);
+  };
+
+  const confirmUnpublish = async () => {
+    if (!unpublishPendingPackage) return;
+    const target = unpublishPendingPackage;
+    setUnpublishPendingPackage(null);
+    await setPackagePublished(target, false);
   };
 
   const handleDelete = async (id: number) => {
@@ -614,6 +631,73 @@ const ListedPackagesPage = () => {
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>
+
+      <Transition appear show={unpublishPendingPackage !== null} as={Fragment}>
+        <Dialog
+          as="div"
+          className="fixed inset-0 z-50 overflow-y-auto"
+          onClose={() => setUnpublishPendingPackage(null)}
+        >
+          <div className="min-h-screen px-4 text-center">
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-75"
+              enterFrom="opacity-0"
+              enterTo="opacity-100"
+              leave="ease-in duration-75"
+              leaveFrom="opacity-100"
+              leaveTo="opacity-0"
+            >
+              <Dialog.Overlay className="fixed inset-0 bg-neutral-900 bg-opacity-50 dark:bg-opacity-80" />
+            </Transition.Child>
+            <span className="inline-block h-screen align-middle" aria-hidden="true">
+              &#8203;
+            </span>
+            <Transition.Child
+              as={Fragment}
+              enter="ease-out duration-75"
+              enterFrom="opacity-0 scale-95"
+              enterTo="opacity-100 scale-100"
+              leave="ease-in duration-75"
+              leaveFrom="opacity-100 scale-100"
+              leaveTo="opacity-0 scale-95"
+            >
+              <div className="inline-block w-full max-w-md p-6 my-8 text-left align-middle transition-all transform bg-white dark:bg-neutral-900 shadow-xl rounded-2xl">
+                <div className="flex items-center justify-between mb-4">
+                  <Dialog.Title className="text-lg font-semibold">Unpublish Package</Dialog.Title>
+                  <button
+                    type="button"
+                    onClick={() => setUnpublishPendingPackage(null)}
+                    className="inline-flex items-center justify-center rounded-xl p-1.5 text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+                  >
+                    <XMarkIcon className="w-5 h-5" />
+                  </button>
+                </div>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                  Unpublish <span className="font-medium">{unpublishPendingPackage?.title || `Package ${unpublishPendingPackage?.id}`}</span>?
+                  Users will no longer see it in search results until you publish it again.
+                </p>
+                <div className="mt-6 flex gap-3 justify-end">
+                  <ButtonSecondary
+                    type="button"
+                    onClick={() => setUnpublishPendingPackage(null)}
+                    className="!text-sm"
+                  >
+                    Keep Published
+                  </ButtonSecondary>
+                  <ButtonPrimary
+                    type="button"
+                    onClick={confirmUnpublish}
+                    className="!bg-amber-600 hover:!bg-amber-700 !text-sm"
+                  >
+                    Unpublish
+                  </ButtonPrimary>
+                </div>
+              </div>
+            </Transition.Child>
+          </div>
+        </Dialog>
+      </Transition>
 
       <Transition appear show={deletePendingPackageId !== null} as={Fragment}>
         <Dialog

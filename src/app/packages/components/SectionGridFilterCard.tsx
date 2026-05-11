@@ -10,6 +10,12 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { Package } from '@/data/types';
 import Packages from './packages';
 import { fetchPackages, buildPackagesQueryArgs } from '@/lib/queries/packages';
+import LocationDetectBanner from '@/components/LocationDetectBanner';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { useCities } from '@/hooks/useCities';
+import { matchUserLocationCities } from '@/utils/matchUserLocationCities';
+import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
+import { claimAutoApplyOnce } from '@/utils/userLocation';
 
 export interface SectionGridFilterCardProps {
   className?: string;
@@ -47,6 +53,23 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
         : undefined,
     });
 
+  // Auto-apply the user's detected location to the URL location filter on
+  // first mount of the session, but only if no location filter is already
+  // present in the URL (so we never override an explicit user choice).
+  const { location: userLocation } = useUserLocation();
+  const { data: cities } = useCities({ enabled: !!userLocation });
+  const { replaceParams } = useFilterUrlSync();
+  useEffect(() => {
+    if (!userLocation || !cities || cities.length === 0) return;
+    if (searchParams.get('location')) return; // user already filtered
+    if (!claimAutoApplyOnce()) return; // already applied this session
+
+    const matched = matchUserLocationCities(userLocation, cities);
+    if (matched.length === 0) return;
+
+    replaceParams((params) => params.set('location', matched.join(',')));
+  }, [userLocation, cities, searchParams, replaceParams]);
+
   // Infinite scroll observer — prefetches before the loader is in view
   const loaderRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -73,6 +96,9 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
 
   return (
     <div className={`nc-SectionGridFilterCard ${className}`} data-nc-id="SectionGridFilterCard">
+      <div className="mt-4">
+        <LocationDetectBanner />
+      </div>
       <Breadcrumb items={[{ label: 'Home', href: '/' }, { label: 'Packages' }]} className="mt-4" />
       <div className="relative z-30 mb-4 lg:mb-6 mt-4 flex flex-wrap items-center justify-between gap-3">
         <div className="min-w-0 flex-grow">

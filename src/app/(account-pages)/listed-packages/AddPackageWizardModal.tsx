@@ -527,7 +527,7 @@ const AddPackageWizardModal = ({
     });
   };
 
-  const handlePublish = async () => {
+  const handlePublish = async (forcePublish: boolean = true) => {
     if (!meta.title.trim()) {
       toast.error('Title is required.');
       setStep('meta');
@@ -623,7 +623,9 @@ const AddPackageWizardModal = ({
       },
       agent_id: agentAuthUserId,
       agent_name: agentSlug,
-      published: editPackageId ? true : true,
+      // Save & Publish forces published=true. Plain Save preserves the current
+      // published state on edits; new packages start as drafts.
+      published: forcePublish ? true : editPackageId ? !isDraftPackage : false,
       thumbnail_url: editPackageId ? currentImageUrl || null : null,
     };
 
@@ -725,10 +727,12 @@ const AddPackageWizardModal = ({
 
     toast.success(
       editPackageId
-        ? isDraftPackage
+        ? forcePublish && isDraftPackage
           ? 'Package published successfully!'
           : 'Package updated successfully!'
-        : 'Package created successfully!'
+        : forcePublish
+          ? 'Package created and published!'
+          : 'Package saved as draft.'
     );
     onCreated();
     closeModal();
@@ -771,6 +775,25 @@ const AddPackageWizardModal = ({
             </p>
           ) : (
             <>
+              <div className="flex flex-wrap items-center justify-end gap-2 -mt-1">
+                <ButtonSecondary
+                  type="button"
+                  onClick={() => handlePublish(false)}
+                  disabled={isSaving}
+                  className="!text-sm"
+                >
+                  {isSaving ? 'Saving…' : 'Save'}
+                </ButtonSecondary>
+                <ButtonPrimary
+                  type="button"
+                  onClick={() => handlePublish(true)}
+                  disabled={isSaving}
+                  className="!text-sm"
+                >
+                  {isSaving ? 'Saving…' : 'Save & Publish'}
+                </ButtonPrimary>
+              </div>
+
               <div className="text-xs text-neutral-500 dark:text-neutral-400">
                 Step {currentStepIndex + 1} of {WIZARD_STEPS.length}
               </div>
@@ -1314,7 +1337,7 @@ const AddPackageWizardModal = ({
                   <ButtonPrimary
                     type="button"
                     className="w-full sm:w-auto"
-                    onClick={handlePublish}
+                    onClick={() => handlePublish(true)}
                     disabled={isSaving}
                   >
                     {isSaving

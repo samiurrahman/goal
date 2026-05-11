@@ -268,14 +268,9 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
       />
-      <div className="relative z-20 my-4 flex items-center justify-between gap-3">
+      <div className="relative z-20 my-4">
         <Breadcrumb
           items={[{ label: 'Home', href: '/' }, { label: agentDetails?.known_as ?? '' }]}
-        />
-        <ShareButton
-          url={`/${agentName}`}
-          title={agentDetails?.known_as || 'Agent profile'}
-          ariaLabel="Share agent profile"
         />
       </div>
       <div className="nc-ListingStayDetailPage w-full min-h-screen">
@@ -306,6 +301,15 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                   }
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
+                <div className="absolute top-3 right-3 md:top-4 md:right-4 z-20">
+                  <ShareButton
+                    url={`/${agentName}`}
+                    title={agentDetails?.known_as || 'Agent profile'}
+                    iconOnly
+                    className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-sm shadow-md"
+                    ariaLabel="Share agent profile"
+                  />
+                </div>
                 {socialLinks.length > 0 && (
                   <div className="absolute top-3 left-3 md:top-4 md:left-4 z-20">
                     <div className="flex items-center rounded-2xl bg-white/95 px-2.5 py-2 shadow-md backdrop-blur-sm">

@@ -3,6 +3,7 @@ import Image from 'next/image';
 import PackageSearchForm from '@/app/(client-components)/(PackageSearchForm)/PackageSearchForm';
 import BgGlassmorphism from '@/components/BgGlassmorphism';
 import HeroSearchTrigger from '@/components/HeroSearchTrigger';
+import LocationDetectBanner from '@/components/LocationDetectBanner';
 import SectionTopCitiesMobile from '@/components/SectionTopCitiesMobile';
 import Logo from '@/shared/Logo';
 import ourFeaturesImg from '@/images/our-features_01.png';
@@ -14,6 +15,9 @@ function PageHome() {
       <div className="hidden lg:block">
         <BgGlassmorphism />
         <div className="container relative">
+          <div className="pt-6">
+            <LocationDetectBanner />
+          </div>
           <PackageSearchForm className="lg:pb-16" />
         </div>
       </div>
@@ -24,6 +28,9 @@ function PageHome() {
           <div className="px-4 pb-5">
             <div className="flex justify-center">
               <Logo className="w-14" />
+            </div>
+            <div className="mt-3">
+              <LocationDetectBanner />
             </div>
             <HeroSearchTrigger />
           </div>

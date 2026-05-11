@@ -1,7 +1,6 @@
 import React from 'react';
 import { Amenities_demos } from '../(components)/constant';
 import Breadcrumb from '@/components/Breadcrumb';
-import ShareButton from '@/shared/ShareButton';
 import Iternary from '../(components)/Iternary';
 import type { IternaryItemProps } from '../(components)/IternaryItem';
 import PackageMeta from '../(components)/PackageMeta';
@@ -183,6 +182,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     agentProfileImage: agentProfileImage,
     agentRatingPoint,
     agentReviewCount,
+    shareUrl: `/${agentName}/${slug}`,
   };
 
   const hostLocationText = [agentData?.city, agentData?.state, agentData?.country]
@@ -338,18 +338,13 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
 
   return (
     <div className="nc-ListingStayDetailPage w-full min-h-screen">
-      <div className="relative z-20 mt-4 flex items-center justify-between gap-3">
+      <div className="relative z-20 mt-4">
         <Breadcrumb
           items={[
             { label: 'Home', href: '/' },
             { label: 'Packages', href: '/packages' },
             { label: slug },
           ]}
-        />
-        <ShareButton
-          url={`/${agentName}/${slug}`}
-          title={(package_details as { title?: string }).title || slug || 'Umrah Package'}
-          ariaLabel="Share package"
         />
       </div>
 
