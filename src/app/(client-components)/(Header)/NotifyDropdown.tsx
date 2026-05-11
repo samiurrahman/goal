@@ -325,12 +325,26 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
             },
             async (payload) => {
               const current = payload.new as BookingRow;
-              console.debug('[NotifyDropdown] agent UPDATE', current);
-              if ((current.status || '').toLowerCase() !== 'cancelled') return;
-              if (current.cancelled_by !== 'user') return;
+              console.debug('[NotifyDropdown] agent UPDATE', {
+                status: current.status,
+                cancelled_by: current.cancelled_by,
+                readByAgent: current.readByAgent,
+                full: current,
+              });
+              if ((current.status || '').toLowerCase() !== 'cancelled') {
+                console.debug('[NotifyDropdown] agent UPDATE skipped (not cancelled)');
+                return;
+              }
+              if (current.cancelled_by === 'agent') {
+                console.debug('[NotifyDropdown] agent UPDATE skipped (agent did it themselves)');
+                return;
+              }
               // Don't re-fire after the agent clicks the notification (which
               // sets readByAgent: true via /api/bookings/notifications/read).
-              if (current.readByAgent) return;
+              if (current.readByAgent === true) {
+                console.debug('[NotifyDropdown] agent UPDATE skipped (already read)');
+                return;
+              }
 
               let customerName = 'A traveler';
               const { data: customer } = await supabase
@@ -368,6 +382,10 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
         };
       }
 
+      console.debug(
+        '[NotifyDropdown] running user-side initial query for auth_user_id =',
+        user.id
+      );
       const { data: rows, error: rowsError } = await supabase
         .from('bookings')
         .select(
@@ -380,6 +398,12 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
         .limit(20);
 
       if (!isMounted) return;
+
+      console.debug('[NotifyDropdown] user-side initial query result', {
+        error: rowsError,
+        rowCount: rows?.length ?? 0,
+        rows,
+      });
 
       let parsedRows = (rows || []) as BookingRow[];
       if (rowsError) {
@@ -394,12 +418,19 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
         parsedRows = ((fallbackRows || []) as Omit<BookingRow, 'readByAgent' | 'readByUser'>[]).map(
           (item) => ({ ...item, readByAgent: false, readByUser: false })
         );
+        console.debug('[NotifyDropdown] used fallback query, rows:', parsedRows.length);
       }
 
       // Drop user-cancellations from the user's own notification feed (they triggered it).
       parsedRows = parsedRows.filter(
         (item) =>
           (item.status || '').toLowerCase() !== 'cancelled' || item.cancelled_by !== 'user'
+      );
+
+      console.debug(
+        '[NotifyDropdown] after filtering user-cancellations:',
+        parsedRows.length,
+        'rows'
       );
 
       const agentIds = Array.from(new Set(parsedRows.map((item) => item.agent_id).filter(Boolean)));
@@ -451,20 +482,34 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
           },
           async (payload) => {
             const current = payload.new as BookingRow;
-            console.debug('[NotifyDropdown] user UPDATE', current);
+            console.debug('[NotifyDropdown] user UPDATE', {
+              status: current.status,
+              cancelled_by: current.cancelled_by,
+              readByUser: current.readByUser,
+              cancellation_reason: current.cancellation_reason,
+              full: current,
+            });
             const status = (current.status || '').toLowerCase();
 
             const isConfirmed = status === 'confirmed';
+            // Treat any cancelled-but-not-by-user state as an agent rejection
+            // so that a missing/null `cancelled_by` in the realtime payload
+            // (which can happen with partial column replication) still
+            // triggers the user notification.
             const isAgentCancellation =
-              status === 'cancelled' && current.cancelled_by === 'agent';
+              status === 'cancelled' && current.cancelled_by !== 'user';
 
-            // Only notify on terminal transitions the user cares about.
-            if (!isConfirmed && !isAgentCancellation) return;
+            if (!isConfirmed && !isAgentCancellation) {
+              console.debug('[NotifyDropdown] user UPDATE skipped (not relevant)');
+              return;
+            }
 
-            // Skip if the user has already marked this booking as read — this
-            // prevents re-firing the notification when the user clicks the
-            // bell item (which itself triggers an UPDATE setting readByUser).
-            if (current.readByUser) return;
+            // Skip if the user has already explicitly marked this booking as
+            // read — prevents re-firing when the user clicks the bell item.
+            if (current.readByUser === true) {
+              console.debug('[NotifyDropdown] user UPDATE skipped (already read)');
+              return;
+            }
 
             let name = current.agent_name || 'Your agent';
             let avatar: string | null = null;
