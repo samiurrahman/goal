@@ -46,3 +46,7 @@ yarn-error.log*
 .cache/
 dist/
 *.gz
+
+# Design assets (not part of the shipped app)
+HajjScanner Design System/
+HajjScanner Design System.zip

@@ -4,11 +4,13 @@ import React, { Fragment, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { XMarkIcon, MapPinIcon } from '@heroicons/react/24/solid';
+import { XMarkIcon, MapPinIcon, CalendarDaysIcon } from '@heroicons/react/24/solid';
 import { useTimeoutFn } from 'react-use';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
 import { usePackageSearch, type CityItem } from '@/hooks/usePackageSearch';
+
+type FieldName = 'location' | 'month';
 
 const HeroSearchTrigger = () => {
   const router = useRouter();
@@ -16,12 +18,11 @@ const HeroSearchTrigger = () => {
   const [showDialog, setShowDialog] = useState(false);
   const [, , resetIsShowingDialog] = useTimeoutFn(() => setShowDialog(true), 1);
 
-  const [fieldNameShow, setFieldNameShow] = useState<'location' | 'month'>('location');
+  const [fieldNameShow, setFieldNameShow] = useState<FieldName>('location');
   const [locationQuery, setLocationQuery] = useState('');
 
   const {
     locationValue,
-    selectedLocation,
     handleSelectLocation,
     monthStates,
     handleChangeMonth,
@@ -33,15 +34,14 @@ const HeroSearchTrigger = () => {
   } = usePackageSearch();
 
   const closeModal = () => setShowModal(false);
-  const openModal = () => {
+  const openModal = (initialField: FieldName = 'location') => {
     setShowModal(true);
-    setFieldNameShow('location');
-    // Seed the edit field from the currently selected location so the user
-    // can edit/clear it instead of seeing a stale fallback when they delete
-    // every character.
-    setLocationQuery(locationValue || '');
+    setFieldNameShow(initialField);
+    setLocationQuery(initialField === 'location' ? locationValue || '' : '');
   };
 
+  // Selecting a city auto-advances to the month picker — the well-tested
+  // existing behavior, just preserved.
   const onPickLocation = (city: CityItem) => {
     handleSelectLocation(city);
     setLocationQuery(city.name + (city.state ? ', ' + city.state : ''));
@@ -63,38 +63,62 @@ const HeroSearchTrigger = () => {
 
   const queryFiltered = locationQuery
     ? allCities.filter((c) =>
-        (c.name + (c.state ? ', ' + c.state : '')).toLowerCase().includes(locationQuery.toLowerCase())
+        (c.name + (c.state ? ', ' + c.state : ''))
+          .toLowerCase()
+          .includes(locationQuery.toLowerCase())
       )
     : allCities;
 
-  const renderTrigger = () => (
-    <button
-      type="button"
-      onClick={openModal}
-      className="relative flex items-center w-full border border-neutral-200 dark:border-neutral-700 px-4 py-2 pr-11 rounded-full shadow-lg bg-white dark:bg-neutral-800"
+  // ───── Inline card (the visible hero form on mobile) ─────
+  const renderInlineCard = () => (
+    <div
+      className="bg-white dark:bg-neutral-900 rounded-3xl p-4 grid gap-2.5"
+      style={{ boxShadow: '0 24px 64px -16px rgba(17,17,26,0.35)' }}
     >
-      <MagnifyingGlassIcon className="flex-shrink-0 w-5 h-5" />
-      <div className="ml-3 flex-1 text-left overflow-hidden">
-        <span className="block font-medium text-sm">Where to?</span>
-        <span className="block mt-0.5 text-xs font-light text-neutral-500 dark:text-neutral-400">
-          <span className="line-clamp-1">Anywhere • Any month</span>
-        </span>
-      </div>
-      <span className="absolute right-2 top-1/2 transform -translate-y-1/2 w-9 h-9 flex items-center justify-center rounded-full border border-neutral-200 dark:border-neutral-700 dark:text-neutral-300">
-        <svg
-          viewBox="0 0 16 16"
-          aria-hidden="true"
-          role="presentation"
-          focusable="false"
-          className="block w-4 h-4"
-          fill="currentColor"
-        >
-          <path d="M5 8c1.306 0 2.418.835 2.83 2H14v2H7.829A3.001 3.001 0 1 1 5 8zm0 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2zm6-8a3 3 0 1 1-2.829 4H2V4h6.17A3.001 3.001 0 0 1 11 2zm0 2a1 1 0 1 0 0 2 1 1 0 0 0 0-2z"></path>
-        </svg>
-      </span>
-    </button>
+      <button
+        type="button"
+        onClick={() => openModal('location')}
+        className="grid grid-cols-[36px_1fr] items-center gap-3 px-3.5 py-3 rounded-2xl border border-neutral-200 dark:border-neutral-700 text-left hover:border-neutral-400 dark:hover:border-neutral-500 transition"
+      >
+        <MapPinIcon className="w-5 h-5 text-primary-700" />
+        <div className="min-w-0">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-500 dark:text-neutral-400">
+            Departure city
+          </div>
+          <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+            {locationValue || 'Anywhere'}
+          </div>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={() => openModal('month')}
+        className="grid grid-cols-[36px_1fr] items-center gap-3 px-3.5 py-3 rounded-2xl border border-neutral-200 dark:border-neutral-700 text-left hover:border-neutral-400 dark:hover:border-neutral-500 transition"
+      >
+        <CalendarDaysIcon className="w-5 h-5 text-primary-700" />
+        <div className="min-w-0">
+          <div className="text-[11px] font-semibold uppercase tracking-[0.06em] text-neutral-500 dark:text-neutral-400">
+            Travel month
+          </div>
+          <div className="text-sm font-medium text-neutral-900 dark:text-neutral-100 truncate">
+            {monthLabel || 'Any month'}
+          </div>
+        </div>
+      </button>
+
+      <button
+        type="button"
+        onClick={onSubmit}
+        className="w-full inline-flex items-center justify-center gap-2 rounded-2xl bg-primary-700 hover:bg-primary-800 text-white font-semibold text-base py-4 mt-1 transition shadow-md"
+      >
+        <MagnifyingGlassIcon className="w-5 h-5" strokeWidth={2.2} />
+        Search Umrah packages
+      </button>
+    </div>
   );
 
+  // ───── Full-screen dialog sub-views (the well-tested old flow) ─────
   const renderInputLocation = () => {
     const isActive = fieldNameShow === 'location';
     return (
@@ -208,16 +232,9 @@ const HeroSearchTrigger = () => {
     );
   };
 
-  const renderForm = () => (
-    <div className="w-full space-y-5">
-      {renderInputLocation()}
-      {renderInputMonth()}
-    </div>
-  );
-
   return (
     <div className="HeroSearchForm2Mobile">
-      {renderTrigger()}
+      {renderInlineCard()}
 
       <Transition appear show={showModal} as={Fragment}>
         <Dialog
@@ -247,8 +264,9 @@ const HeroSearchTrigger = () => {
 
                       <div className="flex-1 min-h-0 pt-12 px-1.5 sm:px-4 flex overflow-hidden">
                         <div className="flex-1 min-h-0 overflow-y-auto hiddenScrollbar py-4">
-                          <div className="transition-opacity animate-[myblur_0.4s_ease-in-out]">
-                            {renderForm()}
+                          <div className="transition-opacity animate-[myblur_0.4s_ease-in-out] w-full space-y-5">
+                            {renderInputLocation()}
+                            {renderInputMonth()}
                           </div>
                         </div>
                       </div>

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { supabase } from '@/utils/supabaseClient';
 import useOutsideAlerter from '@/hooks/useOutsideAlerter';
 import { useRouter } from 'next/navigation';
+import MobileBottomSheet from '@/shared/MobileBottomSheet';
 
 type BookingRow = {
   id: number;
@@ -627,7 +628,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
           leaveFrom="opacity-100 translate-y-0"
           leaveTo="opacity-0 translate-y-1"
         >
-          <div className="absolute z-10 w-screen max-w-xs sm:max-w-sm px-4 top-full -right-28 sm:right-0 sm:px-0">
+          <div className="hidden md:block absolute z-50 w-screen max-w-sm top-full right-0">
             <div className="overflow-hidden rounded-2xl shadow-lg ring-1 ring-black ring-opacity-5">
               <div className="bg-white dark:bg-neutral-800 p-7">
                 <h3 className="text-xl font-semibold">Notifications</h3>
@@ -674,6 +675,49 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
           </div>
         </Transition>
       </div>
+
+      {/* Mobile bottom sheet — same content, slide-up animation */}
+      <MobileBottomSheet open={open} onClose={() => setOpen(false)} title="Notifications">
+        <div className="space-y-2 pt-3">
+          {notifications.length === 0 ? (
+            <p className="text-sm text-gray-500 dark:text-gray-400 py-4">
+              No new notifications.
+            </p>
+          ) : (
+            notifications.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                onClick={async (event) => {
+                  event.preventDefault();
+                  await handleNotificationClick(item);
+                  setOpen(false);
+                  router.push(item.href);
+                }}
+                className="flex items-start gap-3 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 relative"
+              >
+                <Avatar
+                  imgUrl={item.avatar || undefined}
+                  sizeClass="w-9 h-9"
+                  userName={item.name}
+                />
+                <div className="flex-1 min-w-0 space-y-0.5">
+                  <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
+                    {item.name}
+                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {item.description}
+                  </p>
+                  <p className="text-xs text-gray-400">{item.time}</p>
+                </div>
+                {!item.isRead ? (
+                  <span className="absolute right-3 top-4 w-2 h-2 rounded-full bg-blue-500" />
+                ) : null}
+              </Link>
+            ))
+          )}
+        </div>
+      </MobileBottomSheet>
     </>
   );
 };

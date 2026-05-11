@@ -87,6 +87,7 @@ export interface Package {
   arrival_city: string | null;
   sharing_rate: string | null;
   package_location: string | null;
+  tags?: string[] | null;
 }
 
 // PackageDetails type for detailed package JSON structure

@@ -15,6 +15,7 @@ import { supabase } from '@/utils/supabaseClient';
 import { uploadImageToStorage } from '@/utils/supabaseStorageHelper';
 import { useCities } from '@/hooks/useCities';
 import { allocatePackageSlug, slugify as slugifyShared } from '@/lib/slug';
+import { PACKAGE_TAGS, sanitizePackageTags, type PackageTag } from '@/constants/packageTags';
 
 type WizardStep = 'meta' | 'itinerary' | 'amenities' | 'stay' | 'policies' | 'media';
 
@@ -185,6 +186,7 @@ const AddPackageWizardModal = ({
     makeEmptyIternaryItem(),
   ]);
   const [amenitiesText, setAmenitiesText] = useState('');
+  const [selectedTags, setSelectedTags] = useState<PackageTag[]>([]);
   const [stayInfoContentHtml, setStayInfoContentHtml] = useState('');
   const [policyCancellation, setPolicyCancellation] = useState('');
   const [policyCheckIn, setPolicyCheckIn] = useState('');
@@ -355,6 +357,7 @@ const AddPackageWizardModal = ({
     setSharingRates(parsedRates);
     setIternaryItems(parseIternary(detailsRow?.iternary));
     setAmenitiesText(parseAmenitiesText(detailsRow?.amenities));
+    setSelectedTags(sanitizePackageTags(packageRow.tags));
     const stayInfoRow = (() => {
       const raw = detailsRow?.stay_information;
       if (typeof raw === 'string') {
@@ -425,6 +428,7 @@ const AddPackageWizardModal = ({
     ]);
     setIternaryItems([makeEmptyIternaryItem(), makeEmptyIternaryItem()]);
     setAmenitiesText('');
+    setSelectedTags([]);
     setStayInfoContentHtml('');
     setPolicyCancellation('');
     setPolicyCheckIn('');
@@ -632,6 +636,7 @@ const AddPackageWizardModal = ({
       },
       agent_id: agentAuthUserId,
       agent_name: agentSlug,
+      tags: selectedTags,
       // Save & Publish forces published=true. Plain Save preserves the current
       // published state on edits; new packages start as drafts.
       published: forcePublish ? true : editPackageId ? !isDraftPackage : false,
@@ -1226,15 +1231,52 @@ const AddPackageWizardModal = ({
                 )}
 
                 {step === 'amenities' && (
-                  <div>
-                    <Label>Amenities (one per line)</Label>
-                    <Textarea
-                      className="mt-1.5"
-                      rows={10}
-                      value={amenitiesText}
-                      onChange={(e) => setAmenitiesText(e.target.value)}
-                      placeholder={'Meals\nVisa\nLaundry\nMakkah Hotel near Haram'}
-                    />
+                  <div className="space-y-6">
+                    <div>
+                      <Label>Highlight tags</Label>
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        Pick the chips that best describe this package. They appear on listing
+                        cards and help pilgrims filter.
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {PACKAGE_TAGS.map((tag) => {
+                          const active = selectedTags.includes(tag);
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() =>
+                                setSelectedTags((prev) =>
+                                  prev.includes(tag)
+                                    ? prev.filter((t) => t !== tag)
+                                    : [...prev, tag]
+                                )
+                              }
+                              aria-pressed={active}
+                              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium border transition ${
+                                active
+                                  ? 'bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white text-white dark:text-neutral-900'
+                                  : 'bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:border-neutral-400'
+                              }`}
+                            >
+                              {active ? <span aria-hidden>✓</span> : null}
+                              {tag}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Amenities (one per line)</Label>
+                      <Textarea
+                        className="mt-1.5"
+                        rows={10}
+                        value={amenitiesText}
+                        onChange={(e) => setAmenitiesText(e.target.value)}
+                        placeholder={'Meals\nVisa\nLaundry\nMakkah Hotel near Haram'}
+                      />
+                    </div>
                   </div>
                 )}
 

@@ -4,12 +4,12 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/utils/reactQueryClient';
 import { Poppins } from 'next/font/google';
 import SiteHeader from './(client-components)/(Header)/SiteHeader';
+import SiteFooter from '@/components/SiteFooter';
 import ClientCommons from './ClientCommons';
 import './globals.css';
 import '@/fonts/line-awesome-1.3.0/css/line-awesome.css';
 import '@/styles/index.scss';
 import 'rc-slider/assets/index.css';
-import FooterNav from '@/components/FooterNav';
 import { ReactQueryProvider } from './providers';
 import { Metadata } from 'next';
 import StructuredData from '@/components/StructuredData';
@@ -137,7 +137,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <SupabaseSessionSync />
           <SiteHeader />
           {children}
-          <FooterNav />
+          <SiteFooter />
         </ReactQueryProvider>
       </body>
     </html>

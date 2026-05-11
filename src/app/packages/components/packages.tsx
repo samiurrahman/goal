@@ -10,6 +10,7 @@ import Avatar from '@/shared/Avatar';
 import GovtVerifiedBadge from '@/components/GovtVerifiedBadge';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 import ShareButton from '@/shared/ShareButton';
+import { sanitizePackageTags, packageTagTone } from '@/constants/packageTags';
 
 // Neutral 2x2 gray JPEG used as fallback blur for packages without a stored LQIP
 const FALLBACK_BLUR_DATA_URL =
@@ -61,7 +62,10 @@ const Packages: FC<PackagesProps> = ({
     departure_date,
     arrival_date,
     package_location,
+    tags,
   } = data;
+
+  const cardTags = sanitizePackageTags(tags);
 
   const parsedDefaultPricing = useMemo(() => {
     try {
@@ -183,6 +187,26 @@ const Packages: FC<PackagesProps> = ({
               </span>
             ) : null}
           </div>
+
+          {cardTags.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {cardTags.map((tag) => {
+                const tone = packageTagTone(tag);
+                return (
+                  <span
+                    key={tag}
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none ${
+                      tone === 'popular'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-primary-50 text-primary-700'
+                    }`}
+                  >
+                    {tag}
+                  </span>
+                );
+              })}
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="flex items-start gap-2 min-w-0">

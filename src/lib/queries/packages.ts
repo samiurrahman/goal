@@ -86,10 +86,26 @@ const PACKAGE_FIELDS = [
   'madinah_hotel_distance_m',
 ].join(', ');
 
+// `tags` was added in a later migration. If the host hasn't applied
+// `20260511010000_add_tags_to_packages.sql` yet, including it in the SELECT
+// makes the whole query fail with "column packages.tags does not exist". We
+// query without it first and ONLY add it once we know it's available.
+const PACKAGE_FIELDS_WITH_TAGS = `${PACKAGE_FIELDS}, tags`;
+let tagsColumnAvailable: boolean | null = null;
+
 const toNum = (v: unknown): number | undefined => {
   if (v === undefined || v === null || v === '') return undefined;
   const n = Number(v);
   return Number.isFinite(n) ? n : undefined;
+};
+
+const isMissingTagsColumn = (err: { message?: string; code?: string } | null | undefined) => {
+  if (!err) return false;
+  const message = (err.message || '').toLowerCase();
+  return (
+    err.code === '42703' ||
+    (message.includes('column') && message.includes('tags') && message.includes('does not exist'))
+  );
 };
 
 export async function fetchPackages(args: {
@@ -105,9 +121,14 @@ export async function fetchPackages(args: {
   const today = new Date();
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
+  // Optimistically include `tags` until we confirm the column is missing on
+  // this install; from then on, skip it for the rest of the process lifetime.
+  const includeTags = tagsColumnAvailable !== false;
+  const selectFields = includeTags ? PACKAGE_FIELDS_WITH_TAGS : PACKAGE_FIELDS;
+
   let query = supabase
     .from('packages')
-    .select(PACKAGE_FIELDS)
+    .select(selectFields)
     .eq('published', true)
     .gte('departure_date', todayStr);
 
@@ -168,7 +189,21 @@ export async function fetchPackages(args: {
   const to = from + pageSize - 1;
 
   const { data, error } = await query.range(from, to);
-  if (error) throw error;
+  if (error) {
+    // The host hasn't applied the tags migration yet. Latch the flag off and
+    // retry the entire query with the legacy field list so the listing still
+    // populates. Without this, the whole page renders empty until the SQL is
+    // run.
+    if (includeTags && isMissingTagsColumn(error)) {
+      tagsColumnAvailable = false;
+      return fetchPackages(args);
+    }
+    throw error;
+  }
+
+  if (includeTags && tagsColumnAvailable === null) {
+    tagsColumnAvailable = true;
+  }
 
   return (data ?? []) as unknown as Package[];
 }

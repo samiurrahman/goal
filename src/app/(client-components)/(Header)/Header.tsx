@@ -1,18 +1,18 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import Logo from '@/shared/Logo';
 import NotifyDropdown from './NotifyDropdown';
 import AvatarDropdown from './AvatarDropdown';
+import HeaderLocationPill from './HeaderLocationPill';
 import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
-import ButtonPrimary from '@/shared/ButtonPrimary';
 import { readHeaderCache } from '@/utils/headerCache';
 
 const Header3 = () => {
   const { isLoggedIn, isAuthReady } = useSupabaseIsLoggedIn();
   const pathname = usePathname();
-  const hideOnMobile = pathname === '/';
 
   const [optimisticLoggedIn, setOptimisticLoggedIn] = useState<boolean | null>(null);
   useEffect(() => {
@@ -20,55 +20,45 @@ const Header3 = () => {
   }, []);
 
   const showLoggedInUi = isAuthReady ? isLoggedIn : optimisticLoggedIn;
-  return (
-    <>
-      <div
-        className={`nc-Header sticky top-0 w-full left-0 right-0 z-40 nc-header-bg shadow-sm dark:border-b dark:border-neutral-700 ${
-          hideOnMobile ? 'hidden lg:block' : ''
-        }`}
+
+  // Logged-in users get notify + avatar + hamburger.
+  // Logged-out users get a single prominent Sign in CTA.
+  const renderActions = () => {
+    if (showLoggedInUi === null) {
+      return <div className="h-10 w-24" aria-hidden="true" />;
+    }
+
+    if (showLoggedInUi) {
+      return (
+        <div className="flex items-center gap-1 sm:gap-2">
+          <NotifyDropdown />
+          <AvatarDropdown />
+        </div>
+      );
+    }
+
+    return (
+      <Link
+        href={`/login?redirect=${encodeURIComponent(pathname || '/')}`}
+        className="inline-flex items-center justify-center rounded-full bg-primary-700 hover:bg-primary-800 px-5 py-2.5 sm:px-7 sm:py-3 text-sm sm:text-base font-semibold text-white shadow-md hover:shadow-lg transition-all whitespace-nowrap"
       >
-        <div className={`nc-MainNav1 relative z-10`}>
-          <div className="px-4 lg:container h-14 sm:h-16 relative flex justify-between items-center">
-            <div className="hidden md:flex justify-start flex-1 items-center">
-              <Logo className="w-40 sm:w-44" />
-            </div>
+        Sign in
+      </Link>
+    );
+  };
 
-            <div className="flex md:hidden flex-1 justify-center items-center">
-              <Logo className="w-40 sm:w-44" />
-            </div>
-
-            <div className="hidden md:flex relative z-10 flex-1 justify-end text-neutral-700 dark:text-neutral-100">
-              <div className=" flex space-x-1">
-                {/* <Link
-                  href={'/add-listing/1'}
-                  className="self-center hidden xl:inline-flex px-4 py-2 border border-neutral-300 hover:border-neutral-400 dark:border-neutral-700 rounded-full items-center text-sm text-gray-700 dark:text-neutral-300 font-medium focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75"
-                >
-                  Offers
-                </Link> */}
-
-                {/* {isLoggedIn && <NotifyDropdown />}
-                {isLoggedIn && <AvatarDropdown />} */}
-                {showLoggedInUi === null ? (
-                  <div className="w-24 h-10 self-center" aria-hidden="true" />
-                ) : showLoggedInUi ? (
-                  <>
-                    <NotifyDropdown />
-                    <AvatarDropdown />
-                  </>
-                ) : (
-                  <>
-                    <div className="px-1" />
-                    <ButtonPrimary className="self-center" href="/login">
-                      log in
-                    </ButtonPrimary>
-                  </>
-                )}
-              </div>
-            </div>
+  return (
+    <div className="nc-Header sticky top-0 w-full left-0 right-0 z-40 nc-header-bg shadow-sm dark:border-b dark:border-neutral-700">
+      <div className="nc-MainNav1 relative z-10">
+        <div className="px-4 lg:container h-14 sm:h-16 relative flex justify-between items-center gap-3">
+          <Logo className="w-36 sm:w-44" />
+          <div className="hidden lg:flex flex-1 justify-center">
+            <HeaderLocationPill />
           </div>
+          <div className="text-neutral-700 dark:text-neutral-100">{renderActions()}</div>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

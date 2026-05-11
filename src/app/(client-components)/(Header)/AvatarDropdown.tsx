@@ -10,6 +10,7 @@ import { resolvePublicImageUrl } from '@/utils/supabaseStorageHelper';
 import useOutsideAlerter from '@/hooks/useOutsideAlerter';
 import { shouldRedirectHomeOnLogout } from '@/constants/protectedRoutes';
 import { clearHeaderCache, readHeaderCache, writeHeaderCache } from '@/utils/headerCache';
+import MobileBottomSheet from '@/shared/MobileBottomSheet';
 import type { User } from '@supabase/supabase-js';
 interface Props {
   className?: string;
@@ -310,7 +311,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
         <Avatar sizeClass="w-8 h-8 sm:w-9 sm:h-9" imgUrl={avatarUrl} priority />
       </button>
       {open && (
-        <div className="absolute z-50 w-screen max-w-[260px] px-4 top-full -right-10 sm:right-0 sm:px-0">
+        <div className="hidden md:block absolute z-50 w-screen max-w-[260px] top-full right-0">
           <div className="overflow-hidden rounded-3xl shadow-lg ring-1 ring-black ring-opacity-5">
             <div className="relative grid grid-cols-1 gap-6 bg-white dark:bg-neutral-800 py-7 px-6">
               {userType === 'agent' && agentSlug ? (
@@ -626,6 +627,68 @@ export default function AvatarDropdown({ className = '' }: Props) {
           </div>
         </div>
       )}
+
+      {/* Mobile bottom sheet — same destinations, slide-up animation */}
+      <MobileBottomSheet
+        open={open}
+        onClose={() => setOpen(false)}
+        title={
+          <span className="flex items-center gap-3">
+            <Avatar sizeClass="w-9 h-9" imgUrl={avatarUrl} />
+            <span>{userType === 'agent' ? 'Agent' : displayName || 'My Account'}</span>
+          </span>
+        }
+      >
+        <nav className="space-y-1 pt-2">
+          {(userType === 'agent'
+            ? [
+                { label: 'Profile', href: agentSlug ? `/${agentSlug}` : '/profile', icon: 'la-user' },
+                { label: 'Bookings', href: '/bookings', icon: 'la-clipboard-list' },
+                { label: 'Packages', href: '/listed-packages', icon: 'la-box' },
+                { label: 'Account Settings', href: '/account-settings', icon: 'la-cog' },
+              ]
+            : [
+                { label: 'Profile', href: myAccountHref, icon: 'la-user' },
+                { label: 'My Bookings', href: '/my-bookings', icon: 'la-clipboard-list' },
+                { label: 'Account Settings', href: '/account-settings', icon: 'la-cog' },
+              ]
+          ).map((link) => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className={`flex items-center gap-3 px-3 py-3 rounded-xl transition ${
+                pathname === link.href
+                  ? 'bg-neutral-100 dark:bg-neutral-800 text-primary-6000'
+                  : 'hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
+              }`}
+            >
+              <i className={`las ${link.icon} text-xl`} />
+              <span className="text-sm font-medium">{link.label}</span>
+            </Link>
+          ))}
+        </nav>
+        <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-700 space-y-1">
+          <div className="flex items-center justify-between px-3 py-3 rounded-xl">
+            <div className="flex items-center gap-3 text-neutral-700 dark:text-neutral-300">
+              <i className="las la-moon text-xl" />
+              <span className="text-sm font-medium">Dark theme</span>
+            </div>
+            <SwitchDarkMode2 />
+          </div>
+          <button
+            type="button"
+            disabled={isSigningOut}
+            onClick={handleLogout}
+            className="flex items-center gap-3 w-full px-3 py-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300"
+          >
+            <i className="las la-sign-out-alt text-xl" />
+            <span className="text-sm font-medium">
+              {isSigningOut ? 'Logging out…' : 'Log out'}
+            </span>
+          </button>
+        </div>
+      </MobileBottomSheet>
     </div>
   );
 }
