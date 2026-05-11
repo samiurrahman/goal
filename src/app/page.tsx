@@ -60,22 +60,26 @@ async function PageHome() {
           <HeroSkyline />
         </div>
 
-        <div className="container relative z-10 pt-10 pb-12 lg:pt-10 lg:pb-28">
-          <span className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 pl-1.5 pr-4 py-1.5 text-xs font-medium text-primary-100 mb-5">
-            <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-secondary-500 text-white text-[11px] font-bold">
-              ✓
+        <div className="container relative z-10 pt-10 pb-6 lg:pt-10 lg:pb-14">
+          <div className="flex justify-center">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 border border-white/20 pl-1.5 pr-4 py-1.5 text-xs font-medium text-primary-100 mb-5">
+              <span className="inline-flex h-[22px] w-[22px] items-center justify-center rounded-full bg-secondary-500 text-white text-[11px] font-bold">
+                ✓
+              </span>
+              Every agent KYC-verified · zero middlemen
             </span>
-            Every agent KYC-verified · zero middlemen
-          </span>
+          </div>
 
-          <h1 className="font-light tracking-tight leading-[1.05] text-[28px] sm:text-[44px] lg:text-[56px] max-w-[18ch]">
-            Find a verified <em className="not-italic text-primary-200">Umrah</em> package, your
-            way.
-          </h1>
-          <p className="mt-4 text-base lg:text-[14px] leading-relaxed text-primary-200 max-w-[56ch]">
+          <div className="flex justify-center items-center">
+            <h1 className="font-light tracking-tight leading-[1.05] text-[22px] sm:text-[36px] lg:text-[48px] max-w-[18ch] text-center">
+              Find a verified <em className="not-italic text-primary-200">Umrah</em> package, your
+              way.
+            </h1>
+          </div>
+          {/* <p className="mt-4 text-base lg:text-[14px] leading-relaxed text-primary-200 max-w-[56ch]">
             Compare Umrah packages from trusted agents across India. Transparent pricing, real
             reviews, direct agent contact — no resold leads.
-          </p>
+          </p> */}
 
           {/* Desktop search */}
           <div className="hidden lg:block mt-6">
