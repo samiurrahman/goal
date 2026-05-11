@@ -173,9 +173,14 @@ const SearchForm = () => {
               leaveFrom="opacity-100 translate-y-0"
               leaveTo="opacity-0 translate-y-1"
             >
-              <Popover.Panel className="absolute z-30 right-0 top-full mt-3 w-screen max-w-sm">
+              <Popover.Panel className="absolute z-50 right-0 top-full mt-3 w-screen max-w-sm">
                 <div className="overflow-hidden rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-xl">
-                  <div className="max-h-72 overflow-y-auto p-3">
+                  {/*
+                    Height matched to the Location popover (which has a search
+                    header + max-h-72 list ≈ 360px). Without this the months
+                    popover renders much shorter and the two feel unbalanced.
+                  */}
+                  <div className="h-[22.5rem] overflow-y-auto p-3">
                     {MONTHS_LIST_WITH_ANY.map((month) => (
                       <span
                         key={`${month}-${monthStates.includes(month)}`}

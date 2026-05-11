@@ -2,7 +2,6 @@ import React from 'react';
 import Link from 'next/link';
 import SearchForm from '@/app/(client-components)/(PackageSearchForm)/SearchForm';
 import HeroSearchTrigger from '@/components/HeroSearchTrigger';
-import LocationDetectBanner from '@/components/LocationDetectBanner';
 import FeaturedPackagesSection from '@/app/(home-components)/FeaturedPackagesSection';
 import HeroSkyline from '@/app/(home-components)/HeroSkyline';
 import { fetchPackages } from '@/lib/queries/packages';
@@ -77,10 +76,6 @@ async function PageHome() {
             Compare Umrah packages from trusted agents across India. Transparent pricing, real
             reviews, direct agent contact — no resold leads.
           </p>
-
-          <div className="mt-8">
-            <LocationDetectBanner />
-          </div>
 
           {/* Desktop search */}
           <div className="hidden lg:block mt-6">

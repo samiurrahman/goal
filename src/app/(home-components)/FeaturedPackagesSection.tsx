@@ -41,7 +41,7 @@ const FeaturedPackagesSection: FC<FeaturedPackagesSectionProps> = ({ packages })
       <div className="container">
         <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8 md:mb-10">
           <div className="max-w-2xl">
-            <span className="text-[12px] tracking-[0.12em] uppercase font-light text-primary-700">
+            <span className="text-[12px] tracking-[0.12em] uppercase font-semibold text-primary-700">
               Featured Umrah packages
             </span>
             <h2 className="mt-2 text-3xl lg:text-[32px] leading-tight font-light text-neutral-900 dark:text-neutral-100 tracking-tight">
