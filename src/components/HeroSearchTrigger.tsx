@@ -28,7 +28,8 @@ const HeroSearchTrigger = () => {
     monthLabel,
     packagesUrl,
     clearAll,
-    filteredCities: allCities,
+    cities: allCities,
+    citiesLoading,
   } = usePackageSearch();
 
   const closeModal = () => setShowModal(false);
@@ -130,22 +131,32 @@ const HeroSearchTrigger = () => {
             </div>
             <div className="mt-7">
               <p className="block font-semibold text-base">
-                {locationQuery ? 'Locations' : 'Popular destinations'}
+                {locationQuery ? 'Search results' : 'All locations'}
               </p>
               <div className="mt-3 max-h-[30vh] overflow-y-auto">
-                {queryFiltered.map((item) => (
-                  <div
-                    key={item.id}
-                    onClick={() => onPickLocation(item)}
-                    className="py-2 mb-1 flex items-center space-x-3 text-sm cursor-pointer"
-                  >
-                    <MapPinIcon className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
-                    <span>
-                      {item.name}
-                      {item.state ? ', ' + item.state : ''}
-                    </span>
-                  </div>
-                ))}
+                {citiesLoading ? (
+                  <p className="py-4 text-sm text-neutral-500 dark:text-neutral-400">
+                    Loading locations…
+                  </p>
+                ) : queryFiltered.length === 0 ? (
+                  <p className="py-4 text-sm text-neutral-500 dark:text-neutral-400">
+                    No location matches &ldquo;{locationQuery}&rdquo;.
+                  </p>
+                ) : (
+                  queryFiltered.map((item) => (
+                    <div
+                      key={item.id}
+                      onClick={() => onPickLocation(item)}
+                      className="py-2 mb-1 flex items-center space-x-3 text-sm cursor-pointer"
+                    >
+                      <MapPinIcon className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
+                      <span>
+                        {item.name}
+                        {item.state ? ', ' + item.state : ''}
+                      </span>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

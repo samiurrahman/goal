@@ -160,10 +160,35 @@ const LocationInput: FC<LocationInputProps> = ({
   // };
 
   const renderSearchValue = () => {
+    if (isLoading) {
+      return (
+        <p className="px-4 sm:px-8 py-4 text-sm text-neutral-500 dark:text-neutral-400">
+          Loading locations…
+        </p>
+      );
+    }
+
+    if (error) {
+      return (
+        <p className="px-4 sm:px-8 py-4 text-sm text-red-500">
+          Could not load locations. Please retry.
+        </p>
+      );
+    }
+
+    if (!filteredCities || filteredCities.length === 0) {
+      return (
+        <p className="px-4 sm:px-8 py-4 text-sm text-neutral-500 dark:text-neutral-400">
+          {value
+            ? `No location matches "${value}".`
+            : 'No locations available.'}
+        </p>
+      );
+    }
+
     return (
       <>
-       
-        {filteredCities?.map((item, idx) => (
+        {filteredCities.map((item, idx) => (
           <span
             onClick={() => handleSelectLocation(item)}
             key={item.id}
@@ -171,9 +196,6 @@ const LocationInput: FC<LocationInputProps> = ({
               focusedIndex === idx ? 'bg-blue-100 dark:bg-blue-900' : ''
             }`}
           >
-            {/* <span className="block text-neutral-400">
-              <ClockIcon className="h-4 w-4 sm:h-6 sm:w-6" />
-            </span> */}
             <span className="block font-medium text-neutral-700 dark:text-neutral-200">
               {item.name}, {item.state}
             </span>

@@ -28,7 +28,8 @@ export function usePackageSearch() {
   const userInteractedRef = useRef(false);
   const autoPrefilledRef = useRef(false);
 
-  const { data: cities, isLoading: citiesLoading } = useCities();
+  const { data: citiesData, isLoading: citiesLoading } = useCities();
+  const cities = useMemo<CityItem[]>(() => (citiesData as CityItem[] | undefined) || [], [citiesData]);
   const { location: userLocation } = useUserLocation();
 
   // Auto-prefill the location field from a previously detected user location.
@@ -37,7 +38,10 @@ export function usePackageSearch() {
     if (autoPrefilledRef.current || userInteractedRef.current) return;
     if (!userLocation || !cities || cities.length === 0) return;
 
-    const matched = matchUserLocationCities(userLocation, cities);
+    const matched = matchUserLocationCities(
+      userLocation,
+      cities.map((c) => ({ id: String(c.id), name: c.name, state: c.state ?? null }))
+    );
     if (matched.length === 0) return;
 
     const cityRow = (cities as CityItem[]).find((c) => c.name === matched[0]);
@@ -48,14 +52,10 @@ export function usePackageSearch() {
     setSelectedLocation(cityRow);
   }, [userLocation, cities]);
 
-  const filteredCities = useMemo(() => {
-    if (!cities) return [];
-    if (!locationValue) return cities as CityItem[];
-    const query = locationValue.toLowerCase();
-    return (cities as CityItem[]).filter((item) =>
-      formatCityLabel(item).toLowerCase().includes(query)
-    );
-  }, [cities, locationValue]);
+  // Backwards-compat alias — consumers should prefer `cities` and apply their
+  // own search filter so clearing the search input always restores the full
+  // list, even after a city has been selected.
+  const filteredCities = cities;
 
   const handleSelectLocation = useCallback((city: CityItem) => {
     userInteractedRef.current = true;
@@ -107,7 +107,8 @@ export function usePackageSearch() {
     handleSelectLocation,
     monthStates,
     handleChangeMonth,
-    filteredCities,
+    cities,
+    filteredCities, // deprecated — same as `cities` now
     citiesLoading,
     packagesUrl,
     monthLabel,
