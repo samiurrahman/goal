@@ -68,6 +68,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
   const router = useRouter();
   const [notifications, setNotifications] = useState<NotifyItem[]>([]);
   const [open, setOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const hasInteractedRef = useRef(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -275,6 +276,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
             },
             async (payload) => {
               const booking = payload.new as BookingRow;
+              console.debug('[NotifyDropdown] agent INSERT', booking);
               let customerName = 'A traveler';
 
               const { data: customer } = await supabase
@@ -312,8 +314,12 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
             },
             async (payload) => {
               const current = payload.new as BookingRow;
+              console.debug('[NotifyDropdown] agent UPDATE', current);
               if ((current.status || '').toLowerCase() !== 'cancelled') return;
               if (current.cancelled_by !== 'user') return;
+              // Don't re-fire after the agent clicks the notification (which
+              // sets readByAgent: true via /api/bookings/notifications/read).
+              if (current.readByAgent) return;
 
               let customerName = 'A traveler';
               const { data: customer } = await supabase
@@ -434,6 +440,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
           },
           async (payload) => {
             const current = payload.new as BookingRow;
+            console.debug('[NotifyDropdown] user UPDATE', current);
             const status = (current.status || '').toLowerCase();
 
             const isConfirmed = status === 'confirmed';
@@ -441,8 +448,12 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
               status === 'cancelled' && current.cancelled_by === 'agent';
 
             // Only notify on terminal transitions the user cares about.
-            // Dedup is handled by the deterministic notification id below.
             if (!isConfirmed && !isAgentCancellation) return;
+
+            // Skip if the user has already marked this booking as read — this
+            // prevents re-firing the notification when the user clicks the
+            // bell item (which itself triggers an UPDATE setting readByUser).
+            if (current.readByUser) return;
 
             let name = current.agent_name || 'Your agent';
             let avatar: string | null = null;
@@ -492,7 +503,10 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
       isMounted = false;
       if (cleanup) cleanup();
     };
-  }, []);
+    // refreshKey is in deps so opening the bell catches up on any events that
+    // realtime missed (e.g., transient connection drops).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refreshKey]);
 
   const handleNotificationClick = async (item: NotifyItem) => {
     if (item.isRead) return true;
