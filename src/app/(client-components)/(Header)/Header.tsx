@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import Logo from '@/shared/Logo';
 import NotifyDropdown from './NotifyDropdown';
 import AvatarDropdown from './AvatarDropdown';
-import HeaderLocationPill from './HeaderLocationPill';
+import LocationDetectBanner from '@/components/LocationDetectBanner';
 import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
 import { readHeaderCache } from '@/utils/headerCache';
 
@@ -50,12 +50,20 @@ const Header3 = () => {
   return (
     <div className="nc-Header sticky top-0 w-full left-0 right-0 z-40 nc-header-bg shadow-sm dark:border-b dark:border-neutral-700">
       <div className="nc-MainNav1 relative z-10">
-        <div className="px-4 lg:container h-14 sm:h-16 relative flex justify-between items-center gap-3">
-          <Logo className="w-36 sm:w-44" />
-          <div className="hidden lg:flex flex-1 justify-center">
-            <HeaderLocationPill />
+        {/*
+          Header grows on desktop to fit the location banner. Mobile keeps the
+          tight h-14 row — the banner is hidden there anyway.
+        */}
+        <div className="px-4 lg:container h-14 sm:h-16 lg:h-auto lg:py-2 relative flex justify-between items-center gap-4">
+          <Logo className="w-36 sm:w-44 flex-shrink-0" />
+          <div className="hidden lg:flex flex-1 justify-center px-4 min-w-0">
+            <div className="w-full max-w-2xl">
+              <LocationDetectBanner />
+            </div>
           </div>
-          <div className="text-neutral-700 dark:text-neutral-100">{renderActions()}</div>
+          <div className="text-neutral-700 dark:text-neutral-100 flex-shrink-0">
+            {renderActions()}
+          </div>
         </div>
       </div>
     </div>

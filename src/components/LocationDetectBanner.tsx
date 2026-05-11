@@ -22,8 +22,7 @@ const LocationDetectBanner: FC<LocationDetectBannerProps> = ({
   prompt = 'Show packages near you?',
   className = '',
 }) => {
-  const { status, location, errorMessage, bannerDismissed, request, dismiss } =
-    useUserLocation();
+  const { status, location, errorMessage, bannerDismissed, request, dismiss } = useUserLocation();
 
   const handleClick = useCallback(async () => {
     const detected = await request();
@@ -44,17 +43,17 @@ const LocationDetectBanner: FC<LocationDetectBannerProps> = ({
 
   return (
     <div
-      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-primary-200 bg-primary-50 dark:border-primary-900 dark:bg-primary-900/20 px-4 py-3 ${className}`}
+      className={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-2xl border border-primary-200 bg-primary-50 dark:border-primary-900 dark:bg-primary-900/20 px-2 py-2 ${className}`}
     >
       <div className="flex items-center gap-3 min-w-0">
         <span className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-white dark:bg-neutral-900 text-primary-6000 dark:text-primary-300">
-          <MapPinIcon className="w-5 h-5" />
+          <MapPinIcon className="w-4 h-4" />
         </span>
         <p className="text-sm text-neutral-800 dark:text-neutral-100 leading-snug min-w-0">
           {prompt}
-          <span className="hidden sm:block text-xs text-neutral-500 dark:text-neutral-400">
+          {/* <span className="hidden sm:block text-xs text-neutral-500 dark:text-neutral-400">
             Only used to filter packages — not stored on our servers.
-          </span>
+          </span> */}
         </p>
       </div>
       <div className="flex items-center gap-2 flex-shrink-0 self-stretch sm:self-auto">
@@ -62,7 +61,7 @@ const LocationDetectBanner: FC<LocationDetectBannerProps> = ({
           type="button"
           onClick={handleClick}
           disabled={status === 'requesting'}
-          className="flex-1 sm:flex-initial px-4 py-2 rounded-full bg-primary-6000 text-white text-sm font-medium hover:bg-primary-700 disabled:opacity-60 whitespace-nowrap"
+          className="flex-1 sm:flex-initial px-3 py-1 rounded-full bg-primary-6000 text-white text-sm font-medium hover:bg-primary-700 disabled:opacity-60 whitespace-nowrap"
         >
           {status === 'requesting' ? 'Detecting…' : 'Use my location'}
         </button>

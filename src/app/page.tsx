@@ -73,7 +73,7 @@ async function PageHome() {
             Find a verified <em className="not-italic text-primary-200">Umrah</em> package, your
             way.
           </h1>
-          <p className="mt-4 text-base lg:text-[12px] leading-relaxed text-primary-200 max-w-[56ch]">
+          <p className="mt-4 text-base lg:text-[14px] leading-relaxed text-primary-200 max-w-[56ch]">
             Compare Umrah packages from trusted agents across India. Transparent pricing, real
             reviews, direct agent contact — no resold leads.
           </p>
