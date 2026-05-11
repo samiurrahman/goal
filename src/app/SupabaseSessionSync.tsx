@@ -1,8 +1,30 @@
 'use client';
 import { useEffect } from 'react';
 import { supabase } from '@/utils/supabaseClient';
-import { storeAccessToken } from '@/utils/authToken';
+import { storeAccessToken, removeAccessToken } from '@/utils/authToken';
 import { insertAgentWithUniqueSlug } from '@/lib/slug';
+
+// Auth user referenced by the current JWT no longer exists in auth.users.
+// The cookie/session is stale — sign out so the next page load starts clean
+// instead of replaying the same failing insert over and over.
+const handleStaleAuthUser = async (error: { code?: string; message?: string }) => {
+  if (error.code !== '23503') return false;
+  console.warn(
+    'Stale auth session detected (auth.users FK violation). Signing out.',
+    error.message
+  );
+  try {
+    await supabase.auth.signOut();
+  } catch (signOutErr) {
+    console.warn('signOut failed during stale-session cleanup:', signOutErr);
+  }
+  try {
+    removeAccessToken();
+  } catch {
+    /* token already gone */
+  }
+  return true;
+};
 
 type AuthMeta = {
   full_name?: string | null;
@@ -80,13 +102,19 @@ export default function SupabaseSessionSync() {
       // No row yet — create one. Default user_type to 'user' if no signup param.
       const resolvedType = userTypeParam === 'agent' ? 'agent' : 'user';
 
-      await supabase.from('user_details').insert({
+      const { error: insertUserDetailsError } = await supabase.from('user_details').insert({
         auth_user_id: session.user.id,
         user_type: resolvedType,
         first_name: firstFromMeta || null,
         last_name: lastFromMeta || null,
         profile_image: pictureFromMeta || null,
       });
+
+      if (insertUserDetailsError) {
+        const handled = await handleStaleAuthUser(insertUserDetailsError);
+        if (handled) return;
+        console.warn('Failed to create user_details row:', insertUserDetailsError.message);
+      }
 
       // Mirror the agent signup path (retry-safe on slug race)
       if (resolvedType === 'agent') {

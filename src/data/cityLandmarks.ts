@@ -16,6 +16,7 @@ export const CITY_LANDMARKS: Record<string, string> = {
   Ahmedabad: '/images/cities/ahmedabad.jpg',
   Pune: '/images/cities/pune.jpg',
   Kochi: '/images/cities/kochi.jpg',
+  Nagpur: '/images/cities/nagpur.jpg',
 };
 
 export function getCityImage(cityName: string): string {
