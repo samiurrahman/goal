@@ -1,5 +1,7 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import { useCities } from './useCities';
+import { useUserLocation } from './useUserLocation';
+import { matchUserLocationCities } from '@/utils/matchUserLocationCities';
 
 export type CityItem = {
   id: number | string;
@@ -23,8 +25,28 @@ export function usePackageSearch() {
   const [locationValue, setLocationValue] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<CityItem | null>(null);
   const [monthStates, setMonthStates] = useState<string[]>([]);
+  const userInteractedRef = useRef(false);
+  const autoPrefilledRef = useRef(false);
 
   const { data: cities, isLoading: citiesLoading } = useCities();
+  const { location: userLocation } = useUserLocation();
+
+  // Auto-prefill the location field from a previously detected user location.
+  // Runs once per hook instance, only if the user hasn't already interacted.
+  useEffect(() => {
+    if (autoPrefilledRef.current || userInteractedRef.current) return;
+    if (!userLocation || !cities || cities.length === 0) return;
+
+    const matched = matchUserLocationCities(userLocation, cities);
+    if (matched.length === 0) return;
+
+    const cityRow = (cities as CityItem[]).find((c) => c.name === matched[0]);
+    if (!cityRow) return;
+
+    autoPrefilledRef.current = true;
+    setLocationValue(formatCityLabel(cityRow));
+    setSelectedLocation(cityRow);
+  }, [userLocation, cities]);
 
   const filteredCities = useMemo(() => {
     if (!cities) return [];
@@ -36,6 +58,7 @@ export function usePackageSearch() {
   }, [cities, locationValue]);
 
   const handleSelectLocation = useCallback((city: CityItem) => {
+    userInteractedRef.current = true;
     setLocationValue(formatCityLabel(city));
     setSelectedLocation(city);
   }, []);
@@ -54,11 +77,13 @@ export function usePackageSearch() {
   const clearMonths = useCallback(() => setMonthStates([]), []);
 
   const clearLocation = useCallback(() => {
+    userInteractedRef.current = true;
     setLocationValue('');
     setSelectedLocation(null);
   }, []);
 
   const clearAll = useCallback(() => {
+    userInteractedRef.current = true;
     setLocationValue('');
     setSelectedLocation(null);
     setMonthStates([]);

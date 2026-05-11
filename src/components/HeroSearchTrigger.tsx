@@ -35,12 +35,15 @@ const HeroSearchTrigger = () => {
   const openModal = () => {
     setShowModal(true);
     setFieldNameShow('location');
-    setLocationQuery('');
+    // Seed the edit field from the currently selected location so the user
+    // can edit/clear it instead of seeing a stale fallback when they delete
+    // every character.
+    setLocationQuery(locationValue || '');
   };
 
   const onPickLocation = (city: CityItem) => {
     handleSelectLocation(city);
-    setLocationQuery('');
+    setLocationQuery(city.name + (city.state ? ', ' + city.state : ''));
     setFieldNameShow('month');
   };
 
@@ -117,7 +120,7 @@ const HeroSearchTrigger = () => {
               <input
                 className="block w-full bg-transparent border px-4 py-3 pr-12 border-neutral-900 dark:border-neutral-200 rounded-xl focus:ring-0 focus:outline-none text-base leading-none placeholder-neutral-500 dark:placeholder-neutral-300 truncate font-bold placeholder:truncate"
                 placeholder="Search location"
-                value={locationQuery || locationValue}
+                value={locationQuery}
                 onChange={(e) => setLocationQuery(e.currentTarget.value)}
                 autoFocus
               />

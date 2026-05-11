@@ -72,6 +72,19 @@ export function useUserLocation(): UseUserLocationResult {
       return null;
     }
 
+    // iOS Safari/Chrome silently fail on http:// — geolocation requires a
+    // secure context. Surface this clearly instead of timing out.
+    if (
+      typeof window !== 'undefined' &&
+      window.location.protocol !== 'https:' &&
+      window.location.hostname !== 'localhost' &&
+      window.location.hostname !== '127.0.0.1'
+    ) {
+      setStatus('unavailable');
+      setErrorMessage('Location requires HTTPS. Please reload over a secure connection.');
+      return null;
+    }
+
     setStatus('requesting');
     setErrorMessage(null);
 
@@ -100,16 +113,31 @@ export function useUserLocation(): UseUserLocationResult {
           }
         },
         (err) => {
+          // iOS frequently returns POSITION_UNAVAILABLE (code 2) when GPS is
+          // off or indoors, and TIMEOUT (code 3) when location services are
+          // slow. Distinguish them so the toast is actionable.
           if (err.code === err.PERMISSION_DENIED) {
             setStatus('denied');
-            setErrorMessage('Location permission was denied.');
+            setErrorMessage(
+              'Location permission was denied. Allow location access in your browser settings.'
+            );
+          } else if (err.code === err.POSITION_UNAVAILABLE) {
+            setStatus('error');
+            setErrorMessage(
+              'Could not determine your location. Make sure location services are enabled on your device.'
+            );
+          } else if (err.code === err.TIMEOUT) {
+            setStatus('error');
+            setErrorMessage('Location request timed out. Please try again.');
           } else {
             setStatus('error');
             setErrorMessage(err.message || 'Could not get your location.');
           }
           resolve(null);
         },
-        { enableHighAccuracy: false, timeout: 10000, maximumAge: 1000 * 60 * 60 }
+        // Longer timeout for iOS: GPS lock indoors can take 15+ seconds.
+        // maximumAge accepts a cached fix up to 10 minutes old.
+        { enableHighAccuracy: false, timeout: 20000, maximumAge: 1000 * 60 * 10 }
       );
     });
   }, []);
