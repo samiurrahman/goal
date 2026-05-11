@@ -51,6 +51,24 @@ const splitName = (full?: string | null) => {
  *    as "User" in reviews.
  */
 export default function SupabaseSessionSync() {
+  // Keep the `access_token` cookie in sync with Supabase's session for the
+  // entire app lifetime. Without this, the cookie holds the JWT from the
+  // initial login forever — when Supabase auto-refreshes the token, or when
+  // the user signs out in another tab, the cookie diverges from the actual
+  // session and the middleware bounces logged-in users to /login.
+  useEffect(() => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.access_token) {
+        storeAccessToken(session.access_token);
+      } else {
+        removeAccessToken();
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data }) => {
       const session = data?.session;

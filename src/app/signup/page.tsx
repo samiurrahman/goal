@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken } from '@/utils/authToken';
+import { useRedirectIfAuthenticated } from '@/hooks/useRedirectIfAuthenticated';
 import { insertAgentWithUniqueSlug, ReservedSlugError } from '@/lib/slug';
 import googleSvg from '@/images/Google.svg';
 import Input from '@/shared/Input';
@@ -33,6 +34,7 @@ const getFriendlySignupMessage = (rawMessage: string) => {
 const PageSignUp = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  useRedirectIfAuthenticated('/');
   const userType = (searchParams.get('userType') === 'agent' ? 'agent' : 'user') as
     | 'user'
     | 'agent';
@@ -91,7 +93,11 @@ const PageSignUp = () => {
         storeAccessToken(data.session.access_token);
       }
       toast.success('Account created successfully. Please sign in.');
-      router.push('/login');
+      const redirectParam = searchParams.get('redirect');
+      const loginHref = redirectParam
+        ? `/login?redirect=${encodeURIComponent(redirectParam)}`
+        : '/login';
+      router.replace(loginHref);
     }
   };
 

@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken } from '@/utils/authToken';
+import { useRedirectIfAuthenticated } from '@/hooks/useRedirectIfAuthenticated';
 import googleSvg from '@/images/Google.svg';
 import Input from '@/shared/Input';
 import ButtonPrimary from '@/shared/ButtonPrimary';
@@ -34,6 +35,7 @@ const getFriendlyAuthMessage = (rawMessage: string) => {
 const PageLogin = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  useRedirectIfAuthenticated('/');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
@@ -81,13 +83,15 @@ const PageLogin = () => {
         setErrors({ form: friendlyMessage });
       }
     } else {
-      // Store access token in cookie (secure, sameSite strict)
+      // Store access token in cookie so the middleware sees the user as
+      // authenticated on the very next request. The onAuthStateChange listener
+      // in SupabaseSessionSync also refreshes this cookie whenever Supabase
+      // rotates the token, so it stays in sync for the entire session.
       if (data?.session?.access_token) {
         storeAccessToken(data.session.access_token);
       }
-      // Redirect after login
       const redirectPath = searchParams.get('redirect') || '/';
-      router.push(redirectPath);
+      router.replace(redirectPath);
     }
   };
 
