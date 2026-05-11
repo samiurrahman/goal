@@ -518,6 +518,50 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       return;
     }
 
+    const { data: agentData } = await supabase
+      .from('agents')
+      .select('contact_number')
+      .eq('auth_user_id', resolvedAgentId)
+      .maybeSingle();
+
+    const currency = packageDetails?.currency ?? 'INR';
+    const totalDisplay = `${totalAmount.toLocaleString('en-IN')} ${currency}`;
+    const packageTitle = packageDetails?.title ?? 'your package';
+    const bookingId = String(createdBooking.id);
+
+    const sendWhatsApp = (to: string | undefined | null, params: string[]) => {
+      const phone = (to || '').trim();
+      if (!phone) return;
+      fetch('/api/whatsapp/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: phone,
+          template: {
+            name: 'booking_confirmation',
+            language: 'en_US',
+            params,
+          },
+        }),
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            console.error('WhatsApp send failed:', await res.text());
+          }
+        })
+        .catch((err) => console.error('WhatsApp request error:', err));
+    };
+
+    const templateParams = [
+      packageTitle,
+      String(totalGuests),
+      totalDisplay,
+      bookingId,
+    ];
+
+    sendWhatsApp(agentData?.contact_number, templateParams);
+    sendWhatsApp(bookingMobile, templateParams);
+
     const params = new URLSearchParams();
 
     if (packageDetails?.id) params.set('package_id', String(packageDetails.id));

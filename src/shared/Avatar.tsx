@@ -10,6 +10,7 @@ export interface AvatarProps {
   userName?: string;
   hasChecked?: boolean;
   hasCheckedClass?: string;
+  priority?: boolean;
 }
 
 const Avatar: FC<AvatarProps> = ({
@@ -20,6 +21,7 @@ const Avatar: FC<AvatarProps> = ({
   userName,
   hasChecked,
   hasCheckedClass = 'w-4 h-4 -top-0.5 -right-0.5',
+  priority = false,
 }) => {
   const url = imgUrl || '';
   const name = userName || '';
@@ -39,7 +41,8 @@ const Avatar: FC<AvatarProps> = ({
           src={url}
           alt={name}
           fill
-          sizes="(max-width: 768px) 96px, 96px"
+          sizes="96px"
+          priority={priority}
         />
       )}
       <span className="wil-avatar__name">{name[0]}</span>

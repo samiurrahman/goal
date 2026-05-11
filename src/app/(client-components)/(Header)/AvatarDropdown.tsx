@@ -9,6 +9,7 @@ import { removeAccessToken } from '@/utils/authToken';
 import { resolvePublicImageUrl } from '@/utils/supabaseStorageHelper';
 import useOutsideAlerter from '@/hooks/useOutsideAlerter';
 import { shouldRedirectHomeOnLogout } from '@/constants/protectedRoutes';
+import { clearHeaderCache, readHeaderCache, writeHeaderCache } from '@/utils/headerCache';
 import type { User } from '@supabase/supabase-js';
 interface Props {
   className?: string;
@@ -40,6 +41,18 @@ export default function AvatarDropdown({ className = '' }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   useOutsideAlerter(containerRef, () => setOpen(false));
 
+  useEffect(() => {
+    const cache = readHeaderCache();
+    if (!cache?.loggedIn) return;
+    setDisplayName(cache.displayName || DEFAULT_DISPLAY_NAME);
+    setUserType(cache.userType);
+    setCity(cache.city);
+    setState(cache.state);
+    setProfileUrl(cache.profileUrl);
+    setAgentSlug(cache.agentSlug);
+    setIsAuthReady(true);
+  }, []);
+
   const resetDetails = () => {
     setDisplayName(DEFAULT_DISPLAY_NAME);
     setUserType(null);
@@ -59,11 +72,22 @@ export default function AvatarDropdown({ className = '' }: Props) {
       agentSlug: null,
     };
 
-    const { data: userDetailsData } = await supabase
-      .from('user_details')
-      .select('user_type, first_name, last_name, city, state, profile_image')
-      .eq('auth_user_id', userId)
-      .maybeSingle();
+    // Fire both in parallel — for non-agents the agents row will simply be null.
+    const [userDetailsRes, agentRes] = await Promise.all([
+      supabase
+        .from('user_details')
+        .select('user_type, first_name, last_name, city, state, profile_image')
+        .eq('auth_user_id', userId)
+        .maybeSingle(),
+      supabase
+        .from('agents')
+        .select('known_as, city, state, slug, profile_image')
+        .eq('auth_user_id', userId)
+        .maybeSingle(),
+    ]);
+
+    const userDetailsData = userDetailsRes.data;
+    const agentData = agentRes.data;
 
     if (!userDetailsData) return fallback;
 
@@ -85,12 +109,6 @@ export default function AvatarDropdown({ className = '' }: Props) {
         agentSlug: null,
       };
     }
-
-    const { data: agentData } = await supabase
-      .from('agents')
-      .select('known_as, city, state, slug, profile_image')
-      .eq('auth_user_id', userId)
-      .maybeSingle();
 
     const knownAs = (agentData?.known_as || '').trim();
     return {
@@ -120,6 +138,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
       if (!nextUser) {
         setOpen(false);
         resetDetails();
+        clearHeaderCache();
         setIsAuthReady(true);
         return;
       }
@@ -132,7 +151,8 @@ export default function AvatarDropdown({ className = '' }: Props) {
 
       if (!isMounted || requestId !== currentRequest) return;
 
-      setDisplayName(details.displayName || metadataFullName);
+      const finalDisplayName = details.displayName || metadataFullName;
+      setDisplayName(finalDisplayName);
       setUserType(details.userType);
       setCity(details.city);
       setState(details.state);
@@ -144,6 +164,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
         (nextUser.user_metadata?.picture as string | undefined) ||
         '';
 
+      let resolvedProfileUrl = details.profileUrl;
       if (!details.profileUrl && metadataAvatar) {
         const { error: upsertError } = await supabase.from('user_details').upsert(
           {
@@ -155,9 +176,20 @@ export default function AvatarDropdown({ className = '' }: Props) {
         );
 
         if (!upsertError) {
+          resolvedProfileUrl = metadataAvatar;
           setProfileUrl(metadataAvatar);
         }
       }
+
+      writeHeaderCache({
+        loggedIn: true,
+        displayName: finalDisplayName,
+        userType: details.userType,
+        city: details.city,
+        state: details.state,
+        profileUrl: resolvedProfileUrl,
+        agentSlug: details.agentSlug,
+      });
 
       setIsAuthReady(true);
     };
@@ -200,6 +232,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
 
     const finalizeLocalLogout = () => {
       removeAccessToken();
+      clearHeaderCache();
 
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('app_forced_logged_out', '1');
@@ -274,7 +307,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
         aria-busy={!isAuthReady}
         className="self-center w-10 h-10 sm:w-12 sm:h-12 rounded-full text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 focus:outline-none flex items-center justify-center"
       >
-        <Avatar sizeClass="w-8 h-8 sm:w-9 sm:h-9" imgUrl={avatarUrl} />
+        <Avatar sizeClass="w-8 h-8 sm:w-9 sm:h-9" imgUrl={avatarUrl} priority />
       </button>
       {open && (
         <div className="absolute z-50 w-screen max-w-[260px] px-4 top-full -right-10 sm:right-0 sm:px-0">

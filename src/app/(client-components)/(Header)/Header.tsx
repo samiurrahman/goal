@@ -1,19 +1,25 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Logo from '@/shared/Logo';
 import NotifyDropdown from './NotifyDropdown';
 import AvatarDropdown from './AvatarDropdown';
 import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
 import ButtonPrimary from '@/shared/ButtonPrimary';
+import { readHeaderCache } from '@/utils/headerCache';
 
 const Header3 = () => {
-  //
-
   const { isLoggedIn, isAuthReady } = useSupabaseIsLoggedIn();
   const pathname = usePathname();
   const hideOnMobile = pathname === '/';
+
+  const [optimisticLoggedIn, setOptimisticLoggedIn] = useState<boolean | null>(null);
+  useEffect(() => {
+    setOptimisticLoggedIn(readHeaderCache()?.loggedIn ?? false);
+  }, []);
+
+  const showLoggedInUi = isAuthReady ? isLoggedIn : optimisticLoggedIn;
   return (
     <>
       <div
@@ -42,11 +48,10 @@ const Header3 = () => {
 
                 {/* {isLoggedIn && <NotifyDropdown />}
                 {isLoggedIn && <AvatarDropdown />} */}
-                {!isAuthReady ? (
+                {showLoggedInUi === null ? (
                   <div className="w-24 h-10 self-center" aria-hidden="true" />
-                ) : isLoggedIn ? (
+                ) : showLoggedInUi ? (
                   <>
-                    {' '}
                     <NotifyDropdown />
                     <AvatarDropdown />
                   </>
