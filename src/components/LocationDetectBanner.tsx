@@ -46,7 +46,7 @@ const LocationDetectBanner: FC<LocationDetectBannerProps> = ({
       className={`flex items-center justify-between gap-3 rounded-2xl border border-primary-200 bg-primary-50 dark:border-primary-900 dark:bg-primary-900/20 px-4 py-3 ${className}`}
     >
       <div className="flex items-center gap-3 min-w-0">
-        <span className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-white dark:bg-neutral-900 text-primary-600 dark:text-primary-300">
+        <span className="flex-shrink-0 inline-flex items-center justify-center w-9 h-9 rounded-full bg-white dark:bg-neutral-900 text-primary-6000 dark:text-primary-300">
           <MapPinIcon className="w-5 h-5" />
         </span>
         <p className="text-sm text-neutral-800 dark:text-neutral-100 leading-snug">
@@ -61,7 +61,7 @@ const LocationDetectBanner: FC<LocationDetectBannerProps> = ({
           type="button"
           onClick={handleClick}
           disabled={status === 'requesting'}
-          className="px-4 py-1.5 rounded-full bg-primary-600 text-white text-sm font-medium hover:bg-primary-700 disabled:opacity-60"
+          className="px-4 py-1.5 rounded-full bg-primary-6000 text-white text-sm font-medium hover:bg-primary-700 disabled:opacity-60"
         >
           {status === 'requesting' ? 'Detecting…' : 'Use my location'}
         </button>

@@ -61,19 +61,23 @@ export async function allocateAgentSlug(name: string): Promise<string> {
  */
 export async function allocatePackageSlug(
   agentId: string,
-  title: string
+  title: string,
+  excludePackageId?: number | string
 ): Promise<string> {
   const base = slugify(title);
   if (!base) throw new Error('Cannot generate a slug from an empty title.');
 
   for (let i = 0; i <= MAX_SUFFIX; i++) {
     const candidate = i === 0 ? base : `${base}-${i + 1}`;
-    const { data, error } = await supabase
+    let query = supabase
       .from('packages')
       .select('id')
       .eq('agent_id', agentId)
-      .eq('slug', candidate)
-      .maybeSingle();
+      .eq('slug', candidate);
+    if (excludePackageId !== undefined && excludePackageId !== null) {
+      query = query.neq('id', excludePackageId);
+    }
+    const { data, error } = await query.maybeSingle();
     if (error) throw error;
     if (!data) return candidate;
   }

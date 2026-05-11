@@ -543,8 +543,10 @@ const AddPackageWizardModal = ({
     setIsSaving(true);
 
     // Allocate a unique slug scoped to this agent.
-    // - For edits, keep the existing slug (don't break shared URLs).
-    // - For new packages, prefer a user-edited slug field, fall back to title.
+    // - For published edits: keep the existing slug so shared URLs don't break.
+    // - For drafts (e.g. cloned packages still unpublished): re-allocate from
+    //   the user's current title/slug so we don't keep a temp timestamped slug.
+    // - For new packages: allocate fresh from the user's input.
     const userSlugInput = (meta.slug || '').trim();
     const slugSource = userSlugInput || meta.title;
     let packageSlug: string;
@@ -552,12 +554,19 @@ const AddPackageWizardModal = ({
       if (editPackageId) {
         const { data: existing } = await supabase
           .from('packages')
-          .select('slug')
+          .select('slug, published')
           .eq('id', editPackageId)
           .maybeSingle();
-        packageSlug =
-          (existing?.slug && String(existing.slug).trim()) ||
-          (await allocatePackageSlug(agentAuthUserId, slugSource));
+
+        const existingSlug = (existing?.slug && String(existing.slug).trim()) || '';
+        const existingIsPublished = existing?.published !== false;
+
+        if (existingIsPublished) {
+          packageSlug =
+            existingSlug || (await allocatePackageSlug(agentAuthUserId, slugSource, editPackageId));
+        } else {
+          packageSlug = await allocatePackageSlug(agentAuthUserId, slugSource, editPackageId);
+        }
       } else {
         packageSlug = await allocatePackageSlug(agentAuthUserId, slugSource);
       }
