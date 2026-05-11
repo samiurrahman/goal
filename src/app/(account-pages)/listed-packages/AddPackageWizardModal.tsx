@@ -665,7 +665,12 @@ const AddPackageWizardModal = ({
       if (imageUpload.error) {
         toast.error('Image upload failed: ' + imageUpload.error);
       } else {
-        finalThumbnailUrl = imageUpload.url;
+        // Append a cache-buster so Next.js Image (minimumCacheTTL: 30 days)
+        // and CDN/browser caches don't keep serving the previous thumbnail
+        // at this same Supabase storage path after an overwrite.
+        finalThumbnailUrl = imageUpload.url
+          ? `${imageUpload.url}${imageUpload.url.includes('?') ? '&' : '?'}v=${Date.now()}`
+          : null;
         finalThumbnailBlur = imageUpload.lqip ?? null;
       }
     }

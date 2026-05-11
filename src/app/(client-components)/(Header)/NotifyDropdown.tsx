@@ -177,16 +177,27 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
           .eq('email_id', user.email)
           .maybeSingle()) as any;
 
+        // Only adopt this orphan agent row if it has no auth_user_id yet —
+        // matching by email alone would mis-classify a regular user who
+        // happens to share an email with an existing agent.
         if (agentByEmail && !agentByEmail.auth_user_id) {
           await (supabase.from('agents') as any)
             .update({ auth_user_id: user.id })
             .eq('id', agentByEmail.id);
+          hasAgentProfile = true;
         }
-
-        hasAgentProfile = !!agentByEmail;
       }
 
+      // Authoritative agent classification: explicit `user_type === 'agent'`
+      // OR an `agents` row that's actually linked to this auth user.
       const isAgent = userDetails?.user_type === 'agent' || hasAgentProfile;
+      console.debug('[NotifyDropdown] role detection', {
+        userId: user.id,
+        userEmail: user.email,
+        userType: userDetails?.user_type,
+        hasAgentProfile,
+        isAgent,
+      });
 
       if (isAgent) {
         const { data: rows, error: rowsError } = await supabase
@@ -543,7 +554,15 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
       <div ref={containerRef} className={`relative flex ${className}`}>
         <button
           type="button"
-          onClick={() => setOpen((value) => !value)}
+          onClick={() => {
+            setOpen((value) => {
+              const next = !value;
+              // On open, bump refreshKey so we re-fetch any cancellations or
+              // confirmations that the realtime channel may have missed.
+              if (next) setRefreshKey((k) => k + 1);
+              return next;
+            });
+          }}
           className={` ${
             open ? '' : 'text-opacity-90'
           } group self-center w-10 h-10 sm:w-12 sm:h-12 hover:bg-gray-100 dark:hover:bg-neutral-800 rounded-full inline-flex items-center justify-center text-base font-medium hover:text-opacity-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75 relative`}
