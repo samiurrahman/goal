@@ -214,6 +214,16 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
           ).map((item) => ({ ...item, readByAgent: false, readByUser: false }));
         }
 
+        // Agent only cares about: new pending bookings + user-initiated
+        // cancellations. Confirmations/rejections were done by the agent so
+        // they don't need a self-notification.
+        parsedRows = parsedRows.filter((item) => {
+          const status = (item.status || '').toLowerCase();
+          if (status === 'pending') return true;
+          if (status === 'cancelled' && item.cancelled_by === 'user') return true;
+          return false;
+        });
+
         const userIds = Array.from(new Set(parsedRows.map((item) => item.auth_user_id)));
 
         let userMap: Record<string, UserDetailsRow> = {};
@@ -301,11 +311,9 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
               filter: `agent_id=eq.${user.id}`,
             },
             async (payload) => {
-              const previous = payload.old as BookingRow;
               const current = payload.new as BookingRow;
               if ((current.status || '').toLowerCase() !== 'cancelled') return;
               if (current.cancelled_by !== 'user') return;
-              if ((previous.status || '').toLowerCase() === 'cancelled') return;
 
               let customerName = 'A traveler';
               const { data: customer } = await supabase
@@ -332,7 +340,11 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
               });
             }
           )
-          .subscribe();
+          .subscribe((status) => {
+            if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+              console.warn('[NotifyDropdown] agent channel status:', status);
+            }
+          });
 
         return () => {
           supabase.removeChannel(agentChannel);
@@ -421,18 +433,16 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
             filter: `auth_user_id=eq.${user.id}`,
           },
           async (payload) => {
-            const previous = payload.old as BookingRow;
             const current = payload.new as BookingRow;
             const status = (current.status || '').toLowerCase();
-            const previousStatus = (previous.status || '').toLowerCase();
 
-            const isFreshConfirm = status === 'confirmed' && previousStatus !== 'confirmed';
+            const isConfirmed = status === 'confirmed';
             const isAgentCancellation =
-              status === 'cancelled' &&
-              previousStatus !== 'cancelled' &&
-              current.cancelled_by === 'agent';
+              status === 'cancelled' && current.cancelled_by === 'agent';
 
-            if (!isFreshConfirm && !isAgentCancellation) return;
+            // Only notify on terminal transitions the user cares about.
+            // Dedup is handled by the deterministic notification id below.
+            if (!isConfirmed && !isAgentCancellation) return;
 
             let name = current.agent_name || 'Your agent';
             let avatar: string | null = null;
@@ -461,7 +471,11 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
             });
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+            console.warn('[NotifyDropdown] user channel status:', status);
+          }
+        });
 
       return () => {
         supabase.removeChannel(userChannel);
