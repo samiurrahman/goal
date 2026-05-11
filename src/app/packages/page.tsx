@@ -5,6 +5,12 @@ import { Metadata } from 'next';
 import { buildPackagesQueryArgs, fetchPackages } from '@/lib/queries/packages';
 import { Package } from '@/data/types';
 
+// ISR — re-render at most once per minute so SEO crawlers get fresh content
+// and visitors get fast cached HTML. Mutations (create/delete/publish toggle)
+// hit /api/revalidate which forces an immediate refresh via revalidatePath,
+// so agents never have to wait the full 60s to see their own changes.
+export const revalidate = 60;
+
 export const metadata: Metadata = {
   title: 'Umrah Packages 2025 | Compare Best Deals',
   description:

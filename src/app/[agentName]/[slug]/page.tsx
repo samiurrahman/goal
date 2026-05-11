@@ -12,8 +12,12 @@ import MobileFooterSticky from '../(components)/MobileFooterSticky';
 import PurchaseSummary from '../(components)/PurchaseSummary';
 import type { PackageDetails } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
-import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+
+// ISR — re-render at most once per minute. Edits from the agent's wizard
+// trigger an immediate revalidatePath via /api/revalidate so changes show up
+// without waiting the full 60s window.
+export const revalidate = 60;
 
 type RoomRate = { value: string; people: number; default: boolean };
 
@@ -304,8 +308,6 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
           icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
         }));
 
-  const isLoggedIn = Boolean(cookies().get('access_token')?.value);
-
   const parsedDefaultPricing = parseJson<{ people?: number; value?: number; currency?: string }>(
     package_details?.default_pricing,
     {}
@@ -324,10 +326,11 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   checkoutParams.set('sharing', String(sharingCount));
   const checkoutUrl = `/checkout?${checkoutParams.toString()}`;
 
-  // Logged-out users go through login first, then land directly on /checkout
-  const reserveHref = isLoggedIn
-    ? checkoutUrl
-    : `/login?redirect=${encodeURIComponent(checkoutUrl)}`;
+  // Always route through /login?redirect= — the login page's
+  // useRedirectIfAuthenticated hook immediately bounces already-logged-in
+  // users to the target, so this stays correct for both states AND keeps the
+  // page ISR-cacheable (no cookies() call → no forced dynamic rendering).
+  const reserveHref = `/login?redirect=${encodeURIComponent(checkoutUrl)}`;
 
   const purchaseSummaryProps = {
     sharingRates: sharingRateList,

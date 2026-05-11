@@ -23,6 +23,7 @@ import { useRouter } from 'next/navigation';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonSecondary from '@/shared/ButtonSecondary';
 import ShareButton from '@/shared/ShareButton';
+import { revalidatePaths } from '@/utils/revalidate';
 import toast, { Toaster } from 'react-hot-toast';
 
 type SortKey = 'newest' | 'published' | 'unpublished';
@@ -246,6 +247,12 @@ const ListedPackagesPage = () => {
 
     toast.success(nextPublished ? 'Package published.' : 'Package unpublished.');
     queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
+
+    const pkgSlug = (pkg.slug || '').trim();
+    const paths = ['/packages'];
+    if (agentSlug) paths.push(`/${agentSlug}`);
+    if (agentSlug && pkgSlug) paths.push(`/${agentSlug}/${pkgSlug}`);
+    void revalidatePaths(paths);
   };
 
   const handleTogglePublished = async (pkg: Package) => {
@@ -266,6 +273,11 @@ const ListedPackagesPage = () => {
   };
 
   const handleDelete = async (id: number) => {
+    // Capture the slug before we drop the row, so we can revalidate the
+    // package's detail page too.
+    const deletedPkg = (agentPackages || []).find((p) => p.id === id);
+    const deletedSlug = (deletedPkg?.slug || '').trim();
+
     const { error: packageError } = await supabase.from('packages').delete().eq('id', id);
     if (packageError) {
       toast.error('Failed to delete package: ' + packageError.message);
@@ -284,6 +296,11 @@ const ListedPackagesPage = () => {
     }
 
     queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
+
+    const paths = ['/packages'];
+    if (agentSlug) paths.push(`/${agentSlug}`);
+    if (agentSlug && deletedSlug) paths.push(`/${agentSlug}/${deletedSlug}`);
+    void revalidatePaths(paths);
   };
 
   const requestDeletePackage = (id: number) => {
@@ -411,6 +428,7 @@ const ListedPackagesPage = () => {
             agentSlug={agentSlug}
             onCreated={() => {
               queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
+              void revalidatePaths(['/packages', `/${agentSlug}`]);
             }}
           />
         ) : (
@@ -552,6 +570,10 @@ const ListedPackagesPage = () => {
                                 queryClient.invalidateQueries({
                                   queryKey: ['agentPackages', agentUUID],
                                 });
+                                const pkgSlug = (pkg.slug || '').trim();
+                                const paths = ['/packages', `/${agentSlug}`];
+                                if (pkgSlug) paths.push(`/${agentSlug}/${pkgSlug}`);
+                                void revalidatePaths(paths);
                               }}
                             />
                           ) : null}

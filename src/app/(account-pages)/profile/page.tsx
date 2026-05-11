@@ -16,6 +16,7 @@ import Textarea from '@/shared/Textarea';
 import type { Agent, AgentInfoFeature, TwMainColor } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 import { slugify, RESERVED_AGENT_SLUGS } from '@/lib/slug';
+import { revalidatePaths } from '@/utils/revalidate';
 
 // When an agent updates slug / known_as / profile_image, propagate the new
 // values to the denormalized copies on packages, package_details and bookings.
@@ -391,6 +392,15 @@ const AgentProfilePage = () => {
       oldProfileImage: (agent.profile_image || '').trim(),
       newProfileImage: (form.profile_image || '').trim() || null,
     });
+
+    // Invalidate ISR caches so the agent's public profile, every package
+    // detail page, and the packages listing reflect the new known_as / slug
+    // / profile_image / about_us immediately.
+    const newSlug = slugUpdate.slug || oldSlug;
+    const pathsToRevalidate = ['/packages'];
+    if (oldSlug && oldSlug !== newSlug) pathsToRevalidate.push(`/${oldSlug}`);
+    if (newSlug) pathsToRevalidate.push(`/${newSlug}`);
+    void revalidatePaths(pathsToRevalidate);
 
     toast.success(
       slugUpdate.slug
