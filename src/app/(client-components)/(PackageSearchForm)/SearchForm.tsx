@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Fragment, useMemo, useState } from 'react';
+import React, { Fragment, useCallback, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Popover, Transition } from '@headlessui/react';
 import {
@@ -9,9 +9,12 @@ import {
   XMarkIcon,
   CalendarDaysIcon,
 } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
 import { usePackageSearch, type CityItem } from '@/hooks/usePackageSearch';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { matchUserLocationCities } from '@/utils/matchUserLocationCities';
 
 // Desktop search pill that matches the HajjScanner design system wireframe:
 //   - white rounded-full bar with column dividers
@@ -47,6 +50,36 @@ const SearchForm = () => {
     setLocationQuery('');
     close();
   };
+
+  const { status: geoStatus, request: requestGeo, errorMessage: geoError } = useUserLocation();
+  const isDetecting = geoStatus === 'requesting';
+
+  const detectAndPick = useCallback(
+    async (close: () => void) => {
+      const detected = await requestGeo();
+      if (!detected) {
+        if (geoError) toast.error(geoError);
+        return;
+      }
+      const matched = matchUserLocationCities(
+        detected,
+        cities.map((c) => ({ id: String(c.id), name: c.name, state: c.state ?? null }))
+      );
+      if (matched.length === 0) {
+        toast.error(
+          `No packages near ${detected.city || detected.state || 'your area'} yet. Pick a city manually.`
+        );
+        return;
+      }
+      const cityRow = cities.find((c) => c.name === matched[0]);
+      if (!cityRow) return;
+      handleSelectLocation(cityRow);
+      setLocationQuery('');
+      toast.success(`Showing packages near ${cityRow.name}`);
+      close();
+    },
+    [requestGeo, geoError, cities, handleSelectLocation]
+  );
 
   return (
     <form
@@ -88,6 +121,15 @@ const SearchForm = () => {
               <Popover.Panel className="absolute z-50 left-0 top-full mt-3 w-screen max-w-md">
                 <div className="overflow-hidden rounded-3xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 shadow-xl">
                   <div className="p-4 border-b border-neutral-200 dark:border-neutral-700">
+                    <button
+                      type="button"
+                      onClick={() => detectAndPick(close)}
+                      disabled={isDetecting || citiesLoading}
+                      className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 dark:bg-primary-900/20 dark:border-primary-900 px-3 py-1.5 text-xs font-medium text-primary-700 dark:text-primary-200 hover:bg-primary-100 dark:hover:bg-primary-900/40 disabled:opacity-60 transition-colors"
+                    >
+                      <MapPinIcon className="w-3.5 h-3.5" />
+                      {isDetecting ? 'Detecting…' : 'Use my location'}
+                    </button>
                     <div className="relative">
                       <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                       <input
