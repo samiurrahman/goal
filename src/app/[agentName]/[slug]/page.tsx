@@ -9,7 +9,7 @@ import HostInformation from '../(components)/HostInformation';
 import AmenitiesSection from '../(components)/AmenitiesSection';
 import PackageInfo from '../(components)/PackageInfo';
 import MobileFooterSticky from '../(components)/MobileFooterSticky';
-import PurchaseSummary from '../(components)/PurchaseSummary';
+import PurchaseSummaryInteractive from '../(components)/PurchaseSummaryInteractive';
 import type { PackageDetails } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 import { notFound } from 'next/navigation';
@@ -368,7 +368,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
         {/* SIDEBAR: Purchase summary, sticky on lg+, hidden on mobile (replaced by MobileFooterSticky) */}
         <aside className="hidden lg:block lg:sticky lg:top-28 lg:self-start w-full lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0">
           <div className="max-w-md mx-auto w-full">
-            <PurchaseSummary {...purchaseSummaryProps} />
+            <PurchaseSummaryInteractive {...purchaseSummaryProps} />
           </div>
         </aside>
       </main>
