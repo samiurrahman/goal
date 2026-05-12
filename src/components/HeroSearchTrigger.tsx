@@ -6,9 +6,12 @@ import { Dialog, Transition } from '@headlessui/react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { XMarkIcon, MapPinIcon, CalendarDaysIcon } from '@heroicons/react/24/solid';
 import { useTimeoutFn } from 'react-use';
+import toast from 'react-hot-toast';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
 import { usePackageSearch, type CityItem } from '@/hooks/usePackageSearch';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { matchUserLocationCities } from '@/utils/matchUserLocationCities';
 
 type FieldName = 'location' | 'month';
 
@@ -46,6 +49,31 @@ const HeroSearchTrigger = () => {
     handleSelectLocation(city);
     setLocationQuery(city.name + (city.state ? ', ' + city.state : ''));
     setFieldNameShow('month');
+  };
+
+  const { status: geoStatus, request: requestGeo, errorMessage: geoError } = useUserLocation();
+  const isDetecting = geoStatus === 'requesting';
+
+  const detectAndPick = async () => {
+    const detected = await requestGeo();
+    if (!detected) {
+      if (geoError) toast.error(geoError);
+      return;
+    }
+    const matched = matchUserLocationCities(
+      detected,
+      allCities.map((c) => ({ id: String(c.id), name: c.name, state: c.state ?? null }))
+    );
+    if (matched.length === 0) {
+      toast.error(
+        `No packages near ${detected.city || detected.state || 'your area'} yet. Pick a city manually.`
+      );
+      return;
+    }
+    const cityRow = allCities.find((c) => c.name === matched[0]);
+    if (!cityRow) return;
+    onPickLocation(cityRow);
+    toast.success(`Showing packages near ${cityRow.name}`);
   };
 
   const onClearAll = () => {
@@ -141,7 +169,16 @@ const HeroSearchTrigger = () => {
         ) : (
           <div className="p-5">
             <span className="block font-semibold text-xl sm:text-2xl">Where to?</span>
-            <div className="relative mt-5">
+            <button
+              type="button"
+              onClick={detectAndPick}
+              disabled={isDetecting || citiesLoading}
+              className="mt-4 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 dark:bg-primary-900/20 dark:border-primary-900 px-3 py-1.5 text-xs font-medium text-primary-700 dark:text-primary-200 hover:bg-primary-100 dark:hover:bg-primary-900/40 disabled:opacity-60 transition-colors"
+            >
+              <MapPinIcon className="w-3.5 h-3.5" />
+              {isDetecting ? 'Detecting…' : 'Use my location'}
+            </button>
+            <div className="relative mt-4">
               <input
                 className="block w-full bg-transparent border px-4 py-3 pr-12 border-neutral-900 dark:border-neutral-200 rounded-xl focus:ring-0 focus:outline-none text-base leading-none placeholder-neutral-500 dark:placeholder-neutral-300 truncate font-bold placeholder:truncate"
                 placeholder="Search location"
