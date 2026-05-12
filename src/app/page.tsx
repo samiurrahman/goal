@@ -172,20 +172,20 @@ async function PageHome() {
               <span className="text-[12px] tracking-[0.12em] uppercase font-semibold text-secondary-400">
                 For travel agents
               </span>
-              <h2 className="mt-2 text-3xl lg:text-[44px] leading-[1.1] font-semibold tracking-tight max-w-[16ch]">
+              <h2 className="mt-2 text-3xl lg:text-[44px] leading-[1.1] font-thin tracking-tight max-w-[16ch]">
                 Reach pilgrims who already trust the platform.
               </h2>
               <p className="mt-4 text-base lg:text-[18px] leading-relaxed text-primary-200 max-w-[56ch]">
-                List your Hajj &amp; Umrah packages on Searchumrah. We send you qualified inquiries
-                — never resold, never shared. You stay in full control of pricing, communication,
-                and bookings.
+                List your Umrah packages on Searchumrah. We send you qualified inquiries — never
+                resold, never shared. You stay in full control of pricing, communication, and
+                bookings.
               </p>
 
               <ul className="mt-7 grid gap-3.5">
                 {[
                   {
                     title: 'Free to list.',
-                    body: 'No subscription, no per-listing fee. We charge a flat fee only on confirmed bookings.',
+                    body: 'No commision, no per-listing fee. We charge a flat Annual fee subscription.',
                   },
                   {
                     title: 'Direct inquiries.',
@@ -211,25 +211,10 @@ async function PageHome() {
                   </li>
                 ))}
               </ul>
-
-              <div className="mt-8 flex gap-3 flex-wrap">
-                <Link
-                  href="/signup?userType=agent"
-                  className="inline-flex items-center justify-center rounded-full bg-white text-primary-900 hover:bg-primary-50 px-7 py-4 text-base font-semibold transition"
-                >
-                  List your packages
-                </Link>
-                <Link
-                  href="/packages"
-                  className="inline-flex items-center justify-center rounded-full bg-transparent text-white border border-white/30 hover:border-white/70 px-7 py-4 text-base font-semibold transition"
-                >
-                  See how it works
-                </Link>
-              </div>
             </div>
 
             <aside className="rounded-[28px] bg-white/5 border border-white/10 p-8 backdrop-blur-sm">
-              <h3 className="text-lg font-semibold">What other agents are seeing</h3>
+              <h3 className="text-lg font-thin">What other agents are seeing</h3>
               <p className="text-[13px] text-primary-300 mt-1">
                 Aggregated, last 12 months on Searchumrah
               </p>
@@ -237,7 +222,7 @@ async function PageHome() {
                 {[
                   { v: '+38%', k: 'Inquiry-to-booking rate vs WhatsApp' },
                   { v: '~ 4 hrs', k: 'Avg agent reply time' },
-                  { v: '240+', k: 'Active verified agents' },
+                  { v: '540+', k: 'Active verified agents' },
                   { v: '38,400', k: 'Pilgrims served' },
                 ].map((stat) => (
                   <div key={stat.k}>
@@ -256,10 +241,8 @@ async function PageHome() {
                   AN
                 </div>
                 <div>
-                  <div className="text-sm font-semibold">Imran Khan</div>
-                  <div className="text-[12px] text-primary-300 mt-0.5">
-                    Founder, Al-Noor Travels · Bangalore
-                  </div>
+                  <div className="text-sm font-light">Happy Agent</div>
+                  <div className="text-[12px] text-primary-300 mt-0.5">Founder · Bangalore</div>
                 </div>
               </div>
             </aside>

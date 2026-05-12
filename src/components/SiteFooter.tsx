@@ -8,7 +8,7 @@ const SiteFooter: React.FC = () => {
   return (
     <footer className="border-t border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
       <div className="container py-6 md:py-7 flex flex-col md:flex-row items-center md:justify-between gap-2 md:gap-4 text-[13px] text-neutral-500 dark:text-neutral-400">
-        <span>© {year} HajjScanner. All rights reserved.</span>
+        <span>© {year} Searchumrah. All rights reserved.</span>
         <span>Bangalore, India</span>
       </div>
     </footer>
