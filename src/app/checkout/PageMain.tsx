@@ -70,7 +70,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     enabled: !!packageIdFromUrl,
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('packages')
+        .from('packages_with_agent')
         .select('*')
         .eq('id', packageIdFromUrl)
         .single();

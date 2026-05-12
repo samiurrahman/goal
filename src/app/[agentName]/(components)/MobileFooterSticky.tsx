@@ -9,7 +9,7 @@ interface MobileFooterStickyProps {
   sharingRates: RoomRate[];
   initialGuests: number;
   initialSharing: number;
-  reserveHref: string;
+  checkoutUrl: string;
   priceLabel: string;
 }
 
@@ -17,7 +17,7 @@ const MobileFooterSticky = ({
   sharingRates,
   initialGuests,
   initialSharing,
-  reserveHref,
+  checkoutUrl,
   priceLabel,
 }: MobileFooterStickyProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -62,7 +62,7 @@ const MobileFooterSticky = ({
               sharingRates={sharingRates}
               initialGuests={initialGuests}
               initialSharing={initialSharing}
-              reserveHref={reserveHref}
+              checkoutUrl={checkoutUrl}
               className="!rounded-none"
               flat
             />

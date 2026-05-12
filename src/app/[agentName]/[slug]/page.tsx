@@ -75,7 +75,9 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
       )
       .ilike('slug', agentName)
       .limit(1),
-    supabase.from('packages').select('*').ilike('slug', slug).limit(5),
+    // packages_with_agent exposes agent fields + package_location sourced
+    // from agents.city, so renames/city-changes are reflected immediately.
+    supabase.from('packages_with_agent').select('*').ilike('slug', slug).limit(5),
   ]);
 
   const agentRow = Array.isArray(agentResult.data) ? agentResult.data[0] : null;
@@ -320,23 +322,23 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   // Slim checkout URL: only what isn't derivable from the package row.
   // package_id identifies the package; everything else (slug, agent_id, agent_name)
   // is read from the DB by the checkout page.
+  //
+  // The Reserve buttons render via ReserveLink (client component), which
+  // decides between /checkout and /login?redirect=<checkout> at click time
+  // based on the auth cookie + supabase session. Passing the raw checkout
+  // URL here lets that decision happen on the client without forcing this
+  // page out of ISR.
   const checkoutParams = new URLSearchParams();
   if (package_details?.id) checkoutParams.set('package_id', String(package_details.id));
   checkoutParams.set('guests', String(numberOfGuests));
   checkoutParams.set('sharing', String(sharingCount));
   const checkoutUrl = `/checkout?${checkoutParams.toString()}`;
 
-  // Always route through /login?redirect= — the login page's
-  // useRedirectIfAuthenticated hook immediately bounces already-logged-in
-  // users to the target, so this stays correct for both states AND keeps the
-  // page ISR-cacheable (no cookies() call → no forced dynamic rendering).
-  const reserveHref = `/login?redirect=${encodeURIComponent(checkoutUrl)}`;
-
   const purchaseSummaryProps = {
     sharingRates: sharingRateList,
     initialGuests: numberOfGuests,
     initialSharing: sharingCount,
-    reserveHref,
+    checkoutUrl,
   };
 
   return (
@@ -375,7 +377,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
         sharingRates={sharingRateList}
         initialGuests={numberOfGuests}
         initialSharing={sharingCount}
-        reserveHref={reserveHref}
+        checkoutUrl={checkoutUrl}
         priceLabel={formattedPrice}
       />
     </div>

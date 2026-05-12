@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
+import ReserveLink from '@/components/ReserveLink';
 
 type RoomRate = { value: string; people: number; default: boolean };
 
@@ -9,31 +9,18 @@ export interface PurchaseSummaryInteractiveProps {
   sharingRates: RoomRate[];
   initialGuests: number;
   initialSharing: number;
-  reserveHref: string;
+  checkoutUrl: string;
   className?: string;
   flat?: boolean;
 }
 
 const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
 
-const buildReserveHref = (baseHref: string, guests: number, sharing: number) => {
+const withGuestsAndSharing = (baseHref: string, guests: number, sharing: number) => {
   try {
-    const dummyOrigin = 'https://local.searchumrah';
-    const url = new URL(baseHref, dummyOrigin);
-
-    if (url.pathname === '/login') {
-      const redirect = url.searchParams.get('redirect');
-      if (redirect) {
-        const redirectUrl = new URL(redirect, dummyOrigin);
-        redirectUrl.searchParams.set('guests', String(guests));
-        redirectUrl.searchParams.set('sharing', String(sharing));
-        url.searchParams.set('redirect', `${redirectUrl.pathname}${redirectUrl.search}`);
-      }
-    } else {
-      url.searchParams.set('guests', String(guests));
-      url.searchParams.set('sharing', String(sharing));
-    }
-
+    const url = new URL(baseHref, 'https://local.searchumrah');
+    url.searchParams.set('guests', String(guests));
+    url.searchParams.set('sharing', String(sharing));
     return `${url.pathname}${url.search}`;
   } catch {
     return baseHref;
@@ -44,7 +31,7 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
   sharingRates,
   initialGuests,
   initialSharing,
-  reserveHref,
+  checkoutUrl,
   className = '',
   flat = false,
 }) => {
@@ -72,9 +59,9 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
   const formattedGst = gstAmount.toLocaleString('en-IN');
   const formattedGrandTotal = grandTotal.toLocaleString('en-IN');
 
-  const resolvedReserveHref = useMemo(
-    () => buildReserveHref(reserveHref, numberOfGuests, sharingCount),
-    [reserveHref, numberOfGuests, sharingCount]
+  const resolvedCheckoutUrl = useMemo(
+    () => withGuestsAndSharing(checkoutUrl, numberOfGuests, sharingCount),
+    [checkoutUrl, numberOfGuests, sharingCount]
   );
 
   return (
@@ -155,12 +142,12 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
         </div>
       </div>
 
-      <Link
-        href={resolvedReserveHref}
+      <ReserveLink
+        checkoutUrl={resolvedCheckoutUrl}
         className="ttnc-ButtonPrimary disabled:bg-opacity-70 bg-primary-6000 hover:bg-primary-700 text-neutral-50 relative h-auto inline-flex items-center justify-center rounded-full transition-colors text-sm sm:text-base font-medium px-4 py-3 sm:px-6"
       >
         Send enquiry
-      </Link>
+      </ReserveLink>
     </div>
   );
 };

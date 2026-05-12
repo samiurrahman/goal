@@ -11,7 +11,7 @@ export function useCityPackageCounts(limit = 10) {
     queryKey: ['city-package-counts', limit],
     queryFn: async (): Promise<CityPackageCount[]> => {
       const { data, error } = await supabase
-        .from('packages')
+        .from('packages_with_agent')
         .select('package_location')
         .not('package_location', 'is', null);
 

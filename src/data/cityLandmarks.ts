@@ -1,7 +1,8 @@
 // City -> landmark image mapping for the mobile homepage.
 // Drop landmark images into /public/images/cities/<filename>.
-// Keys are case-insensitive matches against the city name returned from the
-// `packages.package_location` field.
+// Keys are case-insensitive matches against the city name returned as
+// `package_location` from the `packages_with_agent` view (sourced from
+// `agents.city`).
 
 export const DEFAULT_CITY_IMAGE = '/images/cities/default.jpg';
 

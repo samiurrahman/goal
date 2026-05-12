@@ -106,7 +106,6 @@ interface PackageMetaForm {
   departure_date: string;
   arrival_date: string;
   location: string;
-  package_location: string;
   makkah_hotel_name: string;
   makkah_hotel_distance_m: string;
   madinah_hotel_name: string;
@@ -142,7 +141,6 @@ const initialMetaForm: PackageMetaForm = {
   departure_date: '',
   arrival_date: '',
   location: '',
-  package_location: '',
   makkah_hotel_name: '',
   makkah_hotel_distance_m: '',
   madinah_hotel_name: '',
@@ -348,7 +346,6 @@ const AddPackageWizardModal = ({
         : '',
       arrival_date: packageRow.arrival_date ? String(packageRow.arrival_date).slice(0, 10) : '',
       location: String(packageRow.location || ''),
-      package_location: String(packageRow.package_location || ''),
       makkah_hotel_name: String(packageRow.makkah_hotel_name || ''),
       makkah_hotel_distance_m: String(packageRow.makkah_hotel_distance_m ?? ''),
       madinah_hotel_name: String(packageRow.madinah_hotel_name || ''),
@@ -470,7 +467,6 @@ const AddPackageWizardModal = ({
           meta.departure_date,
           meta.arrival_date,
           meta.location,
-          meta.package_location,
           meta.makkah_hotel_name,
           meta.makkah_hotel_distance_m,
           meta.madinah_hotel_name,
@@ -623,7 +619,6 @@ const AddPackageWizardModal = ({
       departure_date: meta.departure_date || null,
       arrival_date: meta.arrival_date || null,
       location: meta.location.trim() || null,
-      package_location: meta.package_location.trim() || null,
       makkah_hotel_name: meta.makkah_hotel_name.trim() || null,
       makkah_hotel_distance_m: Number(meta.makkah_hotel_distance_m || 0),
       madinah_hotel_name: meta.madinah_hotel_name.trim() || null,
@@ -1044,15 +1039,6 @@ const AddPackageWizardModal = ({
                         name="location"
                         className="mt-1.5"
                         value={meta.location}
-                        onChange={handleMetaChange}
-                      />
-                    </div>
-                    <div>
-                      <Label>Package Location</Label>
-                      <Input
-                        name="package_location"
-                        className="mt-1.5"
-                        value={meta.package_location}
                         onChange={handleMetaChange}
                       />
                     </div>
