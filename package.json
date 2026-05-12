@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "seed:cities": "tsx scripts/seed-cities.ts",
+    "backfill:agent-cities": "tsx scripts/backfill-agent-city-ids.ts"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.14",
@@ -55,6 +57,10 @@
     "autoprefixer": "^10.4.14",
     "postcss": "^8.4.23",
     "prettier": "^3.7.4",
-    "tailwindcss": "^3.3.2"
+    "tailwindcss": "^3.3.2",
+    "tsx": "^4.19.0",
+    "adm-zip": "^0.5.16",
+    "@types/adm-zip": "^0.5.5",
+    "dotenv": "^16.4.5"
   }
 }

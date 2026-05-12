@@ -2,8 +2,11 @@ import BgGlassmorphism from '@/components/BgGlassmorphism';
 import React from 'react';
 import SectionGridFilterCard from './components/SectionGridFilterCard';
 import { Metadata } from 'next';
-import { buildPackagesQueryArgs, fetchPackages } from '@/lib/queries/packages';
-import { Package } from '@/data/types';
+import {
+  buildPackagesQueryArgs,
+  fetchPackagesWithRelaxation,
+  RelaxedFetchResult,
+} from '@/lib/queries/packages';
 
 // ISR — re-render at most once per minute so SEO crawlers get fresh content
 // and visitors get fast cached HTML. Mutations (create/delete/publish toggle)
@@ -75,12 +78,15 @@ const ListingPackagesPage = async ({ searchParams }: PageProps) => {
 
   const { payload, sort } = buildPackagesQueryArgs(getParam);
 
-  let initialData: Package[] = [];
+  let initialResult: RelaxedFetchResult = {
+    packages: [],
+    relaxedFilters: [],
+    effectivePayload: payload,
+  };
   try {
-    initialData = await fetchPackages({ payload, page: 0, pageSize: PAGE_SIZE, sort });
+    initialResult = await fetchPackagesWithRelaxation({ payload, pageSize: PAGE_SIZE, sort });
   } catch {
     // Fail gracefully — client will retry
-    initialData = [];
   }
 
   // JSON-LD Structured Data for SEO
@@ -105,7 +111,12 @@ const ListingPackagesPage = async ({ searchParams }: PageProps) => {
       </div>
 
       <div className="container relative min-h-screen">
-        <SectionGridFilterCard className="pb-24 lg:pb-28" initialData={initialData} />
+        <SectionGridFilterCard
+          className="pb-24 lg:pb-28"
+          initialData={initialResult.packages}
+          initialRelaxedFilters={initialResult.relaxedFilters}
+          initialEffectivePayload={initialResult.effectivePayload}
+        />
       </div>
     </div>
   );

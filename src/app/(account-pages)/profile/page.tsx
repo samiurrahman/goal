@@ -1,12 +1,12 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
 import ImageUpload from '@/components/ImageUpload';
 import Label from '@/components/Label';
-import { useCities } from '@/hooks/useCities';
+import CityAutocomplete, { SelectedCity } from '@/components/CityAutocomplete';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Input from '@/shared/Input';
 import Select from '@/shared/Select';
@@ -68,12 +68,6 @@ const syncDenormalizedAgentFields = async ({
   }
 };
 
-interface CityRecord {
-  id: string | number;
-  name: string;
-  state?: string | null;
-}
-
 interface AgentProfileFormState {
   name: string;
   known_as: string;
@@ -99,7 +93,11 @@ const AgentProfilePage = () => {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [selectedCityId, setSelectedCityId] = useState('');
+  // The structured city record (id, slug, name, admin1_name) we'll persist
+  // as agents.city_id. form.city / form.state are still mirrored for legacy
+  // readers (checkout pages, packages_with_agent view's package_location
+  // alias) — the autocomplete writes both in lockstep.
+  const [selectedCity, setSelectedCity] = useState<SelectedCity | null>(null);
   const [experienceField, setExperienceField] = useState<string | undefined>();
   const [form, setForm] = useState<AgentProfileFormState>({
     name: '',
@@ -134,12 +132,6 @@ const AgentProfilePage = () => {
   });
   const [isSavingInfoSection, setIsSavingInfoSection] = useState(false);
   const [pendingInfoImage, setPendingInfoImage] = useState<File | null>(null);
-
-  const { data: citiesData, isLoading: citiesLoading } = useCities();
-  const cities = useMemo<CityRecord[]>(() => {
-    if (!Array.isArray(citiesData)) return [];
-    return citiesData as CityRecord[];
-  }, [citiesData]);
 
   useEffect(() => {
     let isMounted = true;
@@ -227,22 +219,37 @@ const AgentProfilePage = () => {
     };
   }, [router]);
 
+  // Rehydrate selectedCity from the agent record once it's loaded. The
+  // agents row has city_id when the autocomplete has been used; otherwise
+  // we leave selectedCity null and the input shows form.city as a hint so
+  // the agent knows they should pick a structured city.
   useEffect(() => {
-    if (!cities.length) return;
-    if (!form.city) {
-      setSelectedCityId('');
+    if (!agent) return;
+    const agentRow = agent as unknown as Record<string, unknown>;
+    const cityId = agentRow.city_id;
+    if (cityId == null) {
+      setSelectedCity(null);
       return;
     }
-
-    const matched = cities.find((city) => {
-      const sameCity = (city.name || '').toLowerCase() === form.city.toLowerCase();
-      if (!sameCity) return false;
-      if (!form.state) return true;
-      return ((city.state || '').toLowerCase() || '') === form.state.toLowerCase();
-    });
-
-    setSelectedCityId(matched ? String(matched.id) : '');
-  }, [cities, form.city, form.state]);
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from('cities')
+        .select('id, slug, name, admin1_name')
+        .eq('id', cityId)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      setSelectedCity({
+        id: Number(data.id),
+        slug: data.slug,
+        name: data.name,
+        admin1_name: data.admin1_name,
+      });
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [agent]);
 
   const canSave = !!agent?.id && !isLoading && !isSaving;
 
@@ -250,21 +257,20 @@ const AgentProfilePage = () => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleCitySelect = (cityId: string) => {
-    setSelectedCityId(cityId);
-
-    if (!cityId) {
+  // When the user picks a city from the autocomplete, mirror the structured
+  // record into the legacy form.city / form.state strings so existing reads
+  // (checkout pages, packages_with_agent.package_location) keep showing the
+  // right text. The canonical source on save is selectedCity.id → city_id.
+  const handleCityPick = (city: SelectedCity | null) => {
+    setSelectedCity(city);
+    if (!city) {
       setForm((prev) => ({ ...prev, city: '', state: '' }));
       return;
     }
-
-    const selectedCity = cities.find((city) => String(city.id) === cityId);
-    if (!selectedCity) return;
-
     setForm((prev) => ({
       ...prev,
-      city: selectedCity.name || '',
-      state: selectedCity.state || '',
+      city: city.name,
+      state: city.admin1_name ?? '',
     }));
   };
 
@@ -335,6 +341,7 @@ const AgentProfilePage = () => {
         city: form.city.trim(),
         state: form.state.trim(),
         country: form.country.trim(),
+        city_id: selectedCity?.id ?? null,
         profile_image: form.profile_image.trim() || null,
         banner_image: form.banner_image.trim() || null,
         about_us: form.about_us,
@@ -654,24 +661,19 @@ const AgentProfilePage = () => {
 
               <div>
                 <Label>Location</Label>
-                <Select
-                  className="mt-1.5"
-                  value={selectedCityId}
-                  onChange={(e) => handleCitySelect(e.target.value)}
-                  disabled={citiesLoading}
-                >
-                  <option value="">{citiesLoading ? 'Loading cities...' : 'Select city'}</option>
-                  {cities.map((city) => (
-                    <option key={city.id} value={String(city.id)}>
-                      {city.name}
-                      {city.state ? `, ${city.state}` : ''}
-                    </option>
-                  ))}
-                </Select>
-                {form.city && !selectedCityId ? (
-                  <p className="mt-2 text-xs text-neutral-500">
-                    Saved city: {form.city}
-                    {form.state ? `, ${form.state}` : ''}
+                <div className="mt-1.5">
+                  <CityAutocomplete
+                    value={selectedCity}
+                    onChange={handleCityPick}
+                    placeholder="Search city (e.g. Akola)"
+                    initialQuery={form.city ? form.city : undefined}
+                  />
+                </div>
+                {form.city && !selectedCity ? (
+                  <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                    Saved city is text-only ({form.city}
+                    {form.state ? `, ${form.state}` : ''}). Pick from the
+                    suggestions to enable proximity search on your packages.
                   </p>
                 ) : null}
               </div>

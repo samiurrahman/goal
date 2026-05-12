@@ -1,22 +1,25 @@
 'use client';
 
-import React, { Fragment, useState, useEffect, useMemo } from 'react';
+import React, { Fragment, useState, useEffect, useMemo, useCallback } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import ButtonClose from '@/shared/ButtonClose';
 import Checkbox from '@/shared/Checkbox';
 import Slider from 'rc-slider';
-import { useCities } from '@/hooks/useCities';
+import CityAutocomplete, { SelectedCity } from '@/components/CityAutocomplete';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabaseClient';
 import { MONTHS_LIST } from '@/contains/contants';
 import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
 import { useSingleValueFilter } from '@/hooks/filters/useSingleValueFilter';
 import { useHotelDistanceFilter } from '@/hooks/filters/useHotelDistanceFilter';
+import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
 
-type City = { id: string; name: string; state?: string | null };
 type Agent = { id: string; known_as: string; slug: string };
+
+const CITY_PARAM = 'city';
+const LEGACY_LOCATION_PARAM = 'location';
 
 const PRICE_MAX = 300000;
 const DURATION_MAX = 60;
@@ -65,26 +68,66 @@ const SectionHeader = ({
 
 const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   // ── Shared filter hooks ──────────────────────────────────────────────────
-  const location = useMultiSelectFilter('location');
+  const { searchParams, replaceParams } = useFilterUrlSync();
   const agent = useMultiSelectFilter('agent_name');
   const month = useMultiSelectFilter('month');
   const duration = useSingleValueFilter('total_duration_days', DURATION_MAX);
   const price = useSingleValueFilter('price', PRICE_MAX);
   const hotelDistance = useHotelDistanceFilter(DISTANCE_MAX);
 
-  // Local-only search state for the city/agent typeahead
-  const [locationSearch, setLocationSearch] = useState('');
-  const [debouncedLocationSearch, setDebouncedLocationSearch] = useState('');
+  // Staged city selections — committed to the URL on Apply. Hydrated from
+  // the URL's ?city= param whenever the modal opens so back/forward
+  // navigation and external links work.
+  const [stagedCities, setStagedCities] = useState<SelectedCity[]>([]);
+  const cityIsActive = stagedCities.length > 0;
+  const urlCitySlugs = useMemo(() => {
+    const raw = searchParams.get(CITY_PARAM) || '';
+    return raw.split(',').map((s) => s.trim()).filter(Boolean);
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (urlCitySlugs.length === 0) {
+      setStagedCities([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      const { data, error } = await supabase
+        .from('cities')
+        .select('id, slug, name, admin1_name')
+        .in('slug', urlCitySlugs);
+      if (cancelled || error || !data) return;
+      const order = new Map(urlCitySlugs.map((s, i) => [s, i]));
+      setStagedCities(
+        data
+          .map((row) => ({
+            id: Number(row.id),
+            slug: String(row.slug),
+            name: String(row.name),
+            admin1_name: row.admin1_name as string | null,
+          }))
+          .sort((a, b) => (order.get(a.slug) ?? 0) - (order.get(b.slug) ?? 0))
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, urlCitySlugs]);
+
+  const addCity = useCallback((c: SelectedCity | null) => {
+    if (!c) return;
+    setStagedCities((prev) => (prev.some((x) => x.id === c.id) ? prev : [...prev, c]));
+  }, []);
+  const removeCity = useCallback((id: number) => {
+    setStagedCities((prev) => prev.filter((c) => c.id !== id));
+  }, []);
+
+  // Local-only search state for the agent typeahead
   const [agentSearch, setAgentSearch] = useState('');
   const [debouncedAgentSearch, setDebouncedAgentSearch] = useState('');
 
   // ── Data fetching (only when the modal is open) ──────────────────────────
-  const {
-    data: cities,
-    isLoading: citiesLoading,
-    error: citiesError,
-  } = useCities({ enabled: isOpen });
-
   const {
     data: agents,
     isLoading: agentsLoading,
@@ -107,14 +150,6 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   });
 
   // ── Debounce helpers ─────────────────────────────────────────────────────
-  const debouncedLocationSearchUpdater = useMemo(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    return (val: string) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => setDebouncedLocationSearch(val), 300);
-    };
-  }, []);
-
   const debouncedAgentSearchUpdater = useMemo(() => {
     let timer: ReturnType<typeof setTimeout>;
     return (val: string) => {
@@ -126,24 +161,10 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   // Reset typeahead inputs when the modal opens/closes
   useEffect(() => {
     if (!isOpen) {
-      setLocationSearch('');
-      setDebouncedLocationSearch('');
       setAgentSearch('');
       setDebouncedAgentSearch('');
     }
   }, [isOpen]);
-
-  const filteredCities = useMemo(
-    () =>
-      (cities as City[] | undefined)?.filter((item) => {
-        const search = debouncedLocationSearch.toLowerCase();
-        return (
-          item.name?.toLowerCase().includes(search) ||
-          (item.state && item.state.toLowerCase().includes(search))
-        );
-      }) ?? [],
-    [cities, debouncedLocationSearch]
-  );
 
   const filteredAgents = useMemo(
     () =>
@@ -160,7 +181,16 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
 
   // ── Apply / Clear all ────────────────────────────────────────────────────
   const handleApplyAll = () => {
-    location.apply();
+    // Cities are URL-managed locally — write the staged slug list and drop
+    // the legacy ?location= key so the two contracts can't disagree.
+    replaceParams((params) => {
+      params.delete(LEGACY_LOCATION_PARAM);
+      if (stagedCities.length === 0) {
+        params.delete(CITY_PARAM);
+      } else {
+        params.set(CITY_PARAM, stagedCities.map((c) => c.slug).join(','));
+      }
+    });
     agent.apply();
     month.apply();
     // Single-value filters: only commit when the user has actually moved them
@@ -176,14 +206,16 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   };
 
   const handleClearAll = () => {
-    location.clear();
+    setStagedCities([]);
+    replaceParams((params) => {
+      params.delete(CITY_PARAM);
+      params.delete(LEGACY_LOCATION_PARAM);
+    });
     agent.clear();
     month.clear();
     duration.clear();
     price.clear();
     hotelDistance.clear();
-    setLocationSearch('');
-    setDebouncedLocationSearch('');
     setAgentSearch('');
     setDebouncedAgentSearch('');
     onClose();
@@ -242,42 +274,36 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                     <section className="py-5 sm:py-4 sm:border-b sm:border-neutral-200 sm:dark:border-neutral-800">
                       <SectionHeader
                         title="Location"
-                        active={location.isActive}
-                        onClear={() => {
-                          location.clear();
-                          setLocationSearch('');
-                          setDebouncedLocationSearch('');
-                        }}
+                        active={cityIsActive}
+                        onClear={() => setStagedCities([])}
                       />
-                      <input
-                        type="text"
-                        placeholder="Search location..."
-                        aria-label="Search location"
-                        className="mb-3 px-3 py-2 border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 rounded-md w-full text-sm focus:outline-none focus:ring focus:border-primary-500"
-                        value={locationSearch}
-                        onChange={(e) => {
-                          setLocationSearch(e.target.value);
-                          debouncedLocationSearchUpdater(e.target.value);
-                        }}
+                      <CityAutocomplete
+                        value={null}
+                        onChange={addCity}
+                        placeholder="Search a city (e.g. Akola)"
+                        clearable={false}
                       />
-                      <div className="max-h-44 overflow-y-auto space-y-3 pr-1">
-                        {citiesLoading && <p className="text-sm text-neutral-500">Loading…</p>}
-                        {citiesError && (
-                          <p className="text-sm text-red-500">Error loading locations.</p>
-                        )}
-                        {!citiesLoading && !citiesError && filteredCities.length === 0 && (
-                          <p className="text-sm text-neutral-500">No locations found.</p>
-                        )}
-                        {filteredCities.map((item) => (
-                          <Checkbox
-                            key={item.id}
-                            name={item.name}
-                            label={item.name + (item.state ? ', ' + item.state : '')}
-                            defaultChecked={location.selected.includes(item.name)}
-                            onChange={(checked) => location.toggle(checked, item.name)}
-                          />
-                        ))}
-                      </div>
+                      {stagedCities.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {stagedCities.map((c) => (
+                            <span
+                              key={c.id}
+                              className="inline-flex items-center gap-1 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-800 dark:text-primary-100 px-2.5 py-1 text-xs font-medium"
+                            >
+                              {c.name}
+                              {c.admin1_name ? `, ${c.admin1_name}` : ''}
+                              <button
+                                type="button"
+                                onClick={() => removeCity(c.id)}
+                                className="ml-0.5 text-primary-600 hover:text-primary-800 dark:text-primary-300"
+                                aria-label={`Remove ${c.name}`}
+                              >
+                                ×
+                              </button>
+                            </span>
+                          ))}
+                        </div>
+                      )}
                     </section>
 
                     {/* Agent */}
