@@ -383,10 +383,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
         };
       }
 
-      console.debug(
-        '[NotifyDropdown] running user-side initial query for auth_user_id =',
-        user.id
-      );
+      console.debug('[NotifyDropdown] running user-side initial query for auth_user_id =', user.id);
       const { data: rows, error: rowsError } = await supabase
         .from('bookings')
         .select(
@@ -424,8 +421,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
 
       // Drop user-cancellations from the user's own notification feed (they triggered it).
       parsedRows = parsedRows.filter(
-        (item) =>
-          (item.status || '').toLowerCase() !== 'cancelled' || item.cancelled_by !== 'user'
+        (item) => (item.status || '').toLowerCase() !== 'cancelled' || item.cancelled_by !== 'user'
       );
 
       console.debug(
@@ -497,8 +493,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
             // so that a missing/null `cancelled_by` in the realtime payload
             // (which can happen with partial column replication) still
             // triggers the user notification.
-            const isAgentCancellation =
-              status === 'cancelled' && current.cancelled_by !== 'user';
+            const isAgentCancellation = status === 'cancelled' && current.cancelled_by !== 'user';
 
             if (!isConfirmed && !isAgentCancellation) {
               console.debug('[NotifyDropdown] user UPDATE skipped (not relevant)');
@@ -631,8 +626,8 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
           <div className="hidden md:block absolute z-50 w-screen max-w-sm top-full right-0">
             <div className="overflow-hidden rounded-2xl shadow-lg ring-1 ring-black ring-opacity-5">
               <div className="bg-white dark:bg-neutral-800 p-7">
-                <h3 className="text-xl font-semibold">Notifications</h3>
-                <div className="mt-6 max-h-80 overflow-y-auto overflow-x-hidden pr-3 pb-1 space-y-3">
+                <h3 className="text-lg font-medium">Notifications</h3>
+                <div className="mt-3 max-h-80 overflow-y-auto overflow-x-hidden pr-3 pb-1 space-y-3">
                   {notifications.length === 0 ? (
                     <p className="text-sm text-gray-500 dark:text-gray-400">
                       No new notifications.
@@ -680,9 +675,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
       <MobileBottomSheet open={open} onClose={() => setOpen(false)} title="Notifications">
         <div className="space-y-2 pt-3">
           {notifications.length === 0 ? (
-            <p className="text-sm text-gray-500 dark:text-gray-400 py-4">
-              No new notifications.
-            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400 py-4">No new notifications.</p>
           ) : (
             notifications.map((item) => (
               <Link
@@ -705,9 +698,7 @@ const NotifyDropdown: FC<Props> = ({ className = '' }) => {
                   <p className="text-sm font-medium text-gray-900 dark:text-gray-200">
                     {item.name}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {item.description}
-                  </p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{item.description}</p>
                   <p className="text-xs text-gray-400">{item.time}</p>
                 </div>
                 {!item.isRead ? (
