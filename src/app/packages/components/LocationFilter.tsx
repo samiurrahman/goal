@@ -1,12 +1,17 @@
 'use client';
 
-import React, { Fragment, useState, useMemo } from 'react';
+import React, { Fragment, useState, useMemo, useCallback } from 'react';
 import { Popover, Transition } from '@headlessui/react';
+import { MapPinIcon } from '@heroicons/react/24/outline';
+import toast from 'react-hot-toast';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import Checkbox from '@/shared/Checkbox';
 import { useCities } from '@/hooks/useCities';
 import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
+import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
+import { useUserLocation } from '@/hooks/useUserLocation';
+import { matchUserLocationCities } from '@/utils/matchUserLocationCities';
 import XClearIcon from './XClearIcon';
 
 type City = { id: string; name: string; state?: string | null };
@@ -22,6 +27,37 @@ const LocationFilter = () => {
     error: citiesError,
     isLoading: citiesLoading,
   } = useCities({ enabled: hasOpened });
+
+  const { status: geoStatus, request: requestGeo, errorMessage: geoError } = useUserLocation();
+  const { replaceParams } = useFilterUrlSync();
+  const isDetecting = geoStatus === 'requesting';
+
+  // Write the matched cities straight to the URL via the shared sync helper.
+  // We bypass filter.toggle/apply on purpose: apply() closes over a stale
+  // `selected` snapshot and wouldn't pick up a same-tick setSelected call.
+  // The URL write triggers useMultiSelectFilter's URL→state effect, so the
+  // checkboxes reflect the selection on next render.
+  const detectAndApply = useCallback(
+    async (close: () => void) => {
+      const detected = await requestGeo();
+      if (!detected) {
+        if (geoError) toast.error(geoError);
+        return;
+      }
+      const matched = matchUserLocationCities(detected, (cities as City[] | undefined) ?? null);
+      if (matched.length === 0) {
+        toast.error(
+          `No packages near ${detected.city || detected.state || 'your area'} yet. Pick a city manually.`
+        );
+        return;
+      }
+      replaceParams((params) => params.set('location', matched.join(',')));
+      const label = detected.city || detected.state || 'your area';
+      toast.success(`Showing packages near ${label}`);
+      close();
+    },
+    [requestGeo, geoError, cities, replaceParams]
+  );
 
   const debouncedLocationSearchUpdater = useMemo(() => {
     let timer: ReturnType<typeof setTimeout>;
@@ -86,7 +122,16 @@ const LocationFilter = () => {
           >
             <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
               <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
-                <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 px-5 pt-6 pb-2">
+                <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 px-5 pt-5 pb-2">
+                  <button
+                    type="button"
+                    onClick={() => detectAndApply(close)}
+                    disabled={isDetecting || citiesLoading}
+                    className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 dark:bg-primary-900/20 dark:border-primary-900 px-3 py-1.5 text-xs font-medium text-primary-700 dark:text-primary-200 hover:bg-primary-100 dark:hover:bg-primary-900/40 disabled:opacity-60 transition-colors"
+                  >
+                    <MapPinIcon className="w-3.5 h-3.5" />
+                    {isDetecting ? 'Detecting…' : 'Use my location'}
+                  </button>
                   <input
                     type="text"
                     placeholder="Search location..."

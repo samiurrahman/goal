@@ -199,8 +199,10 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
     // packages.agent_id stores the auth user UUID, not the agents row id
     const packageAgentId = agentDetails.auth_user_id ?? agentDetails.id;
     const [packagesResult, reviews] = await Promise.all([
+      // Read via the joining view so agent_* fields (used by the package cards
+      // rendered below) reflect the live `agents` row.
       supabase
-        .from('packages')
+        .from('packages_with_agent')
         .select('*')
         .eq('agent_id', packageAgentId)
         .eq('published', true),

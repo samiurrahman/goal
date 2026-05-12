@@ -3,8 +3,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   clearUserLocation,
-  dismissBanner as dismissBannerStorage,
-  isBannerDismissed,
   readUserLocation,
   writeUserLocation,
   type UserLocation,
@@ -22,9 +20,7 @@ type UseUserLocationResult = {
   location: UserLocation | null;
   status: GeoStatus;
   errorMessage: string | null;
-  bannerDismissed: boolean;
   request: () => Promise<UserLocation | null>;
-  dismiss: () => void;
   clear: () => void;
 };
 
@@ -50,11 +46,9 @@ export function useUserLocation(): UseUserLocationResult {
   const [location, setLocation] = useState<UserLocation | null>(null);
   const [status, setStatus] = useState<GeoStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   useEffect(() => {
     setLocation(readUserLocation());
-    setBannerDismissed(isBannerDismissed());
 
     const handleUpdate = () => {
       setLocation(readUserLocation());
@@ -142,11 +136,6 @@ export function useUserLocation(): UseUserLocationResult {
     });
   }, []);
 
-  const dismiss = useCallback(() => {
-    dismissBannerStorage();
-    setBannerDismissed(true);
-  }, []);
-
   const clear = useCallback(() => {
     clearUserLocation();
     setLocation(null);
@@ -157,9 +146,7 @@ export function useUserLocation(): UseUserLocationResult {
     location,
     status,
     errorMessage,
-    bannerDismissed,
     request,
-    dismiss,
     clear,
   };
 }

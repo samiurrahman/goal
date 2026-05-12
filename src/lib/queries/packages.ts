@@ -126,8 +126,15 @@ export async function fetchPackages(args: {
   const includeTags = tagsColumnAvailable !== false;
   const selectFields = includeTags ? PACKAGE_FIELDS_WITH_TAGS : PACKAGE_FIELDS;
 
+  // Read from the `packages_with_agent` view (defined in
+  // 20260512_normalize_package_agent_fields.sql). The view INNER JOINs
+  // packages → agents so agent_known_as / agent_profile_image /
+  // agent_rating_avg / agent_rating_total are sourced live from `agents`
+  // instead of stale denormalized columns. Sort and filter on those fields
+  // work natively against the view (e.g. .order('agent_rating_avg'),
+  // .gte('agent_rating_avg', 4)).
   let query = supabase
-    .from('packages')
+    .from('packages_with_agent')
     .select(selectFields)
     .eq('published', true)
     .gte('departure_date', todayStr);

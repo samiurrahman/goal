@@ -51,10 +51,10 @@ const FeaturedPackagesSection: FC<FeaturedPackagesSectionProps> = ({ packages })
             <h2 className="mt-2 text-3xl lg:text-[32px] leading-tight font-light text-neutral-900 dark:text-neutral-100 tracking-tight">
               Verified packages, ready to book.
             </h2>
-            <p className="mt-3 text-base lg:text-[14px] text-neutral-600 dark:text-neutral-300 leading-relaxed">
+            {/* <p className="mt-3 text-base lg:text-[14px] text-neutral-600 dark:text-neutral-300 leading-relaxed">
               Curated this week from the agents with the highest pilgrim satisfaction. Filter by
               your departure city or hotel proximity to the Haram.
-            </p>
+            </p> */}
           </div>
           <Link
             href="/packages"

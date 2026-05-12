@@ -15,7 +15,7 @@ const SORT_OPTIONS: { value: SortValue; label: string }[] = [
   { value: 'newest', label: 'Newest First' },
   { value: 'price-asc', label: 'Price: Low to High' },
   { value: 'price-desc', label: 'Price: High to Low' },
-  { value: 'rating', label: 'Avg. Customer Review' },
+  { value: 'rating', label: 'Top rated' },
 ];
 
 const SortByFilter = () => {

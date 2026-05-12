@@ -4,8 +4,6 @@
  * lat/lng.
  */
 const LOCATION_KEY = 'app:userLocation:v1';
-const BANNER_DISMISSED_KEY = 'app:locationBannerDismissed:v1';
-const APPLIED_FLAG_KEY = 'app:locationFilterApplied:v1';
 
 export type UserLocation = {
   city: string | null;
@@ -44,39 +42,8 @@ export const clearUserLocation = (): void => {
   if (!isBrowser()) return;
   try {
     window.localStorage.removeItem(LOCATION_KEY);
-    window.localStorage.removeItem(APPLIED_FLAG_KEY);
     window.dispatchEvent(new CustomEvent('app:user-location-updated'));
   } catch {
     // Ignore.
-  }
-};
-
-export const isBannerDismissed = (): boolean => {
-  if (!isBrowser()) return false;
-  return window.localStorage.getItem(BANNER_DISMISSED_KEY) === '1';
-};
-
-export const dismissBanner = (): void => {
-  if (!isBrowser()) return;
-  try {
-    window.localStorage.setItem(BANNER_DISMISSED_KEY, '1');
-  } catch {
-    // Ignore.
-  }
-};
-
-/**
- * One-shot per session: returns true the first time it's called in this
- * session, false thereafter. Used to auto-apply the cached location filter
- * once per browsing session without overriding manual user changes.
- */
-export const claimAutoApplyOnce = (): boolean => {
-  if (!isBrowser()) return false;
-  try {
-    if (window.sessionStorage.getItem(APPLIED_FLAG_KEY) === '1') return false;
-    window.sessionStorage.setItem(APPLIED_FLAG_KEY, '1');
-    return true;
-  } catch {
-    return false;
   }
 };
