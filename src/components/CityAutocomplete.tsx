@@ -8,6 +8,11 @@ export type SelectedCity = {
   slug: string;
   name: string;
   admin1_name: string | null;
+  // ISO-3166 alpha-2 ("IN", "SA", …). Optional so existing call sites that
+  // build SelectedCity from partial selects (LocationFilter, MobileFilters,
+  // CityMultiSelect) keep working — country is only consumed where the
+  // caller cares to read it.
+  country_code?: string | null;
 };
 
 export interface CityAutocompleteProps {
@@ -81,6 +86,7 @@ const CityAutocomplete: FC<CityAutocompleteProps> = ({
         slug: c.slug,
         name: c.name,
         admin1_name: c.admin1_name,
+        country_code: c.country_code,
       };
       onChange(picked);
       setQuery(formatLabel(picked));

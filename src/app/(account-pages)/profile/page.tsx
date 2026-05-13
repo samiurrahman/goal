@@ -68,6 +68,26 @@ const syncDenormalizedAgentFields = async ({
   }
 };
 
+// ISO-3166 alpha-2 → display name for the countries the form supports.
+// The cities table stores country as a 2-letter code; the agents.country
+// column is a free-text display name (legacy schema), so we translate on
+// the way in. Unknown codes fall through to the raw code rather than
+// silently erasing the country field.
+const COUNTRY_NAME_BY_CODE: Record<string, string> = {
+  IN: 'India',
+  SA: 'Saudi Arabia',
+  AE: 'United Arab Emirates',
+  PK: 'Pakistan',
+  BD: 'Bangladesh',
+  ID: 'Indonesia',
+};
+
+const countryNameFromCode = (code: string | null | undefined): string => {
+  if (!code) return '';
+  const upper = code.toUpperCase();
+  return COUNTRY_NAME_BY_CODE[upper] ?? upper;
+};
+
 interface AgentProfileFormState {
   name: string;
   known_as: string;
@@ -235,7 +255,7 @@ const AgentProfilePage = () => {
     void (async () => {
       const { data, error } = await supabase
         .from('cities')
-        .select('id, slug, name, admin1_name')
+        .select('id, slug, name, admin1_name, country_code')
         .eq('id', cityId)
         .maybeSingle();
       if (cancelled || error || !data) return;
@@ -244,7 +264,15 @@ const AgentProfilePage = () => {
         slug: data.slug,
         name: data.name,
         admin1_name: data.admin1_name,
+        country_code: data.country_code,
       });
+      // Backfill form.country for legacy rows where the agent has a city_id
+      // but country was never persisted (or persisted as a different label).
+      // We always prefer the cities table as the source of truth.
+      const derivedCountry = countryNameFromCode(data.country_code);
+      if (derivedCountry) {
+        setForm((prev) => (prev.country === derivedCountry ? prev : { ...prev, country: derivedCountry }));
+      }
     })();
     return () => {
       cancelled = true;
@@ -264,13 +292,16 @@ const AgentProfilePage = () => {
   const handleCityPick = (city: SelectedCity | null) => {
     setSelectedCity(city);
     if (!city) {
-      setForm((prev) => ({ ...prev, city: '', state: '' }));
+      // Clearing the city clears the derived fields too — otherwise stale
+      // state/country would silently get re-saved against a different city.
+      setForm((prev) => ({ ...prev, city: '', state: '', country: '' }));
       return;
     }
     setForm((prev) => ({
       ...prev,
       city: city.name,
       state: city.admin1_name ?? '',
+      country: countryNameFromCode(city.country_code) || prev.country,
     }));
   };
 
@@ -690,20 +721,12 @@ const AgentProfilePage = () => {
 
               <div>
                 <Label>Country</Label>
-                <Select
+                <Input
                   className="mt-1.5"
                   value={form.country}
-                  onChange={(e) => updateField('country', e.target.value)}
-                >
-                  {form.country ? <option value={form.country}>{form.country}</option> : null}
-                  <option value="">Select country</option>
-                  <option value="India">India</option>
-                  <option value="Saudi Arabia">Saudi Arabia</option>
-                  <option value="United Arab Emirates">United Arab Emirates</option>
-                  <option value="Pakistan">Pakistan</option>
-                  <option value="Bangladesh">Bangladesh</option>
-                  <option value="Indonesia">Indonesia</option>
-                </Select>
+                  readOnly
+                  placeholder="Auto from city"
+                />
               </div>
 
               <div>
