@@ -62,8 +62,19 @@ const Packages: FC<PackagesProps> = ({
     departure_date,
     arrival_date,
     package_location,
+    package_admin1_name,
+    agent_state,
+    agent_country,
     tags,
   } = data;
+
+  const agentLocationLabel = [
+    package_location || null,
+    package_admin1_name || agent_state || null,
+    (!package_admin1_name && !agent_state && agent_country) ? agent_country : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
 
   const cardTags = sanitizePackageTags(tags);
 
@@ -180,10 +191,10 @@ const Packages: FC<PackagesProps> = ({
               <i className="las la-share-alt text-base"></i>
               {parsedDefaultPricing?.people ?? defaultSharingRate?.people} Sharing
             </span>
-            {package_location ? (
+            {agentLocationLabel ? (
               <span className="inline-flex items-center gap-1">
                 <i className="las la-map-marker text-base"></i>
-                {package_location}
+                {agentLocationLabel}
               </span>
             ) : null}
           </div>

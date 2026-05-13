@@ -7,29 +7,7 @@ import { supabase } from '@/utils/supabaseClient';
 import toast, { Toaster } from 'react-hot-toast';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonSecondary from '@/shared/ButtonSecondary';
-
-const sendWhatsApp = (
-  to: string | undefined | null,
-  templateName: string,
-  params: string[]
-) => {
-  const phone = (to || '').trim();
-  if (!phone) return;
-  fetch('/api/whatsapp/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to: phone,
-      template: { name: templateName, language: 'en_US', params },
-    }),
-  })
-    .then(async (res) => {
-      if (!res.ok) {
-        console.error('WhatsApp send failed:', await res.text());
-      }
-    })
-    .catch((err) => console.error('WhatsApp request error:', err));
-};
+import { sendWhatsApp, WA_TEMPLATES } from '@/lib/whatsapp';
 
 type BookingRow = {
   id: number;
@@ -265,7 +243,7 @@ const MyBookingsPage = () => {
     );
 
     const agentPhone = agentsByAuthId[cancellingBooking.agent_id]?.contact_number || '';
-    sendWhatsApp(agentPhone, 'booking_cancelled_by_user', [
+    sendWhatsApp(agentPhone, WA_TEMPLATES.BOOKING_CANCELLED_BY_USER, [
       cancellingBooking.slug || `Booking #${cancellingBooking.id}`,
       String(cancellingBooking.id),
     ]);

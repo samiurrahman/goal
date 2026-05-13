@@ -13,6 +13,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type { PackageDetails } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
+import { sendWhatsApp, WA_TEMPLATES } from '@/lib/whatsapp';
 import NcInputNumber from '@/components/NcInputNumber';
 
 export interface CheckOutPagePageMainProps {
@@ -578,38 +579,18 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     const packageTitle = packageDetails?.title ?? 'your package';
     const bookingId = String(createdBooking.id);
 
-    const sendWhatsApp = (to: string | undefined | null, params: string[]) => {
+    const templateParams = [packageTitle, String(totalGuests), totalDisplay, bookingId];
+
+    // Deduplicate: if agent and user share the same number, send only once
+    const sent = new Set<string>();
+    const sendOnce = (to: string | undefined | null) => {
       const phone = (to || '').trim();
-      if (!phone) return;
-      fetch('/api/whatsapp/send', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: phone,
-          template: {
-            name: 'booking_confirmation',
-            language: 'en_US',
-            params,
-          },
-        }),
-      })
-        .then(async (res) => {
-          if (!res.ok) {
-            console.error('WhatsApp send failed:', await res.text());
-          }
-        })
-        .catch((err) => console.error('WhatsApp request error:', err));
+      if (!phone || sent.has(phone)) return;
+      sent.add(phone);
+      sendWhatsApp(phone, WA_TEMPLATES.BOOKING_CONFIRMATION, templateParams);
     };
-
-    const templateParams = [
-      packageTitle,
-      String(totalGuests),
-      totalDisplay,
-      bookingId,
-    ];
-
-    sendWhatsApp(agentData?.contact_number, templateParams);
-    sendWhatsApp(bookingMobile, templateParams);
+    sendOnce(agentData?.contact_number);
+    sendOnce(bookingMobile);
 
     const params = new URLSearchParams();
 

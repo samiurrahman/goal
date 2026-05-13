@@ -88,6 +88,9 @@ export interface Package {
   sharing_rate: string | null;
   package_location: string | null;
   tags?: string[] | null;
+  package_admin1_name?: string | null;
+  agent_state?: string | null;
+  agent_country?: string | null;
 }
 
 // PackageDetails type for detailed package JSON structure

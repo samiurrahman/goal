@@ -31,6 +31,7 @@ type CardData = {
   isDirect: boolean;
   priceLabel: string;
   pricePerPerson: string;
+  agentLocation: string;
 };
 
 const PackageCard: FC<{ data: CardData; priority?: boolean }> = ({ data, priority }) => {
@@ -83,6 +84,12 @@ const PackageCard: FC<{ data: CardData; priority?: boolean }> = ({ data, priorit
         {subParts.length > 0 ? (
           <p className="mt-1.5 text-[13px] text-neutral-500 dark:text-neutral-400 line-clamp-1">
             {subParts.join(' · ')}
+          </p>
+        ) : null}
+        {data.agentLocation ? (
+          <p className="mt-1 text-[12px] text-neutral-400 dark:text-neutral-500 flex items-center gap-1">
+            <i className="las la-map-marker-alt text-sm" />
+            {data.agentLocation}
           </p>
         ) : null}
 
@@ -173,6 +180,13 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
           pricePerPerson: sharingPeople
             ? `/ person · ${sharingPeople} sharing`
             : '/ person',
+          agentLocation: [
+            pkg.package_location || null,
+            pkg.package_admin1_name || pkg.agent_state || null,
+            (!pkg.package_admin1_name && !pkg.agent_state && pkg.agent_country) ? pkg.agent_country : null,
+          ]
+            .filter(Boolean)
+            .join(', '),
         } satisfies CardData;
       });
   }, [packages, agent]);

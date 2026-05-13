@@ -15,29 +15,7 @@ import { supabase } from '@/utils/supabaseClient';
 import toast, { Toaster } from 'react-hot-toast';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonSecondary from '@/shared/ButtonSecondary';
-
-const sendWhatsApp = (
-  to: string | undefined | null,
-  templateName: string,
-  params: string[]
-) => {
-  const phone = (to || '').trim();
-  if (!phone) return;
-  fetch('/api/whatsapp/send', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      to: phone,
-      template: { name: templateName, language: 'en_US', params },
-    }),
-  })
-    .then(async (res) => {
-      if (!res.ok) {
-        console.error('WhatsApp send failed:', await res.text());
-      }
-    })
-    .catch((err) => console.error('WhatsApp request error:', err));
-};
+import { sendWhatsApp, WA_TEMPLATES } from '@/lib/whatsapp';
 
 const formatBookingRef = (id: number) => `#${id}`;
 
@@ -289,6 +267,14 @@ const AgentBookingsPage = () => {
       prev.map((item) => (item.id === bookingId ? { ...item, status: 'confirmed' } : item))
     );
 
+    const confirmedBooking = bookings.find((b) => b.id === bookingId);
+    if (confirmedBooking?.booking_mobile) {
+      sendWhatsApp(confirmedBooking.booking_mobile, WA_TEMPLATES.BOOKING_CONFIRMED, [
+        confirmedBooking.slug || String(bookingId),
+        String(bookingId),
+      ]);
+    }
+
     // Auto-open the next pending booking (in display order — newest first).
     // Also switch year and expand month so the row is actually visible.
     const idx = bookings.findIndex((b) => b.id === bookingId);
@@ -409,7 +395,7 @@ const AgentBookingsPage = () => {
       )
     );
 
-    sendWhatsApp(rejectingBooking.booking_mobile, 'booking_cancelled_by_agent', [
+    sendWhatsApp(rejectingBooking.booking_mobile, WA_TEMPLATES.BOOKING_CANCELLED_BY_AGENT, [
       rejectingBooking.slug || `Booking #${rejectingBooking.id}`,
       String(rejectingBooking.id),
       reason,

@@ -56,3 +56,7 @@ booking_cancelled_by_user — utility, en_US, body with 2 vars: {{1}} (package t
 
 A user cancelled their booking for {{1}} (ID {{2}}).
 Until both are approved, the in-app cancel/reject still works fully — only the WhatsApp delivery is blocked. The browser console will log any Meta API rejection.
+
+
+
+enable email verification for user

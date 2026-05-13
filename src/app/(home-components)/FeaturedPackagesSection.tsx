@@ -163,6 +163,13 @@ const PackageCard: FC<{ pkg: Package; priority?: boolean }> = ({ pkg, priority =
   const rating = Number(pkg.agent_rating_avg ?? 0);
   const reviews = Number(pkg.agent_rating_total ?? 0);
   const agentName = (pkg.agent_known_as || pkg.agent_name || 'Agent').trim();
+  const agentLocation = [
+    pkg.package_location || null,
+    pkg.package_admin1_name || pkg.agent_state || null,
+    (!pkg.package_admin1_name && !pkg.agent_state && pkg.agent_country) ? pkg.agent_country : null,
+  ]
+    .filter(Boolean)
+    .join(', ') || null;
   const nights =
     typeof pkg.total_duration_days === 'number' && pkg.total_duration_days > 0
       ? `${pkg.total_duration_days} nights`
@@ -225,6 +232,12 @@ const PackageCard: FC<{ pkg: Package; priority?: boolean }> = ({ pkg, priority =
             {pkg.departure_city ? `Departs ${pkg.departure_city}` : null}
             {pkg.departure_city && subParts.length > 0 ? ' · ' : ''}
             {subParts.join(' · ')}
+          </p>
+        )}
+        {agentLocation && (
+          <p className="text-[12px] text-neutral-400 dark:text-neutral-500 leading-snug flex items-center gap-1">
+            <i className="las la-map-marker-alt text-sm" />
+            {agentLocation}
           </p>
         )}
 
