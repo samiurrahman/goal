@@ -689,13 +689,17 @@ function crossProduct<T>(arrs: T[][]): T[][] {
 type LadderEntry = { key: RelaxableKey; steps: LadderStep[] };
 type ChosenStep = { key: RelaxableKey; stepIdx: number; step: LadderStep };
 
-// Hard ceiling on how many filters we'll relax simultaneously. At k>=4 the
+// Hard ceiling on how many filters we'll relax simultaneously. At k>=3 the
 // result barely resembles the user's intent ("we found something but we
-// ignored 4 of the 6 things you asked for"), and the empty-state UX is
-// strictly more honest. The combinatorial cost also escalates here — C(8,5)
-// is 56 candidates at k=5, C(8,6) is 28 at k=6, etc. — so capping is a
-// twofer (better UX + bounded queries).
-const MAX_RELAXATION_K = 4;
+// ignored 3 of the 6 things you asked for"), and the empty-state UX is
+// strictly more honest.
+const MAX_RELAXATION_K = 3;
+
+// Candidates within each k-level are fired in parallel batches of this size.
+// Sorting cheapest-first + stopping as soon as any batch yields results keeps
+// the total request count low in the common case (results found quickly) while
+// still exhausting all candidates in the pathological case (nothing matched).
+const CASCADE_BATCH_SIZE = 4;
 
 // Run the relaxation cascade against an already-resolved payload. Returns
 // the best (least-relaxed, most-results) match found within MAX_RELAXATION_K,
@@ -747,15 +751,28 @@ async function runRelaxationCascade(
       }
     }
 
-    const candidates = await Promise.all(
-      allCandidates.map(async (chosen) => {
-        let p = payload;
-        for (const { step } of chosen) p = step.apply(p);
-        const packages = await fetchPackages({ payload: p, page: 0, pageSize, sort });
-        return { chosen, packages, effectivePayload: p };
-      })
+    // Sort cheapest-first (lowest total stepIdx = least relaxation) so the
+    // first batch that yields results is already the closest to user intent.
+    allCandidates.sort(
+      (a, b) =>
+        a.reduce((s, x) => s + x.stepIdx, 0) - b.reduce((s, x) => s + x.stepIdx, 0)
     );
-    const winners = candidates.filter((c) => c.packages.length > 0);
+
+    // Fire in batches; stop as soon as any batch returns non-empty results.
+    let winners: Array<{ chosen: ChosenStep[]; packages: Package[]; effectivePayload: PackagesFilterPayload }> = [];
+    for (let i = 0; i < allCandidates.length; i += CASCADE_BATCH_SIZE) {
+      const batch = allCandidates.slice(i, i + CASCADE_BATCH_SIZE);
+      const batchResults = await Promise.all(
+        batch.map(async (chosen) => {
+          let p = payload;
+          for (const { step } of chosen) p = step.apply(p);
+          const packages = await fetchPackages({ payload: p, page: 0, pageSize, sort });
+          return { chosen, packages, effectivePayload: p };
+        })
+      );
+      winners = batchResults.filter((c) => c.packages.length > 0);
+      if (winners.length > 0) break;
+    }
     if (winners.length === 0) continue;
 
     // Cost = sum of (stepIdx + 1) across relaxed filters. Lower cost ⇒ closer

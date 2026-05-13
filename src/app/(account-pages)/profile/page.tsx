@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import toast, { Toaster } from 'react-hot-toast';
@@ -150,6 +150,13 @@ const AgentProfilePage = () => {
   // readers (checkout pages, packages_with_agent view's package_location
   // alias) — the autocomplete writes both in lockstep.
   const [selectedCity, setSelectedCity] = useState<SelectedCity | null>(null);
+  // True once the async city fetch for the loaded agent has finished (or
+  // confirmed there's no city_id). Before this point a fast Save click should
+  // still fall back to agent.city_id so we don't spuriously null the city.
+  // After this point, selectedCity is the canonical value — if it's null the
+  // user actively cleared the field and must pick a new city before saving.
+  const [cityHydrated, setCityHydrated] = useState(false);
+  const cityFieldRef = useRef<HTMLDivElement>(null);
   const [experienceField, setExperienceField] = useState<string | undefined>();
   const [form, setForm] = useState<AgentProfileFormState>({
     name: '',
@@ -194,6 +201,7 @@ const AgentProfilePage = () => {
     known_as?: string;
     slug?: string;
     contact_number?: string;
+    city?: string;
   }>({});
 
   useEffect(() => {
@@ -288,10 +296,12 @@ const AgentProfilePage = () => {
   // the agent knows they should pick a structured city.
   useEffect(() => {
     if (!agent) return;
+    setCityHydrated(false);
     const agentRow = agent as unknown as Record<string, unknown>;
     const cityId = agentRow.city_id;
     if (cityId == null) {
       setSelectedCity(null);
+      setCityHydrated(true);
       return;
     }
     let cancelled = false;
@@ -301,7 +311,9 @@ const AgentProfilePage = () => {
         .select('id, slug, name, admin1_name, country_code')
         .eq('id', cityId)
         .maybeSingle();
-      if (cancelled || error || !data) return;
+      if (cancelled) return;
+      setCityHydrated(true);
+      if (error || !data) return;
       setSelectedCity({
         id: Number(data.id),
         slug: data.slug,
@@ -344,8 +356,12 @@ const AgentProfilePage = () => {
       // Clearing the city clears the derived fields too — otherwise stale
       // state/country would silently get re-saved against a different city.
       setForm((prev) => ({ ...prev, city: '', state: '', country: '' }));
+      if (cityHydrated) {
+        setFieldErrors((prev) => ({ ...prev, city: 'City is required. Please pick from the list.' }));
+      }
       return;
     }
+    setFieldErrors((prev) => (prev.city ? { ...prev, city: undefined } : prev));
     setForm((prev) => ({
       ...prev,
       city: city.name,
@@ -373,28 +389,29 @@ const AgentProfilePage = () => {
     const slugError = validateAgentSlug(form.slug);
     const contactError = validateContactNumber(form.contact_number);
 
+    // selectedCity hydrates asynchronously from agent.city_id. During the
+    // brief window before hydration completes, fall back to agent.city_id so
+    // a fast Save click doesn't spuriously null the city. Once hydration is
+    // done, selectedCity is canonical — null means the user cleared the field
+    // and must pick a new city before saving.
+    const persistedCityId = cityHydrated
+      ? (selectedCity?.id ?? null)
+      : (selectedCity?.id ?? ((agent as unknown as { city_id?: number | null }).city_id ?? null));
+    const cityError = persistedCityId ? undefined : 'City is required. Please pick from the list.';
+
     setFieldErrors({
       name: nameError,
       known_as: knownAsError,
       slug: slugError,
       contact_number: contactError,
+      city: cityError,
     });
 
-    const firstError = nameError || knownAsError || slugError || contactError;
+    const firstError = nameError || knownAsError || slugError || contactError || cityError;
     if (firstError) {
-      toast.error(firstError);
-      return;
-    }
-
-    // selectedCity hydrates asynchronously from agent.city_id; in the rare
-    // race window between page load and city fetch returning, fall back to
-    // the original agent.city_id so a fast Save click doesn't spuriously
-    // null the city.
-    const persistedCityId =
-      selectedCity?.id ??
-      ((agent as unknown as { city_id?: number | null }).city_id ?? null);
-    if (!persistedCityId) {
-      toast.error('Please pick your city from the list.');
+      if (cityError) {
+        cityFieldRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
       return;
     }
 
@@ -837,7 +854,7 @@ const AgentProfilePage = () => {
                 ) : null}
               </div>
 
-              <div>
+              <div ref={cityFieldRef}>
                 <Label>Location</Label>
                 <div className="mt-1.5">
                   <CityAutocomplete
@@ -851,9 +868,14 @@ const AgentProfilePage = () => {
                     // CHANGE their city by picking a different suggestion;
                     // they just can't blank it out.
                     clearable={false}
+                    className={fieldErrors.city ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
                   />
                 </div>
-                {form.city && !selectedCity ? (
+                {fieldErrors.city ? (
+                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                    {fieldErrors.city}
+                  </p>
+                ) : form.city && !selectedCity ? (
                   <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
                     Saved city is text-only ({form.city}
                     {form.state ? `, ${form.state}` : ''}). Pick from the
