@@ -173,7 +173,7 @@ const CityMultiSelect: FC<CityMultiSelectProps> = ({
         placeholder={searchPlaceholder}
         aria-label="Search city"
         autoComplete="off"
-        className="mb-3 px-3 py-2 border border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-100 rounded-md w-full focus:outline-none focus:ring focus:border-primary-500"
+        className="mb-3 px-3 py-2 border border-neutral-400 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 rounded-md w-full focus:outline-none"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />

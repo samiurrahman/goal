@@ -96,6 +96,10 @@ const SearchForm = () => {
     [requestGeo, geoError, handleSelectLocation]
   );
 
+  const focusLocationInput = useCallback((el: HTMLInputElement | null) => {
+    if (el) requestAnimationFrame(() => el.focus());
+  }, []);
+
   return (
     <form
       onSubmit={(e) => e.preventDefault()}
@@ -148,12 +152,12 @@ const SearchForm = () => {
                     <div className="relative">
                       <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                       <input
+                        ref={focusLocationInput}
                         type="text"
                         placeholder="Search city"
                         value={locationQuery}
                         onChange={(e) => setLocationQuery(e.target.value)}
-                        autoFocus
-                        className="w-full pl-9 pr-9 py-2.5 text-sm rounded-full border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800 focus:outline-none focus:bg-white dark:focus:bg-neutral-900 focus:border-neutral-400"
+                        className="w-full pl-9 pr-9 py-2 border border-neutral-400 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 rounded-md focus:outline-none"
                       />
                       {locationQuery ? (
                         <button

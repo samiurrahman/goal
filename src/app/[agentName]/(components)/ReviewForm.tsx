@@ -240,7 +240,7 @@ export default function ReviewForm({
         </div>
         {isAnonymous ? (
           <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-            Your name and photo won't be visible to others.
+            Your name and photo won&apos;t be visible to others.
           </p>
         ) : null}
       </div>
