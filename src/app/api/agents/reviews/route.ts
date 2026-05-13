@@ -43,17 +43,19 @@ const getAdminSupabase = () => {
 };
 
 const normalizeReview = (row: Record<string, any>) => {
-  const email = (row.user_email as string | undefined) || '';
+  const anonymous = !!row.is_anonymous;
+  const email = anonymous ? '' : (row.user_email as string | undefined) || '';
   const emailName = email.includes('@') ? email.split('@')[0] : '';
   return {
     id: row.id,
     agent_id: row.agent_id,
     user_id: row.user_id,
     user_email: email,
-    user_name: row.user_name || emailName || 'User',
-    user_profile_image: row.user_profile_image || null,
+    user_name: anonymous ? 'Anonymous' : row.user_name || emailName || 'User',
+    user_profile_image: anonymous ? null : row.user_profile_image || null,
     rating: row.rating,
     review_text: row.review_text,
+    is_anonymous: anonymous,
     created_at: row.created_at,
     updated_at: row.updated_at,
   };
@@ -112,7 +114,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Only users can submit agent reviews' }, { status: 403 });
     }
 
-    const { agentId, rating, reviewText } = await request.json();
+    const { agentId, rating, reviewText, isAnonymous } = await request.json();
 
     // Validate input
     if (!agentId || !rating || !reviewText) {
@@ -168,6 +170,7 @@ export async function POST(request: NextRequest) {
       user_email: authData.user.email || '',
       user_name: buildReviewerName(reviewerProfile || undefined),
       user_profile_image: (reviewerProfile?.profile_image as string | null) || null,
+      is_anonymous: !!isAnonymous,
     };
 
     let activePayload: Record<string, any> = reviewPayloadWithIdentity;
@@ -179,7 +182,7 @@ export async function POST(request: NextRequest) {
       .from('agent_reviews')
       .upsert(reviewPayloadWithIdentity, { onConflict: 'agent_id,user_id' })
       .select(
-        'id, agent_id, user_id, user_email, user_name, user_profile_image, rating, review_text, created_at, updated_at'
+        'id, agent_id, user_id, user_email, user_name, user_profile_image, is_anonymous, rating, review_text, created_at, updated_at'
       );
 
     const missingIdentityColumnsError =
@@ -230,13 +233,13 @@ export async function POST(request: NextRequest) {
             .update(activePayload)
             .eq('id', existingReview.id)
             .select(
-              'id, agent_id, user_id, user_email, user_name, user_profile_image, rating, review_text, created_at, updated_at'
+              'id, agent_id, user_id, user_email, user_name, user_profile_image, is_anonymous, rating, review_text, created_at, updated_at'
             )
         : await writeSupabase
             .from('agent_reviews')
             .insert(activePayload)
             .select(
-              'id, agent_id, user_id, user_email, user_name, user_profile_image, rating, review_text, created_at, updated_at'
+              'id, agent_id, user_id, user_email, user_name, user_profile_image, is_anonymous, rating, review_text, created_at, updated_at'
             );
 
       const fallbackMissingIdentityColumnsError =
@@ -289,15 +292,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const reviewWithProfile = {
-      ...normalizedReview,
-      user_name:
-        normalizedReview.user_name || buildReviewerName(reviewerProfile || undefined) || 'User',
-      user_profile_image:
-        normalizedReview.user_profile_image ||
-        (reviewerProfile?.profile_image as string | null) ||
-        null,
-    };
+    const reviewWithProfile = normalizedReview.is_anonymous
+      ? normalizedReview
+      : {
+          ...normalizedReview,
+          user_name:
+            normalizedReview.user_name || buildReviewerName(reviewerProfile || undefined) || 'User',
+          user_profile_image:
+            normalizedReview.user_profile_image ||
+            (reviewerProfile?.profile_image as string | null) ||
+            null,
+        };
 
     return NextResponse.json(
       {
@@ -350,6 +355,7 @@ export async function GET(request: NextRequest) {
         user_email,
         user_name,
         user_profile_image,
+        is_anonymous,
         rating,
         review_text,
         created_at,
@@ -359,17 +365,18 @@ export async function GET(request: NextRequest) {
       .eq('agent_id', agentId)
       .order('created_at', { ascending: false })) as any;
 
-    const missingIdentityColumnsError =
-      !!reviewsQuery.error &&
-      (reviewsQuery.error.code === '42703' ||
-        String(reviewsQuery.error.message || '')
+    const missingColumnsError = (err: any) =>
+      !!err &&
+      (err.code === '42703' ||
+        String(err.message || '')
           .toLowerCase()
           .includes('column') ||
-        String(reviewsQuery.error.message || '')
+        String(err.message || '')
           .toLowerCase()
           .includes('user_name'));
 
-    if (missingIdentityColumnsError) {
+    if (missingColumnsError(reviewsQuery.error)) {
+      // Try without identity columns (older schema without user_name etc.)
       reviewsQuery = (await supabase
         .from('agent_reviews')
         .select(
@@ -419,6 +426,10 @@ export async function GET(request: NextRequest) {
 
     const enrichedReviews = reviewRows.map((review) => {
       const normalized = normalizeReview(review);
+      // Don't enrich with profile data when anonymous — normalizeReview already masked it.
+      if (normalized.is_anonymous) {
+        return normalized;
+      }
       const profile = profileByUserId.get(review.user_id as string);
       if (!profile) {
         return normalized;

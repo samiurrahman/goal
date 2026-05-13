@@ -69,6 +69,10 @@ export default function ReviewsSection({
     await refreshReviews();
   };
 
+  const userAlreadyReviewed =
+    !!currentUserId && reviews.some((r) => r.user_id === currentUserId);
+  const showForm = !userAlreadyReviewed || !!editingReview;
+
   return (
     <div className="listingSection__wrap !space-y-4">
       <div className="flex items-center justify-between gap-4">
@@ -76,14 +80,16 @@ export default function ReviewsSection({
       </div>
       <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
 
-      <div ref={formRef}>
-        <ReviewFormWithAuth
-          agentId={agentId}
-          editingReview={editingReview}
-          onCancelEdit={handleCancelEdit}
-          onSubmitted={handleSubmitted}
-        />
-      </div>
+      {showForm ? (
+        <div ref={formRef}>
+          <ReviewFormWithAuth
+            agentId={agentId}
+            editingReview={editingReview}
+            onCancelEdit={handleCancelEdit}
+            onSubmitted={handleSubmitted}
+          />
+        </div>
+      ) : null}
 
       <ReviewsList
         agentName={agentName}

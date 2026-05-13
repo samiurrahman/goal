@@ -81,10 +81,13 @@ export default function ReviewsList({
   return (
     <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
       {reviews.map((review) => {
-        const initials = getInitials(review.user_email, review.user_name);
-        const avatarColor = getAvatarColor(review.user_email);
-        const displayName = review.user_name || review.user_email?.split('@')[0] || 'Anonymous';
-        const hasProfileImage = !!review.user_profile_image;
+        const anonymous = !!review.is_anonymous;
+        const initials = anonymous ? '?' : getInitials(review.user_email, review.user_name);
+        const avatarColor = anonymous ? 'bg-neutral-400' : getAvatarColor(review.user_email);
+        const displayName = anonymous
+          ? 'Anonymous'
+          : review.user_name || review.user_email?.split('@')[0] || 'Anonymous';
+        const hasProfileImage = !anonymous && !!review.user_profile_image;
         const isOwn = !!currentUserId && review.user_id === currentUserId;
         const isEditingThis = !!editingReviewId && String(review.id) === editingReviewId;
 

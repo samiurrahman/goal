@@ -55,6 +55,7 @@ export default function ReviewForm({
   const isEditing = !!editingReview;
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
+  const [isAnonymous, setIsAnonymous] = useState(false);
   const [formError, setFormError] = useState<string>('');
   const queryClient = useQueryClient();
 
@@ -63,10 +64,12 @@ export default function ReviewForm({
     if (editingReview) {
       setRating(Number(editingReview.rating) || 0);
       setReviewText(editingReview.review_text || '');
+      setIsAnonymous(editingReview.is_anonymous ?? false);
       setFormError('');
     } else {
       setRating(0);
       setReviewText('');
+      setIsAnonymous(false);
       setFormError('');
     }
   }, [editingReview]);
@@ -100,6 +103,7 @@ export default function ReviewForm({
           agentId,
           rating,
           reviewText,
+          isAnonymous,
         }),
       });
 
@@ -121,6 +125,7 @@ export default function ReviewForm({
       toast.success(isEditing ? 'Review updated successfully!' : 'Review submitted successfully!');
       setRating(0);
       setReviewText('');
+      setIsAnonymous(false);
       queryClient.invalidateQueries({ queryKey: ['agentReviews', agentId] });
       onReviewSubmitted?.();
     },
@@ -156,6 +161,7 @@ export default function ReviewForm({
     }
     setRating(0);
     setReviewText('');
+    setIsAnonymous(false);
     setFormError('');
   };
 
@@ -199,6 +205,44 @@ export default function ReviewForm({
           required
           className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+      </div>
+
+      {/* Anonymous / Show Name toggle */}
+      <div className="mb-5">
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          Post as
+        </label>
+        <div className="inline-flex rounded-lg border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 p-0.5 gap-0.5">
+          <button
+            type="button"
+            onClick={() => setIsAnonymous(false)}
+            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              !isAnonymous
+                ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white'
+                : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+            }`}
+          >
+            <i className="las la-user text-base" aria-hidden="true"></i>
+            Show Name
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsAnonymous(true)}
+            className={`inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              isAnonymous
+                ? 'bg-white dark:bg-neutral-700 shadow-sm text-neutral-900 dark:text-white'
+                : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
+            }`}
+          >
+            <i className="las la-user-secret text-base" aria-hidden="true"></i>
+            Anonymous
+          </button>
+        </div>
+        {isAnonymous ? (
+          <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+            Your name and photo won't be visible to others.
+          </p>
+        ) : null}
       </div>
 
       {formError ? (

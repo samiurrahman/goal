@@ -175,6 +175,7 @@ export interface AgentReview {
   user_profile_image?: string | null;
   rating: number;
   review_text: string;
+  is_anonymous?: boolean;
   created_at: string;
   updated_at: string;
 }
