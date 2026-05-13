@@ -56,6 +56,34 @@ const isUuid = (value?: string | null) =>
   !!value &&
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 
+// Field-level validators. Each returns the error string for the field, or
+// `undefined` when the value passes. Used by both onBlur (per-field feedback
+// as the user moves between inputs) and the final Book Now click (guards
+// against fields the user never blurred).
+const validateGuestName = (value: string): string | undefined => {
+  const trimmed = value.trim();
+  if (!trimmed) return 'Name is required';
+  if (trimmed.length < 2) return 'Name must be at least 2 characters';
+  return undefined;
+};
+
+const validateGuestAge = (value: string): string | undefined => {
+  const trimmed = value.trim();
+  if (!trimmed) return 'Age is required';
+  const num = Number(trimmed);
+  if (!Number.isFinite(num) || !Number.isInteger(num)) return 'Age must be a whole number';
+  if (num < 1 || num > 120) return 'Age must be between 1 and 120';
+  return undefined;
+};
+
+const validateBookingMobile = (value: string): string | undefined => {
+  const trimmed = value.trim();
+  if (!trimmed) return 'Mobile number is required';
+  const digitCount = (trimmed.match(/\d/g) || []).length;
+  if (digitCount < 7) return 'Please enter a valid mobile number';
+  return undefined;
+};
+
 const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -105,6 +133,11 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   const [isTravelersLoading, setIsTravelersLoading] = useState(false);
   const [selectedTravelerIds, setSelectedTravelerIds] = useState<string[]>([]);
   const [travelerToGuestIndex, setTravelerToGuestIndex] = useState<Record<string, number>>({});
+  // True when the logged-in user has an agents row — agents sell packages
+  // through the platform, they don't book them, so Book Now is disabled
+  // for them with an inline message. Defaults false so logged-out and
+  // pilgrim users see the normal booking flow.
+  const [isAgent, setIsAgent] = useState(false);
 
   const sharingRates = useMemo<SharingRate[]>(() => {
     try {
@@ -158,7 +191,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
         return;
       }
 
-      const [travelersResult, userDetailsResult] = await Promise.all([
+      const [travelersResult, userDetailsResult, agentResult] = await Promise.all([
         supabase
           .from('traveler_profiles')
           .select('id, label, first_name, last_name, age, date_of_birth')
@@ -166,6 +199,12 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           .order('is_default', { ascending: false })
           .order('created_at', { ascending: true }),
         supabase.from('user_details').select('phone').eq('auth_user_id', user.id).maybeSingle(),
+        // Presence of an agents row keyed on auth_user_id is the source of
+        // truth for whether this account sells packages. We don't read
+        // user_details.user_type because that's the *selected* type at
+        // signup; the agents row is what actually wires the account into
+        // the seller-side flows.
+        supabase.from('agents').select('id').eq('auth_user_id', user.id).maybeSingle(),
       ]);
 
       if (!isMounted) return;
@@ -184,6 +223,12 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
         if (dbPhone) {
           setBookingMobile((prev) => prev || dbPhone);
         }
+      }
+
+      if (agentResult.error) {
+        console.error('Failed to check agent status:', agentResult.error.message);
+      } else if (agentResult.data?.id) {
+        setIsAgent(true);
       }
 
       setIsTravelersLoading(false);
@@ -400,9 +445,13 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   };
 
   const handleConfirmAndPay = async () => {
+    // Agents can't book — the UI also disables the button, but guard the
+    // submit handler against direct invocation just in case.
+    if (isAgent) return;
+
     const nextErrors = guestForms.map((form) => ({
-      name: form.name.trim() ? undefined : 'Name is required',
-      age: form.age.trim() ? undefined : 'Age is required',
+      name: validateGuestName(form.name),
+      age: validateGuestAge(form.age),
     }));
 
     const invalidIndexes = nextErrors
@@ -411,10 +460,10 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       .map((item) => item.index);
 
     setGuestFormErrors(nextErrors);
-    const hasMobile = !!bookingMobile.trim();
-    setBookingMobileError(hasMobile ? '' : 'Mobile number is required');
+    const mobileError = validateBookingMobile(bookingMobile);
+    setBookingMobileError(mobileError ?? '');
 
-    if (invalidIndexes.length > 0 || !hasMobile) {
+    if (invalidIndexes.length > 0 || mobileError) {
       setExpandedGuestIndexes((prev) => Array.from(new Set([...prev, ...invalidIndexes])));
       return;
     }
@@ -799,6 +848,14 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                               onChange={(e) =>
                                 handleGuestFormChange(index, 'name', e.currentTarget.value)
                               }
+                              onBlur={(e) => {
+                                const error = validateGuestName(e.currentTarget.value);
+                                setGuestFormErrors((prev) => {
+                                  const next = [...prev];
+                                  next[index] = { ...(next[index] || {}), name: error };
+                                  return next;
+                                });
+                              }}
                               className={
                                 formError.name
                                   ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
@@ -820,6 +877,14 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                               onChange={(e) =>
                                 handleGuestFormChange(index, 'age', e.currentTarget.value)
                               }
+                              onBlur={(e) => {
+                                const error = validateGuestAge(e.currentTarget.value);
+                                setGuestFormErrors((prev) => {
+                                  const next = [...prev];
+                                  next[index] = { ...(next[index] || {}), age: error };
+                                  return next;
+                                });
+                              }}
                               className={
                                 formError.age
                                   ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
@@ -868,9 +933,16 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
               value={bookingMobile}
               onChange={(e) => {
                 setBookingMobile(e.currentTarget.value);
-                if (e.currentTarget.value.trim()) {
-                  setBookingMobileError('');
+                if (bookingMobileError) {
+                  // Re-run the validator on each keystroke once an error is
+                  // showing so it disappears as soon as the field becomes
+                  // valid — but don't surface new errors mid-typing.
+                  const stillInvalid = validateBookingMobile(e.currentTarget.value);
+                  if (!stillInvalid) setBookingMobileError('');
                 }
+              }}
+              onBlur={(e) => {
+                setBookingMobileError(validateBookingMobile(e.currentTarget.value) ?? '');
               }}
               className={
                 bookingMobileError ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''
@@ -889,8 +961,16 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
             </span>
           </div>
 
-          <div className="pt-8">
-            <ButtonPrimary onClick={handleConfirmAndPay}>Book Now</ButtonPrimary>
+          <div className="pt-8 space-y-3">
+            {isAgent ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/10 px-4 py-3 text-sm text-amber-700 dark:text-amber-300">
+                Agents sell packages on the platform and can&apos;t book them. Sign in with a
+                pilgrim account to complete this booking.
+              </div>
+            ) : null}
+            <ButtonPrimary onClick={handleConfirmAndPay} disabled={isAgent}>
+              Book Now
+            </ButtonPrimary>
           </div>
         </div>
       </>

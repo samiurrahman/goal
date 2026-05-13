@@ -88,6 +88,38 @@ const countryNameFromCode = (code: string | null | undefined): string => {
   return COUNTRY_NAME_BY_CODE[upper] ?? upper;
 };
 
+// Field-level validators. Pure functions returning the error string for a
+// given value, or `undefined` when valid. Used by both the onBlur handlers
+// (per-field feedback as the user moves between inputs) and handleSave (the
+// final guard before the supabase write).
+const validateAgentName = (value: string): string | undefined => {
+  const trimmed = value.trim();
+  if (trimmed.length < 2) return 'Name is required (at least 2 characters).';
+  return undefined;
+};
+
+const validateKnownAs = (value: string): string | undefined => {
+  const trimmed = value.trim();
+  if (trimmed.length < 2) return 'Business name is required (at least 2 characters).';
+  return undefined;
+};
+
+const validateAgentSlug = (value: string): string | undefined => {
+  const trimmed = value.trim().toLowerCase();
+  if (!trimmed || trimmed.length < 2) return 'URL handle is required.';
+  if (trimmed !== slugify(trimmed))
+    return 'URL handle must contain only lowercase letters, numbers, and hyphens.';
+  if (RESERVED_AGENT_SLUGS.has(trimmed))
+    return 'That URL handle is reserved by the system. Please pick a different one.';
+  return undefined;
+};
+
+const validateContactNumber = (value: string): string | undefined => {
+  const digitCount = (value.match(/\d/g) || []).length;
+  if (digitCount < 7) return 'A valid contact number is required.';
+  return undefined;
+};
+
 interface AgentProfileFormState {
   name: string;
   known_as: string;
@@ -152,6 +184,17 @@ const AgentProfilePage = () => {
   });
   const [isSavingInfoSection, setIsSavingInfoSection] = useState(false);
   const [pendingInfoImage, setPendingInfoImage] = useState<File | null>(null);
+
+  // Per-field validation errors for the four identity fields. Each is set
+  // on blur (and on a failed save) and cleared on the next keystroke into
+  // that field. The handleSave function still re-runs the validators as a
+  // final guard for fields the user never blurred.
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    known_as?: string;
+    slug?: string;
+    contact_number?: string;
+  }>({});
 
   useEffect(() => {
     let isMounted = true;
@@ -283,6 +326,12 @@ const AgentProfilePage = () => {
 
   const updateField = (field: keyof AgentProfileFormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+    // Clear the inline error for this field on each keystroke so a stale
+    // error doesn't linger while the user is actively fixing it. onBlur
+    // re-runs the validator when they leave the field.
+    if (field === 'name' || field === 'known_as' || field === 'slug' || field === 'contact_number') {
+      setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
+    }
   };
 
   // When the user picks a city from the autocomplete, mirror the structured
@@ -316,31 +365,24 @@ const AgentProfilePage = () => {
     // ALL of the agent's packages silently disappear from the /packages
     // location filter (the view aliases agents.city as package_location);
     // contact_number empty → pilgrims have no way to actually reach the
-    // agent. Block before the supabase update so the agent can't
-    // accidentally wipe themselves.
-    const trimmedName = form.name.trim();
-    if (trimmedName.length < 2) {
-      toast.error('Name is required (at least 2 characters).');
-      return;
-    }
+    // agent. Run every validator (not short-circuit on the first failure)
+    // so the user sees all the inline errors at once — same pattern the
+    // checkout page uses for guest forms.
+    const nameError = validateAgentName(form.name);
+    const knownAsError = validateKnownAs(form.known_as);
+    const slugError = validateAgentSlug(form.slug);
+    const contactError = validateContactNumber(form.contact_number);
 
-    const trimmedKnownAs = form.known_as.trim();
-    if (trimmedKnownAs.length < 2) {
-      toast.error('Business name is required (at least 2 characters).');
-      return;
-    }
+    setFieldErrors({
+      name: nameError,
+      known_as: knownAsError,
+      slug: slugError,
+      contact_number: contactError,
+    });
 
-    const desiredSlugRaw = form.slug.trim().toLowerCase();
-    if (!desiredSlugRaw || desiredSlugRaw.length < 2) {
-      toast.error('URL handle is required.');
-      return;
-    }
-    if (desiredSlugRaw !== slugify(desiredSlugRaw)) {
-      toast.error('URL handle must contain only lowercase letters, numbers, and hyphens.');
-      return;
-    }
-    if (RESERVED_AGENT_SLUGS.has(desiredSlugRaw)) {
-      toast.error('That URL handle is reserved by the system. Please pick a different one.');
+    const firstError = nameError || knownAsError || slugError || contactError;
+    if (firstError) {
+      toast.error(firstError);
       return;
     }
 
@@ -356,12 +398,10 @@ const AgentProfilePage = () => {
       return;
     }
 
+    const trimmedName = form.name.trim();
+    const trimmedKnownAs = form.known_as.trim();
+    const desiredSlugRaw = form.slug.trim().toLowerCase();
     const trimmedContact = form.contact_number.trim();
-    const contactDigitCount = (trimmedContact.match(/\d/g) || []).length;
-    if (contactDigitCount < 7) {
-      toast.error('A valid contact number is required.');
-      return;
-    }
 
     setIsSaving(true);
 
@@ -580,26 +620,59 @@ const AgentProfilePage = () => {
               <div>
                 <Label>Legal Name</Label>
                 <Input
-                  className="mt-1.5"
+                  className={`mt-1.5 ${
+                    fieldErrors.name
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                      : ''
+                  }`}
                   value={form.name}
                   onChange={(e) => updateField('name', e.target.value)}
+                  onBlur={(e) =>
+                    setFieldErrors((prev) => ({ ...prev, name: validateAgentName(e.target.value) }))
+                  }
                   placeholder="Enter legal name"
                 />
+                {fieldErrors.name ? (
+                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                    {fieldErrors.name}
+                  </p>
+                ) : null}
               </div>
 
               <div>
                 <Label>Known As</Label>
                 <Input
-                  className="mt-1.5"
+                  className={`mt-1.5 ${
+                    fieldErrors.known_as
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                      : ''
+                  }`}
                   value={form.known_as}
                   onChange={(e) => updateField('known_as', e.target.value)}
+                  onBlur={(e) =>
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      known_as: validateKnownAs(e.target.value),
+                    }))
+                  }
                   placeholder="Public profile name"
                 />
+                {fieldErrors.known_as ? (
+                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                    {fieldErrors.known_as}
+                  </p>
+                ) : null}
               </div>
 
               <div className="md:col-span-2">
                 <Label>Public URL</Label>
-                <div className="mt-1.5 flex items-stretch rounded-2xl border border-neutral-300 dark:border-neutral-600 overflow-hidden focus-within:ring-2 focus-within:ring-primary-500">
+                <div
+                  className={`mt-1.5 flex items-stretch rounded-2xl border overflow-hidden focus-within:ring-2 ${
+                    fieldErrors.slug
+                      ? 'border-red-500 focus-within:ring-red-200'
+                      : 'border-neutral-300 dark:border-neutral-600 focus-within:ring-primary-500'
+                  }`}
+                >
                   <span className="inline-flex items-center px-3 bg-neutral-50 dark:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400 border-r border-neutral-300 dark:border-neutral-600 select-none whitespace-nowrap">
                     searchumrah.com/
                   </span>
@@ -611,6 +684,9 @@ const AgentProfilePage = () => {
                     spellCheck={false}
                     value={form.slug}
                     onChange={(e) => updateField('slug', slugify(e.target.value))}
+                    onBlur={(e) =>
+                      setFieldErrors((prev) => ({ ...prev, slug: validateAgentSlug(e.target.value) }))
+                    }
                     placeholder="your-business-name"
                     className="flex-1 px-3 py-3 bg-transparent text-sm focus:outline-none"
                   />
@@ -619,6 +695,17 @@ const AgentProfilePage = () => {
                 {(() => {
                   const trimmed = form.slug.trim();
                   const original = (agent?.slug || '').trim();
+                  // fieldErrors.slug covers "empty / required" on blur; the
+                  // checks below give live feedback as the user types (the
+                  // onBlur error is cleared on each keystroke via updateField).
+                  if (fieldErrors.slug) {
+                    return (
+                      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                        <i className="las la-exclamation-circle mr-1" />
+                        {fieldErrors.slug}
+                      </p>
+                    );
+                  }
                   const isReserved = trimmed.length > 0 && RESERVED_AGENT_SLUGS.has(trimmed);
                   const isInvalid = trimmed.length > 0 && trimmed !== slugify(trimmed);
                   const hasChanged = trimmed.length > 0 && trimmed !== original;
@@ -663,11 +750,26 @@ const AgentProfilePage = () => {
               <div>
                 <Label>Contact Number</Label>
                 <Input
-                  className="mt-1.5"
+                  className={`mt-1.5 ${
+                    fieldErrors.contact_number
+                      ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                      : ''
+                  }`}
                   value={form.contact_number}
                   onChange={(e) => updateField('contact_number', e.target.value)}
+                  onBlur={(e) =>
+                    setFieldErrors((prev) => ({
+                      ...prev,
+                      contact_number: validateContactNumber(e.target.value),
+                    }))
+                  }
                   placeholder="Primary phone number"
                 />
+                {fieldErrors.contact_number ? (
+                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                    {fieldErrors.contact_number}
+                  </p>
+                ) : null}
               </div>
 
               <div>

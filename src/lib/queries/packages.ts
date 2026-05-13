@@ -689,6 +689,103 @@ function crossProduct<T>(arrs: T[][]): T[][] {
 type LadderEntry = { key: RelaxableKey; steps: LadderStep[] };
 type ChosenStep = { key: RelaxableKey; stepIdx: number; step: LadderStep };
 
+// Hard ceiling on how many filters we'll relax simultaneously. At k>=4 the
+// result barely resembles the user's intent ("we found something but we
+// ignored 4 of the 6 things you asked for"), and the empty-state UX is
+// strictly more honest. The combinatorial cost also escalates here — C(8,5)
+// is 56 candidates at k=5, C(8,6) is 28 at k=6, etc. — so capping is a
+// twofer (better UX + bounded queries).
+const MAX_RELAXATION_K = 4;
+
+// Run the relaxation cascade against an already-resolved payload. Returns
+// the best (least-relaxed, most-results) match found within MAX_RELAXATION_K,
+// or empty if no rung satisfied the search.
+//
+// At k=1 we keep the full ladder cross-product so the "Booking.com nudge"
+// works — e.g. Makkah 250m → 500m before "any distance". At k>=2 we collapse
+// each chosen filter to its drop step only; intermediate widening across
+// multiple filters explodes combinatorially (5^k candidates per subset) and
+// rarely finds matches the simpler "drop these N filters" wouldn't also find.
+async function runRelaxationCascade(
+  payload: PackagesFilterPayload,
+  pageSize: number,
+  sort: SortValue
+): Promise<RelaxedFetchResult> {
+  const builtLadders = await Promise.all(
+    RELAXATION_PRIORITY.map(async (key) => ({
+      key,
+      steps: await buildLadder(payload, key),
+    }))
+  );
+  const ladders: LadderEntry[] = builtLadders.filter((l) => l.steps.length > 0);
+  if (ladders.length === 0) {
+    return { packages: [], relaxedFilters: [], effectivePayload: payload };
+  }
+
+  const maxK = Math.min(ladders.length, MAX_RELAXATION_K);
+
+  for (let k = 1; k <= maxK; k++) {
+    const subsets = combinations(ladders, k);
+    const allCandidates: ChosenStep[][] = [];
+
+    if (k === 1) {
+      for (const subset of subsets) {
+        const perFilterChoices: ChosenStep[][] = subset.map((entry) =>
+          entry.steps.map((step, stepIdx) => ({ key: entry.key, stepIdx, step }))
+        );
+        const cross = crossProduct(perFilterChoices);
+        for (const choice of cross) allCandidates.push(choice);
+      }
+    } else {
+      // k>=2: single candidate per subset = drop every filter in the subset.
+      for (const subset of subsets) {
+        const candidate: ChosenStep[] = subset.map((entry) => {
+          const lastIdx = entry.steps.length - 1;
+          return { key: entry.key, stepIdx: lastIdx, step: entry.steps[lastIdx] };
+        });
+        allCandidates.push(candidate);
+      }
+    }
+
+    const candidates = await Promise.all(
+      allCandidates.map(async (chosen) => {
+        let p = payload;
+        for (const { step } of chosen) p = step.apply(p);
+        const packages = await fetchPackages({ payload: p, page: 0, pageSize, sort });
+        return { chosen, packages, effectivePayload: p };
+      })
+    );
+    const winners = candidates.filter((c) => c.packages.length > 0);
+    if (winners.length === 0) continue;
+
+    // Cost = sum of (stepIdx + 1) across relaxed filters. Lower cost ⇒ closer
+    // to the user's original intent (smaller widening). Ties broken by which
+    // candidate returned more results.
+    winners.sort((a, b) => {
+      const ac = a.chosen.reduce((s, x) => s + x.stepIdx + 1, 0);
+      const bc = b.chosen.reduce((s, x) => s + x.stepIdx + 1, 0);
+      if (ac !== bc) return ac - bc;
+      return b.packages.length - a.packages.length;
+    });
+    const w = winners[0];
+
+    const relaxed: RelaxedFilter[] = w.chosen.map(({ key, step }) => {
+      const orig = originalValueLabel(key, payload) ?? '';
+      return {
+        key,
+        filterLabel: FILTER_LABEL[key],
+        originalValueLabel: orig,
+        relaxedValueLabel: step.kind === 'widen' ? step.relaxedValueLabel : undefined,
+        kind: step.kind,
+        urlKeys: urlKeysFor(key),
+      };
+    });
+    return { packages: w.packages, relaxedFilters: relaxed, effectivePayload: w.effectivePayload };
+  }
+
+  return { packages: [], relaxedFilters: [], effectivePayload: payload };
+}
+
 /**
  * Fetch packages, then if the first page is empty, find the MINIMAL
  * relaxation that yields results. Each relaxable filter has a ladder of
@@ -726,70 +823,7 @@ export async function fetchPackagesWithRelaxation(args: {
     return { packages: initial, relaxedFilters: [], effectivePayload: payload };
   }
 
-  // Build every filter's ladder in parallel. The citySlugs ladder hits the
-  // nearby_cities RPC for each proximity radius, so this is the one async
-  // batch — the rest resolve in microtasks.
-  const builtLadders = await Promise.all(
-    RELAXATION_PRIORITY.map(async (key) => ({
-      key,
-      steps: await buildLadder(payload, key),
-    }))
-  );
-  const ladders: LadderEntry[] = builtLadders.filter((l) => l.steps.length > 0);
-
-  if (ladders.length === 0) {
-    return { packages: [], relaxedFilters: [], effectivePayload: payload };
-  }
-
-  for (let k = 1; k <= ladders.length; k++) {
-    // Enumerate all (k-filter-subset) × (ladder-step-choice-per-filter) candidates.
-    const subsets = combinations(ladders, k);
-    const allCandidates: ChosenStep[][] = [];
-    for (const subset of subsets) {
-      const perFilterChoices: ChosenStep[][] = subset.map((entry) =>
-        entry.steps.map((step, stepIdx) => ({ key: entry.key, stepIdx, step }))
-      );
-      const cross = crossProduct(perFilterChoices);
-      for (const choice of cross) allCandidates.push(choice);
-    }
-
-    const candidates = await Promise.all(
-      allCandidates.map(async (chosen) => {
-        let p = payload;
-        for (const { step } of chosen) p = step.apply(p);
-        const packages = await fetchPackages({ payload: p, page: 0, pageSize, sort });
-        return { chosen, packages, effectivePayload: p };
-      })
-    );
-    const winners = candidates.filter((c) => c.packages.length > 0);
-    if (winners.length === 0) continue;
-
-    // Cost = sum of (stepIdx + 1) across relaxed filters. Step 0 is the
-    // smallest widening; later steps are looser. Lower cost ⇒ closer to
-    // the user's original intent.
-    winners.sort((a, b) => {
-      const ac = a.chosen.reduce((s, x) => s + x.stepIdx + 1, 0);
-      const bc = b.chosen.reduce((s, x) => s + x.stepIdx + 1, 0);
-      if (ac !== bc) return ac - bc;
-      return b.packages.length - a.packages.length;
-    });
-    const w = winners[0];
-
-    const relaxed: RelaxedFilter[] = w.chosen.map(({ key, step }) => {
-      const orig = originalValueLabel(key, payload) ?? '';
-      return {
-        key,
-        filterLabel: FILTER_LABEL[key],
-        originalValueLabel: orig,
-        relaxedValueLabel: step.kind === 'widen' ? step.relaxedValueLabel : undefined,
-        kind: step.kind,
-        urlKeys: urlKeysFor(key),
-      };
-    });
-    return { packages: w.packages, relaxedFilters: relaxed, effectivePayload: w.effectivePayload };
-  }
-
-  return { packages: [], relaxedFilters: [], effectivePayload: payload };
+  return runRelaxationCascade(payload, pageSize, sort);
 }
 
 /**
@@ -809,61 +843,5 @@ export async function fetchPackagesRelaxedOnly(args: {
 }): Promise<RelaxedFetchResult> {
   const { pageSize, sort } = args;
   const payload = await resolvePackagesPayload(args.payload);
-
-  const builtLadders = await Promise.all(
-    RELAXATION_PRIORITY.map(async (key) => ({
-      key,
-      steps: await buildLadder(payload, key),
-    }))
-  );
-  const ladders: LadderEntry[] = builtLadders.filter((l) => l.steps.length > 0);
-  if (ladders.length === 0) {
-    return { packages: [], relaxedFilters: [], effectivePayload: payload };
-  }
-
-  for (let k = 1; k <= ladders.length; k++) {
-    const subsets = combinations(ladders, k);
-    const allCandidates: ChosenStep[][] = [];
-    for (const subset of subsets) {
-      const perFilterChoices: ChosenStep[][] = subset.map((entry) =>
-        entry.steps.map((step, stepIdx) => ({ key: entry.key, stepIdx, step }))
-      );
-      const cross = crossProduct(perFilterChoices);
-      for (const choice of cross) allCandidates.push(choice);
-    }
-
-    const candidates = await Promise.all(
-      allCandidates.map(async (chosen) => {
-        let p = payload;
-        for (const { step } of chosen) p = step.apply(p);
-        const packages = await fetchPackages({ payload: p, page: 0, pageSize, sort });
-        return { chosen, packages, effectivePayload: p };
-      })
-    );
-    const winners = candidates.filter((c) => c.packages.length > 0);
-    if (winners.length === 0) continue;
-
-    winners.sort((a, b) => {
-      const ac = a.chosen.reduce((s, x) => s + x.stepIdx + 1, 0);
-      const bc = b.chosen.reduce((s, x) => s + x.stepIdx + 1, 0);
-      if (ac !== bc) return ac - bc;
-      return b.packages.length - a.packages.length;
-    });
-    const w = winners[0];
-
-    const relaxed: RelaxedFilter[] = w.chosen.map(({ key, step }) => {
-      const orig = originalValueLabel(key, payload) ?? '';
-      return {
-        key,
-        filterLabel: FILTER_LABEL[key],
-        originalValueLabel: orig,
-        relaxedValueLabel: step.kind === 'widen' ? step.relaxedValueLabel : undefined,
-        kind: step.kind,
-        urlKeys: urlKeysFor(key),
-      };
-    });
-    return { packages: w.packages, relaxedFilters: relaxed, effectivePayload: w.effectivePayload };
-  }
-
-  return { packages: [], relaxedFilters: [], effectivePayload: payload };
+  return runRelaxationCascade(payload, pageSize, sort);
 }
