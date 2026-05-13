@@ -47,6 +47,33 @@ const AddPackageWizardModal = dynamic(() => import('./AddPackageWizardModal'), {
   loading: () => null,
 });
 
+const ProfileGateModal = dynamic(() => import('./ProfileGateModal'), {
+  ssr: false,
+  loading: () => null,
+});
+
+interface AgentProfileSnapshot {
+  id: string;
+  auth_user_id: string | null;
+  slug: string;
+  known_as: string | null;
+  contact_number: string | null;
+  city_id: number | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+}
+
+const isProfileComplete = (agent: AgentProfileSnapshot | null): boolean => {
+  if (!agent) return false;
+  return (
+    Boolean((agent.known_as || '').trim()) &&
+    Boolean(agent.city_id) &&
+    Boolean((agent.contact_number || '').trim()) &&
+    Boolean((agent.slug || '').trim())
+  );
+};
+
 const slugify = (value: string): string =>
   value
     .toLowerCase()
@@ -79,12 +106,17 @@ const ListedPackagesPage = () => {
   const queryClient = useQueryClient();
   const [agentUUID, setAgentUUID] = useState<string | null>(null);
   const [agentSlug, setAgentSlug] = useState<string>('');
+  const [agentProfile, setAgentProfile] = useState<AgentProfileSnapshot | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [expandedPackageIds, setExpandedPackageIds] = useState<number[]>([]);
   const [deletePendingPackageId, setDeletePendingPackageId] = useState<number | null>(null);
   const [unpublishPendingPackage, setUnpublishPendingPackage] = useState<Package | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('newest');
   const [origin, setOrigin] = useState<string>('');
+  const [isGateOpen, setIsGateOpen] = useState(false);
+  // Monotonic counter; each increment tells AddPackageWizardModal to open.
+  // Starts at 0 (does not auto-open on mount).
+  const [wizardOpenSignal, setWizardOpenSignal] = useState(0);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -107,7 +139,9 @@ const ListedPackagesPage = () => {
 
       const { data: agentRowByAuth, error: agentAuthError } = await supabase
         .from('agents')
-        .select('id, auth_user_id, email_id, slug, known_as')
+        .select(
+          'id, auth_user_id, email_id, slug, known_as, contact_number, city_id, city, state, country'
+        )
         .eq('auth_user_id', user.id)
         .maybeSingle();
 
@@ -124,7 +158,9 @@ const ListedPackagesPage = () => {
       if (!agentRow && user.email) {
         const { data: agentRowByEmail, error: agentEmailError } = await supabase
           .from('agents')
-          .select('id, auth_user_id, email_id, slug, known_as')
+          .select(
+            'id, auth_user_id, email_id, slug, known_as, contact_number, city_id, city, state, country'
+          )
           .eq('email_id', user.email)
           .maybeSingle();
 
@@ -176,6 +212,17 @@ const ListedPackagesPage = () => {
 
       setAgentUUID(user.id);
       setAgentSlug(resolvedSlug);
+      setAgentProfile({
+        id: agentRow.id,
+        auth_user_id: agentRow.auth_user_id ?? user.id,
+        slug: resolvedSlug,
+        known_as: agentRow.known_as ?? null,
+        contact_number: agentRow.contact_number ?? null,
+        city_id: agentRow.city_id ?? null,
+        city: agentRow.city ?? null,
+        state: agentRow.state ?? null,
+        country: agentRow.country ?? null,
+      });
       setIsAuthLoading(false);
     };
     void loadAgent();
@@ -375,9 +422,95 @@ const ListedPackagesPage = () => {
     return null;
   }
 
+  const profileComplete = isProfileComplete(agentProfile);
+  const agentCityLabel = (agentProfile?.city || '').trim();
+
+  const handleAddNewPackageClick = () => {
+    if (!agentUUID || !agentSlug) return;
+    if (!profileComplete) {
+      setIsGateOpen(true);
+      return;
+    }
+    setWizardOpenSignal((n) => n + 1);
+  };
+
+  const handleGateComplete = ({
+    slug,
+    cityId,
+    cityLabel,
+    knownAs,
+    contactNumber,
+  }: {
+    slug: string;
+    cityId: number;
+    cityLabel: string;
+    knownAs: string;
+    contactNumber: string;
+  }) => {
+    // Optimistically reflect the gate's writes in local state so the wizard
+    // sees the completed profile on its very next open — no refetch round
+    // trip needed. The DB write already succeeded inside the gate modal.
+    setAgentProfile((prev) =>
+      prev
+        ? {
+            ...prev,
+            slug,
+            known_as: knownAs,
+            contact_number: contactNumber,
+            city_id: cityId,
+            city: cityLabel,
+          }
+        : prev
+    );
+    setAgentSlug(slug);
+    setIsGateOpen(false);
+    setWizardOpenSignal((n) => n + 1);
+  };
+
   return (
     <div className="space-y-6 sm:space-y-8">
       <Toaster position="top-center" />
+
+      {!profileComplete && agentProfile ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/10 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            <strong className="font-semibold">Complete your business profile</strong> to start
+            listing packages. Pilgrims use your business name, city, and contact info to find and
+            trust you.
+          </p>
+          <ButtonPrimary
+            type="button"
+            onClick={() => setIsGateOpen(true)}
+            className="!text-sm !px-4 !py-2"
+          >
+            Complete profile
+          </ButtonPrimary>
+        </div>
+      ) : null}
+
+      {agentUUID && agentSlug ? (
+        <AddPackageWizardModal
+          agentAuthUserId={agentUUID}
+          agentSlug={agentSlug}
+          agentCity={agentCityLabel}
+          triggerless
+          openSignal={wizardOpenSignal}
+          onCreated={() => {
+            queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
+            void revalidatePaths(['/packages', `/${agentSlug}`]);
+          }}
+        />
+      ) : null}
+
+      {agentProfile ? (
+        <ProfileGateModal
+          isOpen={isGateOpen}
+          onClose={() => setIsGateOpen(false)}
+          onComplete={handleGateComplete}
+          agent={agentProfile}
+        />
+      ) : null}
+
       <div className="flex justify-between items-center gap-3 flex-wrap">
         <Menu as="div" className="relative inline-block text-left">
           <Menu.Button className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:border-primary-500 hover:text-primary-700 dark:hover:text-primary-300 focus:outline-none transition-colors">
@@ -423,14 +556,9 @@ const ListedPackagesPage = () => {
         </Menu>
 
         {agentUUID && agentSlug ? (
-          <AddPackageWizardModal
-            agentAuthUserId={agentUUID}
-            agentSlug={agentSlug}
-            onCreated={() => {
-              queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
-              void revalidatePaths(['/packages', `/${agentSlug}`]);
-            }}
-          />
+          <ButtonPrimary type="button" onClick={handleAddNewPackageClick}>
+            Add New Package
+          </ButtonPrimary>
         ) : (
           <ButtonPrimary type="button" onClick={() => router.push('/listing')}>
             Add New Package
@@ -563,6 +691,7 @@ const ListedPackagesPage = () => {
                             <AddPackageWizardModal
                               agentAuthUserId={agentUUID}
                               agentSlug={agentSlug}
+                              agentCity={agentCityLabel}
                               editPackageId={pkg.id}
                               triggerClassName="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
                               triggerContent={<PencilSquareIcon className="w-5 h-5" />}

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import Link from 'next/link';
 import toast from 'react-hot-toast';
 import NcModal from '@/shared/NcModal';
 import ButtonPrimary from '@/shared/ButtonPrimary';
@@ -84,11 +85,25 @@ interface IternaryItemInput {
 interface AddPackageWizardModalProps {
   agentAuthUserId: string;
   agentSlug: string;
+  // Display label of the agent's saved city (e.g. "Mumbai"). Surfaced as
+  // read-only inside the meta step so the agent sees where their package
+  // will appear in the /packages location filter. Empty string falls back to
+  // "Not set" — but the parent gates package creation on city_id being set,
+  // so this should always be populated when the wizard opens.
+  agentCity?: string;
   onCreated: () => void;
   editPackageId?: number;
   triggerLabel?: string;
   triggerContent?: React.ReactNode;
   triggerClassName?: string;
+  // When true, the wizard does NOT render its own trigger button. The parent
+  // controls opening by incrementing `openSignal`. Used by the listed-packages
+  // page so it can intercept the click and show a profile-completion gate
+  // when the agent's profile is incomplete.
+  triggerless?: boolean;
+  // Monotonic counter; each increment opens the wizard. Ignored unless
+  // triggerless is true. Starts at 0 (does not auto-open on mount).
+  openSignal?: number;
 }
 
 interface PackageMetaForm {
@@ -105,7 +120,6 @@ interface PackageMetaForm {
   arrival_city: string;
   departure_date: string;
   arrival_date: string;
-  location: string;
   makkah_hotel_name: string;
   makkah_hotel_distance_m: string;
   madinah_hotel_name: string;
@@ -140,7 +154,6 @@ const initialMetaForm: PackageMetaForm = {
   arrival_city: '',
   departure_date: '',
   arrival_date: '',
-  location: '',
   makkah_hotel_name: '',
   makkah_hotel_distance_m: '',
   madinah_hotel_name: '',
@@ -160,11 +173,14 @@ const makeEmptyIternaryItem = (): IternaryItemInput => ({
 const AddPackageWizardModal = ({
   agentAuthUserId,
   agentSlug,
+  agentCity,
   onCreated,
   editPackageId,
   triggerLabel,
   triggerContent,
   triggerClassName,
+  triggerless = false,
+  openSignal = 0,
 }: AddPackageWizardModalProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -193,6 +209,25 @@ const AddPackageWizardModal = ({
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(undefined);
   const { data: citiesData, isLoading: citiesLoading } = useCities();
+
+  // Triggerless mode: the parent controls open via an incrementing counter.
+  // Skip the very first render's value (0 or the initial mount value) so the
+  // wizard only opens on subsequent increments, not when the component mounts.
+  useEffect(() => {
+    if (!triggerless) return;
+    if (openSignal <= 0) return;
+    const open = async () => {
+      resetForm();
+      if (editPackageId) {
+        await prefillForEdit();
+      }
+      setIsOpen(true);
+    };
+    void open();
+    // resetForm / prefillForEdit are stable closures over component state;
+    // re-running on each openSignal increment is the desired behavior.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [openSignal, triggerless]);
 
   const currentStepIndex = WIZARD_STEPS.indexOf(step);
   const isFirstStep = currentStepIndex === 0;
@@ -345,7 +380,6 @@ const AddPackageWizardModal = ({
         ? String(packageRow.departure_date).slice(0, 10)
         : '',
       arrival_date: packageRow.arrival_date ? String(packageRow.arrival_date).slice(0, 10) : '',
-      location: String(packageRow.location || ''),
       makkah_hotel_name: String(packageRow.makkah_hotel_name || ''),
       makkah_hotel_distance_m: String(packageRow.makkah_hotel_distance_m ?? ''),
       madinah_hotel_name: String(packageRow.madinah_hotel_name || ''),
@@ -466,7 +500,6 @@ const AddPackageWizardModal = ({
           meta.arrival_city,
           meta.departure_date,
           meta.arrival_date,
-          meta.location,
           meta.makkah_hotel_name,
           meta.makkah_hotel_distance_m,
           meta.madinah_hotel_name,
@@ -538,6 +571,82 @@ const AddPackageWizardModal = ({
       toast.error('Slug is invalid.');
       setStep('meta');
       return;
+    }
+
+    // Filter-critical fields. /packages applies range/date filters against
+    // these; if they're missing the package effectively becomes invisible to
+    // most user searches. Drafts (forcePublish=false) are exempt so agents
+    // can save work-in-progress freely. Publishing requires all of them.
+    if (forcePublish) {
+      const price = Number(meta.price_per_person);
+      if (!Number.isFinite(price) || price <= 0) {
+        toast.error('Price per person is required to publish.');
+        setStep('meta');
+        return;
+      }
+
+      if (!meta.departure_date) {
+        toast.error('Departure date is required to publish.');
+        setStep('meta');
+        return;
+      }
+      const departureDate = new Date(meta.departure_date);
+      if (Number.isNaN(departureDate.getTime())) {
+        toast.error('Departure date is invalid.');
+        setStep('meta');
+        return;
+      }
+      const todayMidnight = new Date();
+      todayMidnight.setHours(0, 0, 0, 0);
+      if (departureDate < todayMidnight) {
+        toast.error('Departure date cannot be in the past.');
+        setStep('meta');
+        return;
+      }
+
+      if (!meta.arrival_date) {
+        toast.error('Arrival date is required to publish.');
+        setStep('meta');
+        return;
+      }
+      const arrivalDate = new Date(meta.arrival_date);
+      if (Number.isNaN(arrivalDate.getTime())) {
+        toast.error('Arrival date is invalid.');
+        setStep('meta');
+        return;
+      }
+      if (arrivalDate < departureDate) {
+        toast.error('Arrival date must be on or after departure date.');
+        setStep('meta');
+        return;
+      }
+
+      const duration = Number(meta.total_duration_days);
+      if (!Number.isFinite(duration) || duration <= 0) {
+        toast.error('Total duration (days) is required to publish.');
+        setStep('meta');
+        return;
+      }
+
+      const makkahDistance = Number(meta.makkah_hotel_distance_m);
+      if (!Number.isFinite(makkahDistance) || makkahDistance < 0) {
+        toast.error('Makkah hotel distance is required to publish.');
+        setStep('meta');
+        return;
+      }
+
+      const madinahDistance = Number(meta.madinah_hotel_distance_m);
+      if (!Number.isFinite(madinahDistance) || madinahDistance < 0) {
+        toast.error('Madinah hotel distance is required to publish.');
+        setStep('meta');
+        return;
+      }
+
+      if (!pendingImageFile && !currentImageUrl) {
+        toast.error('Please upload a package image to publish.');
+        setStep('media');
+        return;
+      }
     }
 
     setIsSaving(true);
@@ -618,7 +727,6 @@ const AddPackageWizardModal = ({
       arrival_city: meta.arrival_city.trim() || null,
       departure_date: meta.departure_date || null,
       arrival_date: meta.arrival_date || null,
-      location: meta.location.trim() || null,
       makkah_hotel_name: meta.makkah_hotel_name.trim() || null,
       makkah_hotel_distance_m: Number(meta.makkah_hotel_distance_m || 0),
       madinah_hotel_name: meta.madinah_hotel_name.trim() || null,
@@ -786,27 +894,31 @@ const AddPackageWizardModal = ({
       modalTitle={`${editPackageId ? 'Edit Package' : 'Add New Package'} • ${stepTitle}`}
       contentExtraClass="max-w-5xl"
       contentPaddingClass="px-4 pb-5 pt-4 md:px-6 md:pb-6"
-      renderTrigger={(openModal) => (
-        <button
-          type="button"
-          className={
-            triggerClassName ||
-            (editPackageId
-              ? 'px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs'
-              : 'nc-ButtonPrimary relative h-auto inline-flex items-center justify-center rounded-full transition-colors px-4 py-3 sm:px-6 ttnc-ButtonPrimary disabled:bg-opacity-70 bg-primary-6000 hover:bg-primary-700 text-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-6000 dark:focus:ring-offset-0')
-          }
-          onClick={async () => {
-            resetForm();
-            if (editPackageId) {
-              await prefillForEdit();
-            }
-            setIsOpen(true);
-            openModal();
-          }}
-        >
-          {triggerContent ?? triggerLabel ?? (editPackageId ? 'Edit' : 'Add New Package')}
-        </button>
-      )}
+      renderTrigger={
+        triggerless
+          ? () => null
+          : (openModal) => (
+              <button
+                type="button"
+                className={
+                  triggerClassName ||
+                  (editPackageId
+                    ? 'px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs'
+                    : 'nc-ButtonPrimary relative h-auto inline-flex items-center justify-center rounded-full transition-colors px-4 py-3 sm:px-6 ttnc-ButtonPrimary disabled:bg-opacity-70 bg-primary-6000 hover:bg-primary-700 text-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-6000 dark:focus:ring-offset-0')
+                }
+                onClick={async () => {
+                  resetForm();
+                  if (editPackageId) {
+                    await prefillForEdit();
+                  }
+                  setIsOpen(true);
+                  openModal();
+                }}
+              >
+                {triggerContent ?? triggerLabel ?? (editPackageId ? 'Edit' : 'Add New Package')}
+              </button>
+            )
+      }
       renderContent={() => (
         <div className="space-y-5">
           {isLoadingPackage ? (
@@ -896,6 +1008,12 @@ const AddPackageWizardModal = ({
               <div className="max-h-[58vh] overflow-y-auto pr-1 space-y-5 sm:max-h-[62vh]">
                 {step === 'meta' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
+                      <strong className="font-semibold">Required to publish:</strong>{' '}
+                      price, departure &amp; arrival dates, total duration, Makkah &amp; Madinah
+                      hotel distances, and a package image. You can save a draft with any of these
+                      missing.
+                    </div>
                     <div className="md:col-span-2">
                       <Label>Title</Label>
                       <Input
@@ -1034,13 +1152,21 @@ const AddPackageWizardModal = ({
                       />
                     </div>
                     <div>
-                      <Label>Location</Label>
-                      <Input
-                        name="location"
-                        className="mt-1.5"
-                        value={meta.location}
-                        onChange={handleMetaChange}
-                      />
+                      <Label>Location (from your profile)</Label>
+                      <div className="mt-1.5 flex items-center justify-between rounded-2xl border border-neutral-200 dark:border-neutral-700 px-4 py-2.5 bg-neutral-50 dark:bg-neutral-800/50">
+                        <span className="text-sm">
+                          {(agentCity || '').trim() || 'Not set'}
+                        </span>
+                        <Link
+                          href="/profile"
+                          className="text-xs text-primary-600 hover:underline"
+                        >
+                          Edit profile
+                        </Link>
+                      </div>
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        Pilgrims will find this package under this city in the location filter.
+                      </p>
                     </div>
                     <div>
                       <Label>Makkah Hotel Name</Label>

@@ -308,27 +308,72 @@ const AgentProfilePage = () => {
   const handleSave = async () => {
     if (!agent?.id || isSaving) return;
 
+    // Required-fields gate. These define a usable agent identity; saving
+    // with any of them blank breaks the agent's existing packages: name /
+    // known_as empty → cards display empty business name (known_as falls
+    // back to name); slug empty → /[agentName]/[slug] URLs break and the
+    // denormalized agent_name on packages stops matching; city_id null →
+    // ALL of the agent's packages silently disappear from the /packages
+    // location filter (the view aliases agents.city as package_location);
+    // contact_number empty → pilgrims have no way to actually reach the
+    // agent. Block before the supabase update so the agent can't
+    // accidentally wipe themselves.
+    const trimmedName = form.name.trim();
+    if (trimmedName.length < 2) {
+      toast.error('Name is required (at least 2 characters).');
+      return;
+    }
+
+    const trimmedKnownAs = form.known_as.trim();
+    if (trimmedKnownAs.length < 2) {
+      toast.error('Business name is required (at least 2 characters).');
+      return;
+    }
+
+    const desiredSlugRaw = form.slug.trim().toLowerCase();
+    if (!desiredSlugRaw || desiredSlugRaw.length < 2) {
+      toast.error('URL handle is required.');
+      return;
+    }
+    if (desiredSlugRaw !== slugify(desiredSlugRaw)) {
+      toast.error('URL handle must contain only lowercase letters, numbers, and hyphens.');
+      return;
+    }
+    if (RESERVED_AGENT_SLUGS.has(desiredSlugRaw)) {
+      toast.error('That URL handle is reserved by the system. Please pick a different one.');
+      return;
+    }
+
+    // selectedCity hydrates asynchronously from agent.city_id; in the rare
+    // race window between page load and city fetch returning, fall back to
+    // the original agent.city_id so a fast Save click doesn't spuriously
+    // null the city.
+    const persistedCityId =
+      selectedCity?.id ??
+      ((agent as unknown as { city_id?: number | null }).city_id ?? null);
+    if (!persistedCityId) {
+      toast.error('Please pick your city from the list.');
+      return;
+    }
+
+    const trimmedContact = form.contact_number.trim();
+    const contactDigitCount = (trimmedContact.match(/\d/g) || []).length;
+    if (contactDigitCount < 7) {
+      toast.error('A valid contact number is required.');
+      return;
+    }
+
     setIsSaving(true);
 
     const experiencePayload = experienceField ? { [experienceField]: form.experience.trim() } : {};
 
-    // Slug change handling — validate, check uniqueness, record redirect, then update
+    // Slug change handling — uniqueness check + redirect record. Format and
+    // reserved-word checks were already done above against desiredSlugRaw.
     const oldSlug = (agent.slug || '').trim().toLowerCase();
-    const desiredSlug = form.slug.trim().toLowerCase();
+    const desiredSlug = desiredSlugRaw;
     let slugUpdate: Record<string, string> = {};
 
-    if (desiredSlug && desiredSlug !== oldSlug) {
-      if (RESERVED_AGENT_SLUGS.has(desiredSlug)) {
-        setIsSaving(false);
-        toast.error('That URL is reserved by the system. Please pick a different one.');
-        return;
-      }
-      if (desiredSlug !== slugify(desiredSlug) || desiredSlug.length < 2) {
-        setIsSaving(false);
-        toast.error('Invalid URL. Use lowercase letters, numbers, and hyphens only.');
-        return;
-      }
-
+    if (desiredSlug !== oldSlug) {
       // Uniqueness check (different agent already owns it)
       const { data: existing } = await supabase
         .from('agents')
@@ -360,9 +405,9 @@ const AgentProfilePage = () => {
     const { data, error } = await supabase
       .from('agents')
       .update({
-        name: form.name.trim(),
-        known_as: form.known_as.trim(),
-        contact_number: form.contact_number.trim(),
+        name: trimmedName,
+        known_as: trimmedKnownAs,
+        contact_number: trimmedContact,
         alternate_number: form.alternate_number.trim(),
         whatsapp_url: form.whatsapp_url.trim() || null,
         instagram_url: form.instagram_url.trim() || null,
@@ -372,7 +417,7 @@ const AgentProfilePage = () => {
         city: form.city.trim(),
         state: form.state.trim(),
         country: form.country.trim(),
-        city_id: selectedCity?.id ?? null,
+        city_id: persistedCityId,
         profile_image: form.profile_image.trim() || null,
         banner_image: form.banner_image.trim() || null,
         about_us: form.about_us,
@@ -698,6 +743,12 @@ const AgentProfilePage = () => {
                     onChange={handleCityPick}
                     placeholder="Search city (e.g. Akola)"
                     initialQuery={form.city ? form.city : undefined}
+                    // Disable the X clear button: clearing the city nulls
+                    // city_id on save, which removes ALL the agent's packages
+                    // from the /packages location filter. Agents can still
+                    // CHANGE their city by picking a different suggestion;
+                    // they just can't blank it out.
+                    clearable={false}
                   />
                 </div>
                 {form.city && !selectedCity ? (
