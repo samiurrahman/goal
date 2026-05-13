@@ -2,13 +2,10 @@
 
 import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Popover, Transition } from '@headlessui/react';
-import { MapPinIcon } from '@heroicons/react/24/outline';
-import toast from 'react-hot-toast';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
-import CityAutocomplete, { SelectedCity } from '@/components/CityAutocomplete';
+import CityMultiSelect, { SelectedCity } from '@/components/CityMultiSelect';
 import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
-import { useUserLocation } from '@/hooks/useUserLocation';
 import { supabase } from '@/utils/supabaseClient';
 import XClearIcon from './XClearIcon';
 
@@ -42,7 +39,6 @@ const LocationFilter = () => {
         .select('id, slug, name, admin1_name')
         .in('slug', urlSlugs);
       if (cancelled || error || !data) return;
-      // Preserve the user's URL order so chips render predictably.
       const order = new Map(urlSlugs.map((s, i) => [s, i]));
       const next: SelectedCity[] = data
         .map((row) => ({
@@ -59,13 +55,8 @@ const LocationFilter = () => {
     };
   }, [urlSlugs]);
 
-  const { status: geoStatus, request: requestGeo, errorMessage: geoError } = useUserLocation();
-  const isDetecting = geoStatus === 'requesting';
-
   const apply = useCallback(() => {
     replaceParams((params) => {
-      // Whenever we commit a structured city selection, drop the legacy
-      // freeform key so they can't fight each other on the next read.
       params.delete(LEGACY_LOCATION_PARAM);
       if (stagedCities.length === 0) {
         params.delete(CITY_PARAM);
@@ -83,57 +74,18 @@ const LocationFilter = () => {
     });
   }, [replaceParams]);
 
-  const addCity = useCallback((c: SelectedCity | null) => {
-    if (!c) return;
-    setStagedCities((prev) => (prev.some((x) => x.id === c.id) ? prev : [...prev, c]));
-  }, []);
-
-  const removeCity = useCallback((id: number) => {
-    setStagedCities((prev) => prev.filter((c) => c.id !== id));
-  }, []);
-
-  // "Use my location" — best-effort geocode → city autocomplete on the
-  // detected city name → first match wins. If we can't resolve the user's
-  // city to one we know about, toast a hint instead of failing silently.
-  const detectAndApply = useCallback(
-    async (close: () => void) => {
-      const detected = await requestGeo();
-      if (!detected) {
-        if (geoError) toast.error(geoError);
-        return;
-      }
-      const queryName = (detected.city || detected.state || '').trim();
-      if (!queryName) {
-        toast.error('Could not figure out your city. Pick one manually.');
-        return;
-      }
-      const params = new URLSearchParams({ q: queryName, country: 'IN', limit: '1' });
-      const res = await fetch(`/api/cities/search?${params}`);
-      if (!res.ok) {
-        toast.error('Location lookup failed. Pick a city manually.');
-        return;
-      }
-      const json = (await res.json()) as {
-        cities?: Array<{
-          id: number;
-          slug: string;
-          name: string;
-          admin1_name: string | null;
-        }>;
-      };
-      const top = json.cities?.[0];
-      if (!top) {
-        toast.error(`No packages near ${queryName} yet. Pick a city manually.`);
-        return;
-      }
+  // "Use my location" picks one city → write it straight to the URL and close
+  // the popover. This is a different flow from manual multi-pick (which only
+  // commits on Apply); the user expressed intent unambiguously by sharing
+  // their position, so we don't make them click twice.
+  const onPickGeolocated = useCallback(
+    (city: SelectedCity) => {
       replaceParams((params) => {
         params.delete(LEGACY_LOCATION_PARAM);
-        params.set(CITY_PARAM, top.slug);
+        params.set(CITY_PARAM, city.slug);
       });
-      toast.success(`Showing packages near ${top.name}`);
-      close();
     },
-    [requestGeo, geoError, replaceParams]
+    [replaceParams]
   );
 
   const isActive = urlSlugs.length > 0;
@@ -178,43 +130,17 @@ const LocationFilter = () => {
           >
             <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
               <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
-                <div className="px-5 pt-5 pb-2">
-                  <button
-                    type="button"
-                    onClick={() => detectAndApply(close)}
-                    disabled={isDetecting}
-                    className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 dark:bg-primary-900/20 dark:border-primary-900 px-3 py-1.5 text-xs font-medium text-primary-700 dark:text-primary-200 hover:bg-primary-100 dark:hover:bg-primary-900/40 disabled:opacity-60 transition-colors"
-                  >
-                    <MapPinIcon className="w-3.5 h-3.5" />
-                    {isDetecting ? 'Detecting…' : 'Use my location'}
-                  </button>
-                  <CityAutocomplete
-                    value={null}
-                    onChange={addCity}
-                    placeholder="Search a city (e.g. Akola)"
-                    clearable={false}
+                <div className="px-5 pt-5">
+                  <CityMultiSelect
+                    selected={stagedCities}
+                    onChange={setStagedCities}
+                    showLocationButton
+                    onPickGeolocated={(city) => {
+                      onPickGeolocated(city);
+                      close();
+                    }}
+                    searchPlaceholder="Search city..."
                   />
-                  {stagedCities.length > 0 && (
-                    <div className="mt-3 flex flex-wrap gap-1.5">
-                      {stagedCities.map((c) => (
-                        <span
-                          key={c.id}
-                          className="inline-flex items-center gap-1 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-800 dark:text-primary-100 px-2.5 py-1 text-xs font-medium"
-                        >
-                          {c.name}
-                          {c.admin1_name ? `, ${c.admin1_name}` : ''}
-                          <button
-                            type="button"
-                            onClick={() => removeCity(c.id)}
-                            className="ml-0.5 text-primary-600 hover:text-primary-800 dark:text-primary-300"
-                            aria-label={`Remove ${c.name}`}
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
                 </div>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird

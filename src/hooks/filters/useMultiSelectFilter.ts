@@ -26,12 +26,23 @@ export function useMultiSelectFilter(paramKey: string) {
     );
   }, []);
 
-  const apply = useCallback(() => {
-    replaceParams((params) => {
+  // Writes the current staged state to a URLSearchParams instance without
+  // touching the router. Use this to batch multiple filter commits into a
+  // single router.replace call (the mobile "Apply filters" button calls
+  // every filter's mutate inside one replaceParams) — otherwise each
+  // sequential .apply() races on a stale searchParams snapshot and all but
+  // the last write get silently dropped.
+  const mutate = useCallback(
+    (params: URLSearchParams) => {
       if (selected.length > 0) params.set(paramKey, selected.join(','));
       else params.delete(paramKey);
-    });
-  }, [paramKey, replaceParams, selected]);
+    },
+    [paramKey, selected]
+  );
+
+  const apply = useCallback(() => {
+    replaceParams(mutate);
+  }, [replaceParams, mutate]);
 
   const clear = useCallback(() => {
     setSelected([]);
@@ -43,6 +54,7 @@ export function useMultiSelectFilter(paramKey: string) {
     setSelected,
     toggle,
     apply,
+    mutate,
     clear,
     isActive: selected.length > 0,
     count: selected.length,

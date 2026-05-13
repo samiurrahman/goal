@@ -25,21 +25,39 @@ export function useHotelDistanceFilter(defaultMax = 5000) {
     setMadinah(urlMadinah ? Number(urlMadinah) : defaultMax);
   }, [urlMakkah, urlMadinah, defaultMax]);
 
-  const apply = useCallback(() => {
-    replaceParams((params) => {
+  // See useMultiSelectFilter.mutate — same batching contract.
+  const mutate = useCallback(
+    (params: URLSearchParams) => {
       params.set(MAKKAH_KEY, String(makkah));
       params.set(MADINAH_KEY, String(madinah));
-    });
-  }, [makkah, madinah, replaceParams]);
+    },
+    [makkah, madinah]
+  );
+
+  const mutateClear = useCallback((params: URLSearchParams) => {
+    params.delete(MAKKAH_KEY);
+    params.delete(MADINAH_KEY);
+  }, []);
+
+  const apply = useCallback(() => {
+    replaceParams(mutate);
+  }, [replaceParams, mutate]);
 
   const clear = useCallback(() => {
     setMakkah(defaultMax);
     setMadinah(defaultMax);
-    replaceParams((params) => {
-      params.delete(MAKKAH_KEY);
-      params.delete(MADINAH_KEY);
-    });
-  }, [replaceParams, defaultMax]);
+    replaceParams(mutateClear);
+  }, [replaceParams, mutateClear, defaultMax]);
 
-  return { makkah, setMakkah, madinah, setMadinah, apply, clear, isActive };
+  return {
+    makkah,
+    setMakkah,
+    madinah,
+    setMadinah,
+    apply,
+    mutate,
+    mutateClear,
+    clear,
+    isActive,
+  };
 }

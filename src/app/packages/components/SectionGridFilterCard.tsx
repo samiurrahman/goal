@@ -7,12 +7,13 @@ import TabFilters from './TabFilters';
 import SortByFilter from './SortByFilter';
 import RelaxedSearchBanner from './RelaxedSearchBanner';
 import ButtonPrimary from '@/shared/ButtonPrimary';
-import { useInfiniteQuery } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery } from '@tanstack/react-query';
 import { Package } from '@/data/types';
 import Packages from './packages';
 import {
   fetchPackages,
-  fetchPackagesWithRelaxation,
+  fetchPackagesExact,
+  fetchPackagesRelaxedOnly,
   buildPackagesQueryArgs,
   PackagesFilterPayload,
   RelaxedFilter,
@@ -73,22 +74,22 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
     // response to the current URL.)
     true;
 
+  // Phase 1: exact-match query. Always runs, hits the DB exactly once for
+  // the first page. This is the query that drives the visible UI most of
+  // the time — when the user changes filters, this returns in ~100ms and
+  // the page repaints immediately. Pagination beyond page 0 also goes
+  // through this query (we just re-use the resolved payload).
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery<PageResult, Error>({
       queryKey,
       queryFn: async ({ pageParam }) => {
-        // pageParam is either `0` (first call) or
-        // `{ page, effectivePayload }` (subsequent calls). For page 0 we run
-        // the relaxation flow; for page N>0 we re-use the effective payload
-        // determined by page 0 so pagination stays consistent.
         if (typeof pageParam === 'number' && pageParam === 0) {
-          const r = await fetchPackagesWithRelaxation({
+          const r = await fetchPackagesExact({
             payload,
             pageSize: PAGE_SIZE,
             sort: sortValue,
-            skipRelaxation,
           });
-          return r;
+          return { packages: r.packages, relaxedFilters: [], effectivePayload: r.effectivePayload };
         }
         const { page, effectivePayload } = pageParam as {
           page: number;
@@ -100,9 +101,6 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
           pageSize: PAGE_SIZE,
           sort: sortValue,
         });
-        // Subsequent pages inherit the page-0 relaxedFilters; we only need
-        // them on the first page for banner rendering. Keep an empty array
-        // here to avoid duplicating banner state across pages.
         return { packages, relaxedFilters: [], effectivePayload };
       },
       getNextPageParam: (lastPage, allPages) => {
@@ -116,6 +114,10 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
               pages: [
                 {
                   packages: initialData,
+                  // Server-rendered initial banner is for the FIRST paint only;
+                  // it's safe to keep here because the relaxation query below
+                  // owns the runtime version. If initialData came from the
+                  // server's own relaxation pass, we honour it on first paint.
                   relaxedFilters: initialRelaxedFilters ?? [],
                   effectivePayload: initialEffectivePayload ?? payload,
                 },
@@ -125,8 +127,38 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
           : undefined,
     });
 
-  const firstPage = data?.pages?.[0];
-  const relaxedFilters = firstPage?.relaxedFilters ?? [];
+  const exactFirstPage = data?.pages?.[0];
+  const exactPackages = exactFirstPage?.packages ?? [];
+  const exactEmpty = !isLoading && exactPackages.length === 0;
+
+  // Phase 2: lazy relaxation. Only runs when the exact query has confirmed
+  // zero results and the user hasn't asked for exact-only mode. This is
+  // the expensive cascade (combinations × ladder steps × fetchPackages) —
+  // running it in a separate query means the UI doesn't block on it.
+  // The user sees the empty-state for exact instantly and a small "looking
+  // for nearby alternatives…" banner while this resolves.
+  const { data: relaxedData, isFetching: relaxedFetching } = useQuery<
+    {
+      packages: Package[];
+      relaxedFilters: RelaxedFilter[];
+      effectivePayload: PackagesFilterPayload;
+    },
+    Error
+  >({
+    queryKey: ['packages', 'relaxed', payload, sortValue],
+    queryFn: () =>
+      fetchPackagesRelaxedOnly({ payload, pageSize: PAGE_SIZE, sort: sortValue }),
+    enabled: exactEmpty && !skipRelaxation,
+    staleTime: 30_000,
+  });
+
+  // What actually renders: relaxed results when exact was empty AND
+  // relaxation found something; otherwise the exact-match list (which may
+  // itself be empty → caller renders the "no packages" empty state).
+  const useRelaxed = exactEmpty && !skipRelaxation && (relaxedData?.packages.length ?? 0) > 0;
+  const relaxedFilters = useRelaxed ? relaxedData!.relaxedFilters : (exactFirstPage?.relaxedFilters ?? []);
+  const showRelaxationLoadingBanner =
+    exactEmpty && !skipRelaxation && relaxedFetching && !relaxedData;
 
   // Infinite scroll observer — prefetches before the loader is in view
   const loaderRef = useRef<HTMLDivElement>(null);
@@ -147,10 +179,20 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
     };
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const packages = useMemo(
+  // Exact-match accumulation across infinite-scroll pages.
+  const exactAllPages = useMemo(
     () => data?.pages.flatMap((page) => page.packages) || [],
     [data?.pages]
   );
+
+  // What we actually show: relaxed first-page when exact was empty AND
+  // relaxation found something; otherwise the exact list. Pagination only
+  // applies to the exact list — relaxed is single-page by design (the user
+  // shouldn't infinite-scroll into "even more relaxed" territory without
+  // explicit intent).
+  const packages = useRelaxed ? relaxedData!.packages : exactAllPages;
+  const showEmptyState =
+    !isLoading && exactEmpty && !relaxedFetching && (relaxedData?.packages.length ?? 0) === 0;
 
   return (
     <div className={`nc-SectionGridFilterCard ${className}`} data-nc-id="SectionGridFilterCard">
@@ -161,6 +203,12 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
         </div>
         <SortByFilter />
       </div>
+      {showRelaxationLoadingBanner && (
+        <div className="mb-4 flex items-center gap-3 rounded-2xl border border-primary-100 dark:border-primary-900 bg-primary-50/60 dark:bg-primary-900/20 px-4 py-3 text-sm text-primary-800 dark:text-primary-100">
+          <span className="inline-block h-3.5 w-3.5 rounded-full border-2 border-primary-400 border-t-transparent animate-spin" />
+          <span>No exact matches — looking for nearby alternatives…</span>
+        </div>
+      )}
       {!isLoading && relaxedFilters.length > 0 && packages.length > 0 && (
         <RelaxedSearchBanner
           relaxedFilters={relaxedFilters}
@@ -168,7 +216,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
           onShowExactOnly={() => setSkipRelaxation(true)}
         />
       )}
-      {!isLoading && packages.length === 0 && (
+      {showEmptyState && (
         <div className="mb-6 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-5 py-6 text-center">
           <h3 className="text-base font-semibold">No packages match your search</h3>
           <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
@@ -246,10 +294,16 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
                 agentReviewCount={Number(item.agent_rating_total ?? 0)}
               />
             ))}
-            <div ref={loaderRef} className="flex mt-12 justify-center items-center">
-              {isFetchingNextPage && <ButtonPrimary loading>Loading more Packages</ButtonPrimary>}
-              {!hasNextPage && <span>No more Packages to load.</span>}
-            </div>
+            {/* Pagination is exact-list only. Relaxed results are a single
+                first-page snapshot; the user can broaden filters manually if
+                they want more — we don't want to infinite-scroll into looser
+                and looser approximations. */}
+            {!useRelaxed && packages.length > 0 && (
+              <div ref={loaderRef} className="flex mt-12 justify-center items-center">
+                {isFetchingNextPage && <ButtonPrimary loading>Loading more Packages</ButtonPrimary>}
+                {!hasNextPage && <span>No more Packages to load.</span>}
+              </div>
+            )}
           </>
         )}
       </div>

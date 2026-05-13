@@ -630,6 +630,34 @@ export async function fetchPackages(args: {
   return (data ?? []) as unknown as Package[];
 }
 
+/**
+ * Fast path: exact match only, with the legacy `?location=` resolution
+ * baked in. Use this when you want results NOW and are happy to run
+ * relaxation as a separate, lazy step.
+ *
+ * Why exists: the relaxation ladder can fire dozens of DB queries (one
+ * fetchPackages per ladder step × filter combination). Blocking the UI on
+ * that during typical filter changes makes search feel slow even though
+ * the user's exact query is one round-trip away. Splitting lets the client
+ * paint exact results first (Akola → empty in 100ms), then progressively
+ * enhance with relaxation in the background ("Looking for nearby
+ * alternatives…" banner).
+ */
+export async function fetchPackagesExact(args: {
+  payload: PackagesFilterPayload;
+  pageSize: number;
+  sort: SortValue;
+}): Promise<{ packages: Package[]; effectivePayload: PackagesFilterPayload }> {
+  const payload = await resolvePackagesPayload(args.payload);
+  const packages = await fetchPackages({
+    payload,
+    page: 0,
+    pageSize: args.pageSize,
+    sort: args.sort,
+  });
+  return { packages, effectivePayload: payload };
+}
+
 export type RelaxedFetchResult = {
   packages: Package[];
   relaxedFilters: RelaxedFilter[];
@@ -739,6 +767,82 @@ export async function fetchPackagesWithRelaxation(args: {
     // Cost = sum of (stepIdx + 1) across relaxed filters. Step 0 is the
     // smallest widening; later steps are looser. Lower cost ⇒ closer to
     // the user's original intent.
+    winners.sort((a, b) => {
+      const ac = a.chosen.reduce((s, x) => s + x.stepIdx + 1, 0);
+      const bc = b.chosen.reduce((s, x) => s + x.stepIdx + 1, 0);
+      if (ac !== bc) return ac - bc;
+      return b.packages.length - a.packages.length;
+    });
+    const w = winners[0];
+
+    const relaxed: RelaxedFilter[] = w.chosen.map(({ key, step }) => {
+      const orig = originalValueLabel(key, payload) ?? '';
+      return {
+        key,
+        filterLabel: FILTER_LABEL[key],
+        originalValueLabel: orig,
+        relaxedValueLabel: step.kind === 'widen' ? step.relaxedValueLabel : undefined,
+        kind: step.kind,
+        urlKeys: urlKeysFor(key),
+      };
+    });
+    return { packages: w.packages, relaxedFilters: relaxed, effectivePayload: w.effectivePayload };
+  }
+
+  return { packages: [], relaxedFilters: [], effectivePayload: payload };
+}
+
+/**
+ * Pure relaxation: run the ladder cascade against an already-resolved
+ * payload, assuming the caller already determined that exact match is
+ * empty. Returns an empty `packages` array if no relaxation rung yields
+ * results.
+ *
+ * Pairs with fetchPackagesExact: the client renders exact results first,
+ * then lazily calls this in the background and swaps in the relaxed
+ * result if exact was empty.
+ */
+export async function fetchPackagesRelaxedOnly(args: {
+  payload: PackagesFilterPayload;
+  pageSize: number;
+  sort: SortValue;
+}): Promise<RelaxedFetchResult> {
+  const { pageSize, sort } = args;
+  const payload = await resolvePackagesPayload(args.payload);
+
+  const builtLadders = await Promise.all(
+    RELAXATION_PRIORITY.map(async (key) => ({
+      key,
+      steps: await buildLadder(payload, key),
+    }))
+  );
+  const ladders: LadderEntry[] = builtLadders.filter((l) => l.steps.length > 0);
+  if (ladders.length === 0) {
+    return { packages: [], relaxedFilters: [], effectivePayload: payload };
+  }
+
+  for (let k = 1; k <= ladders.length; k++) {
+    const subsets = combinations(ladders, k);
+    const allCandidates: ChosenStep[][] = [];
+    for (const subset of subsets) {
+      const perFilterChoices: ChosenStep[][] = subset.map((entry) =>
+        entry.steps.map((step, stepIdx) => ({ key: entry.key, stepIdx, step }))
+      );
+      const cross = crossProduct(perFilterChoices);
+      for (const choice of cross) allCandidates.push(choice);
+    }
+
+    const candidates = await Promise.all(
+      allCandidates.map(async (chosen) => {
+        let p = payload;
+        for (const { step } of chosen) p = step.apply(p);
+        const packages = await fetchPackages({ payload: p, page: 0, pageSize, sort });
+        return { chosen, packages, effectivePayload: p };
+      })
+    );
+    const winners = candidates.filter((c) => c.packages.length > 0);
+    if (winners.length === 0) continue;
+
     winners.sort((a, b) => {
       const ac = a.chosen.reduce((s, x) => s + x.stepIdx + 1, 0);
       const bc = b.chosen.reduce((s, x) => s + x.stepIdx + 1, 0);

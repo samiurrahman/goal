@@ -4,7 +4,7 @@ import SectionGridFilterCard from './components/SectionGridFilterCard';
 import { Metadata } from 'next';
 import {
   buildPackagesQueryArgs,
-  fetchPackagesWithRelaxation,
+  fetchPackagesExact,
   RelaxedFetchResult,
 } from '@/lib/queries/packages';
 
@@ -78,13 +78,19 @@ const ListingPackagesPage = async ({ searchParams }: PageProps) => {
 
   const { payload, sort } = buildPackagesQueryArgs(getParam);
 
+  // Server-side: fast path only — exact match in one DB call. The client
+  // owns lazy relaxation, so a /packages?city=akola-in-mh hit with zero
+  // exact matches no longer blocks the SSR on a combinatorial query
+  // cascade. The client renders the empty exact state immediately and
+  // shows "looking for nearby alternatives…" while relaxation runs.
   let initialResult: RelaxedFetchResult = {
     packages: [],
     relaxedFilters: [],
     effectivePayload: payload,
   };
   try {
-    initialResult = await fetchPackagesWithRelaxation({ payload, pageSize: PAGE_SIZE, sort });
+    const r = await fetchPackagesExact({ payload, pageSize: PAGE_SIZE, sort });
+    initialResult = { packages: r.packages, relaxedFilters: [], effectivePayload: r.effectivePayload };
   } catch {
     // Fail gracefully — client will retry
   }

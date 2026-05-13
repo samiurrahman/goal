@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dialog, Transition } from '@headlessui/react';
 import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
@@ -10,8 +10,9 @@ import toast from 'react-hot-toast';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
 import { usePackageSearch, type CityItem } from '@/hooks/usePackageSearch';
+import { useCitySearch } from '@/hooks/useCitySearch';
 import { useUserLocation } from '@/hooks/useUserLocation';
-import { matchUserLocationCities } from '@/utils/matchUserLocationCities';
+import { stripDiacritics } from '@/components/CityMultiSelect';
 
 type FieldName = 'location' | 'month';
 
@@ -32,9 +33,16 @@ const HeroSearchTrigger = () => {
     monthLabel,
     packagesUrl,
     clearAll,
-    cities: allCities,
-    citiesLoading,
   } = usePackageSearch();
+
+  // City picker now hits the API directly — same pattern as the desktop
+  // SearchForm and the listing-page filters.
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(locationQuery), 250);
+    return () => clearTimeout(t);
+  }, [locationQuery]);
+  const { data: suggestions, isFetching: citiesLoading } = useCitySearch(debouncedQuery);
 
   const closeModal = () => setShowModal(false);
   const openModal = (initialField: FieldName = 'location') => {
@@ -60,20 +68,32 @@ const HeroSearchTrigger = () => {
       if (geoError) toast.error(geoError);
       return;
     }
-    const matched = matchUserLocationCities(
-      detected,
-      allCities.map((c) => ({ id: String(c.id), name: c.name, state: c.state ?? null }))
-    );
-    if (matched.length === 0) {
-      toast.error(
-        `No packages near ${detected.city || detected.state || 'your area'} yet. Pick a city manually.`
-      );
+    const queryName = (detected.city || detected.state || '').trim();
+    if (!queryName) {
+      toast.error('Could not figure out your city. Pick one manually.');
       return;
     }
-    const cityRow = allCities.find((c) => c.name === matched[0]);
-    if (!cityRow) return;
-    onPickLocation(cityRow);
-    toast.success(`Showing packages near ${cityRow.name}`);
+    const params = new URLSearchParams({ q: queryName, country: 'IN', limit: '1' });
+    const res = await fetch(`/api/cities/search?${params}`);
+    if (!res.ok) {
+      toast.error('Location lookup failed. Pick a city manually.');
+      return;
+    }
+    const json = (await res.json()) as {
+      cities?: Array<{ id: number; slug: string; name: string; admin1_name: string | null }>;
+    };
+    const top = json.cities?.[0];
+    if (!top) {
+      toast.error(`No packages near ${queryName} yet. Pick a city manually.`);
+      return;
+    }
+    onPickLocation({
+      id: top.id,
+      name: top.name,
+      state: top.admin1_name ?? undefined,
+      slug: top.slug,
+    });
+    toast.success(`Showing packages near ${stripDiacritics(top.name)}`);
   };
 
   const onClearAll = () => {
@@ -89,13 +109,14 @@ const HeroSearchTrigger = () => {
     router.push(packagesUrl);
   };
 
-  const queryFiltered = locationQuery
-    ? allCities.filter((c) =>
-        (c.name + (c.state ? ', ' + c.state : ''))
-          .toLowerCase()
-          .includes(locationQuery.toLowerCase())
-      )
-    : allCities;
+  // API-backed suggestions. Adapter from the cities API shape to the
+  // legacy CityItem shape the picker render expects.
+  const queryFiltered: CityItem[] = (suggestions ?? []).map((c) => ({
+    id: c.id,
+    name: c.name,
+    state: c.admin1_name ?? undefined,
+    slug: c.slug,
+  }));
 
   // ───── Inline card (the visible hero form on mobile) ─────
   const renderInlineCard = () => (
@@ -191,17 +212,19 @@ const HeroSearchTrigger = () => {
               </span>
             </div>
             <div className="mt-7">
-              <p className="block font-semibold text-base">
-                {locationQuery ? 'Search results' : 'All locations'}
-              </p>
+              <p className="block font-semibold text-base">Search results</p>
               <div className="mt-3 max-h-[30vh] overflow-y-auto">
-                {citiesLoading ? (
+                {debouncedQuery.length < 2 ? (
                   <p className="py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                    Loading locations…
+                    Start typing a city (e.g. Akola).
+                  </p>
+                ) : citiesLoading && queryFiltered.length === 0 ? (
+                  <p className="py-4 text-sm text-neutral-500 dark:text-neutral-400">
+                    Searching…
                   </p>
                 ) : queryFiltered.length === 0 ? (
                   <p className="py-4 text-sm text-neutral-500 dark:text-neutral-400">
-                    No location matches &ldquo;{locationQuery}&rdquo;.
+                    No location matches &ldquo;{debouncedQuery}&rdquo;.
                   </p>
                 ) : (
                   queryFiltered.map((item) => (
@@ -212,8 +235,8 @@ const HeroSearchTrigger = () => {
                     >
                       <MapPinIcon className="w-5 h-5 text-neutral-500 dark:text-neutral-400" />
                       <span>
-                        {item.name}
-                        {item.state ? ', ' + item.state : ''}
+                        {stripDiacritics(item.name)}
+                        {item.state ? ', ' + stripDiacritics(item.state) : ''}
                       </span>
                     </div>
                   ))

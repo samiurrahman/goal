@@ -1,13 +1,13 @@
 'use client';
 
-import React, { Fragment, useState, useEffect, useMemo, useCallback } from 'react';
+import React, { Fragment, useState, useEffect, useMemo } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import ButtonClose from '@/shared/ButtonClose';
 import Checkbox from '@/shared/Checkbox';
 import Slider from 'rc-slider';
-import CityAutocomplete, { SelectedCity } from '@/components/CityAutocomplete';
+import CityMultiSelect, { SelectedCity } from '@/components/CityMultiSelect';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabaseClient';
 import { MONTHS_LIST } from '@/contains/contants';
@@ -115,14 +115,6 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
     };
   }, [isOpen, urlCitySlugs]);
 
-  const addCity = useCallback((c: SelectedCity | null) => {
-    if (!c) return;
-    setStagedCities((prev) => (prev.some((x) => x.id === c.id) ? prev : [...prev, c]));
-  }, []);
-  const removeCity = useCallback((id: number) => {
-    setStagedCities((prev) => prev.filter((c) => c.id !== id));
-  }, []);
-
   // Local-only search state for the agent typeahead
   const [agentSearch, setAgentSearch] = useState('');
   const [debouncedAgentSearch, setDebouncedAgentSearch] = useState('');
@@ -180,42 +172,58 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   else if (duration.value > 30) durationText = `1 month ${duration.value - 30} days`;
 
   // ── Apply / Clear all ────────────────────────────────────────────────────
+  // Critical: every filter write must go through a SINGLE replaceParams so
+  // they all commit to the URL atomically. Each filter's .apply() / .clear()
+  // calls router.replace internally with its own URLSearchParams snapshot;
+  // if we chained them sequentially in one click, every call after the first
+  // would read a stale snapshot of `searchParams` (React hasn't re-rendered
+  // yet) and the last router.replace would silently overwrite the rest.
+  // That bug made the modal feel like "apply only writes the last filter".
   const handleApplyAll = () => {
-    // Cities are URL-managed locally — write the staged slug list and drop
-    // the legacy ?location= key so the two contracts can't disagree.
     replaceParams((params) => {
       params.delete(LEGACY_LOCATION_PARAM);
-      if (stagedCities.length === 0) {
-        params.delete(CITY_PARAM);
-      } else {
-        params.set(CITY_PARAM, stagedCities.map((c) => c.slug).join(','));
-      }
+      if (stagedCities.length === 0) params.delete(CITY_PARAM);
+      else params.set(CITY_PARAM, stagedCities.map((c) => c.slug).join(','));
+
+      agent.mutate(params);
+      month.mutate(params);
+
+      // Single-value filters: only commit when the user has actually moved them
+      // off the default (otherwise we'd add unnecessary URL noise).
+      if (duration.value !== DURATION_MAX) duration.mutate(params);
+      else duration.mutateClear(params);
+      if (price.value !== PRICE_MAX) price.mutate(params);
+      else price.mutateClear(params);
+      if (hotelDistance.makkah !== DISTANCE_MAX || hotelDistance.madinah !== DISTANCE_MAX)
+        hotelDistance.mutate(params);
+      else hotelDistance.mutateClear(params);
     });
-    agent.apply();
-    month.apply();
-    // Single-value filters: only commit when the user has actually moved them
-    // off the default (otherwise we'd add unnecessary URL noise).
-    if (duration.value !== DURATION_MAX) duration.apply();
-    else duration.clear();
-    if (price.value !== PRICE_MAX) price.apply();
-    else price.clear();
-    if (hotelDistance.makkah !== DISTANCE_MAX || hotelDistance.madinah !== DISTANCE_MAX)
-      hotelDistance.apply();
-    else hotelDistance.clear();
     onClose();
   };
 
   const handleClearAll = () => {
     setStagedCities([]);
+    // Same batching reasoning as handleApplyAll — every clear in one call.
     replaceParams((params) => {
       params.delete(CITY_PARAM);
       params.delete(LEGACY_LOCATION_PARAM);
+      params.delete('agent_name');
+      params.delete('month');
+      params.delete('total_duration_days');
+      params.delete('price');
+      params.delete('makkah_hotel_distance_m');
+      params.delete('madinah_hotel_distance_m');
     });
-    agent.clear();
-    month.clear();
-    duration.clear();
-    price.clear();
-    hotelDistance.clear();
+    // Local hook state still needs to reset its in-memory selection so the
+    // checkboxes flip off visually on the next open. The URL write above is
+    // the source of truth; these calls won't race because they're internal
+    // setState (no router involvement).
+    agent.setSelected([]);
+    month.setSelected([]);
+    duration.setValue(DURATION_MAX);
+    price.setValue(PRICE_MAX);
+    hotelDistance.setMakkah(DISTANCE_MAX);
+    hotelDistance.setMadinah(DISTANCE_MAX);
     setAgentSearch('');
     setDebouncedAgentSearch('');
     onClose();
@@ -277,33 +285,11 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                         active={cityIsActive}
                         onClear={() => setStagedCities([])}
                       />
-                      <CityAutocomplete
-                        value={null}
-                        onChange={addCity}
-                        placeholder="Search a city (e.g. Akola)"
-                        clearable={false}
+                      <CityMultiSelect
+                        selected={stagedCities}
+                        onChange={setStagedCities}
+                        listClassName="max-h-44 overflow-y-auto space-y-3 pr-1"
                       />
-                      {stagedCities.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {stagedCities.map((c) => (
-                            <span
-                              key={c.id}
-                              className="inline-flex items-center gap-1 rounded-full bg-primary-100 dark:bg-primary-900/40 text-primary-800 dark:text-primary-100 px-2.5 py-1 text-xs font-medium"
-                            >
-                              {c.name}
-                              {c.admin1_name ? `, ${c.admin1_name}` : ''}
-                              <button
-                                type="button"
-                                onClick={() => removeCity(c.id)}
-                                className="ml-0.5 text-primary-600 hover:text-primary-800 dark:text-primary-300"
-                                aria-label={`Remove ${c.name}`}
-                              >
-                                ×
-                              </button>
-                            </span>
-                          ))}
-                        </div>
-                      )}
                     </section>
 
                     {/* Agent */}

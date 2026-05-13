@@ -21,16 +21,31 @@ export function useSingleValueFilter(paramKey: string, defaultValue: number) {
     setValue(urlValue ? Number(urlValue) : defaultValue);
   }, [urlValue, defaultValue]);
 
-  const apply = useCallback(() => {
-    replaceParams((params) => {
+  // See useMultiSelectFilter.mutate — same batching contract.
+  const mutate = useCallback(
+    (params: URLSearchParams) => {
       params.set(paramKey, String(value));
-    });
-  }, [paramKey, replaceParams, value]);
+    },
+    [paramKey, value]
+  );
+
+  // Same intent as mutate() but for the "no filter applied" case — drop the
+  // key entirely so the URL stays clean.
+  const mutateClear = useCallback(
+    (params: URLSearchParams) => {
+      params.delete(paramKey);
+    },
+    [paramKey]
+  );
+
+  const apply = useCallback(() => {
+    replaceParams(mutate);
+  }, [replaceParams, mutate]);
 
   const clear = useCallback(() => {
     setValue(defaultValue);
-    replaceParams((params) => params.delete(paramKey));
-  }, [paramKey, replaceParams, defaultValue]);
+    replaceParams(mutateClear);
+  }, [replaceParams, mutateClear, defaultValue]);
 
-  return { value, setValue, apply, clear, isActive };
+  return { value, setValue, apply, mutate, mutateClear, clear, isActive };
 }

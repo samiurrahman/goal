@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Fragment, useCallback, useMemo, useState } from 'react';
+import React, { Fragment, useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Popover, Transition } from '@headlessui/react';
 import {
@@ -13,8 +13,9 @@ import toast from 'react-hot-toast';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
 import { usePackageSearch, type CityItem } from '@/hooks/usePackageSearch';
+import { useCitySearch } from '@/hooks/useCitySearch';
 import { useUserLocation } from '@/hooks/useUserLocation';
-import { matchUserLocationCities } from '@/utils/matchUserLocationCities';
+import { stripDiacritics } from '@/components/CityMultiSelect';
 
 // Desktop search pill that matches the HajjScanner design system wireframe:
 //   - white rounded-full bar with column dividers
@@ -31,19 +32,18 @@ const SearchForm = () => {
     monthLabel,
     clearMonths,
     packagesUrl,
-    cities,
-    citiesLoading,
   } = usePackageSearch();
 
+  // Local search query feeds the cities API directly. 250ms debounce
+  // matches the rest of the app's city pickers for consistency.
   const [locationQuery, setLocationQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedQuery(locationQuery), 250);
+    return () => clearTimeout(t);
+  }, [locationQuery]);
 
-  const filteredCities = useMemo(() => {
-    if (!locationQuery) return cities;
-    const q = locationQuery.toLowerCase();
-    return cities.filter((c) =>
-      (c.name + (c.state ? ', ' + c.state : '')).toLowerCase().includes(q)
-    );
-  }, [cities, locationQuery]);
+  const { data: suggestions, isFetching: citiesLoading } = useCitySearch(debouncedQuery);
 
   const onPickLocation = (city: CityItem, close: () => void) => {
     handleSelectLocation(city);
@@ -54,6 +54,9 @@ const SearchForm = () => {
   const { status: geoStatus, request: requestGeo, errorMessage: geoError } = useUserLocation();
   const isDetecting = geoStatus === 'requesting';
 
+  // "Use my location" delegates to the same cities API — geocode the user's
+  // position, search for a city by the detected name, take the top match.
+  // No more loading the full city catalog just to match against it.
   const detectAndPick = useCallback(
     async (close: () => void) => {
       const detected = await requestGeo();
@@ -61,24 +64,36 @@ const SearchForm = () => {
         if (geoError) toast.error(geoError);
         return;
       }
-      const matched = matchUserLocationCities(
-        detected,
-        cities.map((c) => ({ id: String(c.id), name: c.name, state: c.state ?? null }))
-      );
-      if (matched.length === 0) {
-        toast.error(
-          `No packages near ${detected.city || detected.state || 'your area'} yet. Pick a city manually.`
-        );
+      const queryName = (detected.city || detected.state || '').trim();
+      if (!queryName) {
+        toast.error('Could not figure out your city. Pick one manually.');
         return;
       }
-      const cityRow = cities.find((c) => c.name === matched[0]);
-      if (!cityRow) return;
-      handleSelectLocation(cityRow);
+      const params = new URLSearchParams({ q: queryName, country: 'IN', limit: '1' });
+      const res = await fetch(`/api/cities/search?${params}`);
+      if (!res.ok) {
+        toast.error('Location lookup failed. Pick a city manually.');
+        return;
+      }
+      const json = (await res.json()) as {
+        cities?: Array<{ id: number; slug: string; name: string; admin1_name: string | null }>;
+      };
+      const top = json.cities?.[0];
+      if (!top) {
+        toast.error(`No packages near ${queryName} yet. Pick a city manually.`);
+        return;
+      }
+      handleSelectLocation({
+        id: top.id,
+        name: top.name,
+        state: top.admin1_name ?? undefined,
+        slug: top.slug,
+      });
       setLocationQuery('');
-      toast.success(`Showing packages near ${cityRow.name}`);
+      toast.success(`Showing packages near ${stripDiacritics(top.name)}`);
       close();
     },
-    [requestGeo, geoError, cities, handleSelectLocation]
+    [requestGeo, geoError, handleSelectLocation]
   );
 
   return (
@@ -124,7 +139,7 @@ const SearchForm = () => {
                     <button
                       type="button"
                       onClick={() => detectAndPick(close)}
-                      disabled={isDetecting || citiesLoading}
+                      disabled={isDetecting}
                       className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary-200 bg-primary-50 dark:bg-primary-900/20 dark:border-primary-900 px-3 py-1.5 text-xs font-medium text-primary-700 dark:text-primary-200 hover:bg-primary-100 dark:hover:bg-primary-900/40 disabled:opacity-60 transition-colors"
                     >
                       <MapPinIcon className="w-3.5 h-3.5" />
@@ -154,26 +169,38 @@ const SearchForm = () => {
                   </div>
 
                   <div className="max-h-72 overflow-y-auto py-2">
-                    {citiesLoading ? (
-                      <p className="px-4 py-3 text-sm text-neutral-500">Loading locations…</p>
-                    ) : !filteredCities || filteredCities.length === 0 ? (
+                    {debouncedQuery.length < 2 ? (
                       <p className="px-4 py-3 text-sm text-neutral-500">
-                        {locationQuery
-                          ? `No location matches “${locationQuery}”.`
-                          : 'No locations available.'}
+                        Start typing a city (e.g. Akola).
+                      </p>
+                    ) : citiesLoading && (suggestions?.length ?? 0) === 0 ? (
+                      <p className="px-4 py-3 text-sm text-neutral-500">Searching…</p>
+                    ) : !suggestions || suggestions.length === 0 ? (
+                      <p className="px-4 py-3 text-sm text-neutral-500">
+                        No location matches &ldquo;{debouncedQuery}&rdquo;.
                       </p>
                     ) : (
-                      filteredCities.map((city) => (
+                      suggestions.map((city) => (
                         <button
                           key={city.id}
                           type="button"
-                          onClick={() => onPickLocation(city, close)}
+                          onClick={() =>
+                            onPickLocation(
+                              {
+                                id: city.id,
+                                name: city.name,
+                                state: city.admin1_name ?? undefined,
+                                slug: city.slug,
+                              },
+                              close
+                            )
+                          }
                           className="w-full flex items-center gap-3 px-4 py-2.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 text-left"
                         >
                           <MapPinIcon className="w-4 h-4 text-neutral-500 flex-shrink-0" />
                           <span className="text-sm text-neutral-800 dark:text-neutral-200 truncate">
-                            {city.name}
-                            {city.state ? `, ${city.state}` : ''}
+                            {stripDiacritics(city.name)}
+                            {city.admin1_name ? `, ${stripDiacritics(city.admin1_name)}` : ''}
                           </span>
                         </button>
                       ))
