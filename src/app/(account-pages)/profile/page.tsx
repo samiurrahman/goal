@@ -13,6 +13,12 @@ import RichTextEditor from '@/shared/RichTextEditor';
 import Checkbox from '@/shared/Checkbox';
 import Textarea from '@/shared/Textarea';
 import Badge from '@/shared/Badge';
+import BannerAvatarEditor from './BannerAvatarEditor';
+import {
+  FEATURE_ICON_OPTIONS,
+  FeatureIcon,
+  DEFAULT_FEATURE_ICON,
+} from '@/components/icons/featureIcons';
 import type { Agent, AgentInfoFeature, TwMainColor } from '@/data/types';
 
 const FEATURE_BADGE_COLORS: { value: TwMainColor; label: string; swatch: string }[] = [
@@ -57,16 +63,12 @@ const syncDenormalizedAgentFields = async ({
     .from('bookings')
     .update({ agent_name: newSlug })
     .eq('agent_id', authUserId);
-  if (bookingError)
-    console.warn('Failed to sync agent_name on bookings:', bookingError.message);
+  if (bookingError) console.warn('Failed to sync agent_name on bookings:', bookingError.message);
 
   // package_details may carry a denormalized agent_name on some installations.
   // Look up this agent's package IDs first; if the column is missing the
   // update simply errors and we ignore it (best-effort).
-  const { data: pkgRows } = await supabase
-    .from('packages')
-    .select('id')
-    .eq('agent_id', authUserId);
+  const { data: pkgRows } = await supabase.from('packages').select('id').eq('agent_id', authUserId);
   const packageIds = (pkgRows || []).map((row: { id: number | string }) => row.id);
   if (packageIds.length > 0) {
     const { error } = await supabase
@@ -196,12 +198,21 @@ const AgentProfilePage = () => {
     image_url: string | null;
   }>({
     heading: 'What We Provide',
-    features: [{ badge_name: '', badge_color: 'blue', title: '', description: '' }],
+    features: [
+      {
+        badge_name: '',
+        badge_color: 'blue',
+        title: '',
+        description: '',
+        icon: DEFAULT_FEATURE_ICON,
+      },
+    ],
     use_default_image: true,
     image_url: null,
   });
   const [isSavingInfoSection, setIsSavingInfoSection] = useState(false);
   const [pendingInfoImage, setPendingInfoImage] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState<'profile' | 'info'>('profile');
 
   // Per-field validation errors for the four identity fields. Each is set
   // on blur (and on a failed save) and cleared on the next keystroke into
@@ -279,13 +290,26 @@ const AgentProfilePage = () => {
       if (isMounted && agentProfile) {
         let features = agentProfile.info_features;
         if (typeof features === 'string') {
-          try { features = JSON.parse(features); } catch { features = []; }
+          try {
+            features = JSON.parse(features);
+          } catch {
+            features = [];
+          }
         }
         setInfoSection({
           heading: agentProfile.info_heading || 'What We Provide',
-          features: Array.isArray(features) && features.length > 0
-            ? features
-            : [{ badge_name: '', badge_color: 'blue', title: '', description: '' }],
+          features:
+            Array.isArray(features) && features.length > 0
+              ? features
+              : [
+                  {
+                    badge_name: '',
+                    badge_color: 'blue',
+                    title: '',
+                    description: '',
+                    icon: DEFAULT_FEATURE_ICON,
+                  },
+                ],
           use_default_image: agentProfile.info_use_default_image ?? true,
           image_url: agentProfile.info_image_url || null,
         });
@@ -337,7 +361,9 @@ const AgentProfilePage = () => {
       // We always prefer the cities table as the source of truth.
       const derivedCountry = countryNameFromCode(data.country_code);
       if (derivedCountry) {
-        setForm((prev) => (prev.country === derivedCountry ? prev : { ...prev, country: derivedCountry }));
+        setForm((prev) =>
+          prev.country === derivedCountry ? prev : { ...prev, country: derivedCountry }
+        );
       }
     })();
     return () => {
@@ -352,7 +378,12 @@ const AgentProfilePage = () => {
     // Clear the inline error for this field on each keystroke so a stale
     // error doesn't linger while the user is actively fixing it. onBlur
     // re-runs the validator when they leave the field.
-    if (field === 'name' || field === 'known_as' || field === 'slug' || field === 'contact_number') {
+    if (
+      field === 'name' ||
+      field === 'known_as' ||
+      field === 'slug' ||
+      field === 'contact_number'
+    ) {
       setFieldErrors((prev) => (prev[field] ? { ...prev, [field]: undefined } : prev));
     }
   };
@@ -368,7 +399,10 @@ const AgentProfilePage = () => {
       // state/country would silently get re-saved against a different city.
       setForm((prev) => ({ ...prev, city: '', state: '', country: '' }));
       if (cityHydrated) {
-        setFieldErrors((prev) => ({ ...prev, city: 'City is required. Please pick from the list.' }));
+        setFieldErrors((prev) => ({
+          ...prev,
+          city: 'City is required. Please pick from the list.',
+        }));
       }
       return;
     }
@@ -407,7 +441,7 @@ const AgentProfilePage = () => {
     // and must pick a new city before saving.
     const persistedCityId = cityHydrated
       ? (selectedCity?.id ?? null)
-      : (selectedCity?.id ?? ((agent as unknown as { city_id?: number | null }).city_id ?? null));
+      : (selectedCity?.id ?? (agent as unknown as { city_id?: number | null }).city_id ?? null);
     const cityError = persistedCityId ? undefined : 'City is required. Please pick from the list.';
 
     setFieldErrors({
@@ -539,12 +573,18 @@ const AgentProfilePage = () => {
   };
 
   const addFeature = () => {
-    if (infoSection.features.length >= 5) return;
+    if (infoSection.features.length >= 3) return;
     setInfoSection((prev) => ({
       ...prev,
       features: [
         ...prev.features,
-        { badge_name: '', badge_color: 'blue' as TwMainColor, title: '', description: '' },
+        {
+          badge_name: '',
+          badge_color: 'blue' as TwMainColor,
+          title: '',
+          description: '',
+          icon: DEFAULT_FEATURE_ICON,
+        },
       ],
     }));
   };
@@ -595,9 +635,7 @@ const AgentProfilePage = () => {
         return;
       }
 
-      const { data: urlData } = supabase.storage
-        .from('agent-images')
-        .getPublicUrl(uploadData.path);
+      const { data: urlData } = supabase.storage.from('agent-images').getPublicUrl(uploadData.path);
       imageUrl = urlData.publicUrl;
       setPendingInfoImage(null);
     }
@@ -641,527 +679,587 @@ const AgentProfilePage = () => {
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
-          {agent.slug ? (
-            <div className="flex justify-end">
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex rounded-full border border-neutral-200 bg-white p-1 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+              {(
+                [
+                  { key: 'profile', label: 'Profile Info' },
+                  { key: 'info', label: 'Info Section' },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                    activeTab === tab.key
+                      ? 'bg-primary-6000 text-white shadow-sm'
+                      : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+            {agent.slug ? (
               <Link
                 href={`/${agent.slug}`}
                 className="inline-flex w-fit items-center rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800"
               >
                 View Public Page
               </Link>
-            </div>
-          ) : null}
-
-          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 md:p-6">
-            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-              <div>
-                <Label>Legal Name</Label>
-                <Input
-                  className={`mt-1.5 ${
-                    fieldErrors.name
-                      ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
-                      : ''
-                  }`}
-                  value={form.name}
-                  onChange={(e) => updateField('name', e.target.value)}
-                  onBlur={(e) =>
-                    setFieldErrors((prev) => ({ ...prev, name: validateAgentName(e.target.value) }))
-                  }
-                  placeholder="Enter legal name"
-                />
-                {fieldErrors.name ? (
-                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
-                    {fieldErrors.name}
-                  </p>
-                ) : null}
-              </div>
-
-              <div>
-                <Label>Known As</Label>
-                <Input
-                  className={`mt-1.5 ${
-                    fieldErrors.known_as
-                      ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
-                      : ''
-                  }`}
-                  value={form.known_as}
-                  onChange={(e) => updateField('known_as', e.target.value)}
-                  onBlur={(e) =>
-                    setFieldErrors((prev) => ({
-                      ...prev,
-                      known_as: validateKnownAs(e.target.value),
-                    }))
-                  }
-                  placeholder="Public profile name"
-                />
-                {fieldErrors.known_as ? (
-                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
-                    {fieldErrors.known_as}
-                  </p>
-                ) : null}
-              </div>
-
-              <div className="md:col-span-2">
-                <Label>Public URL</Label>
-                <div
-                  className={`mt-1.5 flex items-stretch rounded-2xl border overflow-hidden focus-within:ring-2 ${
-                    fieldErrors.slug
-                      ? 'border-red-500 focus-within:ring-red-200'
-                      : 'border-neutral-300 dark:border-neutral-600 focus-within:ring-primary-500'
-                  }`}
-                >
-                  <span className="inline-flex items-center px-3 bg-neutral-50 dark:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400 border-r border-neutral-300 dark:border-neutral-600 select-none whitespace-nowrap">
-                    searchumrah.com/
-                  </span>
-                  <input
-                    type="text"
-                    inputMode="url"
-                    autoCapitalize="none"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    value={form.slug}
-                    onChange={(e) => updateField('slug', slugify(e.target.value))}
-                    onBlur={(e) =>
-                      setFieldErrors((prev) => ({ ...prev, slug: validateAgentSlug(e.target.value) }))
-                    }
-                    placeholder="your-business-name"
-                    className="flex-1 px-3 py-3 bg-transparent text-sm focus:outline-none"
-                  />
-                </div>
-
-                {(() => {
-                  const trimmed = form.slug.trim();
-                  const original = (agent?.slug || '').trim();
-                  // fieldErrors.slug covers "empty / required" on blur; the
-                  // checks below give live feedback as the user types (the
-                  // onBlur error is cleared on each keystroke via updateField).
-                  if (fieldErrors.slug) {
-                    return (
-                      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
-                        <i className="las la-exclamation-circle mr-1" />
-                        {fieldErrors.slug}
-                      </p>
-                    );
-                  }
-                  const isReserved = trimmed.length > 0 && RESERVED_AGENT_SLUGS.has(trimmed);
-                  const isInvalid = trimmed.length > 0 && trimmed !== slugify(trimmed);
-                  const hasChanged = trimmed.length > 0 && trimmed !== original;
-
-                  if (isReserved) {
-                    return (
-                      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
-                        <i className="las la-exclamation-circle mr-1" />
-                        That URL is reserved by the system. Please pick a different one.
-                      </p>
-                    );
-                  }
-                  if (isInvalid) {
-                    return (
-                      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
-                        <i className="las la-exclamation-circle mr-1" />
-                        Use lowercase letters, numbers, and hyphens only.
-                      </p>
-                    );
-                  }
-                  if (hasChanged) {
-                    return (
-                      <p className="mt-1.5 text-xs rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-amber-800 dark:text-amber-200">
-                        <i className="las la-exclamation-triangle mr-1" />
-                        Heads up — changing your URL means anyone who already has the old link
-                        (Google, social media, WhatsApp shares) will land on a 404 unless we set up
-                        a redirect. Old URL: <span className="font-mono">/{original}</span>
-                      </p>
-                    );
-                  }
-                  return (
-                    <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
-                      Your public agent page is{' '}
-                      <span className="font-mono text-neutral-700 dark:text-neutral-300">
-                        searchumrah.com/{trimmed || original}
-                      </span>
-                    </p>
-                  );
-                })()}
-              </div>
-
-              <div>
-                <Label>Contact Number</Label>
-                <Input
-                  className={`mt-1.5 ${
-                    fieldErrors.contact_number
-                      ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
-                      : ''
-                  }`}
-                  value={form.contact_number}
-                  onChange={(e) => updateField('contact_number', e.target.value)}
-                  onBlur={(e) =>
-                    setFieldErrors((prev) => ({
-                      ...prev,
-                      contact_number: validateContactNumber(e.target.value),
-                    }))
-                  }
-                  placeholder="Primary phone number"
-                />
-                {fieldErrors.contact_number ? (
-                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
-                    {fieldErrors.contact_number}
-                  </p>
-                ) : null}
-              </div>
-
-              <div>
-                <Label>Alternate Number</Label>
-                <Input
-                  className="mt-1.5"
-                  value={form.alternate_number}
-                  onChange={(e) => updateField('alternate_number', e.target.value)}
-                  placeholder="Backup phone number"
-                />
-              </div>
-
-              <div>
-                <Label>Email</Label>
-                <Input
-                  className="mt-1.5"
-                  value={form.email_id}
-                  onChange={(e) => updateField('email_id', e.target.value)}
-                  placeholder="Email address"
-                />
-              </div>
-
-              <div>
-                <Label>WhatsApp Link</Label>
-                <Input
-                  className="mt-1.5"
-                  value={form.whatsapp_url}
-                  onChange={(e) => updateField('whatsapp_url', e.target.value)}
-                  placeholder="https://wa.me/919876543210"
-                />
-              </div>
-
-              <div>
-                <Label>Instagram Link</Label>
-                <Input
-                  className="mt-1.5"
-                  value={form.instagram_url}
-                  onChange={(e) => updateField('instagram_url', e.target.value)}
-                  placeholder="https://instagram.com/yourpage"
-                />
-              </div>
-
-              <div>
-                <Label>Facebook Link</Label>
-                <Input
-                  className="mt-1.5"
-                  value={form.facebook_url}
-                  onChange={(e) => updateField('facebook_url', e.target.value)}
-                  placeholder="https://facebook.com/yourpage"
-                />
-              </div>
-
-              <div>
-                <Label>Experience (Years)</Label>
-                <Input
-                  className="mt-1.5"
-                  value={form.experience}
-                  onChange={(e) => updateField('experience', e.target.value)}
-                  placeholder="e.g. 10"
-                />
-                {!experienceField ? (
-                  <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                    Experience field is not configured in backend schema yet.
-                  </p>
-                ) : null}
-              </div>
-
-              <div ref={cityFieldRef}>
-                <Label>Location</Label>
-                <div className="mt-1.5">
-                  <CityAutocomplete
-                    value={selectedCity}
-                    onChange={handleCityPick}
-                    placeholder="Search city (e.g. Akola)"
-                    initialQuery={form.city ? form.city : undefined}
-                    // Disable the X clear button: clearing the city nulls
-                    // city_id on save, which removes ALL the agent's packages
-                    // from the /packages location filter. Agents can still
-                    // CHANGE their city by picking a different suggestion;
-                    // they just can't blank it out.
-                    clearable={false}
-                    className={fieldErrors.city ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : ''}
-                  />
-                </div>
-                {fieldErrors.city ? (
-                  <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
-                    {fieldErrors.city}
-                  </p>
-                ) : form.city && !selectedCity ? (
-                  <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
-                    Saved city is text-only ({form.city}
-                    {form.state ? `, ${form.state}` : ''}). Pick from the
-                    suggestions to enable proximity search on your packages.
-                  </p>
-                ) : null}
-              </div>
-
-              <div>
-                <Label>State</Label>
-                <Input
-                  className="mt-1.5"
-                  value={form.state}
-                  readOnly
-                  placeholder="Auto from city"
-                />
-              </div>
-
-              <div>
-                <Label>Country</Label>
-                <Input
-                  className="mt-1.5"
-                  value={form.country}
-                  readOnly
-                  placeholder="Auto from city"
-                />
-              </div>
-
-              <div>
-                <Label>Address</Label>
-                <Input
-                  className="mt-1.5"
-                  value={form.address}
-                  onChange={(e) => updateField('address', e.target.value)}
-                  placeholder="Street and area"
-                />
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <Label>About Us</Label>
-              <div className="mt-1.5">
-                <RichTextEditor
-                  value={form.about_us}
-                  onChange={(updated) => updateField('about_us', updated)}
-                  placeholder="Describe your services, process, and support."
-                  minHeightClassName="min-h-[220px]"
-                />
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-1 gap-5 border-t border-neutral-200 pt-5 dark:border-neutral-700 md:grid-cols-2">
-              <ImageUpload
-                label="Profile Picture"
-                folder={`agents/${agent.id}`}
-                currentImageUrl={form.profile_image}
-                fixedFileName="profile"
-                onUploadSuccess={(url) => updateField('profile_image', url)}
-                aspectRatio="square"
-              />
-              <ImageUpload
-                label="Banner Image"
-                folder={`agents/${agent.id}`}
-                currentImageUrl={form.banner_image}
-                fixedFileName="banner"
-                onUploadSuccess={(url) => updateField('banner_image', url)}
-                aspectRatio="wide"
-              />
-            </div>
+            ) : null}
           </div>
 
-          <div className="pt-2">
-            <ButtonPrimary disabled={!canSave} onClick={handleSave}>
-              {isSaving ? 'Saving...' : 'Update info'}
-            </ButtonPrimary>
-          </div>
+          {activeTab === 'profile' ? (
+            <div className="space-y-4">
+              <BannerAvatarEditor
+                agentId={agent.id}
+                bannerUrl={form.banner_image}
+                profileUrl={form.profile_image}
+                legalName={form.name}
+                knownAs={form.known_as}
+                onBannerChange={(url) => updateField('banner_image', url)}
+                onProfileChange={(url) => updateField('profile_image', url)}
+              />
 
-          <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 md:p-6">
-            <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
-              Info Section
-            </h2>
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-              Customize the &ldquo;What We Provide&rdquo; section on your public profile page.
-            </p>
+              <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 md:p-6">
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                  <div>
+                    <Label>Legal Name</Label>
+                    <Input
+                      className={`mt-1.5 ${
+                        fieldErrors.name
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                          : ''
+                      }`}
+                      value={form.name}
+                      onChange={(e) => updateField('name', e.target.value)}
+                      onBlur={(e) =>
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          name: validateAgentName(e.target.value),
+                        }))
+                      }
+                      placeholder="Enter legal name"
+                    />
+                    {fieldErrors.name ? (
+                      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                        {fieldErrors.name}
+                      </p>
+                    ) : null}
+                  </div>
 
-            <div className="mt-4 space-y-5">
-              <div>
-                <Label>Section Heading</Label>
-                <Input
-                  className="mt-1.5"
-                  value={infoSection.heading}
-                  onChange={(e) =>
-                    setInfoSection((prev) => ({ ...prev, heading: e.target.value }))
-                  }
-                  placeholder="What We Provide"
-                />
-              </div>
+                  <div>
+                    <Label>Known As</Label>
+                    <Input
+                      className={`mt-1.5 ${
+                        fieldErrors.known_as
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                          : ''
+                      }`}
+                      value={form.known_as}
+                      onChange={(e) => updateField('known_as', e.target.value)}
+                      onBlur={(e) =>
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          known_as: validateKnownAs(e.target.value),
+                        }))
+                      }
+                      placeholder="Public profile name"
+                    />
+                    {fieldErrors.known_as ? (
+                      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                        {fieldErrors.known_as}
+                      </p>
+                    ) : null}
+                  </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label>Features ({infoSection.features.length}/5)</Label>
-                  {infoSection.features.length < 5 && (
-                    <button
-                      type="button"
-                      onClick={addFeature}
-                      className="text-sm text-primary-6000 hover:text-primary-700 font-medium"
+                  <div className="md:col-span-2">
+                    <Label>Public URL</Label>
+                    <div
+                      className={`mt-1.5 flex items-stretch rounded-2xl border overflow-hidden focus-within:ring-2 ${
+                        fieldErrors.slug
+                          ? 'border-red-500 focus-within:ring-red-200'
+                          : 'border-neutral-300 dark:border-neutral-600 focus-within:ring-primary-500'
+                      }`}
                     >
-                      + Add Feature
-                    </button>
-                  )}
-                </div>
-
-                <p className="text-xs text-neutral-500 dark:text-neutral-400 -mt-2">
-                  Each card on your public &ldquo;{infoSection.heading || 'What We Provide'}&rdquo; section gets a small badge, a title, and a short description. Pick a badge label that pilgrims will instantly recognise (e.g. &ldquo;Govt approved&rdquo;, &ldquo;Visa included&rdquo;).
-                </p>
-
-                {infoSection.features.map((feature, index) => (
-                  <div
-                    key={index}
-                    className="rounded-xl border border-neutral-200 dark:border-neutral-700 p-4 space-y-4"
-                  >
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex items-center gap-2">
-                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 text-[12px] font-semibold">
-                          {index + 1}
-                        </span>
-                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                          Feature {index + 1}
-                        </span>
-                        {feature.badge_name ? (
-                          <Badge name={feature.badge_name} color={feature.badge_color} />
-                        ) : (
-                          <span className="text-[11px] text-neutral-400 italic">badge preview</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          className="text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed"
-                          disabled={index === 0}
-                          onClick={() => moveFeature(index, -1)}
-                          aria-label="Move up"
-                        >
-                          <i className="las la-arrow-up text-base" />
-                        </button>
-                        <button
-                          type="button"
-                          className="text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed"
-                          disabled={index === infoSection.features.length - 1}
-                          onClick={() => moveFeature(index, 1)}
-                          aria-label="Move down"
-                        >
-                          <i className="las la-arrow-down text-base" />
-                        </button>
-                        {infoSection.features.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeFeature(index)}
-                            className="text-xs text-red-500 hover:text-red-700 hover:underline"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
+                      <span className="inline-flex items-center px-3 bg-neutral-50 dark:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400 border-r border-neutral-300 dark:border-neutral-600 select-none whitespace-nowrap">
+                        searchumrah.com/
+                      </span>
+                      <input
+                        type="text"
+                        inputMode="url"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        value={form.slug}
+                        onChange={(e) => updateField('slug', slugify(e.target.value))}
+                        onBlur={(e) =>
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            slug: validateAgentSlug(e.target.value),
+                          }))
+                        }
+                        placeholder="your-business-name"
+                        className="flex-1 px-3 py-3 bg-transparent text-sm focus:outline-none"
+                      />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <div className="md:col-span-1">
-                        <Label>Badge label</Label>
-                        <Input
-                          className="mt-1.5"
-                          value={feature.badge_name}
-                          onChange={(e) =>
-                            updateFeature(index, 'badge_name', e.target.value)
-                          }
-                          placeholder="Best Service"
-                          maxLength={24}
-                        />
-                        <p className="mt-1 text-[11px] text-neutral-400">
-                          Short pill above the title (max 24 chars).
+                    {(() => {
+                      const trimmed = form.slug.trim();
+                      const original = (agent?.slug || '').trim();
+                      // fieldErrors.slug covers "empty / required" on blur; the
+                      // checks below give live feedback as the user types (the
+                      // onBlur error is cleared on each keystroke via updateField).
+                      if (fieldErrors.slug) {
+                        return (
+                          <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                            <i className="las la-exclamation-circle mr-1" />
+                            {fieldErrors.slug}
+                          </p>
+                        );
+                      }
+                      const isReserved = trimmed.length > 0 && RESERVED_AGENT_SLUGS.has(trimmed);
+                      const isInvalid = trimmed.length > 0 && trimmed !== slugify(trimmed);
+                      const hasChanged = trimmed.length > 0 && trimmed !== original;
+
+                      if (isReserved) {
+                        return (
+                          <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                            <i className="las la-exclamation-circle mr-1" />
+                            That URL is reserved by the system. Please pick a different one.
+                          </p>
+                        );
+                      }
+                      if (isInvalid) {
+                        return (
+                          <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                            <i className="las la-exclamation-circle mr-1" />
+                            Use lowercase letters, numbers, and hyphens only.
+                          </p>
+                        );
+                      }
+                      if (hasChanged) {
+                        return (
+                          <p className="mt-1.5 text-xs rounded-lg bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 px-3 py-2 text-amber-800 dark:text-amber-200">
+                            <i className="las la-exclamation-triangle mr-1" />
+                            Heads up — changing your URL means anyone who already has the old link
+                            (Google, social media, WhatsApp shares) will land on a 404 unless we set
+                            up a redirect. Old URL: <span className="font-mono">/{original}</span>
+                          </p>
+                        );
+                      }
+                      return (
+                        <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                          Your public agent page is{' '}
+                          <span className="font-mono text-neutral-700 dark:text-neutral-300">
+                            searchumrah.com/{trimmed || original}
+                          </span>
                         </p>
+                      );
+                    })()}
+                  </div>
+
+                  <div>
+                    <Label>Contact Number</Label>
+                    <Input
+                      className={`mt-1.5 ${
+                        fieldErrors.contact_number
+                          ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                          : ''
+                      }`}
+                      value={form.contact_number}
+                      onChange={(e) => updateField('contact_number', e.target.value)}
+                      onBlur={(e) =>
+                        setFieldErrors((prev) => ({
+                          ...prev,
+                          contact_number: validateContactNumber(e.target.value),
+                        }))
+                      }
+                      placeholder="Primary phone number"
+                    />
+                    {fieldErrors.contact_number ? (
+                      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                        {fieldErrors.contact_number}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <Label>Alternate Number</Label>
+                    <Input
+                      className="mt-1.5"
+                      value={form.alternate_number}
+                      onChange={(e) => updateField('alternate_number', e.target.value)}
+                      placeholder="Backup phone number"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Email</Label>
+                    <Input
+                      className="mt-1.5"
+                      value={form.email_id}
+                      onChange={(e) => updateField('email_id', e.target.value)}
+                      placeholder="Email address"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>WhatsApp Link</Label>
+                    <Input
+                      className="mt-1.5"
+                      value={form.whatsapp_url}
+                      onChange={(e) => updateField('whatsapp_url', e.target.value)}
+                      placeholder="https://wa.me/919876543210"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Instagram Link</Label>
+                    <Input
+                      className="mt-1.5"
+                      value={form.instagram_url}
+                      onChange={(e) => updateField('instagram_url', e.target.value)}
+                      placeholder="https://instagram.com/yourpage"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Facebook Link</Label>
+                    <Input
+                      className="mt-1.5"
+                      value={form.facebook_url}
+                      onChange={(e) => updateField('facebook_url', e.target.value)}
+                      placeholder="https://facebook.com/yourpage"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Experience (Years)</Label>
+                    <Input
+                      className="mt-1.5"
+                      value={form.experience}
+                      onChange={(e) => updateField('experience', e.target.value)}
+                      placeholder="e.g. 10"
+                    />
+                    {!experienceField ? (
+                      <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                        Experience field is not configured in backend schema yet.
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div ref={cityFieldRef}>
+                    <Label>Location</Label>
+                    <div className="mt-1.5">
+                      <CityAutocomplete
+                        value={selectedCity}
+                        onChange={handleCityPick}
+                        placeholder="Search city (e.g. Akola)"
+                        initialQuery={form.city ? form.city : undefined}
+                        // Disable the X clear button: clearing the city nulls
+                        // city_id on save, which removes ALL the agent's packages
+                        // from the /packages location filter. Agents can still
+                        // CHANGE their city by picking a different suggestion;
+                        // they just can't blank it out.
+                        clearable={false}
+                        className={
+                          fieldErrors.city
+                            ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
+                            : ''
+                        }
+                      />
+                    </div>
+                    {fieldErrors.city ? (
+                      <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                        {fieldErrors.city}
+                      </p>
+                    ) : form.city && !selectedCity ? (
+                      <p className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                        Saved city is text-only ({form.city}
+                        {form.state ? `, ${form.state}` : ''}). Pick from the suggestions to enable
+                        proximity search on your packages.
+                      </p>
+                    ) : null}
+                  </div>
+
+                  <div>
+                    <Label>State</Label>
+                    <Input
+                      className="mt-1.5"
+                      value={form.state}
+                      readOnly
+                      placeholder="Auto from city"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Country</Label>
+                    <Input
+                      className="mt-1.5"
+                      value={form.country}
+                      readOnly
+                      placeholder="Auto from city"
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Address</Label>
+                    <Input
+                      className="mt-1.5"
+                      value={form.address}
+                      onChange={(e) => updateField('address', e.target.value)}
+                      placeholder="Street and area"
+                    />
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  <Label>About Us</Label>
+                  <div className="mt-1.5">
+                    <RichTextEditor
+                      value={form.about_us}
+                      onChange={(updated) => updateField('about_us', updated)}
+                      placeholder="Describe your services, process, and support."
+                      minHeightClassName="min-h-[220px]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="pt-2">
+                <ButtonPrimary disabled={!canSave} onClick={handleSave}>
+                  {isSaving ? 'Saving...' : 'Update info'}
+                </ButtonPrimary>
+              </div>
+            </div>
+          ) : (
+            <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 md:p-6">
+              <h2 className="text-lg font-semibold text-neutral-900 dark:text-white">
+                Info Section
+              </h2>
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                Customize the &ldquo;What We Provide&rdquo; section on your public profile page.
+              </p>
+
+              <div className="mt-4 space-y-5">
+                <div>
+                  <Label>Section Heading</Label>
+                  <Input
+                    className="mt-1.5"
+                    value={infoSection.heading}
+                    onChange={(e) =>
+                      setInfoSection((prev) => ({ ...prev, heading: e.target.value }))
+                    }
+                    placeholder="What We Provide"
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <Label>Features ({infoSection.features.length}/3)</Label>
+                    {infoSection.features.length < 3 && (
+                      <button
+                        type="button"
+                        onClick={addFeature}
+                        className="text-sm text-primary-6000 hover:text-primary-700 font-medium"
+                      >
+                        + Add Feature
+                      </button>
+                    )}
+                  </div>
+
+                  <p className="text-xs text-neutral-500 dark:text-neutral-400 -mt-2">
+                    Each card on your public &ldquo;{infoSection.heading || 'What We Provide'}
+                    &rdquo; section gets an icon, a small badge, a title, and a short description.
+                    Pick a badge label that pilgrims will instantly recognise (e.g. &ldquo;Govt
+                    approved&rdquo;, &ldquo;Visa included&rdquo;). You can add up to 3.
+                  </p>
+
+                  {infoSection.features.map((feature, index) => (
+                    <div
+                      key={index}
+                      className="rounded-xl border border-neutral-200 dark:border-neutral-700 p-4 space-y-4"
+                    >
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 text-[12px] font-semibold">
+                            {index + 1}
+                          </span>
+                          <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                            Feature {index + 1}
+                          </span>
+                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-neutral-200 bg-white text-primary-700 dark:border-neutral-700 dark:bg-neutral-800">
+                            <FeatureIcon iconKey={feature.icon} className="h-4 w-4" />
+                          </span>
+                          {feature.badge_name ? (
+                            <Badge name={feature.badge_name} color={feature.badge_color} />
+                          ) : (
+                            <span className="text-[11px] text-neutral-400 italic">
+                              badge preview
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            className="text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                            disabled={index === 0}
+                            onClick={() => moveFeature(index, -1)}
+                            aria-label="Move up"
+                          >
+                            <i className="las la-arrow-up text-base" />
+                          </button>
+                          <button
+                            type="button"
+                            className="text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                            disabled={index === infoSection.features.length - 1}
+                            onClick={() => moveFeature(index, 1)}
+                            aria-label="Move down"
+                          >
+                            <i className="las la-arrow-down text-base" />
+                          </button>
+                          {infoSection.features.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeFeature(index)}
+                              className="text-xs text-red-500 hover:text-red-700 hover:underline"
+                            >
+                              Remove
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="md:col-span-2">
-                        <Label>Badge colour</Label>
+
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="md:col-span-1">
+                          <Label>Badge label</Label>
+                          <Input
+                            className="mt-1.5"
+                            value={feature.badge_name}
+                            onChange={(e) => updateFeature(index, 'badge_name', e.target.value)}
+                            placeholder="Best Service"
+                            maxLength={24}
+                          />
+                          <p className="mt-1 text-[11px] text-neutral-400">
+                            Short pill above the title (max 24 chars).
+                          </p>
+                        </div>
+                        <div className="md:col-span-2">
+                          <Label>Badge colour</Label>
+                          <div className="mt-1.5 flex flex-wrap gap-2">
+                            {FEATURE_BADGE_COLORS.map((opt) => {
+                              const active = feature.badge_color === opt.value;
+                              return (
+                                <button
+                                  key={opt.value}
+                                  type="button"
+                                  onClick={() => updateFeature(index, 'badge_color', opt.value)}
+                                  aria-pressed={active}
+                                  title={opt.label}
+                                  className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition ${
+                                    active
+                                      ? 'border-neutral-900 dark:border-white'
+                                      : 'border-transparent hover:border-neutral-300'
+                                  }`}
+                                >
+                                  <span className={`block h-5 w-5 rounded-full ${opt.swatch}`} />
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Card icon</Label>
                         <div className="mt-1.5 flex flex-wrap gap-2">
-                          {FEATURE_BADGE_COLORS.map((opt) => {
-                            const active = feature.badge_color === opt.value;
+                          {FEATURE_ICON_OPTIONS.map((opt) => {
+                            const active = (feature.icon || DEFAULT_FEATURE_ICON) === opt.key;
                             return (
                               <button
-                                key={opt.value}
+                                key={opt.key}
                                 type="button"
-                                onClick={() => updateFeature(index, 'badge_color', opt.value)}
+                                onClick={() => updateFeature(index, 'icon', opt.key)}
                                 aria-pressed={active}
                                 title={opt.label}
-                                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition ${
+                                className={`flex h-10 w-10 items-center justify-center rounded-xl border-2 transition ${
                                   active
-                                    ? 'border-neutral-900 dark:border-white'
-                                    : 'border-transparent hover:border-neutral-300'
+                                    ? 'border-primary-6000 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                                    : 'border-neutral-200 text-neutral-500 hover:border-neutral-300 dark:border-neutral-700 dark:hover:border-neutral-600'
                                 }`}
                               >
-                                <span className={`block h-5 w-5 rounded-full ${opt.swatch}`} />
+                                <FeatureIcon iconKey={opt.key} className="h-5 w-5" />
                               </button>
                             );
                           })}
                         </div>
+                        <p className="mt-1 text-[11px] text-neutral-400">
+                          Shown at the top of this card on your public page.
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label>Title</Label>
+                        <Input
+                          className="mt-1.5"
+                          value={feature.title}
+                          onChange={(e) => updateFeature(index, 'title', e.target.value)}
+                          placeholder="Best in class service"
+                        />
+                        <p className="mt-1 text-[11px] text-neutral-400">
+                          The bold headline on the card.
+                        </p>
+                      </div>
+
+                      <div>
+                        <Label>Description</Label>
+                        <Textarea
+                          className="mt-1.5"
+                          value={feature.description}
+                          onChange={(e) => updateFeature(index, 'description', e.target.value)}
+                          placeholder="One or two sentences explaining the commitment."
+                          rows={2}
+                        />
                       </div>
                     </div>
+                  ))}
+                </div>
 
-                    <div>
-                      <Label>Title</Label>
-                      <Input
-                        className="mt-1.5"
-                        value={feature.title}
-                        onChange={(e) => updateFeature(index, 'title', e.target.value)}
-                        placeholder="Best in class service"
-                      />
-                      <p className="mt-1 text-[11px] text-neutral-400">
-                        The bold headline on the card.
-                      </p>
-                    </div>
-
-                    <div>
-                      <Label>Description</Label>
-                      <Textarea
-                        className="mt-1.5"
-                        value={feature.description}
-                        onChange={(e) => updateFeature(index, 'description', e.target.value)}
-                        placeholder="One or two sentences explaining the commitment."
-                        rows={2}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4 space-y-3">
-                <Checkbox
-                  key={String(infoSection.use_default_image)}
-                  name="use_default_image"
-                  label="Use default image"
-                  subLabel="Uncheck to upload a custom image for the info section"
-                  defaultChecked={infoSection.use_default_image}
-                  onChange={(checked) =>
-                    setInfoSection((prev) => ({ ...prev, use_default_image: checked }))
-                  }
-                />
-
-                {!infoSection.use_default_image && (
-                  <ImageUpload
-                    label="Info Section Image"
-                    currentImageUrl={infoSection.image_url || undefined}
-                    onFileSelected={(file) => setPendingInfoImage(file)}
-                    aspectRatio="wide"
+                <div className="border-t border-neutral-200 dark:border-neutral-700 pt-4 space-y-3">
+                  <Checkbox
+                    key={String(infoSection.use_default_image)}
+                    name="use_default_image"
+                    label="Use default image"
+                    subLabel="Uncheck to upload a custom image for the info section"
+                    defaultChecked={infoSection.use_default_image}
+                    onChange={(checked) =>
+                      setInfoSection((prev) => ({ ...prev, use_default_image: checked }))
+                    }
                   />
-                )}
-              </div>
 
-              <ButtonPrimary
-                disabled={!agent?.id || isSavingInfoSection}
-                onClick={handleSaveInfoSection}
-              >
-                {isSavingInfoSection ? 'Saving...' : 'Save Info Section'}
-              </ButtonPrimary>
+                  {!infoSection.use_default_image && (
+                    <ImageUpload
+                      label="Info Section Image"
+                      currentImageUrl={infoSection.image_url || undefined}
+                      onFileSelected={(file) => setPendingInfoImage(file)}
+                      aspectRatio="wide"
+                    />
+                  )}
+                </div>
+
+                <ButtonPrimary
+                  disabled={!agent?.id || isSavingInfoSection}
+                  onClick={handleSaveInfoSection}
+                >
+                  {isSavingInfoSection ? 'Saving...' : 'Save Info Section'}
+                </ButtonPrimary>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       )}
     </div>

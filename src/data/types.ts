@@ -185,6 +185,9 @@ export interface AgentInfoFeature {
   badge_color: TwMainColor;
   title: string;
   description: string;
+  // Icon key from FEATURE_ICON_OPTIONS (src/components/icons/featureIcons).
+  // Optional for backward compatibility — older rows fall back to a default.
+  icon?: string;
 }
 
 //  ######  CustomLink  ######## //
