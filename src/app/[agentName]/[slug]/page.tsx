@@ -349,7 +349,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
           const row = (item || {}) as Record<string, unknown>;
           const name = String(row.name || row.title || row.label || '').trim();
           if (!name) return null;
-          return { name, icon: '' };
+          return { name, icon: String(row.icon || '') };
         })
         .filter((item): item is { name: string; icon: string } => Boolean(item))
     : [];

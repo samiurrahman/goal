@@ -18,18 +18,32 @@ import { useCities } from '@/hooks/useCities';
 import { allocatePackageSlug, slugify as slugifyShared } from '@/lib/slug';
 import { PACKAGE_TAGS, sanitizePackageTags, type PackageTag } from '@/constants/packageTags';
 import {
+  AMENITY_ICON_OPTIONS,
+  DEFAULT_AMENITY_ICON,
+  amenityIconClass,
+} from '@/constants/amenityIcons';
+import {
   ITERNARY_ICON_OPTIONS,
   type IternaryIconId,
 } from '@/app/[agentName]/(components)/IternaryItem';
 
-type WizardStep = 'meta' | 'itinerary' | 'amenities' | 'stay' | 'policies' | 'media';
+type WizardStep = 'meta' | 'itinerary' | 'amenities' | 'tags' | 'stay' | 'policies' | 'media';
 
-const WIZARD_STEPS: WizardStep[] = ['meta', 'itinerary', 'amenities', 'stay', 'policies', 'media'];
+const WIZARD_STEPS: WizardStep[] = [
+  'meta',
+  'itinerary',
+  'amenities',
+  'tags',
+  'stay',
+  'policies',
+  'media',
+];
 
 const WIZARD_STEP_LABELS: Record<WizardStep, string> = {
   meta: 'Package Info',
   itinerary: 'Itinerary',
   amenities: 'Amenities',
+  tags: 'Tags',
   stay: 'Stay Information',
   policies: 'Cancellation Policy',
   media: 'Package Image',
@@ -98,6 +112,14 @@ interface DayItemInput {
   title: string;
   description: string;
   icon: IternaryIconId | '';
+}
+
+// An inclusion row — an icon picked from AMENITY_ICON_OPTIONS plus a free-text
+// label. Persisted to package_details.amenities as { name, icon } and rendered
+// by AmenitiesSection on the package detail page.
+interface AmenityItem {
+  name: string;
+  icon: string;
 }
 
 const VALID_ICON_IDS = new Set(ITERNARY_ICON_OPTIONS.map((o) => o.id));
@@ -248,7 +270,9 @@ const AddPackageWizardModal = ({
   const [startFlight, setStartFlight] = useState<FlightItemInput>(makeEmptyFlight());
   const [dayItems, setDayItems] = useState<DayItemInput[]>([makeEmptyDay()]);
   const [endFlight, setEndFlight] = useState<FlightItemInput>(makeEmptyFlight());
-  const [amenitiesText, setAmenitiesText] = useState('');
+  const [amenities, setAmenities] = useState<AmenityItem[]>([]);
+  const [amenityDraftIcon, setAmenityDraftIcon] = useState<string>(DEFAULT_AMENITY_ICON);
+  const [amenityDraftLabel, setAmenityDraftLabel] = useState('');
   const [selectedTags, setSelectedTags] = useState<PackageTag[]>([]);
   const [stayInfoContentHtml, setStayInfoContentHtml] = useState('');
   const [policyCancellation, setPolicyCancellation] = useState('');
@@ -364,7 +388,7 @@ const AddPackageWizardModal = ({
     };
   };
 
-  const parseAmenitiesText = (value: unknown): string => {
+  const parseAmenities = (value: unknown): AmenityItem[] => {
     let source: unknown = value;
     if (typeof source === 'string') {
       try {
@@ -374,19 +398,24 @@ const AddPackageWizardModal = ({
       }
     }
 
-    if (Array.isArray(source)) {
-      return source
-        .map((item) => {
-          if (typeof item === 'string') return item;
-          if (item && typeof item === 'object' && 'name' in (item as Record<string, unknown>)) {
-            return String((item as Record<string, unknown>).name || '');
-          }
-          return '';
-        })
-        .filter(Boolean)
-        .join('\n');
-    }
-    return '';
+    if (!Array.isArray(source)) return [];
+
+    return source
+      .map((item): AmenityItem | null => {
+        // Legacy rows were plain strings with no icon.
+        if (typeof item === 'string') {
+          const name = item.trim();
+          return name ? { name, icon: '' } : null;
+        }
+        if (item && typeof item === 'object') {
+          const row = item as Record<string, unknown>;
+          const name = String(row.name || row.title || row.label || '').trim();
+          if (!name) return null;
+          return { name, icon: String(row.icon || '') };
+        }
+        return null;
+      })
+      .filter((item): item is AmenityItem => Boolean(item));
   };
 
   const prefillForEdit = async () => {
@@ -471,7 +500,9 @@ const AddPackageWizardModal = ({
     setStartFlight(parsedIternary.startFlight);
     setDayItems(parsedIternary.dayItems);
     setEndFlight(parsedIternary.endFlight);
-    setAmenitiesText(parseAmenitiesText(detailsRow?.amenities));
+    setAmenities(parseAmenities(detailsRow?.amenities));
+    setAmenityDraftIcon(DEFAULT_AMENITY_ICON);
+    setAmenityDraftLabel('');
     setSelectedTags(sanitizePackageTags(packageRow.tags));
     const stayInfoRow = (() => {
       const raw = detailsRow?.stay_information;
@@ -544,7 +575,9 @@ const AddPackageWizardModal = ({
     setStartFlight(makeEmptyFlight());
     setDayItems([makeEmptyDay()]);
     setEndFlight(makeEmptyFlight());
-    setAmenitiesText('');
+    setAmenities([]);
+    setAmenityDraftIcon(DEFAULT_AMENITY_ICON);
+    setAmenityDraftLabel('');
     setSelectedTags([]);
     setStayInfoContentHtml('');
     setPolicyCancellation('');
@@ -566,11 +599,17 @@ const AddPackageWizardModal = ({
     setStep(WIZARD_STEPS[currentStepIndex - 1]);
   };
 
-  const parseLines = (value: string): string[] =>
-    value
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean);
+  const addAmenity = () => {
+    const name = amenityDraftLabel.trim();
+    if (!name) return;
+    setAmenities((prev) => [...prev, { name, icon: amenityDraftIcon }]);
+    setAmenityDraftLabel('');
+    // Keep the icon selected — agents often add several rows of the same kind.
+  };
+
+  const removeAmenity = (index: number) => {
+    setAmenities((prev) => prev.filter((_, i) => i !== index));
+  };
 
   const completedSteps = useMemo<Record<WizardStep, boolean>>(
     () => ({
@@ -596,7 +635,8 @@ const AddPackageWizardModal = ({
         flightHasContent(startFlight) ||
         flightHasContent(endFlight) ||
         dayItems.some(dayHasContent),
-      amenities: parseLines(amenitiesText).length > 0,
+      amenities: amenities.length > 0,
+      tags: selectedTags.length > 0,
       stay: hasHtmlContent(stayInfoContentHtml),
       policies:
         Boolean(policyCancellation.trim()) ||
@@ -606,7 +646,8 @@ const AddPackageWizardModal = ({
       media: Boolean(pendingImageFile || currentImageUrl),
     }),
     [
-      amenitiesText,
+      amenities,
+      selectedTags,
       currentImageUrl,
       dayItems,
       endFlight,
@@ -923,7 +964,9 @@ const AddPackageWizardModal = ({
         min_guests: 1,
         max_guests: 20,
       },
-      amenities: parseLines(amenitiesText).map((name) => ({ name })),
+      amenities: amenities
+        .map((item) => ({ name: item.name.trim(), icon: item.icon || '' }))
+        .filter((item) => item.name),
       policies: {
         cancellation: policyCancellation.trim(),
         checkIn: policyCheckIn.trim(),
@@ -1646,49 +1689,135 @@ const AddPackageWizardModal = ({
                 {step === 'amenities' && (
                   <div className="space-y-6">
                     <div>
-                      <Label>Highlight tags</Label>
+                      <Label>Inclusions</Label>
                       <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                        Pick the chips that best describe this package. They appear on listing
-                        cards and help pilgrims filter.
+                        Pick an icon, type a label, and add it. Each row appears in the
+                        package&apos;s Inclusions list as an icon next to its label.
                       </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {PACKAGE_TAGS.map((tag) => {
-                          const active = selectedTags.includes(tag);
+                    </div>
+
+                    <div>
+                      <Label>Icon</Label>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {AMENITY_ICON_OPTIONS.map((opt) => {
+                          const active = amenityDraftIcon === opt.className;
                           return (
                             <button
-                              key={tag}
+                              key={opt.id}
                               type="button"
-                              onClick={() =>
-                                setSelectedTags((prev) =>
-                                  prev.includes(tag)
-                                    ? prev.filter((t) => t !== tag)
-                                    : [...prev, tag]
-                                )
-                              }
+                              onClick={() => setAmenityDraftIcon(opt.className)}
                               aria-pressed={active}
-                              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium border transition ${
+                              title={opt.label}
+                              className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
                                 active
-                                  ? 'bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white text-white dark:text-neutral-900'
-                                  : 'bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:border-neutral-400'
+                                  ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                                  : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400'
                               }`}
                             >
-                              {active ? <span aria-hidden>✓</span> : null}
-                              {tag}
+                              <i className={`${opt.className} text-lg leading-none`} />
                             </button>
                           );
                         })}
                       </div>
                     </div>
 
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                      <div className="flex-1">
+                        <Label>Label</Label>
+                        <Input
+                          className="mt-1.5"
+                          placeholder="Makkah Hilton Suites — 220 m to Haram"
+                          value={amenityDraftLabel}
+                          onChange={(e) => setAmenityDraftLabel(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              addAmenity();
+                            }
+                          }}
+                        />
+                      </div>
+                      <ButtonPrimary
+                        type="button"
+                        className="w-full sm:w-auto"
+                        onClick={addAmenity}
+                        disabled={!amenityDraftLabel.trim()}
+                      >
+                        <i className="las la-plus mr-1.5" />
+                        Add
+                      </ButtonPrimary>
+                    </div>
+
                     <div>
-                      <Label>Amenities (one per line)</Label>
-                      <Textarea
-                        className="mt-1.5"
-                        rows={10}
-                        value={amenitiesText}
-                        onChange={(e) => setAmenitiesText(e.target.value)}
-                        placeholder={'Meals\nVisa\nLaundry\nMakkah Hotel near Haram'}
-                      />
+                      <Label>Added inclusions</Label>
+                      {amenities.length === 0 ? (
+                        <p className="mt-2 text-sm text-neutral-400 dark:text-neutral-500">
+                          Nothing added yet. Pick an icon, type a label, and press Add.
+                        </p>
+                      ) : (
+                        <ul className="mt-2 divide-y divide-neutral-200 dark:divide-neutral-700 rounded-2xl border border-neutral-200 dark:border-neutral-700">
+                          {amenities.map((item, idx) => (
+                            <li
+                              key={`${item.name}-${idx}`}
+                              className="flex items-center gap-3 px-3 py-3"
+                            >
+                              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                                <i
+                                  className={`${amenityIconClass(item.icon)} text-base leading-none`}
+                                  aria-hidden
+                                />
+                              </span>
+                              <span className="min-w-0 flex-1 text-sm font-medium text-neutral-800 dark:text-neutral-100">
+                                {item.name}
+                              </span>
+                              <button
+                                type="button"
+                                className="text-xs text-red-600 hover:underline"
+                                onClick={() => removeAmenity(idx)}
+                              >
+                                Remove
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {step === 'tags' && (
+                  <div className="space-y-2">
+                    <Label>Highlight tags</Label>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Pick the chips that best describe this package. They appear on listing cards
+                      and help pilgrims filter.
+                    </p>
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {PACKAGE_TAGS.map((tag) => {
+                        const active = selectedTags.includes(tag);
+                        return (
+                          <button
+                            key={tag}
+                            type="button"
+                            onClick={() =>
+                              setSelectedTags((prev) =>
+                                prev.includes(tag)
+                                  ? prev.filter((t) => t !== tag)
+                                  : [...prev, tag]
+                              )
+                            }
+                            aria-pressed={active}
+                            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium border transition ${
+                              active
+                                ? 'bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white text-white dark:text-neutral-900'
+                                : 'bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:border-neutral-400'
+                            }`}
+                          >
+                            {active ? <span aria-hidden>✓</span> : null}
+                            {tag}
+                          </button>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
