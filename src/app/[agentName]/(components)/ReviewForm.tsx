@@ -203,7 +203,7 @@ export default function ReviewForm({
           rows={4}
           minLength={5}
           required
-          className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-4 py-2 border border-neutral-300 dark:border-neutral-600 rounded-lg bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary-500"
         />
       </div>
 
@@ -262,7 +262,7 @@ export default function ReviewForm({
         <button
           type="submit"
           disabled={submitReviewMutation.isPending}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition-colors disabled:cursor-not-allowed"
+          className="px-4 py-2 bg-primary-700 text-white rounded-lg hover:bg-primary-800 disabled:bg-gray-400 transition-colors disabled:cursor-not-allowed"
         >
           {submitReviewMutation.isPending
             ? isEditing

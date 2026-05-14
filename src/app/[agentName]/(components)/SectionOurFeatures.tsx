@@ -1,8 +1,5 @@
 import React, { FC } from 'react';
-import rightImgPng from '@/images/our-features.png';
-import Image, { StaticImageData } from 'next/image';
-import Badge from '@/shared/Badge';
-import type { Agent, AgentInfoFeature, TwMainColor } from '@/data/types';
+import type { Agent, AgentInfoFeature } from '@/data/types';
 
 const DEFAULT_FEATURES: AgentInfoFeature[] = [
   {
@@ -28,18 +25,34 @@ const DEFAULT_FEATURES: AgentInfoFeature[] = [
   },
 ];
 
+// Three commitment icons, cycled by feature index — matches the design system's
+// "what we provide" card (shield-check, transparent pricing, secure lock).
+const FEATURE_ICONS = [
+  // Best-in-class service
+  <>
+    <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
+    <path d="m9 12 2 2 4-4" />
+  </>,
+  // Transparent pricing
+  <>
+    <line x1="12" y1="1" x2="12" y2="23" />
+    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+  </>,
+  // Secure & simple
+  <>
+    <rect x="3" y="11" width="18" height="11" rx="2" />
+    <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+  </>,
+];
+
 export interface SectionOurFeaturesProps {
   className?: string;
-  rightImg?: StaticImageData;
-  type?: 'type1' | 'type2';
   agentName?: string;
   agent?: Agent | null;
 }
 
 const SectionOurFeatures: FC<SectionOurFeaturesProps> = ({
-  className = 'lg:py-14',
-  rightImg = rightImgPng,
-  type = 'type1',
+  className = '',
   agentName = 'Sarkar Travels',
   agent,
 }) => {
@@ -59,60 +72,50 @@ const SectionOurFeatures: FC<SectionOurFeaturesProps> = ({
       ? parsedFeatures
       : DEFAULT_FEATURES;
 
-  const useCustomImage =
-    agent && !agent.info_use_default_image && agent.info_image_url;
-  const displayImage: StaticImageData | string = useCustomImage
-    ? agent.info_image_url!
-    : rightImg;
-
   return (
-    <div
-      className={`nc-SectionOurFeatures relative flex flex-col items-center ${
-        type === 'type1' ? 'lg:flex-row' : 'lg:flex-row-reverse'
-      } ${className}`}
+    <section
+      className={`nc-SectionOurFeatures overflow-hidden rounded-3xl border border-neutral-200 bg-white p-5 sm:p-7 md:p-8 ${className}`}
       data-nc-id="SectionOurFeatures"
     >
-      <div className="flex-grow">
-        {typeof displayImage === 'string' ? (
-          <Image
-            src={displayImage}
-            alt={heading}
-            width={600}
-            height={400}
-            className="rounded-2xl object-cover"
-          />
-        ) : (
-          <Image src={displayImage} alt={heading} />
-        )}
-      </div>
-      <div
-        className={`max-w-2xl flex-shrink-0 mt-10 lg:mt-0 lg:w-2/5 ${
-          type === 'type1' ? 'lg:pl-16' : 'lg:pr-16'
-        }`}
-      >
-        <span className="uppercase text-sm text-gray-400 tracking-widest">
-          {heading}
-        </span>
-        <h2 className="font-semibold text-4xl mt-5">{agentName}</h2>
+      <p className="m-0 mb-[18px] text-[13px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
+        {heading}
+      </p>
+      <h2 className="m-0 mb-1.5 text-[22px] font-semibold leading-[1.25] tracking-[-0.01em] text-neutral-900">
+        {agentName}
+      </h2>
+      <p className="m-0 mb-6 text-sm leading-[1.55] text-neutral-600">
+        The commitments behind every package we publish on HajjScanner.
+      </p>
 
-        <ul className="space-y-10 mt-16">
-          {features.map((feature, index) => (
-            <li key={index} className="space-y-4">
-              <Badge
-                name={feature.badge_name}
-                color={feature.badge_color as TwMainColor}
-              />
-              <span className="block text-xl font-semibold">
-                {feature.title}
-              </span>
-              <span className="block mt-5 text-neutral-500 dark:text-neutral-400">
-                {feature.description}
-              </span>
-            </li>
-          ))}
-        </ul>
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">
+        {features.map((feature, index) => (
+          <div
+            key={index}
+            className="rounded-[18px] border border-neutral-200 bg-neutral-50 p-[22px]"
+          >
+            <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-white text-primary-700">
+              <svg
+                viewBox="0 0 24 24"
+                className="h-[22px] w-[22px]"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                {FEATURE_ICONS[index % FEATURE_ICONS.length]}
+              </svg>
+            </span>
+            <h3 className="m-0 mb-1.5 text-base font-semibold tracking-[-0.01em] text-neutral-900">
+              {feature.title}
+            </h3>
+            <p className="m-0 text-[13px] leading-[1.55] text-neutral-600">
+              {feature.description}
+            </p>
+          </div>
+        ))}
       </div>
-    </div>
+    </section>
   );
 };
 

@@ -1,19 +1,14 @@
 import React from 'react';
-import Breadcrumb from '@/components/Breadcrumb';
 import { supabase } from '@/utils/supabaseClient';
 import type { Agent, Package, AgentReview } from '@/data/types';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
-import bannerImage from '@/images/hero-right1.png';
-import Badge from '@/shared/Badge';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 
 const FALLBACK_BLUR_DATA_URL =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
-import SocialsList from '@/shared/SocialsList';
 import ShareButton from '@/shared/ShareButton';
-import StartRating from '@/components/StartRating';
 import GovtVerifiedBadge from '@/components/GovtVerifiedBadge';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
 import SectionGridFeaturePlaces from './(components)/SectionGridFeaturePlaces';
@@ -176,7 +171,8 @@ const getReviewsForAgent = async (agentId: string): Promise<AgentReview[]> => {
     if (!profile) return normalized;
     return {
       ...normalized,
-      user_name: normalized.user_name === 'User' ? buildReviewerName(profile) : normalized.user_name,
+      user_name:
+        normalized.user_name === 'User' ? buildReviewerName(profile) : normalized.user_name,
       user_profile_image: normalized.user_profile_image || profile.profile_image || null,
     };
   }) as AgentReview[];
@@ -245,34 +241,6 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
   const whatsappHref =
     normalizeExternalLink(agentDetails?.whatsapp_url) ||
     (phoneDigits ? `https://wa.me/${phoneDigits}` : '');
-  const socialLinks = [
-    {
-      href: whatsappHref,
-      icon: 'lab la-whatsapp',
-      name: 'WhatsApp',
-    },
-    {
-      href: normalizeExternalLink(agentDetails?.instagram_url),
-      icon: 'lab la-instagram',
-      name: 'Instagram',
-    },
-    {
-      href: normalizeExternalLink(agentDetails?.facebook_url),
-      icon: 'lab la-facebook-square',
-      name: 'Facebook',
-    },
-    {
-      href: agentDetails?.contact_number ? `tel:${agentDetails.contact_number}` : '',
-      icon: 'las la-phone',
-      name: 'Call',
-    },
-    {
-      href: agentDetails?.email_id ? `mailto:${agentDetails.email_id}` : '',
-      icon: 'las la-envelope',
-      name: 'Email',
-    },
-  ].filter((item) => item.href);
-
   const listingCount = Array.isArray(agentPackages) ? agentPackages.length : 0;
   const agentRatingPoint = Number(agentDetails?.rating_avg ?? 0);
   const agentReviewCount = Number(agentDetails?.rating_total ?? 0);
@@ -293,7 +261,30 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
       .trim()
   );
   const sanitizedAboutMarkup = sanitizeProfileMarkup(agentDetails?.about_us || '');
-  const bannerSrc = agentDetails?.banner_image || bannerImage;
+  const bannerImageUrl = agentDetails?.banner_image || '';
+
+  // Derived display values for the redesigned profile header
+  const displayName = agentDetails?.known_as || 'Agent';
+  const initials =
+    displayName
+      .split(/\s+/)
+      .filter(Boolean)
+      .slice(0, 2)
+      .map((word) => word[0]?.toUpperCase() || '')
+      .join('') || '?';
+  const legalName =
+    agentDetails?.name &&
+    agentDetails.name.trim() &&
+    agentDetails.name.trim() !== displayName.trim()
+      ? agentDetails.name.trim()
+      : '';
+  const experienceYears = experienceValue == null ? NaN : Number(String(experienceValue).trim());
+  const hasExperience = Number.isFinite(experienceYears) && experienceYears > 0;
+  const sinceYear = hasExperience ? new Date().getFullYear() - experienceYears : null;
+  const telHref = agentDetails?.contact_number ? `tel:${agentDetails.contact_number}` : '';
+  const mailHref = agentDetails?.email_id ? `mailto:${agentDetails.email_id}` : '';
+  const hasMobileCta = !!(whatsappHref || telHref);
+  const ratingDisplay = agentRatingPoint > 0 ? agentRatingPoint.toFixed(1) : 'New';
 
   return (
     <>
@@ -301,26 +292,130 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
       />
-      <div className="relative z-20 my-4">
-        <Breadcrumb
-          items={[{ label: 'Home', href: '/' }, { label: agentDetails?.known_as ?? '' }]}
-        />
-      </div>
-      <div className="nc-ListingStayDetailPage w-full min-h-screen">
-        <main className="relative z-10 grid grid-cols-1 lg:grid-cols-5 gap-6 w-full mb-24 lg:mb-32 lg:items-stretch">
-          <div className="lg:col-span-5">
-            <section className="overflow-hidden rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg">
-              <div className="relative h-60 md:h-60 w-full">
+
+      <div className="nc-AgentProfilePage w-full pb-28 lg:pb-0">
+        {/* ── BREADCRUMB ── */}
+        <nav
+          className="flex items-center gap-2 py-4 text-[13px] text-neutral-500"
+          aria-label="Breadcrumb"
+        >
+          <Link href="/" className="font-medium text-primary-700 hover:underline">
+            Home
+          </Link>
+          <svg
+            viewBox="0 0 24 24"
+            className="h-3.5 w-3.5 text-neutral-400"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+          <span className="line-clamp-1 font-medium text-neutral-800">{displayName}</span>
+        </nav>
+
+        {/* ── PROFILE HEADER CARD ── */}
+        <section className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm">
+          {/* Banner */}
+          <div
+            className="relative aspect-[4/1] min-h-[180px]"
+            style={{
+              background:
+                'radial-gradient(120% 100% at 20% 0%, rgba(99,102,241,0.20) 0%, transparent 60%), radial-gradient(100% 100% at 90% 100%, rgba(20,184,166,0.18) 0%, transparent 55%), linear-gradient(135deg, rgb(var(--c-primary-800)) 0%, rgb(var(--c-primary-900)) 100%)',
+            }}
+          >
+            {/* dotted geometric overlay */}
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.18]"
+              style={{
+                backgroundImage:
+                  'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.5) 1px, transparent 0)',
+                backgroundSize: '28px 28px',
+                maskImage: 'linear-gradient(180deg, black 0%, transparent 90%)',
+                WebkitMaskImage: 'linear-gradient(180deg, black 0%, transparent 90%)',
+              }}
+            />
+            {/* Makkah + Madinah skyline sketch */}
+            <div
+              className="absolute inset-x-0 -bottom-px leading-[0] text-black/60 opacity-[0.22]"
+              aria-hidden="true"
+            >
+              <svg
+                viewBox="0 0 1440 120"
+                preserveAspectRatio="xMidYMax slice"
+                className="block h-auto w-full"
+              >
+                <g fill="currentColor">
+                  <rect x="100" y="40" width="5" height="80" />
+                  <ellipse cx="102.5" cy="38" rx="7" ry="6" />
+                  <rect x="101" y="22" width="3" height="16" />
+                  <path d="M99 22 L102.5 14 L106 22 Z" />
+                  <rect x="158" y="34" width="5" height="86" />
+                  <ellipse cx="160.5" cy="32" rx="7" ry="6" />
+                  <rect x="159" y="14" width="3" height="18" />
+                  <rect x="240" y="36" width="5" height="84" />
+                  <ellipse cx="242.5" cy="34" rx="7" ry="6" />
+                  <rect x="241" y="18" width="3" height="16" />
+                  <rect x="296" y="42" width="5" height="78" />
+                  <ellipse cx="298.5" cy="40" rx="7" ry="6" />
+                  <rect x="297" y="24" width="3" height="16" />
+                  <rect x="115" y="76" width="170" height="44" />
+                  <rect x="160" y="60" width="80" height="22" />
+                  <path d="M156 64 Q200 26 244 64 Z" />
+                  <rect x="197" y="38" width="6" height="22" />
+                  <ellipse cx="200" cy="36" rx="4" ry="3" />
+                  <rect x="350" y="92" width="36" height="28" />
+                  <rect x="390" y="84" width="28" height="36" />
+                  <rect x="422" y="96" width="50" height="24" />
+                  <rect x="478" y="86" width="30" height="34" />
+                  <rect x="900" y="50" width="5" height="70" />
+                  <ellipse cx="902.5" cy="48" rx="6" ry="5" />
+                  <rect x="901" y="34" width="3" height="14" />
+                  <rect x="958" y="42" width="5" height="78" />
+                  <ellipse cx="960.5" cy="40" rx="6" ry="5" />
+                  <rect x="959" y="26" width="3" height="14" />
+                  <rect x="1030" y="46" width="5" height="74" />
+                  <ellipse cx="1032.5" cy="44" rx="6" ry="5" />
+                  <rect x="1031" y="30" width="3" height="14" />
+                  <rect x="1140" y="52" width="5" height="68" />
+                  <ellipse cx="1142.5" cy="50" rx="6" ry="5" />
+                  <rect x="1141" y="36" width="3" height="14" />
+                  <rect x="908" y="86" width="240" height="34" />
+                  <rect x="976" y="72" width="100" height="20" />
+                  <rect x="1018" y="96" width="22" height="24" />
+                  <rect x="1240" y="14" width="80" height="106" />
+                  <rect x="1232" y="24" width="96" height="8" />
+                  <rect x="1252" y="32" width="56" height="38" />
+                  <circle
+                    cx="1280"
+                    cy="51"
+                    r="13"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                  />
+                  <rect x="1273" y="6" width="14" height="10" />
+                  <rect x="1277" y="0" width="6" height="8" />
+                  <rect x="1156" y="56" width="28" height="64" />
+                  <rect x="1192" y="42" width="22" height="78" />
+                  <rect x="1342" y="42" width="22" height="78" />
+                  <rect x="1372" y="56" width="28" height="64" />
+                </g>
+              </svg>
+            </div>
+            {/* Custom uploaded banner image (kept on top when present) */}
+            {bannerImageUrl ? (
+              <>
                 <Image
                   src={
-                    typeof bannerSrc === 'string'
-                      ? getOptimizedImageUrl(bannerSrc, {
-                          width: 1600,
-                          height: 480,
-                          resize: 'cover',
-                          quality: 78,
-                        }) || bannerSrc
-                      : bannerSrc
+                    getOptimizedImageUrl(bannerImageUrl, {
+                      width: 1600,
+                      height: 400,
+                      resize: 'cover',
+                      quality: 78,
+                    }) || bannerImageUrl
                   }
                   alt={agentDetails?.known_as || 'Agent cover'}
                   fill
@@ -329,194 +424,540 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                   quality={78}
                   priority
                   placeholder="blur"
-                  blurDataURL={
-                    typeof bannerSrc === 'string' ? FALLBACK_BLUR_DATA_URL : undefined
-                  }
+                  blurDataURL={FALLBACK_BLUR_DATA_URL}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/45 to-transparent" />
-                <div className="absolute top-3 right-3 md:top-4 md:right-4 z-20">
-                  <ShareButton
-                    url={`/${agentName}`}
-                    title={agentDetails?.known_as || 'Agent profile'}
-                    iconOnly
-                    className="bg-white/95 dark:bg-neutral-900/95 backdrop-blur-sm shadow-md"
-                    ariaLabel="Share agent profile"
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+              </>
+            ) : null}
+            {/* Share action */}
+            <div className="absolute right-4 top-4 z-10">
+              <ShareButton
+                url={`/${agentName}`}
+                title={agentDetails?.known_as || 'Agent profile'}
+                iconOnly
+                className="!h-[38px] !w-[38px] !rounded-full !bg-white/95 !p-0 !text-primary-700 shadow-sm hover:!bg-white"
+                ariaLabel="Share agent profile"
+              />
+            </div>
+          </div>
+
+          {/* Profile body */}
+          <div className="px-5 pb-7 pt-6 md:px-8 md:pb-8">
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-[auto_1fr] lg:items-center lg:gap-7">
+              {/* Avatar — overlaps the banner on mobile/tablet; vertically centered beside the identity column on desktop */}
+              <div className="relative -mt-[72px] h-[104px] w-[104px] shrink-0 overflow-hidden rounded-[24px] border-[5px] border-white bg-white shadow-md md:-mt-[88px] md:h-[124px] md:w-[124px] md:rounded-[28px] lg:mt-0">
+                {agentDetails?.profile_image ? (
+                  <Image
+                    src={
+                      getOptimizedImageUrl(agentDetails.profile_image, {
+                        width: 248,
+                        height: 248,
+                        resize: 'cover',
+                        quality: 75,
+                      }) || agentDetails.profile_image
+                    }
+                    alt={agentDetails.known_as || 'Agent'}
+                    fill
+                    className="object-cover"
+                    sizes="124px"
+                    quality={75}
                   />
-                </div>
-                {socialLinks.length > 0 && (
-                  <div className="absolute top-3 left-3 md:top-4 md:left-4 z-20">
-                    <div className="flex items-center rounded-2xl bg-white/95 px-2.5 py-2 shadow-md backdrop-blur-sm">
-                      <SocialsList
-                        socials={socialLinks}
-                        className="gap-2"
-                        itemClass="h-8 w-8 rounded-full border border-neutral-200 bg-white hover:bg-neutral-50 shadow-sm flex items-center justify-center text-neutral-700"
-                      />
-                    </div>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-700 to-primary-900 text-[34px] font-semibold tracking-tight text-white md:text-[38px]">
+                    {initials}
                   </div>
                 )}
-                <div className="hidden lg:block absolute right-3 lg:right-4 bottom-0 translate-y-1/2 z-20 max-w-[62vw]">
-                  <div className="flex flex-wrap items-center justify-end gap-2 rounded-2xl bg-white/95 dark:bg-neutral-900/95 px-2.5 py-2 shadow-md border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm">
-                    <Badge
-                      name={
-                        <StartRating
-                          className="text-yellow-900"
-                          point={agentRatingPoint}
-                          reviewCount={agentReviewCount}
-                        />
-                      }
-                      color="yellow"
-                    />
-                    <Badge
-                      name={
-                        <span className="inline-flex items-center gap-1.5">
-                          <i className="las la-briefcase text-sm" />
-                          {listingCount} Packages
-                        </span>
-                      }
-                      color="blue"
-                    />
-                    {isGovVerified && <GovtVerifiedBadge />}
-                  </div>
-                </div>
-                <div className="absolute left-4 right-4 md:right-auto md:left-8 bottom-0 translate-y-1/2 z-20 flex items-center gap-3 md:gap-5 rounded-2xl bg-white/95 dark:bg-neutral-900/95 px-3 py-2 shadow-md border border-neutral-200 dark:border-neutral-700 backdrop-blur-sm lg:max-w-[58vw]">
-                  {agentDetails?.profile_image ? (
-                    <div className="relative h-20 w-20 md:h-24 md:w-24 overflow-hidden rounded-full border-[4px] border-white dark:border-neutral-900 shadow-lg shrink-0">
-                      <Image
-                        src={
-                          getOptimizedImageUrl(agentDetails.profile_image, {
-                            width: 192,
-                            height: 192,
-                            resize: 'cover',
-                            quality: 75,
-                          }) || agentDetails.profile_image
-                        }
-                        alt={agentDetails.known_as || 'Agent'}
-                        fill
-                        className="object-cover"
-                        sizes="96px"
-                        quality={75}
-                      />
-                    </div>
-                  ) : (
-                    <div className="h-20 w-20 md:h-24 md:w-24 rounded-full border-[4px] border-white dark:border-neutral-900 shadow-lg bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 flex items-center justify-center text-2xl font-semibold shrink-0">
-                      {agentDetails?.known_as?.[0] || '?'}
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <h1 className="text-xl md:text-3xl font-semibold text-neutral-900 dark:text-white leading-tight truncate">
-                      {agentDetails?.known_as}
+              </div>
+
+              {/* Identity */}
+              <div className="flex min-w-0 flex-col gap-[18px] pt-1">
+                <div className="flex flex-col gap-2.5">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5">
+                    <h1 className="m-0 text-[28px] font-semibold leading-[1.15] tracking-[-0.02em] text-neutral-900 md:text-[34px]">
+                      {displayName}
                     </h1>
-                    <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300 truncate">
-                      <span className="inline-flex items-center gap-1.5 max-w-full">
-                        <i className="las la-map-marker-alt text-base" />
-                        <span className="truncate">{agentLocation || 'Location pending'}</span>
-                      </span>
-                    </p>
-                    <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-300 truncate">
-                      <span className="inline-flex items-center gap-1.5 max-w-full">
-                        <i className="las la-phone text-base" />
-                        <span className="truncate">
-                          {agentDetails?.contact_number || 'Not available'}
+                    {isGovVerified ? <GovtVerifiedBadge className="shrink-0" /> : null}
+                  </div>
+                  {agentLocation || legalName || sinceYear ? (
+                    <p className="m-0 text-[14.5px] leading-[1.5] text-neutral-600">
+                      {agentLocation ? (
+                        <span className="inline-flex items-center gap-1.5 font-medium text-neutral-700">
+                          <svg
+                            viewBox="0 0 24 24"
+                            className="h-3.5 w-3.5 text-primary-700"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth={1.8}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 1 1 18 0z" />
+                            <circle cx="12" cy="10" r="3" />
+                          </svg>
+                          {agentLocation}
                         </span>
-                      </span>
+                      ) : null}
+                      {agentLocation && (legalName || sinceYear) ? (
+                        <span className="mx-2 inline-block h-[3px] w-[3px] rounded-full bg-neutral-400 align-middle" />
+                      ) : null}
+                      {legalName ? (
+                        <strong className="font-semibold text-neutral-900">{legalName}</strong>
+                      ) : null}
+                      {legalName && sinceYear ? (
+                        <span className="mx-2 inline-block h-[3px] w-[3px] rounded-full bg-neutral-400 align-middle" />
+                      ) : null}
+                      {sinceYear ? (
+                        <>
+                          Hajj &amp; Umrah specialist since{' '}
+                          <strong className="font-semibold text-neutral-900">{sinceYear}</strong>
+                        </>
+                      ) : null}
                     </p>
+                  ) : null}
+                </div>
+
+                {/* Trust strip */}
+                <dl
+                  className="m-0 grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-neutral-200 bg-neutral-200 sm:grid-cols-4"
+                  aria-label="Agent credentials"
+                >
+                  <div className="bg-neutral-50 p-3.5">
+                    <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-3 w-3 text-neutral-400"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M12 2 4 6v6c0 5 3.5 9 8 10 4.5-1 8-5 8-10V6l-8-4z" />
+                      </svg>
+                      Rating
+                    </dt>
+                    <dd className="m-0 mt-1.5 flex items-baseline gap-1 text-base font-semibold leading-tight text-neutral-900">
+                      <span className="text-sm text-[#FACC15]">★</span>
+                      {ratingDisplay}
+                      <small className="text-xs font-medium text-neutral-500">
+                        {agentReviewCount > 0
+                          ? `· ${agentReviewCount.toLocaleString('en-IN')} review${
+                              agentReviewCount === 1 ? '' : 's'
+                            }`
+                          : 'No reviews yet'}
+                      </small>
+                    </dd>
+                  </div>
+                  <div className="bg-neutral-50 p-3.5">
+                    <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-3 w-3 text-neutral-400"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <circle cx="12" cy="12" r="9" />
+                        <path d="M12 7v5l3 2" />
+                      </svg>
+                      Experience
+                    </dt>
+                    <dd className="m-0 mt-1.5 flex items-baseline gap-1 text-base font-semibold leading-tight text-neutral-900">
+                      {hasExperience ? (
+                        <>
+                          {experienceYears}
+                          <small className="text-xs font-medium text-neutral-500">
+                            &nbsp;years
+                          </small>
+                        </>
+                      ) : (
+                        <small className="text-xs font-medium text-neutral-500">
+                          Not available
+                        </small>
+                      )}
+                    </dd>
+                  </div>
+                  <div className="bg-neutral-50 p-3.5">
+                    <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-3 w-3 text-neutral-400"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <rect x="3" y="7" width="18" height="13" rx="2" />
+                        <path d="M8 7V4h8v3M3 13h18" />
+                      </svg>
+                      Packages
+                    </dt>
+                    <dd className="m-0 mt-1.5 flex items-baseline gap-1 text-base font-semibold leading-tight text-neutral-900">
+                      {listingCount}
+                      <small className="text-xs font-medium text-neutral-500">&nbsp;active</small>
+                    </dd>
+                  </div>
+                  <div className="bg-neutral-50 p-3.5">
+                    <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-3 w-3 text-neutral-400"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                        <polyline points="22 4 12 14.01 9 11.01" />
+                      </svg>
+                      Reply time
+                    </dt>
+                    <dd className="m-0 mt-1.5 flex items-baseline gap-1 text-base font-semibold leading-tight text-neutral-900">
+                      Quick
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+
+            {/* Mobile-only quick actions */}
+            {whatsappHref || telHref || mailHref ? (
+              <div className="mt-5 grid grid-cols-3 gap-2 lg:hidden">
+                {whatsappHref ? (
+                  <a
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-4 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100"
+                    aria-label="WhatsApp"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-[22px] w-[22px]">
+                      <path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9s-.4-.1-.6.2-.7.9-.8 1.1-.3.2-.6.1c-1.8-.9-3-1.6-4.1-3.6-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5s-.6-1.4-.8-2c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-1.6 1.6-1 4 .9 6.4 1.7 2.2 3.5 3.4 5.4 3.9 1.7.4 2.5.2 3.4-.4.5-.4 1.1-1.1 1.2-1.7.1-.6 0-1-.1-1zM12 2A10 10 0 0 0 3.5 17l-1.4 5.2 5.3-1.4A10 10 0 1 0 12 2z" />
+                    </svg>
+                    WhatsApp
+                  </a>
+                ) : null}
+                {telHref ? (
+                  <a
+                    href={telHref}
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-4 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100"
+                    aria-label="Call"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-[22px] w-[22px]"
+                    >
+                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.35 1.84.59 2.8.72A2 2 0 0 1 22 16.92z" />
+                    </svg>
+                    Call
+                  </a>
+                ) : null}
+                {mailHref ? (
+                  <a
+                    href={mailHref}
+                    className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-4 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100"
+                    aria-label="Email"
+                  >
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className="h-[22px] w-[22px]"
+                    >
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                    Email
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+        </section>
+
+        {/* ── MAIN GRID ── */}
+        <div className="grid grid-cols-1 gap-8 py-8 lg:grid-cols-[1fr_340px] lg:gap-10 lg:py-10">
+          {/* CONTENT */}
+          <div className="grid min-w-0 gap-7">
+            {/* About this agent */}
+            <section className="overflow-hidden rounded-3xl border border-neutral-200 bg-white p-5 sm:p-7 md:p-8">
+              <h2 className="m-0 text-[22px] font-semibold leading-tight tracking-[-0.01em] text-neutral-900">
+                About {displayName}
+              </h2>
+
+              <div className="mt-6 grid grid-cols-1 gap-3.5 border-b border-neutral-200 pb-6 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <circle cx="12" cy="12" r="9" />
+                      <path d="M12 7v5l3 2" />
+                    </svg>
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-xs font-medium uppercase tracking-[0.04em] text-neutral-500">
+                      Experience
+                    </div>
+                    <div className="mt-0.5 break-words text-sm font-medium text-neutral-900">
+                      {experienceLabel}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                      <polyline points="22,6 12,13 2,6" />
+                    </svg>
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-xs font-medium uppercase tracking-[0.04em] text-neutral-500">
+                      Email
+                    </div>
+                    <div className="mt-0.5 break-words text-sm font-medium text-neutral-900">
+                      {agentDetails?.email_id || 'Not available'}
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700">
+                    <svg
+                      viewBox="0 0 24 24"
+                      className="h-5 w-5"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={1.8}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 1 1 18 0z" />
+                      <circle cx="12" cy="10" r="3" />
+                    </svg>
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-xs font-medium uppercase tracking-[0.04em] text-neutral-500">
+                      Address
+                    </div>
+                    <div className="mt-0.5 break-words text-sm font-medium text-neutral-900">
+                      {agentDetails?.address || 'Not available'}
+                    </div>
                   </div>
                 </div>
               </div>
 
-              <div className="px-5 md:px-8 pb-7">
-                <div className="pt-16 lg:pt-20" />
-
-                <div className="lg:hidden mt-3">
-                  <div className="flex flex-wrap items-center gap-2 rounded-2xl bg-white dark:bg-neutral-900 px-2.5 py-2 shadow-sm border border-neutral-200 dark:border-neutral-700">
-                    <Badge
-                      name={
-                        <StartRating
-                          className="text-yellow-900"
-                          point={agentRatingPoint}
-                          reviewCount={agentReviewCount}
-                        />
-                      }
-                      color="yellow"
-                    />
-                    <Badge
-                      name={
-                        <span className="inline-flex items-center gap-1.5">
-                          <i className="las la-briefcase text-sm" />
-                          {listingCount} Packages
-                        </span>
-                      }
-                      color="blue"
-                    />
-                    {isGovVerified && <GovtVerifiedBadge />}
-                  </div>
-                </div>
-
-                <div className="mt-8 grid grid-cols-1 md:grid-cols-[0.6fr_0.95fr_1.55fr] gap-4 md:gap-5">
-                  <div className="flex items-start gap-3 p-1">
-                    <i className="las la-user-clock text-[26px] flex-shrink-0 mt-0.5"></i>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-600">Experience</p>
-                      <p className="text-sm text-gray-900 font-medium">{experienceLabel}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-1">
-                    <i className="las la-envelope text-[30px] flex-shrink-0 mt-0.5"></i>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-600">Email</p>
-                      <p className="text-sm text-gray-900 font-medium truncate">
-                        {agentDetails?.email_id || 'Not available'}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3 p-1">
-                    <i className="las la-map-marker-alt text-[30px] flex-shrink-0 mt-0.5"></i>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs text-gray-600">Address</p>
-                      <p className="text-sm text-gray-900 font-medium line-clamp-1">
-                        {agentDetails?.address || 'Not available'}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-5">
-                    <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">
-                      About
-                    </h3>
-                    {sanitizedAboutMarkup ? (
-                      <div
-                        className="prose prose-sm max-w-none mt-2 text-neutral-700 dark:prose-invert dark:text-neutral-300 prose-headings:mb-2 prose-headings:mt-3 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
-                        dangerouslySetInnerHTML={{ __html: sanitizedAboutMarkup }}
-                      />
-                    ) : (
-                      <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300 leading-6">
-                        Profile details pending.
-                      </p>
-                    )}
-                  </div>
-                </div>
-              </div>
+              {sanitizedAboutMarkup ? (
+                <div
+                  className="prose prose-sm mt-6 max-w-none overflow-x-auto break-words text-neutral-700 prose-headings:mb-2 prose-headings:mt-3 prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-1"
+                  dangerouslySetInnerHTML={{ __html: sanitizedAboutMarkup }}
+                />
+              ) : (
+                <p className="mt-6 text-[15px] leading-[1.6] text-neutral-700">
+                  Profile details pending.
+                </p>
+              )}
             </section>
-          </div>
 
-          {/* BOTTOM SECTION: LISTINGS FULL-WIDTH */}
-          <div className="lg:col-span-5 gap-12 flex flex-col">
-            <SectionOurFeatures agentName={agentDetails?.known_as} agent={agentDetails} />
+            <SectionOurFeatures agentName={displayName} agent={agentDetails} />
             <SectionGridFeaturePlaces packages={agentPackages ?? []} agent={agentDetails} />
-          </div>
-
-          {/* REVIEWS FULL-WIDTH */}
-          <div className="lg:col-span-5 mt-6">
             <ReviewsSection
               agentId={agentDetails?.id ? String(agentDetails.id) : ''}
-              agentName={agentDetails?.known_as || ''}
+              agentName={displayName}
               initialReviews={agentReviews}
             />
           </div>
-        </main>
+
+          {/* SIDEBAR */}
+          <aside className="hidden lg:block">
+            <div className="sticky top-[88px] grid gap-5">
+              <div className="rounded-[20px] border border-neutral-200 bg-white p-[22px]">
+                <h3 className="m-0 mb-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
+                  Contact this agent
+                </h3>
+
+                {whatsappHref ? (
+                  <a
+                    href={whatsappHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mb-2 flex items-center gap-3 rounded-xl border border-neutral-200 p-3 transition-colors hover:border-primary-300 hover:bg-primary-50"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#25D366] text-white">
+                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px]">
+                        <path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9s-.4-.1-.6.2-.7.9-.8 1.1-.3.2-.6.1c-1.8-.9-3-1.6-4.1-3.6-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5s-.6-1.4-.8-2c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-1.6 1.6-1 4 .9 6.4 1.7 2.2 3.5 3.4 5.4 3.9 1.7.4 2.5.2 3.4-.4.5-.4 1.1-1.1 1.2-1.7.1-.6 0-1-.1-1zM12 2A10 10 0 0 0 3.5 17l-1.4 5.2 5.3-1.4A10 10 0 1 0 12 2z" />
+                      </svg>
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-medium text-neutral-500">
+                        WhatsApp · replies quickly
+                      </div>
+                      <div className="mt-px truncate text-sm font-semibold text-neutral-900">
+                        {agentDetails?.contact_number || 'Send a message'}
+                      </div>
+                    </div>
+                  </a>
+                ) : null}
+
+                {telHref ? (
+                  <a
+                    href={telHref}
+                    className="mb-2 flex items-center gap-3 rounded-xl border border-neutral-200 p-3 transition-colors hover:border-primary-300 hover:bg-primary-50"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-700 text-white">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-[18px] w-[18px]"
+                      >
+                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.35 1.84.59 2.8.72A2 2 0 0 1 22 16.92z" />
+                      </svg>
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-medium text-neutral-500">Call directly</div>
+                      <div className="mt-px truncate text-sm font-semibold text-neutral-900">
+                        {agentDetails?.contact_number}
+                      </div>
+                    </div>
+                  </a>
+                ) : null}
+
+                {mailHref ? (
+                  <a
+                    href={mailHref}
+                    className="flex items-center gap-3 rounded-xl border border-neutral-200 p-3 transition-colors hover:border-primary-300 hover:bg-primary-50"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-neutral-100 text-neutral-700">
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.8}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        className="h-[18px] w-[18px]"
+                      >
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                        <polyline points="22,6 12,13 2,6" />
+                      </svg>
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-medium text-neutral-500">Email</div>
+                      <div className="mt-px truncate text-[13px] font-semibold text-neutral-900">
+                        {agentDetails?.email_id}
+                      </div>
+                    </div>
+                  </a>
+                ) : null}
+
+                {!whatsappHref && !telHref && !mailHref ? (
+                  <p className="m-0 text-sm text-neutral-500">Contact details coming soon.</p>
+                ) : null}
+              </div>
+
+              <div className="rounded-[20px] border border-primary-100 bg-primary-50 p-[22px]">
+                <h3 className="m-0 mb-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-primary-700">
+                  No payment on HajjScanner
+                </h3>
+                <p className="m-0 text-sm leading-[1.55] text-neutral-700">
+                  All bookings are made directly with the agent. We never resell your contact
+                  details or charge you a service fee.
+                </p>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
+
+      {/* ── MOBILE STICKY CTA ── */}
+      {hasMobileCta ? (
+        <div
+          className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden"
+          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
+        >
+          {whatsappHref ? (
+            <>
+              {telHref ? (
+                <a
+                  href={telHref}
+                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-500"
+                  aria-label="Call agent"
+                >
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={1.8}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="h-[18px] w-[18px]"
+                  >
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.35 1.84.59 2.8.72A2 2 0 0 1 22 16.92z" />
+                  </svg>
+                </a>
+              ) : null}
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary-700 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-800"
+              >
+                <svg viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px]">
+                  <path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9s-.4-.1-.6.2-.7.9-.8 1.1-.3.2-.6.1c-1.8-.9-3-1.6-4.1-3.6-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5s-.6-1.4-.8-2c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-1.6 1.6-1 4 .9 6.4 1.7 2.2 3.5 3.4 5.4 3.9 1.7.4 2.5.2 3.4-.4.5-.4 1.1-1.1 1.2-1.7.1-.6 0-1-.1-1zM12 2A10 10 0 0 0 3.5 17l-1.4 5.2 5.3-1.4A10 10 0 1 0 12 2z" />
+                </svg>
+                Message agent
+              </a>
+            </>
+          ) : telHref ? (
+            <a
+              href={telHref}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary-700 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-800"
+            >
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-[18px] w-[18px]"
+              >
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.35 1.84.59 2.8.72A2 2 0 0 1 22 16.92z" />
+              </svg>
+              Call agent
+            </a>
+          ) : null}
+        </div>
+      ) : null}
     </>
   );
 };

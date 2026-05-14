@@ -5,7 +5,6 @@ import Image from 'next/image';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 
 interface ReviewsListProps {
-  agentName: string;
   reviews: AgentReview[];
   currentUserId?: string | null;
   onEditReview?: (review: AgentReview) => void;
@@ -14,14 +13,17 @@ interface ReviewsListProps {
 
 const StarDisplay = ({ rating }: { rating: number }) => {
   return (
-    <div className="flex gap-0.5">
+    <div
+      className="text-sm tracking-[1px]"
+      aria-label={`${rating} out of 5 stars`}
+    >
       {[1, 2, 3, 4, 5].map((star) => (
-        <i
+        <span
           key={star}
-          className={`text-sm ${
-            star <= rating ? 'las la-star text-yellow-400' : 'lar la-star text-gray-300'
-          }`}
-        ></i>
+          className={star <= rating ? 'text-[#FACC15]' : 'text-neutral-300'}
+        >
+          ★
+        </span>
       ))}
     </div>
   );
@@ -39,23 +41,7 @@ const getInitials = (email: string, fullName?: string) => {
   return (email?.[0] || '?').toUpperCase();
 };
 
-const getAvatarColor = (email: string) => {
-  const colors = [
-    'bg-red-500',
-    'bg-orange-500',
-    'bg-yellow-500',
-    'bg-green-500',
-    'bg-blue-500',
-    'bg-indigo-500',
-    'bg-purple-500',
-    'bg-pink-500',
-  ];
-  const hash = (email || '').split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-  return colors[hash % colors.length];
-};
-
 export default function ReviewsList({
-  agentName,
   reviews,
   currentUserId,
   onEditReview,
@@ -63,27 +49,26 @@ export default function ReviewsList({
 }: ReviewsListProps) {
   if (reviews.length === 0) {
     return (
-      <div className="text-center py-8 text-gray-500">
-        <p>No reviews yet. Be the first to review this agent!</p>
+      <div className="py-8 text-center text-sm text-neutral-500">
+        <p className="m-0">No reviews yet. Be the first to review this agent!</p>
       </div>
     );
   }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
+    return date.toLocaleDateString('en-GB', {
       year: 'numeric',
-      month: 'long',
+      month: 'short',
       day: 'numeric',
     });
   };
 
   return (
-    <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
+    <div>
       {reviews.map((review) => {
         const anonymous = !!review.is_anonymous;
         const initials = anonymous ? '?' : getInitials(review.user_email, review.user_name);
-        const avatarColor = anonymous ? 'bg-neutral-400' : getAvatarColor(review.user_email);
         const displayName = anonymous
           ? 'Anonymous'
           : review.user_name || review.user_email?.split('@')[0] || 'Anonymous';
@@ -92,79 +77,71 @@ export default function ReviewsList({
         const isEditingThis = !!editingReviewId && String(review.id) === editingReviewId;
 
         return (
-          <div key={review.id} className="py-8">
-            <div className="flex gap-4">
+          <div
+            key={review.id}
+            className="border-t border-neutral-200 py-5 first:border-t-0 first:pt-0"
+          >
+            <div className="mb-3 flex items-center gap-3">
               {/* Avatar */}
-              <div className="h-14 w-14 rounded-full flex-shrink-0 overflow-hidden">
+              <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full">
                 {hasProfileImage ? (
                   <Image
                     src={
                       getOptimizedImageUrl(review.user_profile_image, {
-                        width: 112,
-                        height: 112,
+                        width: 88,
+                        height: 88,
                         resize: 'cover',
                         quality: 70,
                       }) || (review.user_profile_image as string)
                     }
                     alt={displayName}
-                    width={56}
-                    height={56}
+                    width={44}
+                    height={44}
                     className="h-full w-full object-cover"
                     quality={70}
                   />
                 ) : (
-                  <div
-                    className={`h-full w-full rounded-full flex items-center justify-center text-white font-semibold ${avatarColor}`}
-                  >
+                  <div className="flex h-full w-full items-center justify-center bg-primary-100 text-sm font-semibold text-primary-800">
                     {initials}
                   </div>
                 )}
               </div>
 
-              {/* Review Content */}
-              <div className="flex-1 min-w-0">
-                {/* Header: Name + Edit affordance */}
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="min-w-0">
-                    <h4 className="font-semibold text-neutral-900 dark:text-white inline-flex items-center gap-2">
-                      <span className="truncate">{displayName}</span>
-                      {isOwn ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 text-[10px] font-semibold uppercase tracking-wider">
-                          You
-                        </span>
-                      ) : null}
-                    </h4>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      review in {agentName}
-                    </p>
-                  </div>
-                  {isOwn && onEditReview ? (
-                    <button
-                      type="button"
-                      onClick={() => onEditReview(review)}
-                      disabled={isEditingThis}
-                      className="inline-flex items-center gap-1 text-sm font-medium text-primary-600 dark:text-primary-300 hover:text-primary-700 disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus:ring-2 focus:ring-primary-500 rounded px-2 py-1 -mr-2"
-                    >
-                      <i className="las la-pen text-base" aria-hidden="true"></i>
-                      {isEditingThis ? 'Editing…' : 'Edit'}
-                    </button>
+              {/* Meta */}
+              <div className="min-w-0 flex-1">
+                <div className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-900">
+                  <span className="truncate">{displayName}</span>
+                  {isOwn ? (
+                    <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-700">
+                      You
+                    </span>
                   ) : null}
                 </div>
-
-                {/* Date and Rating */}
-                <div className="flex items-center justify-between gap-4 mb-3">
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {formatDate(review.created_at)}
-                  </p>
-                  <StarDisplay rating={review.rating} />
+                <div className="mt-0.5 text-xs text-neutral-500">
+                  {formatDate(review.created_at)}
                 </div>
+              </div>
 
-                {/* Review Text */}
-                <p className="text-gray-700 dark:text-gray-300 leading-6 whitespace-pre-wrap">
-                  {review.review_text}
-                </p>
+              {/* Stars + edit */}
+              <div className="flex items-center gap-3">
+                <StarDisplay rating={review.rating} />
+                {isOwn && onEditReview ? (
+                  <button
+                    type="button"
+                    onClick={() => onEditReview(review)}
+                    disabled={isEditingThis}
+                    className="inline-flex items-center gap-1 rounded px-2 py-1 text-sm font-medium text-primary-700 hover:text-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <i className="las la-pen text-base" aria-hidden="true"></i>
+                    {isEditingThis ? 'Editing…' : 'Edit'}
+                  </button>
+                ) : null}
               </div>
             </div>
+
+            <p className="m-0 whitespace-pre-wrap break-words text-sm leading-[1.6] text-neutral-700">
+              {review.review_text}
+            </p>
           </div>
         );
       })}

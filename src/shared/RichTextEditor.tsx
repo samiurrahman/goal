@@ -12,6 +12,91 @@ interface RichTextEditorProps {
 const toolbarButtonClass =
   'inline-flex h-9 w-9 items-center justify-center rounded-md text-lg text-slate-600 transition hover:bg-slate-100 hover:text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary-500/30 dark:text-slate-300 dark:hover:bg-neutral-800 dark:hover:text-white';
 
+// Formatting tags we keep when pasting from external sources. Everything else
+// is unwrapped — its text content is preserved but the tag (and any style /
+// class / bgcolor it carried) is dropped, so background colors, fonts, and
+// layout styling from the source site don't leak into the editor.
+const ALLOWED_PASTE_TAGS = new Set([
+  'P',
+  'BR',
+  'B',
+  'STRONG',
+  'I',
+  'EM',
+  'U',
+  'A',
+  'UL',
+  'OL',
+  'LI',
+  'H1',
+  'H2',
+  'H3',
+  'H4',
+  'BLOCKQUOTE',
+]);
+
+// Tags removed entirely, including their content.
+const DROP_PASTE_TAGS = new Set([
+  'SCRIPT',
+  'STYLE',
+  'META',
+  'LINK',
+  'TITLE',
+  'HEAD',
+  'NOSCRIPT',
+  'IFRAME',
+]);
+
+// Strip styling/classes from pasted HTML while keeping basic structure.
+// Allowed tags lose every attribute (except href on links); disallowed tags
+// are unwrapped so their plain content survives.
+const sanitizePastedHtml = (html: string): string => {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+
+  const clean = (node: Node) => {
+    // Iterate a static copy — we mutate the tree as we go.
+    Array.from(node.childNodes).forEach((child) => {
+      if (child.nodeType === Node.TEXT_NODE) return;
+      if (child.nodeType !== Node.ELEMENT_NODE) {
+        // Comments (e.g. Word's <!--StartFragment-->), etc.
+        child.parentNode?.removeChild(child);
+        return;
+      }
+
+      const el = child as HTMLElement;
+      const tag = el.tagName;
+
+      if (DROP_PASTE_TAGS.has(tag)) {
+        el.remove();
+        return;
+      }
+
+      // Recurse first so children are clean before we decide on `el`.
+      clean(el);
+
+      if (ALLOWED_PASTE_TAGS.has(tag)) {
+        Array.from(el.attributes).forEach((attr) => {
+          if (tag === 'A' && attr.name === 'href') return;
+          el.removeAttribute(attr.name);
+        });
+      } else {
+        // span / div / font / table … — unwrap, promoting cleaned children.
+        const parent = el.parentNode;
+        if (!parent) return;
+        while (el.firstChild) parent.insertBefore(el.firstChild, el);
+        parent.removeChild(el);
+      }
+    });
+  };
+
+  clean(doc.body);
+  return doc.body.innerHTML;
+};
+
+// Escape plain text for safe insertion, preserving line breaks.
+const escapePlainText = (text: string): string =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\r?\n/g, '<br>');
+
 const RichTextEditor = ({
   value,
   onChange,
@@ -55,6 +140,22 @@ const RichTextEditor = ({
     onChange(editorRef.current?.innerHTML || '');
   };
 
+  // Intercept paste so content copied from other websites doesn't drag in
+  // their background colors, fonts, and layout styling. We keep basic
+  // formatting (bold, lists, headings, links) and drop everything else.
+  const handlePaste = (event: React.ClipboardEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const clipboard = event.clipboardData;
+    const html = clipboard.getData('text/html');
+    const toInsert = html
+      ? sanitizePastedHtml(html)
+      : escapePlainText(clipboard.getData('text/plain'));
+
+    document.execCommand('insertHTML', false, toInsert);
+    saveSelection();
+    emitChange();
+  };
+
   const runCommand = (command: string, commandValue?: string) => {
     if (!editorRef.current) return;
     editorRef.current.focus();
@@ -81,7 +182,12 @@ const RichTextEditor = ({
     action();
   };
 
-  const isEmpty = !value || value.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, '').trim() === '';
+  const isEmpty =
+    !value ||
+    value
+      .replace(/<[^>]*>/g, '')
+      .replace(/&nbsp;/g, '')
+      .trim() === '';
 
   return (
     <div className="overflow-hidden rounded-md border border-slate-300 bg-white focus-within:border-primary-500 focus-within:ring-2 focus-within:ring-primary-500/20 dark:border-neutral-700 dark:bg-neutral-900">
@@ -197,6 +303,7 @@ const RichTextEditor = ({
           contentEditable
           suppressContentEditableWarning
           onInput={emitChange}
+          onPaste={handlePaste}
           onFocus={() => setIsFocused(true)}
           onBlur={() => {
             setIsFocused(false);
