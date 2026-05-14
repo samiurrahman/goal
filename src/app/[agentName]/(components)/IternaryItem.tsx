@@ -93,7 +93,7 @@ const RowHeading: React.FC<{ dayLabel: string; subtitle: string }> = ({ dayLabel
   const sub = (subtitle || '').trim();
   if (!label && !sub) return null;
   return (
-    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 leading-6">
       {label ? (
         <span className="text-[13px] font-semibold uppercase tracking-[0.08em] text-primary-700 dark:text-primary-300">
           {label}
@@ -233,7 +233,7 @@ const TimelineMarker: React.FC<TimelineMarkerProps> = ({ icon, accent }) => {
         : 'bg-primary-50 text-primary-700 ring-primary-200 dark:bg-primary-900/30 dark:text-primary-300';
     return (
       <span
-        className={`absolute -left-[30px] top-[2px] flex h-6 w-6 items-center justify-center rounded-full border-2 border-white dark:border-neutral-900 ring-2 ${wrapperColor}`}
+        className={`absolute -left-[30px] top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white dark:border-neutral-900 ring-2 ${wrapperColor}`}
         aria-hidden
       >
         <i className={`${iconClass} text-[13px] leading-none`} />

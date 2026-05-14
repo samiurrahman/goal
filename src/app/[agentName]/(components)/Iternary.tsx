@@ -35,12 +35,12 @@ const Iternary: React.FC<IternaryProps> = ({ data }) => {
             ))}
             <li className="relative pt-1">
               <span
-                className="absolute -left-[30px] top-[2px] flex h-6 w-6 items-center justify-center rounded-full border-2 border-white dark:border-neutral-900 ring-2 bg-secondary-500 text-white ring-secondary-200"
+                className="absolute -left-[30px] top-1 flex h-6 w-6 items-center justify-center rounded-full border-2 border-white dark:border-neutral-900 ring-2 bg-secondary-500 text-white ring-secondary-200"
                 aria-hidden
               >
                 <i className="las la-flag-checkered text-[13px] leading-none" />
               </span>
-              <div className="text-[12px] font-semibold uppercase tracking-[0.08em] text-secondary-700 dark:text-secondary-300">
+              <div className="leading-6 text-[12px] font-semibold uppercase tracking-[0.08em] text-secondary-700 dark:text-secondary-300">
                 Journey complete
               </div>
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
