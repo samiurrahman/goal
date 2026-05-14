@@ -17,6 +17,10 @@ import { uploadImageToStorage } from '@/utils/supabaseStorageHelper';
 import { useCities } from '@/hooks/useCities';
 import { allocatePackageSlug, slugify as slugifyShared } from '@/lib/slug';
 import { PACKAGE_TAGS, sanitizePackageTags, type PackageTag } from '@/constants/packageTags';
+import {
+  ITERNARY_ICON_OPTIONS,
+  type IternaryIconId,
+} from '@/app/[agentName]/(components)/IternaryItem';
 
 type WizardStep = 'meta' | 'itinerary' | 'amenities' | 'stay' | 'policies' | 'media';
 
@@ -80,7 +84,15 @@ interface IternaryItemInput {
   tripTime: string;
   flightInfo: string;
   nextLegLabel?: string;
+  icon?: IternaryIconId | '';
 }
+
+const VALID_ICON_IDS = new Set(ITERNARY_ICON_OPTIONS.map((o) => o.id));
+
+const normalizeIcon = (value: unknown): IternaryIconId | '' => {
+  const id = String(value || '').trim();
+  return VALID_ICON_IDS.has(id as IternaryIconId) ? (id as IternaryIconId) : '';
+};
 
 interface AddPackageWizardModalProps {
   agentAuthUserId: string;
@@ -168,6 +180,7 @@ const makeEmptyIternaryItem = (): IternaryItemInput => ({
   tripTime: '',
   flightInfo: '',
   nextLegLabel: '',
+  icon: '',
 });
 
 const AddPackageWizardModal = ({
@@ -278,6 +291,7 @@ const AddPackageWizardModal = ({
         nextLegLabel: String(
           row.nextLegLabel || row.next_leg_label || row.separatorLabel || row.next_label || ''
         ),
+        icon: normalizeIcon(row.icon),
       };
     });
     return mapped.length > 0 ? mapped : [makeEmptyIternaryItem(), makeEmptyIternaryItem()];
@@ -515,6 +529,7 @@ const AddPackageWizardModal = ({
           item.tripTime,
           item.flightInfo,
           item.nextLegLabel,
+          item.icon,
         ].some((value) => String(value || '').trim())
       ),
       amenities: parseLines(amenitiesText).length > 0,
@@ -829,7 +844,9 @@ const AddPackageWizardModal = ({
           item.toDate ||
           item.toLocation ||
           item.tripTime ||
-          item.flightInfo
+          item.flightInfo ||
+          item.nextLegLabel ||
+          item.icon
       ),
       stay_information: {
         title: 'Stay information',
@@ -1251,119 +1268,227 @@ const AddPackageWizardModal = ({
 
                 {step === 'itinerary' && (
                   <div className="space-y-4">
-                    {iternaryItems.map((item, idx) => (
-                      <div
-                        key={idx}
-                        className="border border-neutral-200 dark:border-neutral-700 rounded-2xl p-4 space-y-3"
-                      >
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium">Itinerary Segment {idx + 1}</h4>
-                          {iternaryItems.length > 1 && (
-                            <button
-                              type="button"
-                              className="text-xs text-red-600"
-                              onClick={() => {
-                                setIternaryItems((prev) => prev.filter((_, i) => i !== idx));
-                              }}
-                            >
-                              Remove
-                            </button>
-                          )}
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Add one card per day or leg. Pick an icon to replace the timeline dot, then fill the day label, title, and a short description. Travel details (locations, time, flight number) are optional — open them only when the day involves a flight or transfer.
+                    </p>
+
+                    {iternaryItems.map((item, idx) => {
+                      const updateField = <K extends keyof IternaryItemInput>(
+                        key: K,
+                        value: IternaryItemInput[K]
+                      ) => {
+                        setIternaryItems((prev) =>
+                          prev.map((entry, i) => (i === idx ? { ...entry, [key]: value } : entry))
+                        );
+                      };
+
+                      const hasTravelDetails = Boolean(
+                        (item.toLocation || '').trim() ||
+                          (item.tripTime || '').trim() ||
+                          (item.flightInfo || '').trim() ||
+                          (item.toDate || '').trim()
+                      );
+
+                      return (
+                        <div
+                          key={idx}
+                          className="border border-neutral-200 dark:border-neutral-700 rounded-2xl p-4 space-y-4"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 text-[12px] font-semibold">
+                                {idx + 1}
+                              </span>
+                              <h4 className="font-medium">Day / segment {idx + 1}</h4>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                className="text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                                disabled={idx === 0}
+                                onClick={() =>
+                                  setIternaryItems((prev) => {
+                                    if (idx === 0) return prev;
+                                    const next = [...prev];
+                                    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+                                    return next;
+                                  })
+                                }
+                                aria-label="Move up"
+                              >
+                                <i className="las la-arrow-up text-base" />
+                              </button>
+                              <button
+                                type="button"
+                                className="text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                                disabled={idx === iternaryItems.length - 1}
+                                onClick={() =>
+                                  setIternaryItems((prev) => {
+                                    if (idx === prev.length - 1) return prev;
+                                    const next = [...prev];
+                                    [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+                                    return next;
+                                  })
+                                }
+                                aria-label="Move down"
+                              >
+                                <i className="las la-arrow-down text-base" />
+                              </button>
+                              {iternaryItems.length > 1 && (
+                                <button
+                                  type="button"
+                                  className="text-xs text-red-600 hover:underline"
+                                  onClick={() =>
+                                    setIternaryItems((prev) => prev.filter((_, i) => i !== idx))
+                                  }
+                                >
+                                  Remove
+                                </button>
+                              )}
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label>Icon</Label>
+                            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                              Replaces the dot on the timeline. Pick one that matches this day&apos;s activity.
+                            </p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                onClick={() => updateField('icon', '')}
+                                aria-pressed={!item.icon}
+                                title="No icon (default dot)"
+                                className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                                  !item.icon
+                                    ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                                    : 'border-neutral-200 dark:border-neutral-700 text-neutral-400 hover:border-neutral-400'
+                                }`}
+                              >
+                                <span className="block h-2.5 w-2.5 rounded-full bg-current" />
+                              </button>
+                              {ITERNARY_ICON_OPTIONS.map((opt) => {
+                                const active = item.icon === opt.id;
+                                return (
+                                  <button
+                                    key={opt.id}
+                                    type="button"
+                                    onClick={() => updateField('icon', opt.id)}
+                                    aria-pressed={active}
+                                    title={opt.label}
+                                    className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                                      active
+                                        ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                                        : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400'
+                                    }`}
+                                  >
+                                    <i className={`${opt.className} text-lg leading-none`} />
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <div className="md:col-span-1">
+                              <Label>Day label</Label>
+                              <Input
+                                className="mt-1.5"
+                                placeholder="Day 1 · 15 Jun"
+                                value={item.fromDate}
+                                onChange={(e) => updateField('fromDate', e.target.value)}
+                              />
+                              <p className="mt-1 text-[11px] text-neutral-400">
+                                Shown in uppercase at the top of the row.
+                              </p>
+                            </div>
+                            <div className="md:col-span-2">
+                              <Label>Title</Label>
+                              <Input
+                                className="mt-1.5"
+                                placeholder="Depart Bangalore for Madinah"
+                                value={item.fromLocation}
+                                onChange={(e) => updateField('fromLocation', e.target.value)}
+                              />
+                              <p className="mt-1 text-[11px] text-neutral-400">
+                                The bold line — e.g. &ldquo;Stay at Pullman Zamzam Madinah&rdquo;.
+                              </p>
+                            </div>
+                          </div>
+
+                          <div>
+                            <Label>Description</Label>
+                            <Textarea
+                              className="mt-1.5"
+                              rows={2}
+                              placeholder="Ziyarat of Masjid Nabawi, Quba, Uhud, and the Seven Mosques. Daily breakfast & dinner."
+                              value={item.nextLegLabel || ''}
+                              onChange={(e) => updateField('nextLegLabel', e.target.value)}
+                            />
+                          </div>
+
+                          <details className="rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2" open={hasTravelDetails}>
+                            <summary className="cursor-pointer text-sm font-medium text-neutral-700 dark:text-neutral-200 select-none">
+                              Travel / flight details (optional)
+                            </summary>
+                            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div>
+                                <Label>Destination</Label>
+                                <Input
+                                  className="mt-1.5"
+                                  placeholder="Madinah"
+                                  value={item.toLocation}
+                                  onChange={(e) => updateField('toLocation', e.target.value)}
+                                />
+                                <p className="mt-1 text-[11px] text-neutral-400">
+                                  If set, the title becomes &ldquo;Title → Destination&rdquo;.
+                                </p>
+                              </div>
+                              <div>
+                                <Label>Arrival day label</Label>
+                                <Input
+                                  className="mt-1.5"
+                                  placeholder="Day 1 · 15 Jun (overnight)"
+                                  value={item.toDate}
+                                  onChange={(e) => updateField('toDate', e.target.value)}
+                                />
+                                <p className="mt-1 text-[11px] text-neutral-400">
+                                  Optional — used only if Day label is empty.
+                                </p>
+                              </div>
+                              <div>
+                                <Label>Trip time</Label>
+                                <Input
+                                  className="mt-1.5"
+                                  placeholder="04:15 BLR → 08:30 JED"
+                                  value={item.tripTime}
+                                  onChange={(e) => updateField('tripTime', e.target.value)}
+                                />
+                              </div>
+                              <div>
+                                <Label>Flight number</Label>
+                                <Input
+                                  className="mt-1.5"
+                                  placeholder="Air India AI-2243"
+                                  value={item.flightInfo}
+                                  onChange={(e) => updateField('flightInfo', e.target.value)}
+                                />
+                              </div>
+                              <p className="md:col-span-2 text-[11px] text-neutral-400">
+                                When either field is filled, a flight chip appears under the description.
+                              </p>
+                            </div>
+                          </details>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                          <Input
-                            placeholder="From Date"
-                            value={item.fromDate}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setIternaryItems((prev) =>
-                                prev.map((entry, i) =>
-                                  i === idx ? { ...entry, fromDate: value } : entry
-                                )
-                              );
-                            }}
-                          />
-                          <Input
-                            placeholder="From Location"
-                            value={item.fromLocation}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setIternaryItems((prev) =>
-                                prev.map((entry, i) =>
-                                  i === idx ? { ...entry, fromLocation: value } : entry
-                                )
-                              );
-                            }}
-                          />
-                          <Input
-                            placeholder="To Date"
-                            value={item.toDate}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setIternaryItems((prev) =>
-                                prev.map((entry, i) =>
-                                  i === idx ? { ...entry, toDate: value } : entry
-                                )
-                              );
-                            }}
-                          />
-                          <Input
-                            placeholder="To Location"
-                            value={item.toLocation}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setIternaryItems((prev) =>
-                                prev.map((entry, i) =>
-                                  i === idx ? { ...entry, toLocation: value } : entry
-                                )
-                              );
-                            }}
-                          />
-                          <Input
-                            placeholder="Trip Time"
-                            value={item.tripTime}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setIternaryItems((prev) =>
-                                prev.map((entry, i) =>
-                                  i === idx ? { ...entry, tripTime: value } : entry
-                                )
-                              );
-                            }}
-                          />
-                          <Input
-                            placeholder="Flight Info"
-                            value={item.flightInfo}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setIternaryItems((prev) =>
-                                prev.map((entry, i) =>
-                                  i === idx ? { ...entry, flightInfo: value } : entry
-                                )
-                              );
-                            }}
-                          />
-                          <Input
-                            placeholder="Next Leg Label (for separator)"
-                            value={item.nextLegLabel || ''}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setIternaryItems((prev) =>
-                                prev.map((entry, i) =>
-                                  i === idx ? { ...entry, nextLegLabel: value } : entry
-                                )
-                              );
-                            }}
-                          />
-                        </div>
-                      </div>
-                    ))}
+                      );
+                    })}
 
                     <ButtonSecondary
                       type="button"
                       onClick={() => setIternaryItems((prev) => [...prev, makeEmptyIternaryItem()])}
                     >
-                      Add Itinerary Segment
+                      <i className="las la-plus mr-1.5" />
+                      Add day
                     </ButtonSecondary>
                   </div>
                 )}

@@ -247,6 +247,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
               row.separator_label ||
               ''
           ).trim(),
+          icon: (String(row.icon || '').trim() || '') as IternaryItemProps['icon'],
         };
       })
     : [];

@@ -9,11 +9,22 @@ import Label from '@/components/Label';
 import CityAutocomplete, { SelectedCity } from '@/components/CityAutocomplete';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Input from '@/shared/Input';
-import Select from '@/shared/Select';
 import RichTextEditor from '@/shared/RichTextEditor';
 import Checkbox from '@/shared/Checkbox';
 import Textarea from '@/shared/Textarea';
+import Badge from '@/shared/Badge';
 import type { Agent, AgentInfoFeature, TwMainColor } from '@/data/types';
+
+const FEATURE_BADGE_COLORS: { value: TwMainColor; label: string; swatch: string }[] = [
+  { value: 'blue', label: 'Blue', swatch: 'bg-blue-500' },
+  { value: 'green', label: 'Green', swatch: 'bg-green-500' },
+  { value: 'red', label: 'Red', swatch: 'bg-red-500' },
+  { value: 'yellow', label: 'Yellow', swatch: 'bg-yellow-500' },
+  { value: 'pink', label: 'Pink', swatch: 'bg-pink-500' },
+  { value: 'purple', label: 'Purple', swatch: 'bg-purple-500' },
+  { value: 'indigo', label: 'Indigo', swatch: 'bg-indigo-500' },
+  { value: 'gray', label: 'Gray', swatch: 'bg-gray-500' },
+];
 import { supabase } from '@/utils/supabaseClient';
 import { slugify, RESERVED_AGENT_SLUGS } from '@/lib/slug';
 import { revalidatePaths } from '@/utils/revalidate';
@@ -553,6 +564,16 @@ const AgentProfilePage = () => {
     }));
   };
 
+  const moveFeature = (index: number, direction: -1 | 1) => {
+    setInfoSection((prev) => {
+      const target = index + direction;
+      if (target < 0 || target >= prev.features.length) return prev;
+      const next = [...prev.features];
+      [next[index], next[target]] = [next[target], next[index]];
+      return { ...prev, features: next };
+    });
+  };
+
   const handleSaveInfoSection = async () => {
     if (!agent?.id || isSavingInfoSection) return;
     setIsSavingInfoSection(true);
@@ -988,87 +1009,124 @@ const AgentProfilePage = () => {
                   )}
                 </div>
 
+                <p className="text-xs text-neutral-500 dark:text-neutral-400 -mt-2">
+                  Each card on your public &ldquo;{infoSection.heading || 'What We Provide'}&rdquo; section gets a small badge, a title, and a short description. Pick a badge label that pilgrims will instantly recognise (e.g. &ldquo;Govt approved&rdquo;, &ldquo;Visa included&rdquo;).
+                </p>
+
                 {infoSection.features.map((feature, index) => (
                   <div
                     key={index}
-                    className="rounded-xl border border-neutral-200 dark:border-neutral-700 p-4 space-y-3"
+                    className="rounded-xl border border-neutral-200 dark:border-neutral-700 p-4 space-y-4"
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                        Feature {index + 1}
-                      </span>
-                      {infoSection.features.length > 1 && (
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 text-[12px] font-semibold">
+                          {index + 1}
+                        </span>
+                        <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                          Feature {index + 1}
+                        </span>
+                        {feature.badge_name ? (
+                          <Badge name={feature.badge_name} color={feature.badge_color} />
+                        ) : (
+                          <span className="text-[11px] text-neutral-400 italic">badge preview</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
                         <button
                           type="button"
-                          onClick={() => removeFeature(index)}
-                          className="text-xs text-red-500 hover:text-red-700"
+                          className="text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                          disabled={index === 0}
+                          onClick={() => moveFeature(index, -1)}
+                          aria-label="Move up"
                         >
-                          Remove
+                          <i className="las la-arrow-up text-base" />
                         </button>
-                      )}
+                        <button
+                          type="button"
+                          className="text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed"
+                          disabled={index === infoSection.features.length - 1}
+                          onClick={() => moveFeature(index, 1)}
+                          aria-label="Move down"
+                        >
+                          <i className="las la-arrow-down text-base" />
+                        </button>
+                        {infoSection.features.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeFeature(index)}
+                            className="text-xs text-red-500 hover:text-red-700 hover:underline"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div>
-                        <Label>Badge Name</Label>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      <div className="md:col-span-1">
+                        <Label>Badge label</Label>
                         <Input
-                          className="mt-1"
+                          className="mt-1.5"
                           value={feature.badge_name}
                           onChange={(e) =>
                             updateFeature(index, 'badge_name', e.target.value)
                           }
-                          placeholder="e.g. Best Service"
+                          placeholder="Best Service"
+                          maxLength={24}
                         />
-                      </div>
-                      <div>
-                        <Label>Badge Color</Label>
-                        <Select
-                          className="mt-1"
-                          value={feature.badge_color}
-                          onChange={(e) =>
-                            updateFeature(index, 'badge_color', e.target.value)
-                          }
-                        >
-                          {(
-                            [
-                              'blue',
-                              'green',
-                              'red',
-                              'yellow',
-                              'pink',
-                              'purple',
-                              'indigo',
-                              'gray',
-                            ] as const
-                          ).map((c) => (
-                            <option key={c} value={c}>
-                              {c.charAt(0).toUpperCase() + c.slice(1)}
-                            </option>
-                          ))}
-                        </Select>
+                        <p className="mt-1 text-[11px] text-neutral-400">
+                          Short pill above the title (max 24 chars).
+                        </p>
                       </div>
                       <div className="md:col-span-2">
-                        <Label>Title</Label>
-                        <Input
-                          className="mt-1"
-                          value={feature.title}
-                          onChange={(e) =>
-                            updateFeature(index, 'title', e.target.value)
-                          }
-                          placeholder="Feature title"
-                        />
+                        <Label>Badge colour</Label>
+                        <div className="mt-1.5 flex flex-wrap gap-2">
+                          {FEATURE_BADGE_COLORS.map((opt) => {
+                            const active = feature.badge_color === opt.value;
+                            return (
+                              <button
+                                key={opt.value}
+                                type="button"
+                                onClick={() => updateFeature(index, 'badge_color', opt.value)}
+                                aria-pressed={active}
+                                title={opt.label}
+                                className={`flex h-8 w-8 items-center justify-center rounded-full border-2 transition ${
+                                  active
+                                    ? 'border-neutral-900 dark:border-white'
+                                    : 'border-transparent hover:border-neutral-300'
+                                }`}
+                              >
+                                <span className={`block h-5 w-5 rounded-full ${opt.swatch}`} />
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                      <div className="md:col-span-2">
-                        <Label>Description</Label>
-                        <Textarea
-                          className="mt-1"
-                          value={feature.description}
-                          onChange={(e) =>
-                            updateFeature(index, 'description', e.target.value)
-                          }
-                          placeholder="Brief description"
-                          rows={2}
-                        />
-                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Title</Label>
+                      <Input
+                        className="mt-1.5"
+                        value={feature.title}
+                        onChange={(e) => updateFeature(index, 'title', e.target.value)}
+                        placeholder="Best in class service"
+                      />
+                      <p className="mt-1 text-[11px] text-neutral-400">
+                        The bold headline on the card.
+                      </p>
+                    </div>
+
+                    <div>
+                      <Label>Description</Label>
+                      <Textarea
+                        className="mt-1.5"
+                        value={feature.description}
+                        onChange={(e) => updateFeature(index, 'description', e.target.value)}
+                        placeholder="One or two sentences explaining the commitment."
+                        rows={2}
+                      />
                     </div>
                   </div>
                 ))}
