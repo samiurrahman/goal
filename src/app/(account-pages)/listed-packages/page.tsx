@@ -16,6 +16,7 @@ import {
 } from '@heroicons/react/24/outline';
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Package } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
@@ -621,8 +622,11 @@ const ListedPackagesPage = () => {
                   {sortedPackages.map((pkg) => {
                     const isUnpublished = pkg.published === false;
                     const bookingCount = bookingCountsByPackage?.[pkg.id] ?? 0;
+                    const pkgSlug = (pkg.slug || '').trim();
+                    const detailUrl =
+                      agentSlug && pkgSlug ? `/${agentSlug}/${pkgSlug}` : '';
                     const shareUrl =
-                      origin && pkg.slug ? `${origin}/${agentSlug}/${pkg.slug}` : '';
+                      origin && pkgSlug ? `${origin}/${agentSlug}/${pkgSlug}` : '';
                     return (
                     <div
                       key={pkg.id}
@@ -631,7 +635,18 @@ const ListedPackagesPage = () => {
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                         <div>
                           <h3 className="text-lg font-semibold">
-                            {pkg.title || `Package ${pkg.id}`}
+                            {detailUrl ? (
+                              <Link
+                                href={detailUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-primary-700 dark:hover:text-primary-300 hover:underline transition-colors"
+                              >
+                                {pkg.title || `Package ${pkg.id}`}
+                              </Link>
+                            ) : (
+                              pkg.title || `Package ${pkg.id}`
+                            )}
                           </h3>
                           <p className="text-sm text-neutral-500 dark:text-neutral-400">
                             Ref: {formatPackageRef(pkg.id)}
@@ -699,7 +714,6 @@ const ListedPackagesPage = () => {
                                 queryClient.invalidateQueries({
                                   queryKey: ['agentPackages', agentUUID],
                                 });
-                                const pkgSlug = (pkg.slug || '').trim();
                                 const paths = ['/packages', `/${agentSlug}`];
                                 if (pkgSlug) paths.push(`/${agentSlug}/${pkgSlug}`);
                                 void revalidatePaths(paths);

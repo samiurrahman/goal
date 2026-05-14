@@ -116,10 +116,18 @@ export default function SupabaseSessionSync() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.access_token) {
         storeAccessToken(session.access_token);
-        return;
       }
       if (event === 'SIGNED_OUT') {
         removeAccessToken();
+        return;
+      }
+      // A password-recovery link can land on any page — Supabase falls back to
+      // the project's Site URL when the redirect target isn't allow-listed.
+      // Funnel the user to the reset form wherever they touch down; the
+      // recovery session is already persisted, so the reset page picks it up
+      // after the navigation.
+      if (event === 'PASSWORD_RECOVERY' && window.location.pathname !== '/reset-password') {
+        window.location.replace('/reset-password');
       }
     });
     return () => subscription.unsubscribe();
