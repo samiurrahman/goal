@@ -81,7 +81,7 @@ export default function ReviewsList({
             key={review.id}
             className="border-t border-neutral-200 py-5 first:border-t-0 first:pt-0"
           >
-            <div className="mb-3 flex items-center gap-3">
+            <div className="mb-3 flex flex-wrap items-center gap-3 sm:flex-nowrap">
               {/* Avatar */}
               <div className="h-11 w-11 shrink-0 overflow-hidden rounded-full">
                 {hasProfileImage ? (
@@ -109,10 +109,10 @@ export default function ReviewsList({
 
               {/* Meta */}
               <div className="min-w-0 flex-1">
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-neutral-900">
-                  <span className="truncate">{displayName}</span>
+                <div className="flex min-w-0 items-center gap-2 text-sm font-semibold text-neutral-900">
+                  <span className="min-w-0 flex-1 truncate">{displayName}</span>
                   {isOwn ? (
-                    <span className="inline-flex items-center rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-700">
+                    <span className="inline-flex shrink-0 items-center rounded-full bg-primary-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-700">
                       You
                     </span>
                   ) : null}
@@ -123,7 +123,7 @@ export default function ReviewsList({
               </div>
 
               {/* Stars + edit */}
-              <div className="flex items-center gap-3">
+              <div className="flex shrink-0 items-center gap-3">
                 <StarDisplay rating={review.rating} />
                 {isOwn && onEditReview ? (
                   <button

@@ -296,15 +296,15 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
       <div className="nc-AgentProfilePage w-full pb-28 lg:pb-0">
         {/* ── BREADCRUMB ── */}
         <nav
-          className="flex items-center gap-2 py-4 text-[13px] text-neutral-500"
+          className="flex min-w-0 items-center gap-2 py-4 text-[13px] text-neutral-500"
           aria-label="Breadcrumb"
         >
-          <Link href="/" className="font-medium text-primary-700 hover:underline">
+          <Link href="/" className="shrink-0 font-medium text-primary-700 hover:underline">
             Home
           </Link>
           <svg
             viewBox="0 0 24 24"
-            className="h-3.5 w-3.5 text-neutral-400"
+            className="h-3.5 w-3.5 shrink-0 text-neutral-400"
             fill="none"
             stroke="currentColor"
             strokeWidth={2}
@@ -313,11 +313,13 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
           >
             <polyline points="9 18 15 12 9 6" />
           </svg>
-          <span className="line-clamp-1 font-medium text-neutral-800">{displayName}</span>
+          <span className="min-w-0 flex-1 truncate font-medium text-neutral-800">
+            {displayName}
+          </span>
         </nav>
 
         {/* ── PROFILE HEADER CARD ── */}
-        <section className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm">
+        <section className="min-w-0 overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm">
           {/* Banner */}
           <div
             className="relative aspect-[4/1] min-h-[180px]"
@@ -473,7 +475,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
               <div className="flex min-w-0 flex-col gap-[18px] pt-1">
                 <div className="flex flex-col gap-2.5">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-2.5">
-                    <h1 className="m-0 text-[28px] font-semibold leading-[1.15] tracking-[-0.02em] text-neutral-900 md:text-[34px]">
+                    <h1 className="m-0 break-words text-[28px] font-semibold leading-[1.15] tracking-[-0.02em] text-neutral-900 md:text-[34px]">
                       {displayName}
                     </h1>
                     {isGovVerified ? <GovtVerifiedBadge className="shrink-0" /> : null}
@@ -521,11 +523,11 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                   className="m-0 grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-neutral-200 bg-neutral-200 sm:grid-cols-4"
                   aria-label="Agent credentials"
                 >
-                  <div className="bg-neutral-50 p-3.5">
+                  <div className="min-w-0 bg-neutral-50 p-3.5">
                     <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
                       <svg
                         viewBox="0 0 24 24"
-                        className="h-3 w-3 text-neutral-400"
+                        className="h-3 w-3 shrink-0 text-neutral-400"
                         fill="none"
                         stroke="currentColor"
                         strokeWidth={2}
@@ -536,10 +538,10 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                       </svg>
                       Rating
                     </dt>
-                    <dd className="m-0 mt-1.5 flex items-baseline gap-1 text-base font-semibold leading-tight text-neutral-900">
+                    <dd className="m-0 mt-1.5 flex flex-wrap items-baseline gap-x-1 gap-y-0.5 text-base font-semibold leading-tight text-neutral-900">
                       <span className="text-sm text-[#FACC15]">★</span>
                       {ratingDisplay}
-                      <small className="text-xs font-medium text-neutral-500">
+                      <small className="break-words text-xs font-medium text-neutral-500">
                         {agentReviewCount > 0
                           ? `· ${agentReviewCount.toLocaleString('en-IN')} review${
                               agentReviewCount === 1 ? '' : 's'
@@ -688,40 +690,16 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
         </section>
 
         {/* ── MAIN GRID ── */}
-        <div className="grid grid-cols-1 gap-8 py-8 lg:grid-cols-[1fr_340px] lg:gap-10 lg:py-10">
+        <div className="grid min-w-0 grid-cols-1 gap-8 py-8 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10 lg:py-10">
           {/* CONTENT */}
-          <div className="grid min-w-0 gap-7">
+          <div className="grid min-w-0 grid-cols-1 gap-7">
             {/* About this agent */}
-            <section className="overflow-hidden rounded-3xl border border-neutral-200 bg-white p-5 sm:p-7 md:p-8">
-              <h2 className="m-0 text-[22px] font-semibold leading-tight tracking-[-0.01em] text-neutral-900">
+            <section className="min-w-0 overflow-hidden rounded-3xl border border-neutral-200 bg-white p-5 sm:p-7 md:p-8">
+              <h2 className="m-0 break-words text-[22px] font-semibold leading-tight tracking-[-0.01em] text-neutral-900">
                 About {displayName}
               </h2>
 
-              <div className="mt-6 grid grid-cols-1 gap-3.5 border-b border-neutral-200 pb-6 sm:grid-cols-2 lg:grid-cols-3">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700">
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.8}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <circle cx="12" cy="12" r="9" />
-                      <path d="M12 7v5l3 2" />
-                    </svg>
-                  </span>
-                  <div className="min-w-0">
-                    <div className="text-xs font-medium uppercase tracking-[0.04em] text-neutral-500">
-                      Experience
-                    </div>
-                    <div className="mt-0.5 break-words text-sm font-medium text-neutral-900">
-                      {experienceLabel}
-                    </div>
-                  </div>
-                </div>
+              <div className="mt-6 grid grid-cols-1 gap-3.5 border-b border-neutral-200 pb-6 sm:grid-cols-2 lg:grid-cols-2">
                 <div className="flex items-start gap-3">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700">
                     <svg

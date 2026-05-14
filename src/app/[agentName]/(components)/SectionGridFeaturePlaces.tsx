@@ -69,22 +69,24 @@ const PackageCard: FC<{ data: CardData; priority?: boolean }> = ({ data, priorit
         </span>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 p-5">
-        <div className="flex items-center gap-2 text-xs font-medium text-neutral-500">
-          <span className="text-[#FACC15]">★</span>
-          <b className="font-semibold text-neutral-900">
+      <div className="flex min-w-0 flex-1 flex-col gap-2 p-5">
+        <div className="flex min-w-0 items-center gap-2 text-xs font-medium text-neutral-500">
+          <span className="shrink-0 text-[#FACC15]">★</span>
+          <b className="shrink-0 font-semibold text-neutral-900">
             {data.ratingPoint > 0 ? data.ratingPoint.toFixed(1) : 'New'}
           </b>
-          {data.reviewCount > 0 ? <span>({data.reviewCount.toLocaleString('en-IN')})</span> : null}
-          <span className="text-neutral-400">·</span>
-          <span className="truncate">{data.agentName}</span>
+          {data.reviewCount > 0 ? (
+            <span className="shrink-0">({data.reviewCount.toLocaleString('en-IN')})</span>
+          ) : null}
+          <span className="shrink-0 text-neutral-400">·</span>
+          <span className="min-w-0 flex-1 truncate">{data.agentName}</span>
         </div>
 
-        <h3 className="m-0 text-[17px] font-semibold leading-snug tracking-[-0.005em] text-neutral-900 line-clamp-2">
+        <h3 className="m-0 text-[17px] font-semibold leading-snug tracking-[-0.005em] text-neutral-900 line-clamp-2 break-words">
           {data.title}
         </h3>
         {subParts.length > 0 ? (
-          <p className="m-0 text-[13px] leading-[1.45] text-neutral-500 line-clamp-1">
+          <p className="m-0 text-[13px] leading-[1.45] text-neutral-500 line-clamp-1 break-words">
             {subParts.join(' · ')}
           </p>
         ) : null}
@@ -103,13 +105,15 @@ const PackageCard: FC<{ data: CardData; priority?: boolean }> = ({ data, priorit
         </div>
 
         <div className="mt-auto flex items-end justify-between gap-3 border-t border-neutral-200 pt-4">
-          <div className="min-w-0">
-            <span className="block text-[18px] font-semibold leading-[1.1] tracking-[-0.01em] text-primary-900">
+          <div className="min-w-0 flex-1">
+            <span className="block break-words text-[18px] font-semibold leading-[1.1] tracking-[-0.01em] text-primary-900">
               {data.priceLabel}
             </span>
-            <span className="mt-0.5 block text-xs text-neutral-500">{data.pricePerPerson}</span>
+            <span className="mt-0.5 block break-words text-xs text-neutral-500">
+              {data.pricePerPerson}
+            </span>
           </div>
-          <span className="relative z-20 text-[13px] font-semibold text-primary-700 group-hover:underline">
+          <span className="relative z-20 shrink-0 text-[13px] font-semibold text-primary-700 group-hover:underline">
             View →
           </span>
         </div>
@@ -193,18 +197,18 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
   };
 
   return (
-    <section className="nc-SectionGridFeaturePlaces relative">
+    <section className="nc-SectionGridFeaturePlaces min-w-0 overflow-hidden rounded-3xl border border-neutral-200 bg-white p-5 sm:p-7 md:p-8">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h2 className="m-0 text-2xl font-semibold tracking-[-0.01em] text-neutral-900 md:text-[28px]">
+        <div className="min-w-0 flex-1">
+          <h2 className="m-0 break-words text-2xl font-semibold tracking-[-0.01em] text-neutral-900 md:text-[28px]">
             Our packages
           </h2>
-          <p className="mt-1 text-sm text-neutral-500">
+          <p className="mt-1 break-words text-sm text-neutral-500">
             Sacred journeys, trusted guidance — handpicked for every pilgrim.
           </p>
         </div>
         {cards.length > 1 ? (
-          <div className="hidden items-center gap-2 md:flex">
+          <div className="hidden shrink-0 items-center gap-2 md:flex">
             <button
               type="button"
               onClick={() => scrollBy(-1)}
@@ -230,12 +234,12 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
       ) : (
         <div
           ref={scrollerRef}
-          className="hiddenScrollbar -mx-4 flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth px-4 pb-2 md:mx-0 md:px-0"
+          className="hiddenScrollbar -mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto scroll-smooth px-5 pb-2 sm:-mx-7 sm:gap-5 sm:px-7 md:-mx-8 md:gap-6 md:px-8"
         >
           {cards.map((card, index) => (
             <div
               key={card.id || index}
-              className="w-[78vw] shrink-0 snap-start sm:w-[calc(50%-12px)]"
+              className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[calc(50%-10px)] sm:max-w-none md:w-[calc(50%-12px)] xl:w-[calc(33.333%-16px)]"
             >
               <PackageCard data={card} priority={index < 2} />
             </div>

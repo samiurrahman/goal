@@ -77,13 +77,13 @@ const SectionOurFeatures: FC<SectionOurFeaturesProps> = ({
       className={`nc-SectionOurFeatures overflow-hidden rounded-3xl border border-neutral-200 bg-white p-5 sm:p-7 md:p-8 ${className}`}
       data-nc-id="SectionOurFeatures"
     >
-      <p className="m-0 mb-[18px] text-[13px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
+      <p className="m-0 mb-[18px] break-words text-[13px] font-semibold uppercase tracking-[0.1em] text-neutral-500">
         {heading}
       </p>
-      <h2 className="m-0 mb-1.5 text-[22px] font-semibold leading-[1.25] tracking-[-0.01em] text-neutral-900">
+      <h2 className="m-0 mb-1.5 break-words text-[22px] font-semibold leading-[1.25] tracking-[-0.01em] text-neutral-900">
         {agentName}
       </h2>
-      <p className="m-0 mb-6 text-sm leading-[1.55] text-neutral-600">
+      <p className="m-0 mb-6 break-words text-sm leading-[1.55] text-neutral-600">
         The commitments behind every package we publish on HajjScanner.
       </p>
 
@@ -91,7 +91,7 @@ const SectionOurFeatures: FC<SectionOurFeaturesProps> = ({
         {features.map((feature, index) => (
           <div
             key={index}
-            className="rounded-[18px] border border-neutral-200 bg-neutral-50 p-[22px]"
+            className="min-w-0 overflow-hidden rounded-[18px] border border-neutral-200 bg-neutral-50 p-[22px]"
           >
             <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-white text-primary-700">
               <svg
@@ -106,10 +106,10 @@ const SectionOurFeatures: FC<SectionOurFeaturesProps> = ({
                 {FEATURE_ICONS[index % FEATURE_ICONS.length]}
               </svg>
             </span>
-            <h3 className="m-0 mb-1.5 text-base font-semibold tracking-[-0.01em] text-neutral-900">
+            <h3 className="m-0 mb-1.5 break-words text-base font-semibold tracking-[-0.01em] text-neutral-900">
               {feature.title}
             </h3>
-            <p className="m-0 text-[13px] leading-[1.55] text-neutral-600">
+            <p className="m-0 break-words text-[13px] leading-[1.55] text-neutral-600">
               {feature.description}
             </p>
           </div>

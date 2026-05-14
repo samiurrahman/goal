@@ -82,20 +82,20 @@ export default function ReviewsSection({
   }, [reviews]);
 
   return (
-    <section className="overflow-hidden rounded-3xl border border-neutral-200 bg-white p-5 sm:p-7 md:p-8">
+    <section className="min-w-0 overflow-hidden rounded-3xl border border-neutral-200 bg-white p-5 sm:p-7 md:p-8">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 className="m-0 text-[22px] font-semibold tracking-[-0.01em] text-neutral-900">
+        <div className="min-w-0 flex-1">
+          <h2 className="m-0 break-words text-[22px] font-semibold tracking-[-0.01em] text-neutral-900">
             Reviews
           </h2>
-          <div className="mt-1 flex items-center gap-2 text-sm text-neutral-700">
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-neutral-700">
             {reviewCount > 0 ? (
               <>
                 <span className="text-lg text-[#FACC15]">★</span>
                 <b className="text-lg font-semibold text-neutral-900">
                   {avgRating.toFixed(1)}
                 </b>
-                <span className="text-neutral-500">
+                <span className="break-words text-neutral-500">
                   based on {reviewCount.toLocaleString('en-IN')} review
                   {reviewCount === 1 ? '' : 's'}
                 </span>
