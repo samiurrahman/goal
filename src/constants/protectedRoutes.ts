@@ -1,6 +1,7 @@
 export const PROTECTED_PATHS = [
   '/account',
   '/profile',
+  '/interested-users',
   '/listed-packages',
   '/my-bookings',
   '/bookings',

@@ -30,6 +30,7 @@ export const RESERVED_AGENT_SLUGS: ReadonlySet<string> = new Set([
   'help',
   'home',
   'images',
+  'interested-users',
   'listed-packages',
   'listing',
   'login',

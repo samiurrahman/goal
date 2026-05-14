@@ -61,6 +61,7 @@ export const Nav = () => {
     { href: '/profile', label: 'Profile' },
     { href: '/bookings', label: 'Bookings' },
     { href: '/listed-packages', label: 'Packages' },
+    { href: '/interested-users' as Route, label: 'Interested users' },
     { href: '/account-settings', label: 'Account settings' },
   ];
 

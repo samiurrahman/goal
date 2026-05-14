@@ -13,6 +13,12 @@ import GovtVerifiedBadge from '@/components/GovtVerifiedBadge';
 import SectionOurFeatures from './(components)/SectionOurFeatures';
 import SectionGridFeaturePlaces from './(components)/SectionGridFeaturePlaces';
 import ReviewsSection from './(components)/ReviewsSection';
+import {
+  AgentContactProvider,
+  DesktopContactCard,
+  MobileQuickActions,
+  MobileStickyContact,
+} from './(components)/AgentContactReveal';
 
 export interface AgentDetailsProps {
   params: { agentName: string };
@@ -283,8 +289,20 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
   const sinceYear = hasExperience ? new Date().getFullYear() - experienceYears : null;
   const telHref = agentDetails?.contact_number ? `tel:${agentDetails.contact_number}` : '';
   const mailHref = agentDetails?.email_id ? `mailto:${agentDetails.email_id}` : '';
-  const hasMobileCta = !!(whatsappHref || telHref);
   const ratingDisplay = agentRatingPoint > 0 ? agentRatingPoint.toFixed(1) : 'New';
+
+  // Props for the reveal gate — every contact surface (sidebar, mobile tiles,
+  // mobile sticky) reads from the same provider so a single click flips them
+  // all at once.
+  const contactData = {
+    agentId: agentDetails?.id ? String(agentDetails.id) : '',
+    agentSlug: agentDetails?.slug || agentName,
+    contactNumber: agentDetails?.contact_number || '',
+    whatsappHref,
+    telHref,
+    mailHref,
+    emailId: agentDetails?.email_id || '',
+  };
 
   return (
     <>
@@ -293,6 +311,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
       />
 
+      <AgentContactProvider data={contactData}>
       <div className="nc-AgentProfilePage w-full pb-28 lg:pb-0">
         {/* ── BREADCRUMB ── */}
         <nav
@@ -628,65 +647,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
             </div>
 
             {/* Mobile-only quick actions */}
-            {whatsappHref || telHref || mailHref ? (
-              <div className="mt-5 grid grid-cols-3 gap-2 lg:hidden">
-                {whatsappHref ? (
-                  <a
-                    href={whatsappHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-4 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100"
-                    aria-label="WhatsApp"
-                  >
-                    <svg viewBox="0 0 24 24" fill="currentColor" className="h-[22px] w-[22px]">
-                      <path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9s-.4-.1-.6.2-.7.9-.8 1.1-.3.2-.6.1c-1.8-.9-3-1.6-4.1-3.6-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5s-.6-1.4-.8-2c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-1.6 1.6-1 4 .9 6.4 1.7 2.2 3.5 3.4 5.4 3.9 1.7.4 2.5.2 3.4-.4.5-.4 1.1-1.1 1.2-1.7.1-.6 0-1-.1-1zM12 2A10 10 0 0 0 3.5 17l-1.4 5.2 5.3-1.4A10 10 0 1 0 12 2z" />
-                    </svg>
-                    WhatsApp
-                  </a>
-                ) : null}
-                {telHref ? (
-                  <a
-                    href={telHref}
-                    className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-4 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100"
-                    aria-label="Call"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.8}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-[22px] w-[22px]"
-                    >
-                      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.35 1.84.59 2.8.72A2 2 0 0 1 22 16.92z" />
-                    </svg>
-                    Call
-                  </a>
-                ) : null}
-                {mailHref ? (
-                  <a
-                    href={mailHref}
-                    className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-4 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100"
-                    aria-label="Email"
-                  >
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.8}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-[22px] w-[22px]"
-                    >
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                    Email
-                  </a>
-                ) : null}
-              </div>
-            ) : null}
+            <MobileQuickActions />
           </div>
         </section>
 
@@ -780,87 +741,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                   Contact this agent
                 </h3>
 
-                {whatsappHref ? (
-                  <a
-                    href={whatsappHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mb-2 flex items-center gap-3 rounded-xl border border-neutral-200 p-3 transition-colors hover:border-primary-300 hover:bg-primary-50"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-[#25D366] text-white">
-                      <svg viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px]">
-                        <path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9s-.4-.1-.6.2-.7.9-.8 1.1-.3.2-.6.1c-1.8-.9-3-1.6-4.1-3.6-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5s-.6-1.4-.8-2c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-1.6 1.6-1 4 .9 6.4 1.7 2.2 3.5 3.4 5.4 3.9 1.7.4 2.5.2 3.4-.4.5-.4 1.1-1.1 1.2-1.7.1-.6 0-1-.1-1zM12 2A10 10 0 0 0 3.5 17l-1.4 5.2 5.3-1.4A10 10 0 1 0 12 2z" />
-                      </svg>
-                    </span>
-                    <div className="min-w-0">
-                      <div className="text-[13px] font-medium text-neutral-500">
-                        WhatsApp · replies quickly
-                      </div>
-                      <div className="mt-px truncate text-sm font-semibold text-neutral-900">
-                        {agentDetails?.contact_number || 'Send a message'}
-                      </div>
-                    </div>
-                  </a>
-                ) : null}
-
-                {telHref ? (
-                  <a
-                    href={telHref}
-                    className="mb-2 flex items-center gap-3 rounded-xl border border-neutral-200 p-3 transition-colors hover:border-primary-300 hover:bg-primary-50"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-primary-700 text-white">
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={1.8}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-[18px] w-[18px]"
-                      >
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.35 1.84.59 2.8.72A2 2 0 0 1 22 16.92z" />
-                      </svg>
-                    </span>
-                    <div className="min-w-0">
-                      <div className="text-[13px] font-medium text-neutral-500">Call directly</div>
-                      <div className="mt-px truncate text-sm font-semibold text-neutral-900">
-                        {agentDetails?.contact_number}
-                      </div>
-                    </div>
-                  </a>
-                ) : null}
-
-                {mailHref ? (
-                  <a
-                    href={mailHref}
-                    className="flex items-center gap-3 rounded-xl border border-neutral-200 p-3 transition-colors hover:border-primary-300 hover:bg-primary-50"
-                  >
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-neutral-100 text-neutral-700">
-                      <svg
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={1.8}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        className="h-[18px] w-[18px]"
-                      >
-                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                        <polyline points="22,6 12,13 2,6" />
-                      </svg>
-                    </span>
-                    <div className="min-w-0">
-                      <div className="text-[13px] font-medium text-neutral-500">Email</div>
-                      <div className="mt-px truncate text-[13px] font-semibold text-neutral-900">
-                        {agentDetails?.email_id}
-                      </div>
-                    </div>
-                  </a>
-                ) : null}
-
-                {!whatsappHref && !telHref && !mailHref ? (
-                  <p className="m-0 text-sm text-neutral-500">Contact details coming soon.</p>
-                ) : null}
+                <DesktopContactCard />
               </div>
 
               <div className="rounded-[20px] border border-primary-100 bg-primary-50 p-[22px]">
@@ -877,66 +758,8 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
         </div>
       </div>
 
-      {/* ── MOBILE STICKY CTA ── */}
-      {hasMobileCta ? (
-        <div
-          className="fixed inset-x-0 bottom-0 z-40 flex gap-2 border-t border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur lg:hidden"
-          style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}
-        >
-          {whatsappHref ? (
-            <>
-              {telHref ? (
-                <a
-                  href={telHref}
-                  className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-neutral-300 bg-white px-4 py-3 text-sm font-medium text-neutral-900 transition-colors hover:border-neutral-500"
-                  aria-label="Call agent"
-                >
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={1.8}
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-[18px] w-[18px]"
-                  >
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.35 1.84.59 2.8.72A2 2 0 0 1 22 16.92z" />
-                  </svg>
-                </a>
-              ) : null}
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary-700 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-800"
-              >
-                <svg viewBox="0 0 24 24" fill="currentColor" className="h-[18px] w-[18px]">
-                  <path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9s-.4-.1-.6.2-.7.9-.8 1.1-.3.2-.6.1c-1.8-.9-3-1.6-4.1-3.6-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5s-.6-1.4-.8-2c-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-1.6 1.6-1 4 .9 6.4 1.7 2.2 3.5 3.4 5.4 3.9 1.7.4 2.5.2 3.4-.4.5-.4 1.1-1.1 1.2-1.7.1-.6 0-1-.1-1zM12 2A10 10 0 0 0 3.5 17l-1.4 5.2 5.3-1.4A10 10 0 1 0 12 2z" />
-                </svg>
-                Message agent
-              </a>
-            </>
-          ) : telHref ? (
-            <a
-              href={telHref}
-              className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary-700 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-800"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={1.8}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="h-[18px] w-[18px]"
-              >
-                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.13.96.37 1.9.72 2.8a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.9.35 1.84.59 2.8.72A2 2 0 0 1 22 16.92z" />
-              </svg>
-              Call agent
-            </a>
-          ) : null}
-        </div>
-      ) : null}
+      <MobileStickyContact />
+      </AgentContactProvider>
     </>
   );
 };

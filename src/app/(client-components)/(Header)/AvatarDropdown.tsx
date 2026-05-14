@@ -507,6 +507,43 @@ export default function AvatarDropdown({ className = '' }: Props) {
                 </Link>
               )}
 
+              {/* ------------------ Interested users (agent only) --------------------- */}
+              {userType === 'agent' && (
+                <Link
+                  href={'/interested-users'}
+                  className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
+                  onClick={() => setOpen(false)}
+                >
+                  <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M16 11a4 4 0 1 0-4-4 4 4 0 0 0 4 4Zm0 2c-3.31 0-8 1.34-8 4v2h16v-2c0-2.66-4.69-4-8-4Z"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M7 9a3 3 0 1 0-3-3 3 3 0 0 0 3 3Zm0 1.5c-2.33 0-4.5 1-4.5 2.83V15h4"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium ">{'Interested users'}</p>
+                  </div>
+                </Link>
+              )}
+
               <Link
                 href={'/account-settings'}
                 className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
@@ -645,6 +682,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
                 { label: 'Profile', href: agentSlug ? `/${agentSlug}` : '/profile', icon: 'la-user' },
                 { label: 'Bookings', href: '/bookings', icon: 'la-clipboard-list' },
                 { label: 'Packages', href: '/listed-packages', icon: 'la-box' },
+                { label: 'Interested users', href: '/interested-users', icon: 'la-user-friends' },
                 { label: 'Account Settings', href: '/account-settings', icon: 'la-cog' },
               ]
             : [
