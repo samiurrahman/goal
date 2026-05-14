@@ -481,40 +481,41 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                     {isGovVerified ? <GovtVerifiedBadge className="shrink-0" /> : null}
                   </div>
                   {agentLocation || legalName || sinceYear ? (
-                    <p className="m-0 text-[14.5px] leading-[1.5] text-neutral-600">
-                      {agentLocation ? (
-                        <span className="inline-flex items-center gap-1.5 font-medium text-neutral-700">
-                          <svg
-                            viewBox="0 0 24 24"
-                            className="h-3.5 w-3.5 text-primary-700"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={1.8}
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          >
-                            <path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 1 1 18 0z" />
-                            <circle cx="12" cy="10" r="3" />
-                          </svg>
-                          {agentLocation}
-                        </span>
-                      ) : null}
-                      {agentLocation && (legalName || sinceYear) ? (
-                        <span className="mx-2 inline-block h-[3px] w-[3px] rounded-full bg-neutral-400 align-middle" />
-                      ) : null}
-                      {legalName ? (
-                        <strong className="font-semibold text-neutral-900">{legalName}</strong>
-                      ) : null}
-                      {legalName && sinceYear ? (
-                        <span className="mx-2 inline-block h-[3px] w-[3px] rounded-full bg-neutral-400 align-middle" />
+                    <div className="flex flex-col gap-1 text-[14.5px] leading-[1.5] text-neutral-600">
+                      {agentLocation || legalName ? (
+                        <p className="m-0">
+                          {agentLocation ? (
+                            <span className="inline-flex items-center gap-1.5 font-medium text-neutral-700">
+                              <svg
+                                viewBox="0 0 24 24"
+                                className="h-3.5 w-3.5 text-primary-700"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth={1.8}
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                              >
+                                <path d="M21 10c0 6-9 12-9 12S3 16 3 10a9 9 0 1 1 18 0z" />
+                                <circle cx="12" cy="10" r="3" />
+                              </svg>
+                              {agentLocation}
+                            </span>
+                          ) : null}
+                          {agentLocation && legalName ? (
+                            <span className="mx-2 inline-block h-[3px] w-[3px] rounded-full bg-neutral-400 align-middle" />
+                          ) : null}
+                          {legalName ? (
+                            <strong className="font-semibold text-neutral-900">{legalName}</strong>
+                          ) : null}
+                        </p>
                       ) : null}
                       {sinceYear ? (
-                        <>
+                        <p className="m-0">
                           Hajj &amp; Umrah specialist since{' '}
                           <strong className="font-semibold text-neutral-900">{sinceYear}</strong>
-                        </>
+                        </p>
                       ) : null}
-                    </p>
+                    </div>
                   ) : null}
                 </div>
 
