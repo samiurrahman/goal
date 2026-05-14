@@ -66,15 +66,17 @@ const buildReviewerName = (profile?: { first_name?: string | null; last_name?: s
 };
 
 const normalizeReview = (row: Record<string, any>) => {
-  const email = (row.user_email as string | undefined) || '';
+  const anonymous = !!row.is_anonymous;
+  const email = anonymous ? '' : (row.user_email as string | undefined) || '';
   const emailName = email.includes('@') ? email.split('@')[0] : '';
   return {
     id: row.id,
     agent_id: row.agent_id,
     user_id: row.user_id,
     user_email: email,
-    user_name: row.user_name || emailName || 'User',
-    user_profile_image: row.user_profile_image || null,
+    user_name: anonymous ? 'Anonymous' : row.user_name || emailName || 'User',
+    user_profile_image: anonymous ? null : row.user_profile_image || null,
+    is_anonymous: anonymous,
     rating: row.rating,
     review_text: row.review_text,
     created_at: row.created_at,
@@ -96,6 +98,7 @@ type ReviewRow = {
   user_email: string | null;
   user_name: string | null;
   user_profile_image: string | null;
+  is_anonymous: boolean | null;
   rating: number;
   review_text: string;
   created_at: string;
@@ -110,13 +113,33 @@ type UserDetailsLite = {
 };
 
 const getReviewsForAgent = async (agentId: string): Promise<AgentReview[]> => {
-  const { data: reviewsData, error: reviewsError } = await supabase
+  let reviewsQuery: any = await supabase
     .from('agent_reviews')
     .select(
-      'id, agent_id, user_id, user_email, user_name, user_profile_image, rating, review_text, created_at, updated_at'
+      'id, agent_id, user_id, user_email, user_name, user_profile_image, is_anonymous, rating, review_text, created_at, updated_at'
     )
     .eq('agent_id', agentId)
     .order('created_at', { ascending: false });
+
+  // Older installs may not have the is_anonymous column yet — retry without it.
+  const missingColumn =
+    !!reviewsQuery.error &&
+    (reviewsQuery.error.code === '42703' ||
+      String(reviewsQuery.error.message || '')
+        .toLowerCase()
+        .includes('column'));
+
+  if (missingColumn) {
+    reviewsQuery = await supabase
+      .from('agent_reviews')
+      .select(
+        'id, agent_id, user_id, user_email, user_name, user_profile_image, rating, review_text, created_at, updated_at'
+      )
+      .eq('agent_id', agentId)
+      .order('created_at', { ascending: false });
+  }
+
+  const { data: reviewsData, error: reviewsError } = reviewsQuery;
 
   if (reviewsError) {
     console.error('Error fetching reviews:', reviewsError);
@@ -128,8 +151,9 @@ const getReviewsForAgent = async (agentId: string): Promise<AgentReview[]> => {
 
   // Enrich any rows missing user_name / user_profile_image with a single
   // user_details lookup. (Newer rows have these denormalized already.)
+  // Anonymous reviews are skipped — their identity must stay masked.
   const needsEnrichment = reviewRows.filter(
-    (r) => r.user_id && (!r.user_name || !r.user_profile_image)
+    (r) => r.user_id && !r.is_anonymous && (!r.user_name || !r.user_profile_image)
   );
   const userIds = Array.from(new Set(needsEnrichment.map((r) => r.user_id as string)));
 
@@ -147,6 +171,7 @@ const getReviewsForAgent = async (agentId: string): Promise<AgentReview[]> => {
 
   return reviewRows.map((review) => {
     const normalized = normalizeReview(review);
+    if (normalized.is_anonymous) return normalized;
     const profile = review.user_id ? profileByUserId.get(review.user_id) : undefined;
     if (!profile) return normalized;
     return {
