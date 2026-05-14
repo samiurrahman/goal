@@ -2,7 +2,7 @@ import React from 'react';
 import { Amenities_demos } from '../(components)/constant';
 import Breadcrumb from '@/components/Breadcrumb';
 import Iternary from '../(components)/Iternary';
-import type { IternaryItemProps } from '../(components)/IternaryItem';
+import type { IternaryItemProps, IternaryIconId } from '../(components)/IternaryItem';
 import PackageMeta from '../(components)/PackageMeta';
 import Policies from '../(components)/Policies';
 import HostInformation from '../(components)/HostInformation';
@@ -230,26 +230,77 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
             ? payloadJson.itinerary
             : [];
 
+  // Itinerary is stored as a JSON array. New-format entries carry a `kind`
+  // ('flight' | 'day'); legacy entries (saved before the flight-block redesign)
+  // have none and are mapped to day rows so live packages keep rendering until
+  // the agent re-saves them through the updated wizard.
   const iternaryData: IternaryItemProps[] = Array.isArray(normalizedIternarySource)
-    ? normalizedIternarySource.map((item) => {
-        const row = (item || {}) as Record<string, unknown>;
-        return {
-          fromDate: String(row.fromDate || row.from_date || ''),
-          fromLocation: String(row.fromLocation || row.from_location || ''),
-          toDate: String(row.toDate || row.to_date || ''),
-          toLocation: String(row.toLocation || row.to_location || ''),
-          tripTime: String(row.tripTime || row.trip_time || ''),
-          flightInfo: String(row.flightInfo || row.flight_info || ''),
-          nextLegLabel: String(
-            row.nextLegLabel ||
-              row.next_leg_label ||
-              row.separatorLabel ||
-              row.separator_label ||
-              ''
-          ).trim(),
-          icon: (String(row.icon || '').trim() || '') as IternaryItemProps['icon'],
-        };
-      })
+    ? normalizedIternarySource
+        .map((item): IternaryItemProps | null => {
+          const row = (item || {}) as Record<string, unknown>;
+          const kind = String(row.kind || '').trim();
+
+          if (kind === 'flight') {
+            return {
+              kind: 'flight',
+              position: String(row.position || '').trim() === 'end' ? 'end' : 'start',
+              dayLabel: String(row.dayLabel || ''),
+              subtitle: String(row.subtitle || ''),
+              departureCity: String(row.departureCity || ''),
+              stops: String(row.stops || ''),
+              arrivalCity: String(row.arrivalCity || ''),
+              departureTime: String(row.departureTime || ''),
+              arrivalTime: String(row.arrivalTime || ''),
+              flightInfo: String(row.flightInfo || row.flight_info || ''),
+            };
+          }
+
+          if (kind === 'day') {
+            return {
+              kind: 'day',
+              dayLabel: String(row.dayLabel || ''),
+              subtitle: String(row.subtitle || ''),
+              title: String(row.title || ''),
+              description: String(row.description || ''),
+              icon: (String(row.icon || '').trim() || '') as IternaryIconId | '',
+            };
+          }
+
+          // Legacy entry — fold the old flat fields into a day row.
+          const fromLocation = String(row.fromLocation || row.from_location || '');
+          const toLocation = String(row.toLocation || row.to_location || '');
+          const legacyTitle =
+            fromLocation && toLocation
+              ? `${fromLocation} → ${toLocation}`
+              : fromLocation || toLocation;
+          const legacyText = [
+            String(
+              row.nextLegLabel ||
+                row.next_leg_label ||
+                row.separatorLabel ||
+                row.separator_label ||
+                ''
+            ).trim(),
+            [
+              String(row.tripTime || row.trip_time || '').trim(),
+              String(row.flightInfo || row.flight_info || '').trim(),
+            ]
+              .filter(Boolean)
+              .join(' · '),
+          ]
+            .filter(Boolean)
+            .join(' — ');
+
+          return {
+            kind: 'day',
+            dayLabel: String(row.fromDate || row.from_date || ''),
+            subtitle: '',
+            title: legacyTitle,
+            description: legacyText ? `<p>${legacyText}</p>` : '',
+            icon: (String(row.icon || '').trim() || '') as IternaryIconId | '',
+          };
+        })
+        .filter((entry): entry is IternaryItemProps => entry !== null)
     : [];
   const rawStayInfoData = parseJson<{
     title?: string;

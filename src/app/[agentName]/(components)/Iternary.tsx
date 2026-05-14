@@ -31,18 +31,7 @@ const Iternary: React.FC<IternaryProps> = ({ data }) => {
               aria-hidden
             />
             {itineraryItems.map((item, idx) => (
-              <IternaryItem
-                key={`${item.fromDate}-${item.toDate}-${idx}`}
-                fromDate={item.fromDate || ''}
-                fromLocation={item.fromLocation || ''}
-                toDate={item.toDate || ''}
-                toLocation={item.toLocation || ''}
-                tripTime={item.tripTime || ''}
-                flightInfo={item.flightInfo || ''}
-                nextLegLabel={item.nextLegLabel || ''}
-                icon={item.icon || ''}
-                isLast={idx === itineraryItems.length - 1}
-              />
+              <IternaryItem key={idx} item={item} isLast={idx === itineraryItems.length - 1} />
             ))}
             <li className="relative pt-1">
               <span
@@ -55,7 +44,7 @@ const Iternary: React.FC<IternaryProps> = ({ data }) => {
                 Journey complete
               </div>
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                End of itinerary. May your Hajj be accepted.
+                End of itinerary. May your Umrah be accepted.
               </p>
             </li>
           </ol>

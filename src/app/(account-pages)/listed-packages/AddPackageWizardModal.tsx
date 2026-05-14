@@ -76,15 +76,28 @@ const htmlToPlainLines = (value: string) =>
 
 const hasHtmlContent = (value: string) => htmlToPlainText(value).length > 0;
 
-interface IternaryItemInput {
-  fromDate: string;
-  fromLocation: string;
-  toDate: string;
-  toLocation: string;
-  tripTime: string;
+const STOP_OPTIONS = ['No stop', '1 stop', '2 stops'] as const;
+
+// Fixed flight block — one at the start (departure) and one at the end (return)
+// of every itinerary.
+interface FlightItemInput {
+  dayLabel: string;
+  subtitle: string;
+  departureCity: string;
+  stops: string;
+  arrivalCity: string;
+  departureTime: string;
+  arrivalTime: string;
   flightInfo: string;
-  nextLegLabel?: string;
-  icon?: IternaryIconId | '';
+}
+
+// Day block — added between the two flight blocks via the "Add day" button.
+interface DayItemInput {
+  dayLabel: string;
+  subtitle: string;
+  title: string;
+  description: string;
+  icon: IternaryIconId | '';
 }
 
 const VALID_ICON_IDS = new Set(ITERNARY_ICON_OPTIONS.map((o) => o.id));
@@ -172,16 +185,40 @@ const initialMetaForm: PackageMetaForm = {
   madinah_hotel_distance_m: '',
 };
 
-const makeEmptyIternaryItem = (): IternaryItemInput => ({
-  fromDate: '',
-  fromLocation: '',
-  toDate: '',
-  toLocation: '',
-  tripTime: '',
+const makeEmptyFlight = (): FlightItemInput => ({
+  dayLabel: '',
+  subtitle: '',
+  departureCity: '',
+  stops: 'No stop',
+  arrivalCity: '',
+  departureTime: '',
+  arrivalTime: '',
   flightInfo: '',
-  nextLegLabel: '',
+});
+
+const makeEmptyDay = (): DayItemInput => ({
+  dayLabel: '',
+  subtitle: '',
+  title: '',
+  description: '',
   icon: '',
 });
+
+const flightHasContent = (flight: FlightItemInput): boolean =>
+  [
+    flight.dayLabel,
+    flight.subtitle,
+    flight.departureCity,
+    flight.arrivalCity,
+    flight.departureTime,
+    flight.arrivalTime,
+    flight.flightInfo,
+  ].some((value) => String(value || '').trim());
+
+const dayHasContent = (day: DayItemInput): boolean =>
+  [day.dayLabel, day.subtitle, day.title, day.icon].some((value) =>
+    String(value || '').trim()
+  ) || hasHtmlContent(day.description);
 
 const AddPackageWizardModal = ({
   agentAuthUserId,
@@ -208,10 +245,9 @@ const AddPackageWizardModal = ({
     { people: 4, value: '', default: false },
     { people: 5, value: '', default: true },
   ]);
-  const [iternaryItems, setIternaryItems] = useState<IternaryItemInput[]>([
-    makeEmptyIternaryItem(),
-    makeEmptyIternaryItem(),
-  ]);
+  const [startFlight, setStartFlight] = useState<FlightItemInput>(makeEmptyFlight());
+  const [dayItems, setDayItems] = useState<DayItemInput[]>([makeEmptyDay()]);
+  const [endFlight, setEndFlight] = useState<FlightItemInput>(makeEmptyFlight());
   const [amenitiesText, setAmenitiesText] = useState('');
   const [selectedTags, setSelectedTags] = useState<PackageTag[]>([]);
   const [stayInfoContentHtml, setStayInfoContentHtml] = useState('');
@@ -268,33 +304,64 @@ const AddPackageWizardModal = ({
     setIsOpen(false);
   };
 
-  const parseIternary = (value: unknown): IternaryItemInput[] => {
+  // On edit: round-trip new-format itinerary data back into the wizard. Legacy
+  // packages (saved before the flight-block redesign) carry no `kind` and can't
+  // be cleanly mapped, so they open with a fresh start flight + one day + return
+  // flight — the agent rebuilds the itinerary and the old data is replaced on
+  // the next save.
+  const parseIternaryForEdit = (
+    value: unknown
+  ): { startFlight: FlightItemInput; dayItems: DayItemInput[]; endFlight: FlightItemInput } => {
+    const fresh = {
+      startFlight: makeEmptyFlight(),
+      dayItems: [makeEmptyDay()],
+      endFlight: makeEmptyFlight(),
+    };
+
     let source: unknown = value;
     if (typeof source === 'string') {
       try {
         source = JSON.parse(source);
       } catch {
-        source = [];
+        return fresh;
       }
     }
+    if (!Array.isArray(source)) return fresh;
 
-    if (!Array.isArray(source)) return [makeEmptyIternaryItem(), makeEmptyIternaryItem()];
-    const mapped = source.map((item) => {
-      const row = (item || {}) as Record<string, unknown>;
+    const rows = source as Record<string, unknown>[];
+    const hasNewFormat = rows.some((row) => row && typeof row === 'object' && 'kind' in row);
+    if (!hasNewFormat) return fresh;
+
+    const toFlight = (row: Record<string, unknown> | undefined): FlightItemInput => {
+      const stops = String(row?.stops || '').trim();
       return {
-        fromDate: String(row.fromDate || ''),
-        fromLocation: String(row.fromLocation || ''),
-        toDate: String(row.toDate || ''),
-        toLocation: String(row.toLocation || ''),
-        tripTime: String(row.tripTime || ''),
-        flightInfo: String(row.flightInfo || ''),
-        nextLegLabel: String(
-          row.nextLegLabel || row.next_leg_label || row.separatorLabel || row.next_label || ''
-        ),
-        icon: normalizeIcon(row.icon),
+        dayLabel: String(row?.dayLabel || ''),
+        subtitle: String(row?.subtitle || ''),
+        departureCity: String(row?.departureCity || ''),
+        stops: (STOP_OPTIONS as readonly string[]).includes(stops) ? stops : 'No stop',
+        arrivalCity: String(row?.arrivalCity || ''),
+        departureTime: String(row?.departureTime || ''),
+        arrivalTime: String(row?.arrivalTime || ''),
+        flightInfo: String(row?.flightInfo || ''),
       };
+    };
+
+    const toDay = (row: Record<string, unknown>): DayItemInput => ({
+      dayLabel: String(row?.dayLabel || ''),
+      subtitle: String(row?.subtitle || ''),
+      title: String(row?.title || ''),
+      description: String(row?.description || ''),
+      icon: normalizeIcon(row?.icon),
     });
-    return mapped.length > 0 ? mapped : [makeEmptyIternaryItem(), makeEmptyIternaryItem()];
+
+    const flights = rows.filter((row) => String(row?.kind) === 'flight');
+    const days = rows.filter((row) => String(row?.kind) === 'day');
+
+    return {
+      startFlight: toFlight(flights[0]),
+      dayItems: days.length > 0 ? days.map(toDay) : [makeEmptyDay()],
+      endFlight: toFlight(flights.length > 1 ? flights[flights.length - 1] : undefined),
+    };
   };
 
   const parseAmenitiesText = (value: unknown): string => {
@@ -400,7 +467,10 @@ const AddPackageWizardModal = ({
       madinah_hotel_distance_m: String(packageRow.madinah_hotel_distance_m ?? ''),
     });
     setSharingRates(parsedRates);
-    setIternaryItems(parseIternary(detailsRow?.iternary));
+    const parsedIternary = parseIternaryForEdit(detailsRow?.iternary);
+    setStartFlight(parsedIternary.startFlight);
+    setDayItems(parsedIternary.dayItems);
+    setEndFlight(parsedIternary.endFlight);
     setAmenitiesText(parseAmenitiesText(detailsRow?.amenities));
     setSelectedTags(sanitizePackageTags(packageRow.tags));
     const stayInfoRow = (() => {
@@ -471,7 +541,9 @@ const AddPackageWizardModal = ({
       { people: 4, value: '', default: false },
       { people: 5, value: '', default: true },
     ]);
-    setIternaryItems([makeEmptyIternaryItem(), makeEmptyIternaryItem()]);
+    setStartFlight(makeEmptyFlight());
+    setDayItems([makeEmptyDay()]);
+    setEndFlight(makeEmptyFlight());
     setAmenitiesText('');
     setSelectedTags([]);
     setStayInfoContentHtml('');
@@ -520,18 +592,10 @@ const AddPackageWizardModal = ({
           meta.madinah_hotel_distance_m,
         ].some((value) => String(value || '').trim()) ||
         sharingRates.some((rate) => String(rate.value || '').trim()),
-      itinerary: iternaryItems.some((item) =>
-        [
-          item.fromDate,
-          item.fromLocation,
-          item.toDate,
-          item.toLocation,
-          item.tripTime,
-          item.flightInfo,
-          item.nextLegLabel,
-          item.icon,
-        ].some((value) => String(value || '').trim())
-      ),
+      itinerary:
+        flightHasContent(startFlight) ||
+        flightHasContent(endFlight) ||
+        dayItems.some(dayHasContent),
       amenities: parseLines(amenitiesText).length > 0,
       stay: hasHtmlContent(stayInfoContentHtml),
       policies:
@@ -544,7 +608,9 @@ const AddPackageWizardModal = ({
     [
       amenitiesText,
       currentImageUrl,
-      iternaryItems,
+      dayItems,
+      endFlight,
+      startFlight,
       meta,
       pendingImageFile,
       policyCancellation,
@@ -837,17 +903,15 @@ const AddPackageWizardModal = ({
 
     const packageDetailsPayload = {
       package_id: packageData.id,
-      iternary: iternaryItems.filter(
-        (item) =>
-          item.fromDate ||
-          item.fromLocation ||
-          item.toDate ||
-          item.toLocation ||
-          item.tripTime ||
-          item.flightInfo ||
-          item.nextLegLabel ||
-          item.icon
-      ),
+      iternary: [
+        ...(flightHasContent(startFlight)
+          ? [{ kind: 'flight' as const, position: 'start' as const, ...startFlight }]
+          : []),
+        ...dayItems.filter(dayHasContent).map((day) => ({ kind: 'day' as const, ...day })),
+        ...(flightHasContent(endFlight)
+          ? [{ kind: 'flight' as const, position: 'end' as const, ...endFlight }]
+          : []),
+      ],
       stay_information: {
         title: 'Stay information',
         details: [],
@@ -902,6 +966,118 @@ const AddPackageWizardModal = ({
     onCreated();
     closeModal();
     resetForm();
+  };
+
+  // The two flight blocks share an identical field set, so they render through
+  // one helper. They are fixed — always present, never reorderable or removable.
+  const renderFlightBlock = (
+    label: string,
+    flight: FlightItemInput,
+    setFlight: React.Dispatch<React.SetStateAction<FlightItemInput>>
+  ) => {
+    const update = <K extends keyof FlightItemInput>(key: K, value: FlightItemInput[K]) => {
+      setFlight((prev) => ({ ...prev, [key]: value }));
+    };
+
+    return (
+      <div className="rounded-2xl border border-primary-200 dark:border-primary-900/50 bg-primary-50/40 dark:bg-primary-900/10 p-4 space-y-4">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-100 text-primary-700 dark:bg-primary-900/40 dark:text-primary-300">
+            <i className="las la-plane text-base" />
+          </span>
+          <h4 className="font-medium">{label}</h4>
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">· fixed block</span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="md:col-span-1">
+            <Label>Day label</Label>
+            <Input
+              className="mt-1.5"
+              placeholder="Day 1"
+              value={flight.dayLabel}
+              onChange={(e) => update('dayLabel', e.target.value)}
+            />
+            <p className="mt-1 text-[11px] text-neutral-400">Shown in blue on the timeline.</p>
+          </div>
+          <div className="md:col-span-2">
+            <Label>Sub-title</Label>
+            <Input
+              className="mt-1.5"
+              placeholder="Departure from Mumbai"
+              value={flight.subtitle}
+              onChange={(e) => update('subtitle', e.target.value)}
+            />
+            <p className="mt-1 text-[11px] text-neutral-400">Shown beside the day label, in black.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <Label>Departure (city)</Label>
+            <Input
+              className="mt-1.5"
+              placeholder="Mumbai"
+              value={flight.departureCity}
+              onChange={(e) => update('departureCity', e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Stops</Label>
+            <Select
+              className="mt-1.5"
+              value={flight.stops}
+              onChange={(e) => update('stops', e.target.value)}
+            >
+              {STOP_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div>
+            <Label>Arrival (city)</Label>
+            <Input
+              className="mt-1.5"
+              placeholder="Jeddah"
+              value={flight.arrivalCity}
+              onChange={(e) => update('arrivalCity', e.target.value)}
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <Label>Departure time</Label>
+            <Input
+              className="mt-1.5"
+              placeholder="04:15"
+              value={flight.departureTime}
+              onChange={(e) => update('departureTime', e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Arrival time</Label>
+            <Input
+              className="mt-1.5"
+              placeholder="08:30"
+              value={flight.arrivalTime}
+              onChange={(e) => update('arrivalTime', e.target.value)}
+            />
+          </div>
+          <div>
+            <Label>Flight info</Label>
+            <Input
+              className="mt-1.5"
+              placeholder="Air India AI-2243"
+              value={flight.flightInfo}
+              onChange={(e) => update('flightInfo', e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -1269,25 +1445,23 @@ const AddPackageWizardModal = ({
                 {step === 'itinerary' && (
                   <div className="space-y-4">
                     <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Add one card per day or leg. Pick an icon to replace the timeline dot, then fill the day label, title, and a short description. Travel details (locations, time, flight number) are optional — open them only when the day involves a flight or transfer.
+                      Every itinerary opens and closes with a fixed flight block. Use{' '}
+                      <span className="font-medium">Add day</span> to insert day cards in between —
+                      each with a day label, sub-title, title, a rich-text description, and an icon
+                      for the timeline.
                     </p>
 
-                    {iternaryItems.map((item, idx) => {
-                      const updateField = <K extends keyof IternaryItemInput>(
+                    {renderFlightBlock('Departure flight', startFlight, setStartFlight)}
+
+                    {dayItems.map((item, idx) => {
+                      const updateField = <K extends keyof DayItemInput>(
                         key: K,
-                        value: IternaryItemInput[K]
+                        value: DayItemInput[K]
                       ) => {
-                        setIternaryItems((prev) =>
+                        setDayItems((prev) =>
                           prev.map((entry, i) => (i === idx ? { ...entry, [key]: value } : entry))
                         );
                       };
-
-                      const hasTravelDetails = Boolean(
-                        (item.toLocation || '').trim() ||
-                          (item.tripTime || '').trim() ||
-                          (item.flightInfo || '').trim() ||
-                          (item.toDate || '').trim()
-                      );
 
                       return (
                         <div
@@ -1299,15 +1473,31 @@ const AddPackageWizardModal = ({
                               <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 text-[12px] font-semibold">
                                 {idx + 1}
                               </span>
-                              <h4 className="font-medium">Day / segment {idx + 1}</h4>
+                              <h4 className="font-medium">Day {idx + 1}</h4>
                             </div>
                             <div className="flex items-center gap-2">
+                              {idx > 0 && (
+                                <button
+                                  type="button"
+                                  className="text-xs text-primary-600 hover:underline"
+                                  onClick={() =>
+                                    setDayItems((prev) =>
+                                      prev.map((entry, i) =>
+                                        i === idx ? { ...prev[idx - 1] } : entry
+                                      )
+                                    )
+                                  }
+                                >
+                                  <i className="las la-copy mr-1" />
+                                  Copy from above
+                                </button>
+                              )}
                               <button
                                 type="button"
                                 className="text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed"
                                 disabled={idx === 0}
                                 onClick={() =>
-                                  setIternaryItems((prev) => {
+                                  setDayItems((prev) => {
                                     if (idx === 0) return prev;
                                     const next = [...prev];
                                     [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
@@ -1321,9 +1511,9 @@ const AddPackageWizardModal = ({
                               <button
                                 type="button"
                                 className="text-xs text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200 disabled:opacity-30 disabled:cursor-not-allowed"
-                                disabled={idx === iternaryItems.length - 1}
+                                disabled={idx === dayItems.length - 1}
                                 onClick={() =>
-                                  setIternaryItems((prev) => {
+                                  setDayItems((prev) => {
                                     if (idx === prev.length - 1) return prev;
                                     const next = [...prev];
                                     [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
@@ -1334,12 +1524,12 @@ const AddPackageWizardModal = ({
                               >
                                 <i className="las la-arrow-down text-base" />
                               </button>
-                              {iternaryItems.length > 1 && (
+                              {dayItems.length > 1 && (
                                 <button
                                   type="button"
                                   className="text-xs text-red-600 hover:underline"
                                   onClick={() =>
-                                    setIternaryItems((prev) => prev.filter((_, i) => i !== idx))
+                                    setDayItems((prev) => prev.filter((_, i) => i !== idx))
                                   }
                                 >
                                   Remove
@@ -1394,102 +1584,62 @@ const AddPackageWizardModal = ({
                               <Label>Day label</Label>
                               <Input
                                 className="mt-1.5"
-                                placeholder="Day 1 · 15 Jun"
-                                value={item.fromDate}
-                                onChange={(e) => updateField('fromDate', e.target.value)}
+                                placeholder="Day 2"
+                                value={item.dayLabel}
+                                onChange={(e) => updateField('dayLabel', e.target.value)}
                               />
                               <p className="mt-1 text-[11px] text-neutral-400">
-                                Shown in uppercase at the top of the row.
+                                Shown in blue at the top of the row.
                               </p>
                             </div>
                             <div className="md:col-span-2">
-                              <Label>Title</Label>
+                              <Label>Sub-title</Label>
                               <Input
                                 className="mt-1.5"
-                                placeholder="Depart Bangalore for Madinah"
-                                value={item.fromLocation}
-                                onChange={(e) => updateField('fromLocation', e.target.value)}
+                                placeholder="Ziyarat in Madinah"
+                                value={item.subtitle}
+                                onChange={(e) => updateField('subtitle', e.target.value)}
                               />
                               <p className="mt-1 text-[11px] text-neutral-400">
-                                The bold line — e.g. &ldquo;Stay at Pullman Zamzam Madinah&rdquo;.
+                                Shown beside the day label, in black.
                               </p>
                             </div>
                           </div>
 
                           <div>
-                            <Label>Description</Label>
-                            <Textarea
+                            <Label>Title</Label>
+                            <Input
                               className="mt-1.5"
-                              rows={2}
-                              placeholder="Ziyarat of Masjid Nabawi, Quba, Uhud, and the Seven Mosques. Daily breakfast & dinner."
-                              value={item.nextLegLabel || ''}
-                              onChange={(e) => updateField('nextLegLabel', e.target.value)}
+                              placeholder="Stay at Pullman Zamzam Madinah"
+                              value={item.title}
+                              onChange={(e) => updateField('title', e.target.value)}
                             />
                           </div>
 
-                          <details className="rounded-xl border border-neutral-200 dark:border-neutral-700 px-3 py-2" open={hasTravelDetails}>
-                            <summary className="cursor-pointer text-sm font-medium text-neutral-700 dark:text-neutral-200 select-none">
-                              Travel / flight details (optional)
-                            </summary>
-                            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div>
-                                <Label>Destination</Label>
-                                <Input
-                                  className="mt-1.5"
-                                  placeholder="Madinah"
-                                  value={item.toLocation}
-                                  onChange={(e) => updateField('toLocation', e.target.value)}
-                                />
-                                <p className="mt-1 text-[11px] text-neutral-400">
-                                  If set, the title becomes &ldquo;Title → Destination&rdquo;.
-                                </p>
-                              </div>
-                              <div>
-                                <Label>Arrival day label</Label>
-                                <Input
-                                  className="mt-1.5"
-                                  placeholder="Day 1 · 15 Jun (overnight)"
-                                  value={item.toDate}
-                                  onChange={(e) => updateField('toDate', e.target.value)}
-                                />
-                                <p className="mt-1 text-[11px] text-neutral-400">
-                                  Optional — used only if Day label is empty.
-                                </p>
-                              </div>
-                              <div>
-                                <Label>Trip time</Label>
-                                <Input
-                                  className="mt-1.5"
-                                  placeholder="04:15 BLR → 08:30 JED"
-                                  value={item.tripTime}
-                                  onChange={(e) => updateField('tripTime', e.target.value)}
-                                />
-                              </div>
-                              <div>
-                                <Label>Flight number</Label>
-                                <Input
-                                  className="mt-1.5"
-                                  placeholder="Air India AI-2243"
-                                  value={item.flightInfo}
-                                  onChange={(e) => updateField('flightInfo', e.target.value)}
-                                />
-                              </div>
-                              <p className="md:col-span-2 text-[11px] text-neutral-400">
-                                When either field is filled, a flight chip appears under the description.
-                              </p>
+                          <div>
+                            <Label>Description</Label>
+                            <div className="mt-1.5">
+                              <RichTextEditor
+                                value={item.description}
+                                onChange={(html) => updateField('description', html)}
+                                placeholder="Ziyarat of Masjid Nabawi, Quba, Uhud, and the Seven Mosques. Daily breakfast & dinner."
+                                minHeightClassName="min-h-[140px]"
+                              />
                             </div>
-                          </details>
+                          </div>
                         </div>
                       );
                     })}
 
                     <ButtonSecondary
                       type="button"
-                      onClick={() => setIternaryItems((prev) => [...prev, makeEmptyIternaryItem()])}
+                      onClick={() => setDayItems((prev) => [...prev, makeEmptyDay()])}
                     >
                       <i className="las la-plus mr-1.5" />
                       Add day
                     </ButtonSecondary>
+
+                    {renderFlightBlock('Return flight', endFlight, setEndFlight)}
                   </div>
                 )}
 

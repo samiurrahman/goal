@@ -140,13 +140,32 @@ export interface PackageDetails {
     id: string;
     created_at: string;
     package_id: string;
+    // Itinerary entries. New-format entries carry `kind` ('flight' | 'day');
+    // a fixed flight block sits at the start and end, day blocks in between.
+    // Legacy fields (fromDate, fromLocation, …) are kept optional so packages
+    // saved before the redesign still type-check until they are re-saved.
     iternary: Array<{
+      kind?: 'flight' | 'day';
+      position?: 'start' | 'end';
+      dayLabel?: string;
+      subtitle?: string;
+      // flight block
+      departureCity?: string;
+      stops?: string;
+      arrivalCity?: string;
+      departureTime?: string;
+      arrivalTime?: string;
+      flightInfo?: string;
+      // day block
+      title?: string;
+      description?: string;
+      icon?: string;
+      // legacy (pre-redesign)
       fromDate?: string;
       fromLocation?: string;
       toDate?: string;
       toLocation?: string;
       tripTime?: string;
-      flightInfo?: string;
       nextLegLabel?: string;
     }>;
     stay_information: {
