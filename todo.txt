@@ -60,3 +60,11 @@ Until both are approved, the in-app cancel/reject still works fully — only the
 
 
 enable email verification for user
+
+
+
+
+
+Verify the domain in Google Search Console and Bing Webmaster
+Submit sitemap: https://searchumrah.com/sitemap.xml
+Add SPF/DKIM/DMARC DNS records (will need this anyway when you start sending booking-confirmation emails)

@@ -14,47 +14,38 @@ export interface WidgetFooterMenu {
 
 const widgetMenus: WidgetFooterMenu[] = [
   {
-    id: '5',
-    title: 'Getting started',
-    menus: [
-      { href: '#', label: 'Installation' },
-      { href: '#', label: 'Release Notes' },
-      { href: '#', label: 'Upgrade Guide' },
-      { href: '#', label: 'Browser Support' },
-      { href: '#', label: 'Editor Support' },
-    ],
-  },
-  {
     id: '1',
     title: 'Explore',
     menus: [
-      { href: '#', label: 'Design features' },
-      { href: '#', label: 'Prototyping' },
-      { href: '#', label: 'Design systems' },
-      { href: '#', label: 'Pricing' },
-      { href: '#', label: 'Security' },
+      { href: '/packages', label: 'Browse packages' },
+      { href: '/', label: 'Search by city' },
+      { href: '/signup?userType=agent', label: 'List as an agent' },
+      { href: '/signup', label: 'Create an account' },
     ],
   },
   {
     id: '2',
-    title: 'Resources',
+    title: 'Company',
     menus: [
-      { href: '#', label: 'Best practices' },
-      { href: '#', label: 'Support' },
-      { href: '#', label: 'Developers' },
-      { href: '#', label: 'Learn design' },
-      { href: '#', label: 'Releases' },
+      { href: '/about', label: 'About us' },
+      { href: '/contact', label: 'Contact' },
+    ],
+  },
+  {
+    id: '3',
+    title: 'Legal',
+    menus: [
+      { href: '/privacy', label: 'Privacy Policy' },
+      { href: '/terms', label: 'Terms of Service' },
+      { href: '/refund-policy', label: 'Refund & Cancellation' },
     ],
   },
   {
     id: '4',
-    title: 'Community',
+    title: 'Support',
     menus: [
-      { href: '#', label: 'Discussion Forums' },
-      { href: '#', label: 'Code of Conduct' },
-      { href: '#', label: 'Community Resources' },
-      { href: '#', label: 'Contributing' },
-      { href: '#', label: 'Concurrent Mode' },
+      { href: 'mailto:support@searchumrah.com', label: 'support@searchumrah.com' },
+      { href: 'mailto:security@searchumrah.com', label: 'Report a security issue' },
     ],
   },
 ];
@@ -65,10 +56,9 @@ const Footer: React.FC = () => {
       <div key={index} className="text-sm">
         <h2 className="font-semibold text-neutral-700 dark:text-neutral-200">{menu.title}</h2>
         <ul className="mt-5 space-y-4">
-          {menu.menus.map((item, index) => (
-            <li key={index}>
+          {menu.menus.map((item, idx) => (
+            <li key={idx}>
               <a
-                key={index}
                 className="text-neutral-6000 dark:text-neutral-300 hover:text-black dark:hover:text-white"
                 href={item.href}
               >
@@ -80,6 +70,8 @@ const Footer: React.FC = () => {
       </div>
     );
   };
+
+  const year = new Date().getFullYear();
 
   return (
     <>
@@ -96,6 +88,11 @@ const Footer: React.FC = () => {
             </div>
           </div>
           {widgetMenus.map(renderWidgetMenuItem)}
+        </div>
+
+        <div className="container mt-16 pt-8 border-t border-neutral-200 dark:border-neutral-700 text-xs text-neutral-500 dark:text-neutral-400 flex flex-col md:flex-row md:justify-between gap-2">
+          <p>© {year} Searchumrah. All rights reserved.</p>
+          <p>Operated from Bangalore, India.</p>
         </div>
       </div>
     </>

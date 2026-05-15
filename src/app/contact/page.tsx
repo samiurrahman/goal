@@ -10,16 +10,16 @@ export interface PageContactProps {}
 
 const info = [
   {
-    title: '🗺 ADDRESS',
+    title: '🗺 plot 28, Jafar Nagar, Nagpur, India',
     desc: 'Photo booth tattooed prism, portland taiyaki hoodie neutra typewriter',
   },
   {
     title: '💌 EMAIL',
-    desc: 'nc.example@example.com',
+    desc: 'info@searchumrah.com',
   },
   {
     title: '☎ PHONE',
-    desc: '000-123-456-7890',
+    desc: '+91 7972 351 081',
   },
 ];
 
