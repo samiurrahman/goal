@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDownIcon, ChevronUpIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { ChevronDownIcon, ChevronUpIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import React, { FC, useEffect, useMemo, useState } from 'react';
 import Input from '@/shared/Input';
 import Select from '@/shared/Select';
@@ -140,6 +140,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   // for them with an inline message. Defaults false so logged-out and
   // pilgrim users see the normal booking flow.
   const [isAgent, setIsAgent] = useState(false);
+  const [isMobileSummaryOpen, setIsMobileSummaryOpen] = useState(false);
 
   const sharingRates = useMemo<SharingRate[]>(() => {
     try {
@@ -174,6 +175,15 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       setSharingCount(selectedRate.people);
     }
   }, [selectedRate]);
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = isMobileSummaryOpen ? 'hidden' : previous || '';
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [isMobileSummaryOpen]);
 
   useEffect(() => {
     let isMounted = true;
@@ -661,10 +671,6 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
         </div>
         <div className="flex flex-col space-y-4">
           <h3 className="text-2xl font-semibold">Price detail</h3>
-          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>Guests</span>
-            <span>{totalGuests}</span>
-          </div>
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
             <NcInputNumber
               label="Sharing"
@@ -676,13 +682,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
             />
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>Price / Person</span>
             <span>
-              {purchaseDetails.currency} {purchaseDetails.pricePerPerson}
+              No of Guest ({totalGuests} x {purchaseDetails.pricePerPerson})
             </span>
-          </div>
-          <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
-            <span>Subtotal</span>
             <span>
               {purchaseDetails.currency} {purchaseDetails.subtotal}
             </span>
@@ -726,6 +728,35 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
             { label: 'Checkout' },
           ]}
         />
+
+        {/* Mobile-only condensed package card (no image, no location) */}
+        <div className="lg:hidden bg-white border border-neutral-200 dark:border-neutral-700 rounded-2xl p-4 mb-6">
+          <h3 className="text-base font-semibold mb-3">
+            {packageDetails?.title ?? 'Package details'}
+          </h3>
+          <div className="space-y-2 text-sm text-neutral-500 dark:text-neutral-400">
+            <div className="flex justify-between gap-4">
+              <span>Agent Name</span>
+              <span className="text-right text-neutral-900 dark:text-neutral-100">
+                {packageDetails?.agent_name ?? '—'}
+              </span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span>Route</span>
+              <span className="text-right text-neutral-900 dark:text-neutral-100">
+                {packageDetails?.departure_city && packageDetails?.arrival_city
+                  ? `${packageDetails.departure_city} - ${packageDetails.arrival_city}`
+                  : 'TBD'}
+              </span>
+            </div>
+            <div className="flex justify-between gap-4">
+              <span>Travel Dates</span>
+              <span className="text-right text-neutral-900 dark:text-neutral-100">
+                {formattedTravelDates}
+              </span>
+            </div>
+          </div>
+        </div>
 
         <div className="listingSection__wrap">
           <div className="space-y-4">
@@ -825,7 +856,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                           </div>
 
                           <div className="space-y-1 min-w-0">
-                            <Label>Name</Label>
+                            <Label>
+                              Name <span className="text-red-500">*</span>
+                            </Label>
                             <Input
                               type="text"
                               value={form.name}
@@ -853,7 +886,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                           </div>
 
                           <div className="space-y-1">
-                            <Label>Age</Label>
+                            <Label>
+                              Age <span className="text-red-500">*</span>
+                            </Label>
                             <Input
                               type="number"
                               min="0"
@@ -911,7 +946,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
             </div>
           </div>
           <div className="space-y-1">
-            <Label>Mobile no</Label>
+            <Label>
+              Mobile no <span className="text-red-500">*</span>
+            </Label>
             <Input
               type="tel"
               value={bookingMobile}
@@ -952,7 +989,11 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
                 pilgrim account to complete this booking.
               </div>
             ) : null}
-            <ButtonPrimary onClick={handleConfirmAndPay} disabled={isAgent}>
+            <ButtonPrimary
+              onClick={handleConfirmAndPay}
+              disabled={isAgent}
+              className="hidden lg:inline-flex"
+            >
               Book Now
             </ButtonPrimary>
           </div>
@@ -963,11 +1004,105 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
 
   return (
     <div className={`nc-CheckOutPagePageMain ${className}`}>
-      <main className="container mt-11 mb-24 lg:mb-32 flex flex-col-reverse lg:flex-row gap-8 lg:gap-0">
+      <main className="container mb-4 lex flex-col lg:flex-row gap-8 lg:gap-0 lg:pb-0">
         <div className="w-full lg:w-3/5 xl:w-2/3 lg:pr-10">{renderMain()}</div>
-        <div className="block lg:hidden w-full">{renderSidebar()}</div>
         <div className="hidden lg:block flex-grow">{renderSidebar()}</div>
       </main>
+
+      {/* Mobile sticky footer */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-30 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-700 px-4 py-3 flex items-center gap-3">
+        <div className="flex-shrink-0 leading-tight min-w-0">
+          <div className="text-[10px] font-medium text-neutral-500 uppercase tracking-wider">
+            Total
+          </div>
+          <div className="text-lg font-semibold text-primary-900 dark:text-primary-200">
+            {purchaseDetails.currency} {purchaseDetails.total}
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsMobileSummaryOpen(true)}
+            className="text-xs text-primary-700 dark:text-primary-400 font-medium inline-flex items-center gap-1"
+          >
+            View total
+            <ChevronUpIcon className="w-3 h-3" />
+          </button>
+        </div>
+        <ButtonPrimary onClick={handleConfirmAndPay} disabled={isAgent} className="flex-1 !py-3">
+          Book Now
+        </ButtonPrimary>
+      </div>
+
+      {/* Mobile drawer backdrop */}
+      <div
+        className={`lg:hidden fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity duration-200 ${
+          isMobileSummaryOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={() => setIsMobileSummaryOpen(false)}
+      />
+
+      {/* Mobile drawer */}
+      <div
+        className={`lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-neutral-900 rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${
+          isMobileSummaryOpen ? 'translate-y-0' : 'translate-y-full'
+        }`}
+        style={{ maxHeight: '85vh' }}
+      >
+        <div className="flex justify-center pt-3">
+          <div className="w-10 h-1 rounded-full bg-neutral-300 dark:bg-neutral-700" />
+        </div>
+        <div className="flex items-center justify-between px-5 pt-3 pb-2">
+          <h3 className="text-lg font-semibold">Order summary</h3>
+          <button
+            type="button"
+            onClick={() => setIsMobileSummaryOpen(false)}
+            className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-neutral-800 inline-flex items-center justify-center"
+            aria-label="Close summary"
+          >
+            <XMarkIcon className="w-4 h-4" />
+          </button>
+        </div>
+        <div
+          className="px-5 pb-8 overflow-y-auto"
+          style={{
+            maxHeight: 'calc(85vh - 60px)',
+            paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))',
+          }}
+        >
+          <div className="flex flex-col space-y-4">
+            <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
+              <NcInputNumber
+                label="Sharing"
+                desc="Adjust room sharing"
+                defaultValue={sharingCount}
+                min={sharingMin}
+                max={sharingMax}
+                onChange={(value) => setSharingCount(value)}
+              />
+            </div>
+            <div className="flex justify-between text-neutral-600 dark:text-neutral-300">
+              <span>
+                No of Guest ({totalGuests} x {purchaseDetails.pricePerPerson})
+              </span>
+              <span>
+                {purchaseDetails.currency} {purchaseDetails.subtotal}
+              </span>
+            </div>
+            <div className="flex justify-between text-neutral-600 dark:text-neutral-300">
+              <span>GST (5%)</span>
+              <span>
+                {purchaseDetails.currency} {purchaseDetails.gstAmount}
+              </span>
+            </div>
+            <div className="border-b border-neutral-200 dark:border-neutral-700"></div>
+            <div className="flex justify-between font-semibold text-base">
+              <span>Total</span>
+              <span>
+                {purchaseDetails.currency} {purchaseDetails.total}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
