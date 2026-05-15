@@ -1,10 +1,11 @@
 'use client';
 
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
-import { useMultiRangeFilter, rangeId } from '@/hooks/filters/useMultiRangeFilter';
+import { rangeId } from '@/hooks/filters/useMultiRangeFilter';
+import { useSingleRangeFilter } from '@/hooks/filters/useSingleRangeFilter';
 import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
 import { DISTANCE_RANGES, formatDistanceRangeLabel } from './filterRanges';
 import RangePill from './RangePill';
@@ -14,9 +15,19 @@ type City = 'makkah' | 'madinah';
 
 const HotelDistanceFilter = () => {
   const { replaceParams } = useFilterUrlSync();
-  const makkah = useMultiRangeFilter('makkah_hotel_distance_m');
-  const madinah = useMultiRangeFilter('madinah_hotel_distance_m');
+  const makkah = useSingleRangeFilter('makkah_hotel_distance_m');
+  const madinah = useSingleRangeFilter('madinah_hotel_distance_m');
   const [activeTab, setActiveTab] = useState<City>('makkah');
+  // Brief pulse highlight on the Madinah tab when auto-switched, so the
+  // user notices focus moved to the next picker instead of feeling like
+  // their click did nothing.
+  const [pulseMadinah, setPulseMadinah] = useState(false);
+  const pulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+    };
+  }, []);
 
   const isActive = makkah.isActive || madinah.isActive;
   const totalCount = makkah.count + madinah.count;
@@ -25,8 +36,8 @@ const HotelDistanceFilter = () => {
   // router.replace on a stale searchParams snapshot, and only the last write
   // would land. See MobileFiltersModal.handleApplyAll for the same pattern.
   const clearAll = () => {
-    makkah.setSelected([]);
-    madinah.setSelected([]);
+    makkah.setSelected(null);
+    madinah.setSelected(null);
     replaceParams((params) => {
       makkah.mutateClear(params);
       madinah.mutateClear(params);
@@ -91,16 +102,17 @@ const HotelDistanceFilter = () => {
                       const label = tab === 'makkah' ? 'Makkah' : 'Madinah';
                       const count = tab === 'makkah' ? makkah.count : madinah.count;
                       const selected = activeTab === tab;
+                      const pulse = tab === 'madinah' && pulseMadinah;
                       return (
                         <button
                           key={tab}
                           type="button"
                           onClick={() => setActiveTab(tab)}
-                          className={`flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-full focus:outline-none transition-colors ${
+                          className={`flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-full focus:outline-none transition-all duration-300 ${
                             selected
                               ? 'bg-primary-50 text-primary-700 border border-primary-500'
                               : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                          }`}
+                          } ${pulse ? 'scale-110 ring-2 ring-primary-300' : 'scale-100'}`}
                         >
                           <span>{label}</span>
                           {count > 0 && (
@@ -115,7 +127,16 @@ const HotelDistanceFilter = () => {
                     })}
                   </div>
                 </div>
-                <div className="relative grid grid-cols-2 gap-2 px-5 py-5 max-h-72 overflow-y-auto">
+                <Transition
+                  as="div"
+                  appear
+                  show
+                  key={activeTab}
+                  enter="transition-all duration-300 ease-out"
+                  enterFrom={`opacity-0 ${activeTab === 'madinah' ? 'translate-x-3' : '-translate-x-3'}`}
+                  enterTo="opacity-100 translate-x-0"
+                  className="relative grid grid-cols-2 gap-2 px-5 py-5 max-h-72 overflow-y-auto"
+                >
                   {DISTANCE_RANGES.map((range) => {
                     const id = rangeId(range);
                     const selected = current.isSelected(range);
@@ -124,11 +145,23 @@ const HotelDistanceFilter = () => {
                         key={`${activeTab}-${id}`}
                         label={formatDistanceRangeLabel(range)}
                         selected={selected}
-                        onClick={() => current.toggle(!selected, range)}
+                        onClick={() => {
+                          const nowSelected = !selected;
+                          current.select(nowSelected ? range : null);
+                          // After picking a Makkah range, jump focus to the
+                          // Madinah picker so the user can complete both
+                          // sides without hunting for the tab.
+                          if (nowSelected && activeTab === 'makkah') {
+                            setActiveTab('madinah');
+                            setPulseMadinah(true);
+                            if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+                            pulseTimerRef.current = setTimeout(() => setPulseMadinah(false), 600);
+                          }
+                        }}
                       />
                     );
                   })}
-                </div>
+                </Transition>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird
                     onClick={() => {

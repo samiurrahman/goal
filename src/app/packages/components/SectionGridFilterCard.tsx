@@ -160,6 +160,12 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
   const showRelaxationLoadingBanner =
     exactEmpty && !skipRelaxation && relaxedFetching && !relaxedData;
 
+  // Single visible loading state: the skeleton grid is shown for BOTH the
+  // exact-match fetch and the relaxation cascade. The "looking for nearby
+  // alternatives…" banner sits above the skeletons during phase 2 so the
+  // user understands why the wait is a bit longer than usual.
+  const showSkeletons = isLoading || showRelaxationLoadingBanner;
+
   // Infinite scroll observer — prefetches before the loader is in view
   const loaderRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -226,7 +232,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
         </div>
       )}
       <div className="grid grid-cols-1 gap-6 rounded-3xl">
-        {isLoading ? (
+        {showSkeletons ? (
           Array.from({ length: INITIAL_SKELETON_COUNT }).map((_, index) => (
             <div
               key={`package-skeleton-${index}`}

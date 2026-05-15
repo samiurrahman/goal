@@ -3,8 +3,8 @@ import { Package } from '@/data/types';
 
 export type SortValue = '' | 'price-asc' | 'price-desc' | 'rating' | 'newest';
 
-// Multi-bucket range filter: a CSV of [min, max] tuples. The query layer
-// translates this into a Supabase `.or(and(col.gte.X,col.lt.Y), ...)` clause.
+// Single range filter: a [min, max) pair. The query layer translates this
+// into a simple `col.gte.min AND col.lt.max` pair.
 export type RangeBucket = readonly [number, number];
 
 export type PackagesFilterPayload = {
@@ -28,13 +28,12 @@ export type PackagesFilterPayload = {
   makkahHotelDistance?: number;
   madinahHotelDistance?: number;
   agentNameList?: string[];
-  // Bucket-style filters (checkbox UI). Each bucket is an inclusive lower /
-  // exclusive upper bound that maps to a single `and(...)` group in the
-  // Supabase .or() clause.
-  durationRanges?: RangeBucket[];
-  priceRanges?: RangeBucket[];
-  makkahDistanceRanges?: RangeBucket[];
-  madinahDistanceRanges?: RangeBucket[];
+  // Single-range filters (pill UI, one selected at a time). Each range is an
+  // inclusive lower / exclusive upper bound: `col >= min AND col < max`.
+  durationRange?: RangeBucket;
+  priceRange?: RangeBucket;
+  makkahDistanceRange?: RangeBucket;
+  madinahDistanceRange?: RangeBucket;
 };
 
 // Filter keys that can be auto-relaxed when an exact search yields zero
@@ -130,38 +129,40 @@ function urlKeysFor(key: RelaxableKey): string[] {
   }
 }
 
-const distanceBucketLabel = (b: RangeBucket) =>
-  `${formatDistanceLabel(b[0])} – ${formatDistanceLabel(b[1])}`;
-const priceBucketLabel = (b: RangeBucket) =>
-  `${b[0].toLocaleString()} – ${b[1].toLocaleString()}`;
-const durationBucketLabel = (b: RangeBucket) => `${b[0]}–${b[1]} days`;
+const distanceBucketLabel = (b: RangeBucket) => `≤ ${formatDistanceLabel(b[1])}`;
+const priceBucketLabel = (b: RangeBucket) => `≤ ${b[1].toLocaleString()}`;
+const durationBucketLabel = (b: RangeBucket) => {
+  if (b[1] >= 60) return `${b[0]}+ days`;
+  if (b[0] <= 1) return `Up to ${b[1] - 1} days`;
+  return `${b[0]}–${b[1] - 1} days`;
+};
 
 function originalValueLabel(key: RelaxableKey, payload: PackagesFilterPayload): string | null {
   switch (key) {
     case 'madinahHotelDistance':
-      if (payload.madinahDistanceRanges?.length) {
-        return payload.madinahDistanceRanges.map(distanceBucketLabel).join(', ');
+      if (payload.madinahDistanceRange) {
+        return distanceBucketLabel(payload.madinahDistanceRange);
       }
       return payload.madinahHotelDistance === undefined
         ? null
         : `≤ ${formatDistanceLabel(payload.madinahHotelDistance)}`;
     case 'makkahHotelDistance':
-      if (payload.makkahDistanceRanges?.length) {
-        return payload.makkahDistanceRanges.map(distanceBucketLabel).join(', ');
+      if (payload.makkahDistanceRange) {
+        return distanceBucketLabel(payload.makkahDistanceRange);
       }
       return payload.makkahHotelDistance === undefined
         ? null
         : `≤ ${formatDistanceLabel(payload.makkahHotelDistance)}`;
     case 'price': {
-      if (payload.priceRanges?.length) {
-        return payload.priceRanges.map(priceBucketLabel).join(', ');
+      if (payload.priceRange) {
+        return priceBucketLabel(payload.priceRange);
       }
       const n = toNum(payload.price);
       return n === undefined ? null : `≤ ${n.toLocaleString()}`;
     }
     case 'total_duration_days': {
-      if (payload.durationRanges?.length) {
-        return payload.durationRanges.map(durationBucketLabel).join(', ');
+      if (payload.durationRange) {
+        return durationBucketLabel(payload.durationRange);
       }
       const n = toNum(payload.total_duration_days);
       return n === undefined ? null : `≤ ${n} day${n === 1 ? '' : 's'}`;
@@ -196,19 +197,19 @@ function stripFilter(payload: PackagesFilterPayload, key: RelaxableKey): Package
   switch (key) {
     case 'madinahHotelDistance':
       next.madinahHotelDistance = undefined;
-      next.madinahDistanceRanges = [];
+      next.madinahDistanceRange = undefined;
       break;
     case 'makkahHotelDistance':
       next.makkahHotelDistance = undefined;
-      next.makkahDistanceRanges = [];
+      next.makkahDistanceRange = undefined;
       break;
     case 'price':
       next.price = '';
-      next.priceRanges = [];
+      next.priceRange = undefined;
       break;
     case 'total_duration_days':
       next.total_duration_days = '';
-      next.durationRanges = [];
+      next.durationRange = undefined;
       break;
     case 'months':
       next.months = [];
@@ -252,13 +253,13 @@ async function buildLadder(
   switch (key) {
     case 'makkahHotelDistance':
     case 'madinahHotelDistance': {
-      // Bucket-style: the user picked discrete checkboxes — drop is the
-      // only sensible relaxation (widening a bucket selection is ambiguous).
-      const buckets =
+      // Range-style: the user picked one discrete pill — drop is the only
+      // sensible relaxation (widening a discrete pick is ambiguous).
+      const range =
         key === 'makkahHotelDistance'
-          ? payload.makkahDistanceRanges
-          : payload.madinahDistanceRanges;
-      if (buckets?.length) {
+          ? payload.makkahDistanceRange
+          : payload.madinahDistanceRange;
+      if (range) {
         return [
           {
             apply: (p) => stripFilter(p, key),
@@ -290,7 +291,7 @@ async function buildLadder(
       return steps;
     }
     case 'price': {
-      if (payload.priceRanges?.length) {
+      if (payload.priceRange) {
         return [
           {
             apply: (p) => stripFilter(p, 'price'),
@@ -317,7 +318,7 @@ async function buildLadder(
       return steps;
     }
     case 'total_duration_days': {
-      if (payload.durationRanges?.length) {
+      if (payload.durationRange) {
         return [
           {
             apply: (p) => stripFilter(p, 'total_duration_days'),
@@ -456,27 +457,23 @@ const MONTH_NAME_TO_NUMBER: Record<string, number> = {
   Jul: 7, Aug: 8, Sep: 9, Oct: 10, Nov: 11, Dec: 12,
 };
 
-// Parse "min-max" tokens out of a CSV param. Tokens that don't match the
-// shape are dropped silently so a malformed URL never breaks the listing.
-function parseRangeBuckets(raw: string | null | undefined): RangeBucket[] {
-  if (!raw) return [];
-  return raw
-    .split(',')
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((token): RangeBucket | null => {
-      const [a, b] = token.split('-');
-      const min = Number(a);
-      const max = Number(b);
-      if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
-      return [min, max] as RangeBucket;
-    })
-    .filter((r): r is RangeBucket => r !== null);
+// Parse the FIRST "min-max" token out of a (possibly CSV) param. The UI now
+// only writes a single token, but legacy URLs may carry multiple — we silently
+// take the first so a stale shared link still resolves to a sensible filter.
+function parseFirstRange(raw: string | null | undefined): RangeBucket | undefined {
+  if (!raw) return undefined;
+  const token = raw.split(',').map((s) => s.trim()).filter(Boolean)[0];
+  if (!token) return undefined;
+  const [a, b] = token.split('-');
+  const min = Number(a);
+  const max = Number(b);
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return undefined;
+  return [min, max] as RangeBucket;
 }
 
-// Some URL params now do double duty: a legacy single number (e.g. `price=200000`)
-// OR a CSV of ranges (`price=50000-70000,70000-90000`). Detect ranges by the
-// presence of a `-` in any token, fall back to scalar otherwise.
+// Some URL params do double duty: a legacy single number (e.g. `price=200000`)
+// OR a `min-max` range (`price=50000-70000`). Detect a range by the presence
+// of a `-` in any token; fall back to scalar otherwise.
 function isRangeFormat(raw: string | null | undefined): boolean {
   if (!raw) return false;
   return raw.split(',').some((t) => t.includes('-'));
@@ -503,10 +500,10 @@ export function buildPackagesQueryArgs(
   const makkahParam = getParam('makkah_hotel_distance_m');
   const madinahParam = getParam('madinah_hotel_distance_m');
 
-  const priceRanges = isRangeFormat(priceParam) ? parseRangeBuckets(priceParam) : [];
-  const durationRanges = isRangeFormat(durationParam) ? parseRangeBuckets(durationParam) : [];
-  const makkahDistanceRanges = isRangeFormat(makkahParam) ? parseRangeBuckets(makkahParam) : [];
-  const madinahDistanceRanges = isRangeFormat(madinahParam) ? parseRangeBuckets(madinahParam) : [];
+  const priceRange = isRangeFormat(priceParam) ? parseFirstRange(priceParam) : undefined;
+  const durationRange = isRangeFormat(durationParam) ? parseFirstRange(durationParam) : undefined;
+  const makkahDistanceRange = isRangeFormat(makkahParam) ? parseFirstRange(makkahParam) : undefined;
+  const madinahDistanceRange = isRangeFormat(madinahParam) ? parseFirstRange(madinahParam) : undefined;
 
   const payload: PackagesFilterPayload = {
     location: splitCsv('location'),
@@ -514,27 +511,27 @@ export function buildPackagesQueryArgs(
     datestart: getParam('datestart') || '',
     dateend: getParam('dateend') || '',
     total_duration_days:
-      durationRanges.length > 0 ? '' : durationParam ? Number(durationParam) || '' : '',
+      durationRange ? '' : durationParam ? Number(durationParam) || '' : '',
     months,
     year: new Date().getFullYear(),
-    price: priceRanges.length > 0 ? '' : priceParam ? Number(priceParam) || '' : '',
+    price: priceRange ? '' : priceParam ? Number(priceParam) || '' : '',
     makkahHotelDistance:
-      makkahDistanceRanges.length > 0
+      makkahDistanceRange
         ? undefined
         : makkahParam
           ? Number(makkahParam) || undefined
           : undefined,
     madinahHotelDistance:
-      madinahDistanceRanges.length > 0
+      madinahDistanceRange
         ? undefined
         : madinahParam
           ? Number(madinahParam) || undefined
           : undefined,
     agentNameList: splitCsv('agent_name'),
-    durationRanges,
-    priceRanges,
-    makkahDistanceRanges,
-    madinahDistanceRanges,
+    durationRange,
+    priceRange,
+    makkahDistanceRange,
+    madinahDistanceRange,
   };
 
   const sort = (getParam('sort') || '') as SortValue;
@@ -690,47 +687,52 @@ export async function fetchPackages(args: {
   if (payload.datestart) query = query.gte('departure_date', payload.datestart);
   if (payload.dateend) query = query.lte('arrival_date', payload.dateend);
 
-  // Bucket-style range filters (checkbox UI). Each selected bucket becomes
-  // one `and(col.gte.min,col.lt.max)` group, all OR'd together. Buckets use
-  // half-open intervals (inclusive lower, exclusive upper) so adjacent picks
-  // like 8-16 + 16-24 don't double-count rows that sit exactly on 16.
-  const applyBucketFilter = (
+  // Single-range filters (pill UI). Duration and price use the picked range
+  // as a half-open interval `col >= min AND col < max` (a 7-day pick should
+  // not match a 14-day package). Distance is special: nobody books a hotel
+  // because it's "≥ 300m from Haram" — closer is always better. So the
+  // distance picker is a CEILING filter: a "300m – 500m" pick means
+  // "show me anything within 500m" (matches Booking.com / Agoda behavior).
+  const applyRangeFilter = (
     q: typeof query,
     column: string,
-    buckets: RangeBucket[] | undefined
+    range: RangeBucket | undefined
   ) => {
-    if (!buckets || buckets.length === 0) return q;
-    const clauses = buckets.map(
-      ([min, max]) => `and(${column}.gte.${min},${column}.lt.${max})`
-    );
-    return q.or(clauses.join(','));
+    if (!range) return q;
+    return q.gte(column, range[0]).lt(column, range[1]);
   };
 
-  query = applyBucketFilter(query, 'total_duration_days', payload.durationRanges);
-  query = applyBucketFilter(query, 'price_per_person', payload.priceRanges);
-  query = applyBucketFilter(query, 'makkah_hotel_distance_m', payload.makkahDistanceRanges);
-  query = applyBucketFilter(query, 'madinah_hotel_distance_m', payload.madinahDistanceRanges);
+  const applyDistanceCeilingFilter = (
+    q: typeof query,
+    column: string,
+    range: RangeBucket | undefined
+  ) => {
+    if (!range) return q;
+    return q.lte(column, range[1]);
+  };
 
-  // Legacy scalar filters — still honoured for old URLs that haven't been
-  // migrated to the bucket format. Only apply when no buckets are selected
-  // for the same column (the URL parser already enforces this, but be safe).
+  query = applyRangeFilter(query, 'total_duration_days', payload.durationRange);
+  // Price is also a ceiling: pilgrims search by budget, not by exact band.
+  // A "₹50K – ₹70K" pick should match a ₹40K package because it's UNDER
+  // budget. Same reasoning as the distance ceiling above.
+  query = applyDistanceCeilingFilter(query, 'price_per_person', payload.priceRange);
+  query = applyDistanceCeilingFilter(query, 'makkah_hotel_distance_m', payload.makkahDistanceRange);
+  query = applyDistanceCeilingFilter(query, 'madinah_hotel_distance_m', payload.madinahDistanceRange);
+
+  // Legacy scalar filters — still honoured for old URLs that pre-date the
+  // range UI. Only apply when no range is selected for the same column
+  // (the URL parser already enforces this, but be safe).
   const dur = toNum(payload.total_duration_days);
-  if (dur !== undefined && !(payload.durationRanges && payload.durationRanges.length))
+  if (dur !== undefined && !payload.durationRange)
     query = query.lte('total_duration_days', dur);
 
   const price = toNum(payload.price);
-  if (price !== undefined && !(payload.priceRanges && payload.priceRanges.length))
+  if (price !== undefined && !payload.priceRange)
     query = query.lte('price_per_person', price);
 
-  if (
-    payload.makkahHotelDistance !== undefined &&
-    !(payload.makkahDistanceRanges && payload.makkahDistanceRanges.length)
-  )
+  if (payload.makkahHotelDistance !== undefined && !payload.makkahDistanceRange)
     query = query.lte('makkah_hotel_distance_m', payload.makkahHotelDistance);
-  if (
-    payload.madinahHotelDistance !== undefined &&
-    !(payload.madinahDistanceRanges && payload.madinahDistanceRanges.length)
-  )
+  if (payload.madinahHotelDistance !== undefined && !payload.madinahDistanceRange)
     query = query.lte('madinah_hotel_distance_m', payload.madinahHotelDistance);
 
   if (payload.agentNameList?.length) query = query.in('agent_name', payload.agentNameList);

@@ -9,7 +9,8 @@ import Checkbox from '@/shared/Checkbox';
 import { supabase } from '@/utils/supabaseClient';
 import { MONTHS_LIST } from '@/contains/contants';
 import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
-import { useMultiRangeFilter, rangeId } from '@/hooks/filters/useMultiRangeFilter';
+import { rangeId } from '@/hooks/filters/useMultiRangeFilter';
+import { useSingleRangeFilter } from '@/hooks/filters/useSingleRangeFilter';
 import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
 import SingleCityAutocomplete, { SelectedCity } from './SingleCityAutocomplete';
 import SingleAgentAutocomplete, { AgentOption } from './SingleAgentAutocomplete';
@@ -58,10 +59,10 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   // ── Shared filter hooks ──────────────────────────────────────────────────
   const { searchParams, replaceParams } = useFilterUrlSync();
   const month = useMultiSelectFilter('month');
-  const duration = useMultiRangeFilter('total_duration_days');
-  const price = useMultiRangeFilter('price');
-  const makkahDistance = useMultiRangeFilter('makkah_hotel_distance_m');
-  const madinahDistance = useMultiRangeFilter('madinah_hotel_distance_m');
+  const duration = useSingleRangeFilter('total_duration_days');
+  const price = useSingleRangeFilter('price');
+  const makkahDistance = useSingleRangeFilter('makkah_hotel_distance_m');
+  const madinahDistance = useSingleRangeFilter('madinah_hotel_distance_m');
   const [distanceTab, setDistanceTab] = useState<'makkah' | 'madinah'>('makkah');
   const hotelDistanceActive = makkahDistance.isActive || madinahDistance.isActive;
   const currentDistance = distanceTab === 'makkah' ? makkahDistance : madinahDistance;
@@ -185,10 +186,10 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
     // the source of truth; these calls won't race because they're internal
     // setState (no router involvement).
     month.setSelected([]);
-    duration.setSelected([]);
-    price.setSelected([]);
-    makkahDistance.setSelected([]);
-    madinahDistance.setSelected([]);
+    duration.setSelected(null);
+    price.setSelected(null);
+    makkahDistance.setSelected(null);
+    madinahDistance.setSelected(null);
     onClose();
   };
 
@@ -299,7 +300,7 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                       <SectionHeader
                         title="Package Duration"
                         active={duration.isActive}
-                        onClear={() => duration.setSelected([])}
+                        onClear={() => duration.setSelected(null)}
                       />
                       <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
                         {DURATION_RANGES.map((range) => {
@@ -310,7 +311,7 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                               key={id}
                               label={formatDurationRangeLabel(range)}
                               selected={selected}
-                              onClick={() => duration.toggle(!selected, range)}
+                              onClick={() => duration.select(selected ? null : range)}
                             />
                           );
                         })}
@@ -322,7 +323,7 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                       <SectionHeader
                         title="Price per person"
                         active={price.isActive}
-                        onClear={() => price.setSelected([])}
+                        onClear={() => price.setSelected(null)}
                       />
                       <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
                         {PRICE_RANGES.map((range) => {
@@ -333,7 +334,7 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                               key={id}
                               label={formatPriceRangeLabel(range)}
                               selected={selected}
-                              onClick={() => price.toggle(!selected, range)}
+                              onClick={() => price.select(selected ? null : range)}
                             />
                           );
                         })}
@@ -346,8 +347,8 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                         title="Hotel Distance"
                         active={hotelDistanceActive}
                         onClear={() => {
-                          makkahDistance.setSelected([]);
-                          madinahDistance.setSelected([]);
+                          makkahDistance.setSelected(null);
+                          madinahDistance.setSelected(null);
                         }}
                       />
                       <div className="mb-3 flex justify-center">
@@ -388,7 +389,7 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                               key={`${distanceTab}-${id}`}
                               label={formatDistanceRangeLabel(range)}
                               selected={selected}
-                              onClick={() => currentDistance.toggle(!selected, range)}
+                              onClick={() => currentDistance.select(selected ? null : range)}
                             />
                           );
                         })}

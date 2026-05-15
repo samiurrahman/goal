@@ -4,13 +4,14 @@ import React, { Fragment } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
-import { useMultiRangeFilter, rangeId } from '@/hooks/filters/useMultiRangeFilter';
+import { rangeId } from '@/hooks/filters/useMultiRangeFilter';
+import { useSingleRangeFilter } from '@/hooks/filters/useSingleRangeFilter';
 import { PRICE_RANGES, formatPriceRangeLabel } from './filterRanges';
 import RangePill from './RangePill';
 import XClearIcon from './XClearIcon';
 
 const PriceFilter = () => {
-  const filter = useMultiRangeFilter('price');
+  const filter = useSingleRangeFilter('price');
 
   return (
     <Popover className="relative">
@@ -64,7 +65,7 @@ const PriceFilter = () => {
                         key={id}
                         label={formatPriceRangeLabel(range)}
                         selected={selected}
-                        onClick={() => filter.toggle(!selected, range)}
+                        onClick={() => filter.select(selected ? null : range)}
                       />
                     );
                   })}
