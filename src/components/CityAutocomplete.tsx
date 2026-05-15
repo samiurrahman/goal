@@ -57,9 +57,11 @@ const CityAutocomplete: FC<CityAutocompleteProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value?.id]);
 
-  // 250ms debounce — anything shorter and slow connections show jitter.
+  // 150ms debounce — short enough to feel instant, long enough to avoid
+  // firing on every keystroke. Local-cache hits in useCitySearch return
+  // synchronously for popular cities, so this only gates the API fallback.
   useEffect(() => {
-    const t = setTimeout(() => setDebounced(query), 250);
+    const t = setTimeout(() => setDebounced(query), 150);
     return () => clearTimeout(t);
   }, [query]);
 

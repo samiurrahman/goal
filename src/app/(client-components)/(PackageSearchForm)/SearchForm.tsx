@@ -34,12 +34,13 @@ const SearchForm = () => {
     packagesUrl,
   } = usePackageSearch();
 
-  // Local search query feeds the cities API directly. 250ms debounce
-  // matches the rest of the app's city pickers for consistency.
+  // Local search query feeds the cities API directly. 150ms debounce
+  // matches the rest of the app's city pickers — short enough to feel
+  // instant, long enough to avoid firing on every keystroke.
   const [locationQuery, setLocationQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(locationQuery), 250);
+    const t = setTimeout(() => setDebouncedQuery(locationQuery), 150);
     return () => clearTimeout(t);
   }, [locationQuery]);
 

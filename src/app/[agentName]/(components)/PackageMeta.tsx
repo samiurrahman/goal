@@ -7,6 +7,7 @@ import GovtVerifiedBadge from '@/components/GovtVerifiedBadge';
 import ShareButton from '@/shared/ShareButton';
 import { MakkahIcon, MadinaIcon } from '@/components/icons/icons';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
+import { sanitizePackageTags, packageTagTone } from '@/constants/packageTags';
 
 const FALLBACK_BLUR_DATA_URL =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
@@ -42,6 +43,7 @@ export interface PackageMetaProps {
   agentRatingPoint?: number;
   agentReviewCount?: number;
   shareUrl?: string;
+  tags?: string[] | null;
 }
 
 const PackageMeta: React.FC<PackageMetaProps> = ({
@@ -65,7 +67,9 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
   agentRatingPoint = 0,
   agentReviewCount = 0,
   shareUrl,
+  tags,
 }) => {
+  const sanitizedTags = sanitizePackageTags(tags);
   return (
     <article className="nc-PackageMeta group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden shadow-sm">
       <div className="flex flex-col">

@@ -39,7 +39,7 @@ const HeroSearchTrigger = () => {
   // SearchForm and the listing-page filters.
   const [debouncedQuery, setDebouncedQuery] = useState('');
   useEffect(() => {
-    const t = setTimeout(() => setDebouncedQuery(locationQuery), 250);
+    const t = setTimeout(() => setDebouncedQuery(locationQuery), 150);
     return () => clearTimeout(t);
   }, [locationQuery]);
   const { data: suggestions, isFetching: citiesLoading } = useCitySearch(debouncedQuery);

@@ -127,8 +127,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body
-        className="bg-white text-base dark:bg-neutral-900 text-neutral-900 dark:text-neutral-200"
+        className="text-base dark:bg-neutral-900 text-neutral-900 dark:text-neutral-200"
         suppressHydrationWarning
+        style={{ background: 'rgb(var(--c-neutral-50))' }}
       >
         <NextTopLoader color="#4f46e5" height={3} showSpinner={false} />
         <ClientCommons />

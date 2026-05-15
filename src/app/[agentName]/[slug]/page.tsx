@@ -189,6 +189,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     agentRatingPoint,
     agentReviewCount,
     shareUrl: `/${agentName}/${slug}`,
+    tags: (package_details as { tags?: string[] | null })?.tags ?? null,
   };
 
   const hostLocationText = [agentData?.city, agentData?.state, agentData?.country]
@@ -420,7 +421,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
         {/* SIDEBAR: Purchase summary, sticky on lg+, hidden on mobile (replaced by MobileFooterSticky) */}
         <aside className="hidden lg:block lg:sticky lg:top-28 lg:self-start w-full lg:w-2/5 xl:w-1/3 mt-8 lg:mt-0 flex-shrink-0">
           <div className="max-w-md mx-auto w-full">
-            <PurchaseSummaryInteractive {...purchaseSummaryProps} />
+            <PurchaseSummaryInteractive {...purchaseSummaryProps} className="bg-white" />
           </div>
         </aside>
       </main>

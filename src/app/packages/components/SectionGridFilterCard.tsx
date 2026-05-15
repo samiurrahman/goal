@@ -61,18 +61,18 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
   // Cache key includes skipRelaxation so toggling re-runs the query.
   const queryKey = ['packages', payload, sortValue, skipRelaxation] as const;
 
-  // Only reuse the server-rendered initial data when the client URL matches
-  // what the server saw AND the user hasn't toggled exact-only mode. After
-  // any filter change or toggle, we drop the initial cache and refetch.
-  const canUseInitial =
-    !!initialData &&
-    !skipRelaxation &&
-    // crude check: if there are no relaxed filters in URL terms, this is the
-    // same query the server ran. (The server's effective payload only differs
-    // from the URL payload if filters were dropped, which is captured in
-    // initialRelaxedFilters.length > 0 — both cases are still the server's
-    // response to the current URL.)
-    true;
+  // Snapshot the URL on first render — this is the URL the server rendered
+  // initialData against. Once the user changes any filter, the URL diverges
+  // and we must NOT seed initialData into the new queryKey (otherwise React
+  // Query treats stale SSR packages as fresh and isLoading flips false,
+  // leaving the user staring at the old list while a refetch runs in the
+  // background).
+  const initialUrlRef = useRef<string | null>(null);
+  if (initialUrlRef.current === null) {
+    initialUrlRef.current = searchParams.toString();
+  }
+  const isAtInitialUrl = initialUrlRef.current === searchParams.toString();
+  const canUseInitial = !!initialData && !skipRelaxation && isAtInitialUrl;
 
   // Phase 1: exact-match query. Always runs, hits the DB exactly once for
   // the first page. This is the query that drives the visible UI most of
