@@ -66,32 +66,16 @@ export const metadata: Metadata = {
     title: 'Premium Umrah Packages',
     description:
       'Discover affordable Umrah packages with Searchumrah. Compare prices from verified travel agents and plan your spiritual journey.',
-    images: [
-      {
-        url: '/og-image.jpg',
-        width: 1200,
-        height: 630,
-        alt: 'Umrah Packages',
-      },
-    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Premium Umrah Packages',
     description:
       'Discover affordable Umrah packages. Compare prices and book your spiritual journey.',
-    images: ['/og-image.jpg'],
     creator: '@searchumrah',
-  },
-  verification: {
-    google: 'your-google-verification-code',
   },
   alternates: {
     canonical: '/',
-  },
-  icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
   },
 };
 
@@ -106,7 +90,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           data={{
             name: 'Searchumrah',
             url: baseUrl,
-            logo: `${baseUrl}/logo.png`,
             description:
               'Premium Umrah travel booking platform connecting pilgrims with verified travel agents',
             telephone: '+1-XXX-XXX-XXXX',

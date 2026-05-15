@@ -28,6 +28,20 @@ export interface AgentDetailsProps {
 // this is a huge perf win over `force-dynamic` for repeat visits.
 export const revalidate = 60;
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
+
+const stripHtml = (html: string) =>
+  html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const clampText = (text: string, max = 160) => {
+  const clean = stripHtml(text);
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, max - 1).trimEnd()}…`;
+};
+
 const sanitizeProfileMarkup = (markup: string) => {
   if (!markup) return '';
 
@@ -186,21 +200,30 @@ const getReviewsForAgent = async (agentId: string): Promise<AgentReview[]> => {
 
 export const generateMetadata = async ({ params }: AgentDetailsProps): Promise<Metadata> => {
   const agentDetails = await getAgentBySlug(params.agentName);
-  const title = agentDetails?.known_as
-    ? `${agentDetails.known_as} | Searchumrah`
-    : 'Agent Profile | Searchumrah';
-  const description =
-    agentDetails?.about_us || 'Explore trusted Umrah packages from verified agents.';
+  // The root layout's `title.template` already appends "| Searchumrah", so
+  // return just the agent name here to avoid duplication.
+  const title = agentDetails?.known_as || 'Agent Profile';
+  const description = clampText(
+    agentDetails?.about_us || 'Explore trusted Umrah packages from verified agents.'
+  );
+  const url = `${SITE_URL}/${params.agentName}`;
 
   return {
     title,
     description,
+    alternates: { canonical: url },
     openGraph: {
       title,
       description,
       type: 'profile',
-      url: `https://www.searchumrah.com/${params.agentName}`,
+      url,
       images: agentDetails?.profile_image ? [{ url: agentDetails.profile_image }] : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: agentDetails?.profile_image ? [agentDetails.profile_image] : undefined,
     },
   };
 };
@@ -209,14 +232,55 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
   const { agentName } = params;
   const agentDetails = await getAgentBySlug(agentName);
 
+  const agentUrl = `${SITE_URL}/${agentDetails?.slug || agentName}`;
+  const agentRatingPointEarly = Number(agentDetails?.rating_avg ?? 0);
+  const agentReviewCountEarly = Number(agentDetails?.rating_total ?? 0);
+  const agentAddressParts = [agentDetails?.city, agentDetails?.state, agentDetails?.country].filter(
+    Boolean
+  );
+
   const agentSchema = {
     '@context': 'https://schema.org',
-    '@type': 'Person', // or "Organization" if more appropriate
+    '@type': 'TravelAgency',
     name: agentDetails?.known_as,
-    url: `https://www.searchumrah.com/${agentDetails?.slug}`,
-    description: agentDetails?.about_us,
-    image: agentDetails?.profile_image, // URL to agent's image
-    // Add more fields as needed
+    url: agentUrl,
+    description: clampText(agentDetails?.about_us || ''),
+    image: agentDetails?.profile_image,
+    ...(agentDetails?.email_id ? { email: agentDetails.email_id } : {}),
+    ...(agentDetails?.contact_number ? { telephone: agentDetails.contact_number } : {}),
+    ...(agentAddressParts.length > 0
+      ? {
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: agentDetails?.city || undefined,
+            addressRegion: agentDetails?.state || undefined,
+            addressCountry: agentDetails?.country || undefined,
+          },
+        }
+      : {}),
+    ...(agentReviewCountEarly > 0 && agentRatingPointEarly > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: agentRatingPointEarly,
+            reviewCount: agentReviewCountEarly,
+          },
+        }
+      : {}),
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: agentDetails?.known_as || agentName,
+        item: agentUrl,
+      },
+    ],
   };
 
   // Fetch packages + reviews in parallel once we know the agent id
@@ -309,6 +373,10 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
       />
 
       <AgentContactProvider data={contactData}>

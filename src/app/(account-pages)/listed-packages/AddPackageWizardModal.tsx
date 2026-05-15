@@ -1249,7 +1249,39 @@ const AddPackageWizardModal = ({
     <NcModal
       isOpenProp={isOpen}
       onCloseModal={closeModal}
-      modalTitle=""
+      modalTitle={
+        isLoadingPackage ? null : (
+          <div className="flex items-center justify-between gap-3 text-left">
+            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 sm:text-base lg:text-base">
+              {editPackageId ? 'Edit Package' : 'Add New Package'}
+              <span className="font-normal text-neutral-400 dark:text-neutral-500"> • </span>
+              <span className="font-medium text-neutral-600 dark:text-neutral-300">
+                {stepTitle}
+              </span>
+            </span>
+            <span className="flex flex-wrap items-center gap-2">
+              <ButtonSecondary
+                type="button"
+                onClick={() => handlePublish(false)}
+                disabled={isSaving}
+                sizeClass="px-3.5 py-2"
+                fontSize="text-xs sm:text-sm font-medium"
+              >
+                {isSaving ? 'Saving…' : 'Save'}
+              </ButtonSecondary>
+              <ButtonPrimary
+                type="button"
+                onClick={() => handlePublish(true)}
+                disabled={isSaving}
+                sizeClass="px-3.5 py-2"
+                fontSize="text-xs sm:text-sm font-medium"
+              >
+                {isSaving ? 'Saving…' : 'Save & Publish'}
+              </ButtonPrimary>
+            </span>
+          </div>
+        )
+      }
       contentExtraClass="max-w-5xl"
       contentPaddingClass="px-4 pb-5 pt-4 md:px-6 md:pb-6"
       renderTrigger={
@@ -1285,37 +1317,7 @@ const AddPackageWizardModal = ({
             </p>
           ) : (
             <>
-              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between -mt-1">
-                <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 sm:text-base">
-                  {editPackageId ? 'Edit Package' : 'Add New Package'}
-                  <span className="text-neutral-400 dark:text-neutral-500"> • </span>
-                  <span className="font-medium text-neutral-600 dark:text-neutral-300">
-                    {stepTitle}
-                  </span>
-                </h2>
-                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-                  <ButtonSecondary
-                    type="button"
-                    onClick={() => handlePublish(false)}
-                    disabled={isSaving}
-                    sizeClass="px-3.5 py-2"
-                    fontSize="text-xs sm:text-sm font-medium"
-                  >
-                    {isSaving ? 'Saving…' : 'Save'}
-                  </ButtonSecondary>
-                  <ButtonPrimary
-                    type="button"
-                    onClick={() => handlePublish(true)}
-                    disabled={isSaving}
-                    sizeClass="px-3.5 py-2"
-                    fontSize="text-xs sm:text-sm font-medium"
-                  >
-                    {isSaving ? 'Saving…' : 'Save & Publish'}
-                  </ButtonPrimary>
-                </div>
-              </div>
-
-              <div className="text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="text-xs text-neutral-500 dark:text-neutral-400 -mt-1">
                 Step {currentStepIndex + 1} of {WIZARD_STEPS.length}
               </div>
 

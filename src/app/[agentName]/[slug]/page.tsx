@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { Amenities_demos } from '../(components)/constant';
 import Breadcrumb from '@/components/Breadcrumb';
 import Iternary from '../(components)/Iternary';
@@ -10,7 +11,7 @@ import AmenitiesSection from '../(components)/AmenitiesSection';
 import PackageInfo from '../(components)/PackageInfo';
 import MobileFooterSticky from '../(components)/MobileFooterSticky';
 import PurchaseSummaryInteractive from '../(components)/PurchaseSummaryInteractive';
-import type { PackageDetails } from '@/data/types';
+import type { Package, PackageDetails } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 import { notFound } from 'next/navigation';
 import {
@@ -18,6 +19,20 @@ import {
   sanitizeHotelStars,
   type HotelAmenityKey,
 } from '@/constants/hotelAmenities';
+
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
+
+const stripHtml = (html: string) =>
+  html
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+const clampText = (text: string, max = 160) => {
+  const clean = stripHtml(text);
+  if (clean.length <= max) return clean;
+  return `${clean.slice(0, max - 1).trimEnd()}…`;
+};
 
 // ISR — re-render at most once per minute. Edits from the agent's wizard
 // trigger an immediate revalidatePath via /api/revalidate so changes show up
@@ -33,6 +48,67 @@ export interface PackageDetailProps {
     sharing?: string;
   };
 }
+
+export const generateMetadata = async ({ params }: PackageDetailProps): Promise<Metadata> => {
+  const { agentName, slug } = params;
+
+  const { data: packageData } = await supabase
+    .from('packages')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+
+  const pkg = packageData as Package | null;
+  const packageUrl = `${SITE_URL}/${agentName}/${slug}`;
+
+  if (!pkg) {
+    return {
+      title: 'Package Not Found',
+      description: 'The requested Umrah package could not be found.',
+      alternates: { canonical: packageUrl },
+    };
+  }
+
+  const title = `${pkg.title} — ${pkg.total_duration_days} Days`;
+  const description = clampText(
+    pkg.short_description ||
+      `Book ${pkg.title} with ${pkg.agent_name || 'a verified agent'}. ${
+        pkg.total_duration_days
+      } days including ${pkg.makkah_days} in Makkah and ${pkg.madinah_days} in Madinah. From ${
+        pkg.currency || 'INR'
+      } ${pkg.price_per_person} per person.`
+  );
+
+  return {
+    title,
+    description,
+    keywords: [
+      pkg.title,
+      `${pkg.total_duration_days} days package`,
+      pkg.agent_name || '',
+      'Umrah package',
+      pkg.departure_city || '',
+      pkg.makkah_hotel_name || '',
+      pkg.madinah_hotel_name || '',
+    ].filter(Boolean) as string[],
+    alternates: { canonical: packageUrl },
+    openGraph: {
+      title,
+      description,
+      type: 'website',
+      url: packageUrl,
+      ...(pkg.thumbnail_url
+        ? { images: [{ url: pkg.thumbnail_url, width: 1200, height: 630, alt: pkg.title }] }
+        : {}),
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      ...(pkg.thumbnail_url ? { images: [pkg.thumbnail_url] } : {}),
+    },
+  };
+};
 
 const parseJson = <T,>(raw: unknown, fallback: T): T => {
   try {
@@ -425,8 +501,76 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     checkoutUrl,
   };
 
+  const packageUrl = `${SITE_URL}/${agentName}/${slug}`;
+  const packageImage =
+    (package_details as { thumbnail_url?: string | null })?.thumbnail_url || undefined;
+
+  const productSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'Product',
+    name: package_details?.title,
+    description: clampText(
+      (package_details as { short_description?: string | null })?.short_description ||
+        `${package_details?.total_duration_days || ''} day Umrah package`
+    ),
+    ...(packageImage ? { image: packageImage } : {}),
+    brand: {
+      '@type': 'TravelAgency',
+      name: packageMetaData.agentDisplayName,
+    },
+    offers: {
+      '@type': 'Offer',
+      url: packageUrl,
+      priceCurrency: parsedDefaultPricing?.currency || package_details?.currency || 'INR',
+      price: pricePerPerson,
+      availability: 'https://schema.org/InStock',
+      seller: {
+        '@type': 'TravelAgency',
+        name: packageMetaData.agentDisplayName,
+      },
+    },
+    ...(agentReviewCount > 0 && agentRatingPoint > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: agentRatingPoint,
+            reviewCount: agentReviewCount,
+          },
+        }
+      : {}),
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+      { '@type': 'ListItem', position: 2, name: 'Packages', item: `${SITE_URL}/packages` },
+      {
+        '@type': 'ListItem',
+        position: 3,
+        name: packageMetaData.agentDisplayName,
+        item: `${SITE_URL}/${agentName}`,
+      },
+      {
+        '@type': 'ListItem',
+        position: 4,
+        name: package_details?.title || slug,
+        item: packageUrl,
+      },
+    ],
+  };
+
   return (
     <div className="nc-ListingStayDetailPage w-full min-h-screen">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+      />
       <div className="relative z-20">
         <Breadcrumb
           items={[

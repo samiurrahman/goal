@@ -15,7 +15,6 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
         '@type': 'Organization',
         name: data.name || 'Searchumrah',
         url: data.url || process.env.NEXT_PUBLIC_SITE_URL,
-        logo: data.logo || `${process.env.NEXT_PUBLIC_SITE_URL}/logo.png`,
         description: data.description || 'Premium Umrah travel booking platform',
         contactPoint: {
           '@type': 'ContactPoint',
