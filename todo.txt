@@ -45,23 +45,6 @@ Both must be flipped for the optimization to actually kick in.
 
 
 
-whatsapp
-Create two Meta Business Manager templates for cancellation WhatsApp messages:
-
-booking_cancelled_by_agent — utility, en_US, body with 3 vars: {{1}} (package title/slug), {{2}} (booking ID), {{3}} (reason). Suggested body:
-
-Hi, your booking for {{1}} (ID {{2}}) was cancelled by the agent.
-Reason: {{3}}
-booking_cancelled_by_user — utility, en_US, body with 2 vars: {{1}} (package title/slug), {{2}} (booking ID). Suggested body:
-
-A user cancelled their booking for {{1}} (ID {{2}}).
-Until both are approved, the in-app cancel/reject still works fully — only the WhatsApp delivery is blocked. The browser console will log any Meta API rejection.
-
-
-
-enable email verification for user
-
-
 
 
 

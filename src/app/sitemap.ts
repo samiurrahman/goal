@@ -21,25 +21,46 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let dynamicRoutes: MetadataRoute.Sitemap = [];
 
   try {
-    // Packages
-    // const { data: packages, error: packagesError } = await supabase.from('packages').select('*');
-    // if (!packagesError && packages) {
-    //   dynamicRoutes = packages.map((pkg) => ({
-    //     url: `${baseUrl}/${pkg.agent_name}/${pkg.slug}`,
-    //     lastModified: pkg.updated_at ? new Date(pkg.updated_at) : new Date(),
-    //   }));
-    // }
+    // Agents for /agentName
+    const { data: agents, error: agentsError } = await supabase
+      .from('agents')
+      .select('slug, auth_user_id, updated_at, created_at');
 
-    // Agents for /domain/agentName and /agentName
-    const { data: agents, error: agentsError } = await supabase.from('agents').select('*');
     if (!agentsError && agents) {
-      const agentRoutes = agents.flatMap((agent) => [
-        {
+      const agentRoutes = agents
+        .filter((agent) => agent.slug)
+        .map((agent) => ({
           url: `${baseUrl}/${agent.slug}`,
-          lastModified: agent.updated_at ? new Date(agent.updated_at) : new Date(),
-        },
-      ]);
+          lastModified: new Date(agent.updated_at || agent.created_at || Date.now()),
+        }));
       dynamicRoutes = [...dynamicRoutes, ...agentRoutes];
+
+      // Build agent_id (auth_user_id) → slug map for package URLs
+      const agentSlugByAuthId = new Map<string, string>();
+      for (const agent of agents) {
+        if (agent.auth_user_id && agent.slug) {
+          agentSlugByAuthId.set(agent.auth_user_id, agent.slug);
+        }
+      }
+
+      // Packages for /agentName/slug — only published packages with a slug,
+      // and only those whose agent has a resolvable slug.
+      const { data: packages, error: packagesError } = await supabase
+        .from('packages')
+        .select('slug, agent_id, updated_at, created_at, published');
+
+      if (!packagesError && packages) {
+        const packageRoutes = packages
+          .filter(
+            (pkg) =>
+              pkg.published !== false && pkg.slug && pkg.agent_id && agentSlugByAuthId.has(pkg.agent_id)
+          )
+          .map((pkg) => ({
+            url: `${baseUrl}/${agentSlugByAuthId.get(pkg.agent_id as string)}/${pkg.slug}`,
+            lastModified: new Date(pkg.updated_at || pkg.created_at || Date.now()),
+          }));
+        dynamicRoutes = [...dynamicRoutes, ...packageRoutes];
+      }
     }
   } catch (error) {
     console.warn(
