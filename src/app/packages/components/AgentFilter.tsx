@@ -62,9 +62,9 @@ const AgentFilter = () => {
         <>
           <Popover.Button
             onClick={() => setHasOpened(true)}
-            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 focus:outline-none
+            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:outline-none
              ${open ? '!border-primary-500 ' : ''}
-              ${isActive ? '!border-primary-500 bg-primary-50' : ''}
+              ${isActive ? '!border-primary-500 !bg-primary-50' : ''}
               `}
           >
             <span>Agent</span>

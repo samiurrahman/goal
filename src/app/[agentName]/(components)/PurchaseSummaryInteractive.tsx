@@ -69,7 +69,7 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
       className={`listingSectionSidebar__wrap !space-y-4 ${flat ? '!shadow-none !border-0 !rounded-none' : 'shadow-xl'} ${className}`}
     >
       <div className="flex justify-between">
-        <span className="text-2xl font-normal">
+        <span className="text-2xl font-normal text-primary-900 dark:text-primary-200">
           INR {formattedPrice}
           <span className="text-base font-normal text-neutral-500 dark:text-neutral-400">
             /person

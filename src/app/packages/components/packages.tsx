@@ -179,7 +179,7 @@ const Packages: FC<PackagesProps> = ({
             <h3 className="text-base sm:text-lg font-semibold capitalize leading-snug line-clamp-2 text-neutral-900 dark:text-neutral-100 min-w-0">
               {title}
             </h3>
-            <Badge name="ADS" color="green" className="flex-shrink-0" />
+            {/* <Badge name="ADS" color="green" className="flex-shrink-0" /> */}
           </div>
 
           <div className="flex flex-wrap gap-x-3 gap-y-1.5 text-xs text-neutral-600 dark:text-neutral-300">
@@ -300,10 +300,10 @@ const Packages: FC<PackagesProps> = ({
                 From
               </p>
               <p className="whitespace-nowrap leading-tight">
-                <span className="text-lg sm:text-xl font-bold text-secondary-700">
+                <span className="text-[18px] font-semibold text-primary-900 dark:text-primary-200 tracking-tight">
                   {displayCurrency} {displayPrice.toLocaleString('en-IN')}
                 </span>
-                <span className="text-xs text-neutral-500 dark:text-neutral-400 ml-1">
+                <span className="text-[12px] text-neutral-500 dark:text-neutral-400 ml-1">
                   /person
                 </span>
               </p>

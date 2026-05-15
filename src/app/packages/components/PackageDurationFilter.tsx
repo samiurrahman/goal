@@ -17,11 +17,11 @@ const PackageDurationFilter = () => {
       {({ open, close }) => (
         <>
           <Popover.Button
-            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border focus:outline-none
+            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border bg-white dark:bg-neutral-800 focus:outline-none
               ${open ? '!border-primary-500' : ''}
               ${
                 filter.isActive
-                  ? '!border-primary-500 bg-primary-50 text-primary-700'
+                  ? '!border-primary-500 !bg-primary-50 text-primary-700'
                   : 'border-neutral-300 dark:border-neutral-700'
               }`}
           >
