@@ -24,14 +24,14 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // Agents for /agentName
     const { data: agents, error: agentsError } = await supabase
       .from('agents')
-      .select('slug, auth_user_id, updated_at, created_at');
+      .select('slug, auth_user_id, created_at');
 
     if (!agentsError && agents) {
       const agentRoutes = agents
         .filter((agent) => agent.slug)
         .map((agent) => ({
           url: `${baseUrl}/${agent.slug}`,
-          lastModified: new Date(agent.updated_at || agent.created_at || Date.now()),
+          lastModified: new Date(agent.created_at || Date.now()),
         }));
       dynamicRoutes = [...dynamicRoutes, ...agentRoutes];
 
@@ -47,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       // and only those whose agent has a resolvable slug.
       const { data: packages, error: packagesError } = await supabase
         .from('packages')
-        .select('slug, agent_id, updated_at, created_at, published');
+        .select('slug, agent_id, created_at, published');
 
       if (!packagesError && packages) {
         const packageRoutes = packages
@@ -57,7 +57,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           )
           .map((pkg) => ({
             url: `${baseUrl}/${agentSlugByAuthId.get(pkg.agent_id as string)}/${pkg.slug}`,
-            lastModified: new Date(pkg.updated_at || pkg.created_at || Date.now()),
+            lastModified: new Date(pkg.created_at || Date.now()),
           }));
         dynamicRoutes = [...dynamicRoutes, ...packageRoutes];
       }
