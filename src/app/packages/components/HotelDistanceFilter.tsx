@@ -30,7 +30,6 @@ const HotelDistanceFilter = () => {
   }, []);
 
   const isActive = makkah.isActive || madinah.isActive;
-  const totalCount = makkah.count + madinah.count;
 
   // Batch both writes — sequential .apply() / .clear() calls would each fire
   // router.replace on a stale searchParams snapshot, and only the last write
@@ -67,11 +66,6 @@ const HotelDistanceFilter = () => {
               }`}
           >
             <span>Hotel Distance</span>
-            {totalCount > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary-500 text-[10px] font-semibold text-white">
-                {totalCount}
-              </span>
-            )}
             {!isActive ? (
               <i className="las la-angle-down ml-2"></i>
             ) : (
@@ -100,7 +94,7 @@ const HotelDistanceFilter = () => {
                   <div className="inline-flex rounded-full border border-neutral-200 dark:border-neutral-700 p-1">
                     {(['makkah', 'madinah'] as const).map((tab) => {
                       const label = tab === 'makkah' ? 'Makkah' : 'Madinah';
-                      const count = tab === 'makkah' ? makkah.count : madinah.count;
+                      const tabIsActive = tab === 'makkah' ? makkah.isActive : madinah.isActive;
                       const selected = activeTab === tab;
                       const pulse = tab === 'madinah' && pulseMadinah;
                       return (
@@ -115,12 +109,11 @@ const HotelDistanceFilter = () => {
                           } ${pulse ? 'scale-110 ring-2 ring-primary-300' : 'scale-100'}`}
                         >
                           <span>{label}</span>
-                          {count > 0 && (
+                          {tabIsActive && !selected && (
                             <span
-                              className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold bg-primary-500 text-white"
-                            >
-                              {count}
-                            </span>
+                              aria-hidden
+                              className="inline-block h-1.5 w-1.5 rounded-full bg-primary-500"
+                            />
                           )}
                         </button>
                       );

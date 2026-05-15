@@ -64,58 +64,106 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
     [checkoutUrl, numberOfGuests, sharingCount]
   );
 
+  const minusBtnClass =
+    'w-7 h-7 rounded-full flex items-center justify-center border border-neutral-300 dark:border-neutral-600 text-primary-6000 text-base leading-none disabled:text-neutral-300 dark:disabled:text-neutral-600 transition';
+  const plusBtnClass = minusBtnClass;
+
   return (
     <div
-      className={`listingSectionSidebar__wrap !space-y-4 ${flat ? '!shadow-none !border-0 !rounded-none' : 'shadow-xl'} ${className}`}
+      className={`listingSectionSidebar__wrap !space-y-0 !p-0 overflow-hidden ${flat ? '!shadow-none !border-0 !rounded-none' : 'shadow-xl'} ${className}`}
     >
-      <div className="flex justify-between">
-        <span className="text-2xl font-normal text-primary-900 dark:text-primary-200">
-          INR {formattedPrice}
-          <span className="text-base font-normal text-neutral-500 dark:text-neutral-400">
-            /person
+      <div className="px-5 sm:px-6 pt-5 pb-4">
+        <div className="text-[11px] font-semibold tracking-wider text-neutral-500 dark:text-neutral-400">
+          FROM
+        </div>
+        <div className="mt-1 flex items-baseline gap-1">
+          <span className="text-2xl font-bold text-primary-900 dark:text-primary-200 leading-none tracking-tight">
+            INR {formattedPrice}
           </span>
-        </span>
+          <span className="text-[13px] font-normal text-neutral-500 dark:text-neutral-400">
+            / person
+          </span>
+        </div>
+        <div className="mt-3">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 text-[12px] font-medium">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+              className="w-3.5 h-3.5"
+            >
+              <path
+                fillRule="evenodd"
+                d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 011.42-1.42L8.5 12.08l6.79-6.79a1 1 0 011.414 0z"
+                clipRule="evenodd"
+              />
+            </svg>
+            Includes flight, hotel, visa & transfers
+          </span>
+        </div>
       </div>
 
-      <div className="flex flex-col overflow-hidden border border-neutral-200 dark:border-neutral-700 rounded-3xl">
-        <div className="p-3 flex items-center justify-between">
-          <span className="font-medium text-neutral-800 dark:text-neutral-200">Guests</span>
+      <div className="border-t border-neutral-200 dark:border-neutral-700" />
+
+      <div className="px-5 sm:px-6 py-3 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">
+              Guests
+            </div>
+            <div className="text-[12px] text-neutral-500 dark:text-neutral-400">
+              Adults (12 yrs+)
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setNumberOfGuests((prev) => clamp(prev - 1, 1, 20))}
-              className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+              disabled={numberOfGuests <= 1}
+              aria-label="Decrease guests"
+              className={minusBtnClass}
             >
-              -
+              −
             </button>
-            <span className="w-8 text-center">{numberOfGuests}</span>
+            <span className="w-5 text-center text-[14px] font-medium">{numberOfGuests}</span>
             <button
               type="button"
               onClick={() => setNumberOfGuests((prev) => clamp(prev + 1, 1, 20))}
-              className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+              disabled={numberOfGuests >= 20}
+              aria-label="Increase guests"
+              className={plusBtnClass}
             >
               +
             </button>
           </div>
         </div>
 
-        <div className="w-full border-b border-neutral-200 dark:border-neutral-700" />
-
-        <div className="p-3 flex items-center justify-between">
-          <span className="font-medium text-neutral-800 dark:text-neutral-200">Sharing</span>
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">
+              Sharing
+            </div>
+            <div className="text-[12px] text-neutral-500 dark:text-neutral-400">
+              Per-room occupancy
+            </div>
+          </div>
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setSharingCount((prev) => clamp(prev - 1, 2, 5))}
-              className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+              disabled={sharingCount <= 2}
+              aria-label="Decrease sharing"
+              className={minusBtnClass}
             >
-              -
+              −
             </button>
-            <span className="w-8 text-center">{sharingCount}</span>
+            <span className="w-5 text-center text-[14px] font-medium">{sharingCount}</span>
             <button
               type="button"
               onClick={() => setSharingCount((prev) => clamp(prev + 1, 2, 5))}
-              className="w-8 h-8 rounded-full flex items-center justify-center border border-neutral-400 dark:border-neutral-500"
+              disabled={sharingCount >= 5}
+              aria-label="Increase sharing"
+              className={plusBtnClass}
             >
               +
             </button>
@@ -123,31 +171,112 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
         </div>
       </div>
 
-      <div className="flex flex-col space-y-4">
-        <div className="flex justify-between text-neutral-600 dark:text-neutral-300 text-sm">
+      <div className="bg-neutral-50 dark:bg-neutral-800/50 px-5 sm:px-6 py-3 space-y-1.5">
+        <div className="flex justify-between text-[12.5px] text-neutral-600 dark:text-neutral-300">
           <span>
-            No of Guest ({numberOfGuests} x {formattedPrice})
+            INR {formattedPrice} × {numberOfGuests} {numberOfGuests === 1 ? 'guest' : 'guests'}
           </span>
           <span>INR {formattedTotal}</span>
         </div>
-        <div className="flex justify-between text-neutral-6000 dark:text-neutral-300 text-sm">
+        <div className="flex justify-between text-[12.5px] text-neutral-600 dark:text-neutral-300">
           <span>GST (5%)</span>
           <span>INR {formattedGst}</span>
         </div>
-
-        {!flat ? <div className="border-b border-neutral-200 dark:border-neutral-700"></div> : null}
-        <div className="flex justify-between font-semibold text-md">
-          <span>Total</span>
-          <span>INR {formattedGrandTotal}</span>
+        <div className="flex justify-between text-[12.5px] text-neutral-600 dark:text-neutral-300">
+          <span>Visa & ihram</span>
+          <span>INR 0</span>
+        </div>
+        <div className="border-t border-neutral-200 dark:border-neutral-700 pt-2 mt-2 flex justify-between items-center">
+          <span className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">
+            Total
+          </span>
+          <span className="text-[17px] font-bold text-primary-900 dark:text-primary-200 tracking-tight">
+            INR {formattedGrandTotal}
+          </span>
         </div>
       </div>
 
-      <ReserveLink
-        checkoutUrl={resolvedCheckoutUrl}
-        className="ttnc-ButtonPrimary disabled:bg-opacity-70 bg-primary-6000 hover:bg-primary-700 text-neutral-50 relative h-auto inline-flex items-center justify-center rounded-full transition-colors text-sm sm:text-base font-medium px-4 py-3 sm:px-6"
-      >
-        Send enquiry
-      </ReserveLink>
+      <div className="px-5 sm:px-6 pt-4 pb-3">
+        <ReserveLink
+          checkoutUrl={resolvedCheckoutUrl}
+          className="ttnc-ButtonPrimary disabled:bg-opacity-70 bg-primary-6000 hover:bg-primary-700 text-neutral-50 relative h-auto inline-flex items-center justify-center rounded-full transition-colors text-[14px] font-semibold w-full px-6 py-3.5"
+        >
+          Send enquiry
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-3.5 h-3.5 ml-2"
+          >
+            <path
+              fillRule="evenodd"
+              d="M3 10a1 1 0 011-1h11.586l-3.293-3.293a1 1 0 011.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414-1.414L15.586 11H4a1 1 0 01-1-1z"
+              clipRule="evenodd"
+            />
+          </svg>
+        </ReserveLink>
+        <p className="mt-2.5 text-center text-[12px] text-neutral-500 dark:text-neutral-400">
+          No charge yet · Pay <span className="font-semibold">only after the agent confirms</span>
+        </p>
+      </div>
+
+      <div className="border-t border-neutral-200 dark:border-neutral-700" />
+
+      <ul className="px-5 sm:px-6 py-3 space-y-1.5 text-[12.5px] text-neutral-600 dark:text-neutral-300">
+        <li className="flex items-start gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-3.5 h-3.5 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 011.42-1.42L8.5 12.08l6.79-6.79a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span>
+            HajjScanner <span className="font-semibold">never holds your money</span>. You pay the
+            agent directly.
+          </span>
+        </li>
+        <li className="flex items-start gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-3.5 h-3.5 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 011.42-1.42L8.5 12.08l6.79-6.79a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span>
+            <span className="font-semibold">Free cancellation</span> up to 30 days before
+            departure.
+          </span>
+        </li>
+        <li className="flex items-start gap-2">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="w-3.5 h-3.5 mt-0.5 text-emerald-600 dark:text-emerald-400 flex-shrink-0"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.704 5.29a1 1 0 010 1.42l-7.5 7.5a1 1 0 01-1.42 0l-3.5-3.5a1 1 0 011.42-1.42L8.5 12.08l6.79-6.79a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
+          </svg>
+          <span>
+            Government-licensed & <span className="font-semibold">verified agent</span>.
+          </span>
+        </li>
+      </ul>
     </div>
   );
 };

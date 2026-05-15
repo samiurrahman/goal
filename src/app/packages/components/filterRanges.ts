@@ -23,9 +23,31 @@ export const DURATION_RANGES: NumericRange[] = [
   [30, 60],
 ];
 
-export const PRICE_RANGES: NumericRange[] = buildRanges(50_000, 20_000, 12);
+// Ceiling buckets in 20K steps up to ≤ ₹1.9L; the final "₹2L+" bucket is
+// a FLOOR that captures everything from premium to luxury packages.
+export const PRICE_RANGES: NumericRange[] = [
+  [0, 70_000],
+  [0, 90_000],
+  [0, 110_000],
+  [0, 130_000],
+  [0, 150_000],
+  [0, 170_000],
+  [0, 190_000],
+  [200_000, Infinity],
+];
 
-export const DISTANCE_RANGES: NumericRange[] = buildRanges(100, 200, 10);
+// Same shape as price: ceiling buckets ≤ X meters, then a "1.5km+" floor
+// for hotels that aren't right next to Haram/Masjid Nabawi.
+export const DISTANCE_RANGES: NumericRange[] = [
+  [0, 300],
+  [0, 500],
+  [0, 700],
+  [0, 900],
+  [0, 1100],
+  [0, 1300],
+  [0, 1500],
+  [1500, Infinity],
+];
 
 // Half-open `[min, max)` semantics in SQL — labels render "min – (max-1)"
 // so the displayed day count matches what actually filters. The largest
@@ -44,10 +66,11 @@ function formatIndianPrice(val: number) {
   return `${lakhs}L${thousands > 0 ? ` ${thousands}K` : ''}`;
 }
 
-// Price picker is a CEILING filter — picking the "₹50K – ₹70K" bucket means
-// "show me anything under ₹70K", because pilgrims search by budget ceiling
-// and an under-budget package is always a welcome match.
-export function formatPriceRangeLabel([, max]: NumericRange): string {
+// Most price buckets are CEILINGS ("≤ ₹X") because pilgrims search by budget
+// ceiling. The final bucket is a FLOOR ("₹X+") for the premium tier — when
+// max is Infinity, render the lower bound with a "+" suffix instead.
+export function formatPriceRangeLabel([min, max]: NumericRange): string {
+  if (!Number.isFinite(max)) return `₹ ${formatIndianPrice(min)}+`;
   return `≤ ₹ ${formatIndianPrice(max)}`;
 }
 
@@ -62,9 +85,10 @@ function formatMeters(v: number): string {
   return `${v} m`;
 }
 
-// Distance picker is a CEILING filter — picking the "300m – 500m" bucket
-// means "≤ 500m from Haram", because nobody books a hotel for being FAR
-// from the masjid. Show only the upper bound to make that intent obvious.
-export function formatDistanceRangeLabel([, max]: NumericRange): string {
+// Distance picker mirrors price: most buckets are CEILINGS ("≤ Xm from
+// Haram"). The final "1.5km+" bucket is a FLOOR for hotels in the outer
+// ring; when max is Infinity, render "min+" instead.
+export function formatDistanceRangeLabel([min, max]: NumericRange): string {
+  if (!Number.isFinite(max)) return `${formatMeters(min)}+`;
   return `≤ ${formatMeters(max)}`;
 }

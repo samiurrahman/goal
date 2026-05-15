@@ -9,14 +9,15 @@ const Iternary: React.FC<IternaryProps> = ({ data }) => {
   const itineraryItems = Array.isArray(data) ? data.filter(Boolean) : [];
 
   return (
-    <div className="listingSection__wrap !space-y-0 !p-0 overflow-hidden rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
-      <div className="px-6 pt-6 pb-2 sm:px-8 sm:pt-8">
-        <h3 className="text-[13px] font-semibold uppercase tracking-[0.10em] text-neutral-500 dark:text-neutral-400">
-          Itinerary
-        </h3>
-      </div>
+    <div className="rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-6 sm:p-8">
+      <p className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-primary-700 dark:text-primary-400">
+        Day-by-day plan
+      </p>
+      <h2 className="mt-2 text-[20px] sm:text-[22px] font-semibold leading-tight tracking-tight text-neutral-900 dark:text-neutral-100">
+        Itinerary
+      </h2>
 
-      <div className="px-6 pb-6 sm:px-8 sm:pb-8">
+      <div className="mt-5">
         {itineraryItems.length === 0 ? (
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
             No itinerary available yet.

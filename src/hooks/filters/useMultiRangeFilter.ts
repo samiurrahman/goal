@@ -5,7 +5,11 @@ import { useFilterUrlSync } from './useFilterUrlSync';
 
 export type NumericRange = readonly [number, number];
 
+// Range tokens encode `[min, max]` as "min-max". The "X+" catch-all bucket
+// (e.g. ≥ ₹2L, ≥ 1.5km) uses an open-ended trailing dash: "200000-" means
+// `[200000, Infinity]`. Parsers below treat empty / non-numeric upper as ∞.
 export function rangeId(range: NumericRange): string {
+  if (!Number.isFinite(range[1])) return `${range[0]}-`;
   return `${range[0]}-${range[1]}`;
 }
 
@@ -18,8 +22,8 @@ export function parseRangeIds(raw: string | null | undefined): NumericRange[] {
     .map((token) => {
       const [a, b] = token.split('-');
       const min = Number(a);
-      const max = Number(b);
-      if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+      const max = b === undefined || b === '' ? Infinity : Number(b);
+      if (!Number.isFinite(min) || Number.isNaN(max)) return null;
       return [min, max] as NumericRange;
     })
     .filter((r): r is NumericRange => r !== null);

@@ -45,9 +45,15 @@ const HostInformation: React.FC<HostInformationProps> = ({
   const normalizedProfileHref = profileUrl.startsWith('/') ? profileUrl : `/${profileUrl}`;
 
   return (
-    <div className="listingSection__wrap !space-y-4">
-      <h2 className="text-xl font-normal text-gray-900">Host Information</h2>
-      <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
+    <div className="rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-6 sm:p-8 space-y-4">
+      <div>
+        <p className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-primary-700 dark:text-primary-400">
+          Meet your host
+        </p>
+        <h2 className="mt-2 text-[20px] sm:text-[22px] font-semibold leading-tight tracking-tight text-neutral-900 dark:text-neutral-100">
+          {name}
+        </h2>
+      </div>
       <div className="flex items-center space-x-4">
         <Link href={normalizedProfileHref} aria-label={name} className="flex-shrink-0">
           <Avatar
@@ -112,8 +118,7 @@ const HostInformation: React.FC<HostInformationProps> = ({
           <span>{responseTime}</span>
         </div>
       </div>
-      <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
-      <div>
+      <div className="pt-2">
         <ButtonSecondary href={normalizedProfileHref}>See host profile</ButtonSecondary>
       </div>
     </div>

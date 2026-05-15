@@ -1,7 +1,20 @@
 import { supabase } from '@/utils/supabaseClient';
 import { Package } from '@/data/types';
 
-export type SortValue = '' | 'price-asc' | 'price-desc' | 'rating' | 'newest';
+export type SortValue =
+  | ''
+  | 'price-asc'
+  | 'price-desc'
+  | 'rating'
+  | 'newest'
+  // Closeness-to-intent sorts used by the relaxation cascade. When we drop
+  // a "≤ X" ceiling filter, the relaxed pool is everything ABOVE X, so a
+  // simple ASC sort on that column puts the closest matches first. For a
+  // dropped "X+" floor, the pool is everything BELOW X, so DESC works.
+  | 'makkah-distance-asc'
+  | 'makkah-distance-desc'
+  | 'madinah-distance-asc'
+  | 'madinah-distance-desc';
 
 // Single range filter: a [min, max) pair. The query layer translates this
 // into a simple `col.gte.min AND col.lt.max` pair.
@@ -129,8 +142,10 @@ function urlKeysFor(key: RelaxableKey): string[] {
   }
 }
 
-const distanceBucketLabel = (b: RangeBucket) => `≤ ${formatDistanceLabel(b[1])}`;
-const priceBucketLabel = (b: RangeBucket) => `≤ ${b[1].toLocaleString()}`;
+const distanceBucketLabel = (b: RangeBucket) =>
+  Number.isFinite(b[1]) ? `≤ ${formatDistanceLabel(b[1])}` : `${formatDistanceLabel(b[0])}+`;
+const priceBucketLabel = (b: RangeBucket) =>
+  Number.isFinite(b[1]) ? `≤ ${b[1].toLocaleString()}` : `${b[0].toLocaleString()}+`;
 const durationBucketLabel = (b: RangeBucket) => {
   if (b[1] >= 60) return `${b[0]}+ days`;
   if (b[0] <= 1) return `Up to ${b[1] - 1} days`;
@@ -708,6 +723,10 @@ export async function fetchPackages(args: {
     range: RangeBucket | undefined
   ) => {
     if (!range) return q;
+    // The "X+" catch-all bucket encodes max as Infinity — flip to a floor
+    // (`>= min`) so e.g. "₹2L+" matches premium packages and "1.5km+"
+    // matches outer-ring hotels.
+    if (!Number.isFinite(range[1])) return q.gte(column, range[0]);
     return q.lte(column, range[1]);
   };
 
@@ -743,6 +762,18 @@ export async function fetchPackages(args: {
       break;
     case 'price-desc':
       query = query.order('price_per_person', { ascending: false, nullsFirst: false });
+      break;
+    case 'makkah-distance-asc':
+      query = query.order('makkah_hotel_distance_m', { ascending: true, nullsFirst: false });
+      break;
+    case 'makkah-distance-desc':
+      query = query.order('makkah_hotel_distance_m', { ascending: false, nullsFirst: false });
+      break;
+    case 'madinah-distance-asc':
+      query = query.order('madinah_hotel_distance_m', { ascending: true, nullsFirst: false });
+      break;
+    case 'madinah-distance-desc':
+      query = query.order('madinah_hotel_distance_m', { ascending: false, nullsFirst: false });
       break;
     case 'newest':
       query = query.order('created_at', { ascending: false, nullsFirst: false });
@@ -837,6 +868,42 @@ function crossProduct<T>(arrs: T[][]): T[][] {
 type LadderEntry = { key: RelaxableKey; steps: LadderStep[] };
 type ChosenStep = { key: RelaxableKey; stepIdx: number; step: LadderStep };
 
+// A bucket is a "floor" filter (e.g. "₹2L+", "1.5km+") iff its lower bound
+// is strictly positive AND its upper bound is open. Used by the relaxation
+// sort picker below to decide ASC vs DESC.
+function isFloorBucket(range: RangeBucket): boolean {
+  return range[0] > 0 && !Number.isFinite(range[1]);
+}
+
+// Choose a sort that surfaces the packages closest to the user's original
+// intent for the relaxation candidate. Walks RELAXATION_PRIORITY so the
+// most-prioritized relaxed filter dictates the sort. Falls back to the
+// user's original sort if none of the relaxed keys have a closeness sort.
+function pickRelaxationSort(
+  chosen: ChosenStep[],
+  payload: PackagesFilterPayload,
+  userSort: SortValue
+): SortValue {
+  const relaxed = new Set(chosen.map((c) => c.key));
+  for (const key of RELAXATION_PRIORITY) {
+    if (!relaxed.has(key)) continue;
+    if (key === 'madinahHotelDistance' && payload.madinahDistanceRange) {
+      return isFloorBucket(payload.madinahDistanceRange)
+        ? 'madinah-distance-desc'
+        : 'madinah-distance-asc';
+    }
+    if (key === 'makkahHotelDistance' && payload.makkahDistanceRange) {
+      return isFloorBucket(payload.makkahDistanceRange)
+        ? 'makkah-distance-desc'
+        : 'makkah-distance-asc';
+    }
+    if (key === 'price' && payload.priceRange) {
+      return isFloorBucket(payload.priceRange) ? 'price-desc' : 'price-asc';
+    }
+  }
+  return userSort;
+}
+
 // Hard ceiling on how many filters we'll relax simultaneously. At k>=3 the
 // result barely resembles the user's intent ("we found something but we
 // ignored 3 of the 6 things you asked for"), and the empty-state UX is
@@ -914,7 +981,17 @@ async function runRelaxationCascade(
         batch.map(async (chosen) => {
           let p = payload;
           for (const { step } of chosen) p = step.apply(p);
-          const packages = await fetchPackages({ payload: p, page: 0, pageSize, sort });
+          // Override the user's sort with a closeness-to-intent sort: e.g.
+          // dropping a "≤ ₹70K" filter should surface ₹85K before ₹95K, not
+          // re-rank by agent rating. The original payload (not the relaxed
+          // one) is the source of truth for the user's intent.
+          const candidateSort = pickRelaxationSort(chosen, payload, sort);
+          const packages = await fetchPackages({
+            payload: p,
+            page: 0,
+            pageSize,
+            sort: candidateSort,
+          });
           return { chosen, packages, effectivePayload: p };
         })
       );

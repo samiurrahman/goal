@@ -13,43 +13,38 @@ interface AmenitiesSectionProps {
 
 const iconClassFor = (raw?: string) => {
   const value = (raw || '').trim();
-  // Drop URLs / asset paths — only Line Awesome class names are supported here.
   if (!value || value.startsWith('/') || value.startsWith('http') || value.includes('.'))
     return 'las la-check';
   if (/^(las|lar|lab)\s/.test(value)) return value;
   return `las ${value}`;
 };
 
-const InclusionRow: FC<{ item: InclusionItem; isFirst: boolean }> = ({ item, isFirst }) => {
+const InclusionTile: FC<{ item: InclusionItem }> = ({ item }) => {
   const excluded = Boolean(item.excluded);
 
   return (
-    <div
-      className={`flex items-center gap-3.5 py-3.5 ${
-        isFirst ? '' : 'border-t border-neutral-200 dark:border-neutral-700'
-      }`}
-    >
+    <div className="flex items-start gap-3 rounded-2xl border border-neutral-200 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-800/50 p-3.5">
       <span
-        className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full ${
+        className={`flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl border ${
           excluded
-            ? 'bg-neutral-100 dark:bg-neutral-800 text-neutral-400'
-            : 'bg-primary-50 text-primary-700'
+            ? 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-400'
+            : 'border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-primary-700 dark:text-primary-400'
         }`}
       >
-        <i className={`${iconClassFor(item.icon)} text-[20px] leading-none`} aria-hidden />
+        <i className={`${iconClassFor(item.icon)} text-[18px] leading-none`} aria-hidden />
       </span>
       <div className="min-w-0">
         <p
-          className={`text-[15px] font-medium leading-snug ${
+          className={`text-[13.5px] font-semibold leading-snug ${
             excluded
               ? 'text-neutral-500 line-through decoration-neutral-300'
-              : 'text-neutral-800 dark:text-neutral-100'
+              : 'text-neutral-900 dark:text-neutral-100'
           }`}
         >
           {item.name}
         </p>
         {item.description ? (
-          <p className="mt-0.5 text-[13px] text-neutral-500 dark:text-neutral-400 leading-snug no-underline">
+          <p className="mt-0.5 text-[12px] leading-snug text-neutral-500 dark:text-neutral-400 no-underline">
             {item.description}
           </p>
         ) : null}
@@ -62,23 +57,28 @@ const AmenitiesSection: FC<AmenitiesSectionProps> = ({ amenities }) => {
   const items = (amenities || []).filter((item) => item && item.name);
 
   return (
-    <div className="listingSection__wrap !space-y-0 !p-0 overflow-hidden rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
-      <div className="px-6 pt-6 pb-2 sm:px-8 sm:pt-8">
-        <h3 className="text-[13px] font-semibold uppercase tracking-[0.10em] text-neutral-500 dark:text-neutral-400">
-          Inclusions
-        </h3>
-      </div>
-      <div className="px-6 pb-6 sm:px-8 sm:pb-8">
-        {items.length === 0 ? (
-          <p className="py-2 text-sm text-neutral-500 dark:text-neutral-400">
-            No inclusions added yet.
-          </p>
-        ) : (
-          items.map((item, idx) => (
-            <InclusionRow key={`${item.name}-${idx}`} item={item} isFirst={idx === 0} />
-          ))
-        )}
-      </div>
+    <div className="rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-6 sm:p-8">
+      <p className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-primary-700 dark:text-primary-400">
+        What&rsquo;s included
+      </p>
+      <h2 className="mt-2 text-[20px] sm:text-[22px] font-semibold leading-tight tracking-tight text-neutral-900 dark:text-neutral-100">
+        Everything in your package
+      </h2>
+      <p className="mt-2 text-[14px] leading-relaxed text-neutral-600 dark:text-neutral-400">
+        No hidden costs. Visa, ihram, ground transport, and meals at the hotel are covered.
+      </p>
+
+      {items.length === 0 ? (
+        <p className="mt-5 text-[13.5px] text-neutral-500 dark:text-neutral-400">
+          No inclusions added yet.
+        </p>
+      ) : (
+        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+          {items.map((item, idx) => (
+            <InclusionTile key={`${item.name}-${idx}`} item={item} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

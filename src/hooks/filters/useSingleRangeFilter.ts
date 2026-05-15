@@ -10,8 +10,9 @@ function parseFirstRange(raw: string | null | undefined): NumericRange | null {
   if (!token) return null;
   const [a, b] = token.split('-');
   const min = Number(a);
-  const max = Number(b);
-  if (!Number.isFinite(min) || !Number.isFinite(max)) return null;
+  // Open-ended upper ("200000-") encodes the "X+" floor bucket as ∞.
+  const max = b === undefined || b === '' ? Infinity : Number(b);
+  if (!Number.isFinite(min) || Number.isNaN(max)) return null;
   return [min, max] as NumericRange;
 }
 

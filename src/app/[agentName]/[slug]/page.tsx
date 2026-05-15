@@ -13,6 +13,11 @@ import PurchaseSummaryInteractive from '../(components)/PurchaseSummaryInteracti
 import type { PackageDetails } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 import { notFound } from 'next/navigation';
+import {
+  sanitizeHotelAmenities,
+  sanitizeHotelStars,
+  type HotelAmenityKey,
+} from '@/constants/hotelAmenities';
 
 // ISR — re-render at most once per minute. Edits from the agent's wizard
 // trigger an immediate revalidatePath via /api/revalidate so changes show up
@@ -317,6 +322,10 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     content_html?: string;
     contentHtml?: string;
     content?: string;
+    hotels?: {
+      makkah?: { stars?: unknown; amenities?: unknown };
+      madinah?: { stars?: unknown; amenities?: unknown };
+    };
   }>(package_details?.details?.stay_information, {
     title: 'Stay information',
     details: [],
@@ -327,6 +336,14 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     details: Array.isArray(rawStayInfoData.details) ? rawStayInfoData.details : [],
     contentHtml:
       rawStayInfoData.contentHtml || rawStayInfoData.content_html || rawStayInfoData.content || '',
+  };
+  const makkahHotelMeta: { stars: number | null; amenities: HotelAmenityKey[] } = {
+    stars: sanitizeHotelStars(rawStayInfoData.hotels?.makkah?.stars),
+    amenities: sanitizeHotelAmenities(rawStayInfoData.hotels?.makkah?.amenities),
+  };
+  const madinahHotelMeta: { stars: number | null; amenities: HotelAmenityKey[] } = {
+    stars: sanitizeHotelStars(rawStayInfoData.hotels?.madinah?.stars),
+    amenities: sanitizeHotelAmenities(rawStayInfoData.hotels?.madinah?.amenities),
   };
   const rawPoliciesData = parseJson<Record<string, unknown>>(
     package_details?.details?.policies,
@@ -352,15 +369,18 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     ? parsedAmenities
         .map((item) => {
           if (typeof item === 'string') {
-            return { name: item, icon: '' };
+            return { name: item, icon: '', description: '' };
           }
 
           const row = (item || {}) as Record<string, unknown>;
           const name = String(row.name || row.title || row.label || '').trim();
           if (!name) return null;
-          return { name, icon: String(row.icon || '') };
+          const description = String(
+            row.description || row.subtitle || row.subheading || ''
+          ).trim();
+          return { name, icon: String(row.icon || ''), description };
         })
-        .filter((item): item is { name: string; icon: string } => Boolean(item))
+        .filter((item): item is { name: string; icon: string; description: string } => Boolean(item))
     : [];
 
   const amenitiesData =
@@ -421,7 +441,25 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
           <PackageMeta {...packageMetaData} />
           <Iternary data={iternaryData} />
           <AmenitiesSection amenities={amenitiesData} />
-          <PackageInfo data={stayInfoData} />
+          <PackageInfo
+            data={stayInfoData}
+            hotels={[
+              {
+                side: 'makkah',
+                name: package_details?.makkah_hotel_name ?? null,
+                distanceM: package_details?.makkah_hotel_distance_m ?? null,
+                stars: makkahHotelMeta.stars,
+                amenities: makkahHotelMeta.amenities,
+              },
+              {
+                side: 'madinah',
+                name: package_details?.madinah_hotel_name ?? null,
+                distanceM: package_details?.madinah_hotel_distance_m ?? null,
+                stars: madinahHotelMeta.stars,
+                amenities: madinahHotelMeta.amenities,
+              },
+            ]}
+          />
           <Policies data={policiesData} />
           <HostInformation {...hostData} />
         </div>

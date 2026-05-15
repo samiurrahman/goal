@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Fragment, useState, useEffect, useMemo } from 'react';
+import React, { Fragment, useState, useEffect, useMemo, useRef } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
@@ -66,6 +66,15 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   const [distanceTab, setDistanceTab] = useState<'makkah' | 'madinah'>('makkah');
   const hotelDistanceActive = makkahDistance.isActive || madinahDistance.isActive;
   const currentDistance = distanceTab === 'makkah' ? makkahDistance : madinahDistance;
+  // Mirror desktop HotelDistanceFilter: after picking Makkah, jump focus
+  // to Madinah with a brief pulse so the user notices.
+  const [pulseMadinahMobile, setPulseMadinahMobile] = useState(false);
+  const pulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    return () => {
+      if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+    };
+  }, []);
 
   // Staged city — single-select. Hydrated from `?city=` on every open so
   // back/forward navigation and external links stay in sync.
@@ -355,32 +364,43 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                         <div className="inline-flex rounded-full border border-neutral-200 dark:border-neutral-700 p-1">
                           {(['makkah', 'madinah'] as const).map((tab) => {
                             const label = tab === 'makkah' ? 'Makkah' : 'Madinah';
-                            const count =
-                              tab === 'makkah' ? makkahDistance.count : madinahDistance.count;
+                            const tabIsActive =
+                              tab === 'makkah' ? makkahDistance.isActive : madinahDistance.isActive;
                             const selected = distanceTab === tab;
+                            const pulse = tab === 'madinah' && pulseMadinahMobile;
                             return (
                               <button
                                 key={tab}
                                 type="button"
                                 onClick={() => setDistanceTab(tab)}
-                                className={`flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-full focus:outline-none transition-colors ${
+                                className={`flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-full focus:outline-none transition-all duration-300 ${
                                   selected
                                     ? 'bg-primary-50 text-primary-700 border border-primary-500'
                                     : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
-                                }`}
+                                } ${pulse ? 'scale-110 ring-2 ring-primary-300' : 'scale-100'}`}
                               >
                                 <span>{label}</span>
-                                {count > 0 && (
-                                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold bg-primary-500 text-white">
-                                    {count}
-                                  </span>
+                                {tabIsActive && !selected && (
+                                  <span
+                                    aria-hidden
+                                    className="inline-block h-1.5 w-1.5 rounded-full bg-primary-500"
+                                  />
                                 )}
                               </button>
                             );
                           })}
                         </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                      <Transition
+                        as="div"
+                        appear
+                        show
+                        key={distanceTab}
+                        enter="transition-all duration-300 ease-out"
+                        enterFrom={`opacity-0 ${distanceTab === 'madinah' ? 'translate-x-3' : '-translate-x-3'}`}
+                        enterTo="opacity-100 translate-x-0"
+                        className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1"
+                      >
                         {DISTANCE_RANGES.map((range) => {
                           const id = rangeId(range);
                           const selected = currentDistance.isSelected(range);
@@ -389,11 +409,23 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                               key={`${distanceTab}-${id}`}
                               label={formatDistanceRangeLabel(range)}
                               selected={selected}
-                              onClick={() => currentDistance.select(selected ? null : range)}
+                              onClick={() => {
+                                const nowSelected = !selected;
+                                currentDistance.select(nowSelected ? range : null);
+                                if (nowSelected && distanceTab === 'makkah') {
+                                  setDistanceTab('madinah');
+                                  setPulseMadinahMobile(true);
+                                  if (pulseTimerRef.current) clearTimeout(pulseTimerRef.current);
+                                  pulseTimerRef.current = setTimeout(
+                                    () => setPulseMadinahMobile(false),
+                                    600
+                                  );
+                                }
+                              }}
                             />
                           );
                         })}
-                      </div>
+                      </Transition>
                     </section>
                   </div>
                 </div>
