@@ -153,14 +153,10 @@ export function AgentContactProvider({
         return;
       }
 
-      const body = (await res.json().catch(() => ({}))) as {
-        recorded?: boolean;
-        reason?: string;
-      };
+      // Drain the response so the connection closes cleanly even though we
+      // don't surface anything on success.
+      await res.json().catch(() => ({}));
       setRevealed(true);
-      if (body?.recorded) {
-        toast.success('Details revealed. The agent will see your interest.');
-      }
     } catch {
       toast.error('Network error. Please try again.');
     } finally {
@@ -271,26 +267,48 @@ export function DesktopContactCard() {
       ) : null}
 
       {mailHref ? (
-        <a
-          href={mailHref}
-          className="flex items-center gap-3 rounded-xl border border-neutral-200 p-3 transition-colors hover:border-primary-300 hover:bg-primary-50"
-        >
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-neutral-100 text-neutral-700">
-            <MailIcon />
-          </span>
-          <div className="min-w-0">
-            <div className="text-[13px] font-medium text-neutral-500">Email</div>
-            <div className="mt-px truncate text-[13px] font-semibold text-neutral-900">
-              {emailId}
+        revealed ? (
+          <a
+            href={mailHref}
+            className="flex items-center gap-3 rounded-xl border border-neutral-200 p-3 transition-colors hover:border-primary-300 hover:bg-primary-50"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-neutral-100 text-neutral-700">
+              <MailIcon />
+            </span>
+            <div className="min-w-0">
+              <div className="text-[13px] font-medium text-neutral-500">Email</div>
+              <div className="mt-px truncate text-[13px] font-semibold text-neutral-900">
+                {emailId}
+              </div>
             </div>
-          </div>
-        </a>
+          </a>
+        ) : (
+          <button
+            type="button"
+            onClick={reveal}
+            disabled={pending}
+            className="flex w-full items-center gap-3 rounded-xl border border-neutral-200 p-3 text-left transition-colors hover:border-primary-300 hover:bg-primary-50 disabled:opacity-60"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[10px] bg-neutral-100 text-neutral-700">
+              <MailIcon />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-[13px] font-medium text-neutral-500">Email</div>
+              <div className="mt-px flex items-center gap-2 text-[13px] font-semibold text-neutral-900">
+                <span className="tracking-widest">{PHONE_MASK}</span>
+                <span className="text-primary-700 underline">
+                  {pending ? 'Showing…' : 'Show'}
+                </span>
+              </div>
+            </div>
+          </button>
+        )
       ) : null}
 
-      {!revealed && (whatsappHref || telHref) ? (
+      {!revealed && (whatsappHref || telHref || mailHref) ? (
         <p className="mt-3 text-[11px] leading-[1.4] text-neutral-500">
-          Click <span className="font-medium">Show</span> to reveal the number. Your name and
-          mobile will be shared with this agent.
+          Click <span className="font-medium">Show</span> to reveal contact details. Your name
+          and mobile will be shared with this agent.
         </p>
       ) : null}
     </>
@@ -360,14 +378,18 @@ export function MobileQuickActions() {
         )
       ) : null}
       {mailHref ? (
-        <a
-          href={mailHref}
-          className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-4 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100"
-          aria-label="Email"
-        >
-          <MailIcon size={22} />
-          Email
-        </a>
+        revealed ? (
+          <a
+            href={mailHref}
+            className="flex flex-col items-center justify-center gap-1.5 rounded-2xl bg-primary-50 py-4 text-xs font-medium text-primary-700 transition-colors hover:bg-primary-100"
+            aria-label="Email"
+          >
+            <MailIcon size={22} />
+            Email
+          </a>
+        ) : (
+          <MaskedTile icon={<MailIcon size={22} />} label="Reveal email" />
+        )
       ) : null}
     </div>
   );
@@ -391,10 +413,13 @@ export function MobileStickyContact() {
           type="button"
           onClick={reveal}
           disabled={pending}
-          className="inline-flex flex-1 items-center justify-center gap-2 rounded-full bg-primary-700 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-800 disabled:opacity-60"
+          className="inline-flex flex-1 items-center justify-between gap-3 rounded-full bg-primary-700 px-5 py-3 text-sm font-medium text-white transition-colors hover:bg-primary-800 disabled:opacity-60"
         >
-          <PhoneIcon />
-          {pending ? 'Showing…' : 'Show contact details'}
+          <span className="inline-flex items-center gap-2">
+            <PhoneIcon />
+            <span className="tracking-widest">{PHONE_MASK}</span>
+          </span>
+          <span className="underline">{pending ? 'Showing…' : 'Show'}</span>
         </button>
       </div>
     );

@@ -6,38 +6,26 @@ import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import ButtonClose from '@/shared/ButtonClose';
 import Checkbox from '@/shared/Checkbox';
-import Slider from 'rc-slider';
-import CityMultiSelect, { SelectedCity } from '@/components/CityMultiSelect';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabaseClient';
 import { MONTHS_LIST } from '@/contains/contants';
 import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
-import { useSingleValueFilter } from '@/hooks/filters/useSingleValueFilter';
-import { useHotelDistanceFilter } from '@/hooks/filters/useHotelDistanceFilter';
+import { useMultiRangeFilter, rangeId } from '@/hooks/filters/useMultiRangeFilter';
 import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
-
-type Agent = { id: string; known_as: string; slug: string };
+import SingleCityAutocomplete, { SelectedCity } from './SingleCityAutocomplete';
+import SingleAgentAutocomplete, { AgentOption } from './SingleAgentAutocomplete';
+import {
+  DURATION_RANGES,
+  PRICE_RANGES,
+  DISTANCE_RANGES,
+  formatDurationRangeLabel,
+  formatPriceRangeLabel,
+  formatDistanceRangeLabel,
+} from './filterRanges';
+import RangePill from './RangePill';
 
 const CITY_PARAM = 'city';
 const LEGACY_LOCATION_PARAM = 'location';
-
-const PRICE_MAX = 300000;
-const DURATION_MAX = 60;
-const DISTANCE_MAX = 5000;
-
-function formatDistance(val: number) {
-  if (val < 1000) return `${val} m`;
-  const km = Math.floor(val / 1000);
-  const m = val % 1000;
-  return `${km} km${m > 0 ? ` ${m} m` : ''}`;
-}
-
-function formatIndianPrice(val: number) {
-  if (val < 100000) return `${Math.round(val / 1000)}K`;
-  const lakhs = Math.floor(val / 100000);
-  const thousands = Math.round((val % 100000) / 1000);
-  return `${lakhs} Lakh${thousands > 0 ? ` ${thousands}K` : ''}`;
-}
+const AGENT_PARAM = 'agent_name';
 
 interface MobileFiltersModalProps {
   isOpen: boolean;
@@ -69,26 +57,28 @@ const SectionHeader = ({
 const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   // ── Shared filter hooks ──────────────────────────────────────────────────
   const { searchParams, replaceParams } = useFilterUrlSync();
-  const agent = useMultiSelectFilter('agent_name');
   const month = useMultiSelectFilter('month');
-  const duration = useSingleValueFilter('total_duration_days', DURATION_MAX);
-  const price = useSingleValueFilter('price', PRICE_MAX);
-  const hotelDistance = useHotelDistanceFilter(DISTANCE_MAX);
+  const duration = useMultiRangeFilter('total_duration_days');
+  const price = useMultiRangeFilter('price');
+  const makkahDistance = useMultiRangeFilter('makkah_hotel_distance_m');
+  const madinahDistance = useMultiRangeFilter('madinah_hotel_distance_m');
+  const [distanceTab, setDistanceTab] = useState<'makkah' | 'madinah'>('makkah');
+  const hotelDistanceActive = makkahDistance.isActive || madinahDistance.isActive;
+  const currentDistance = distanceTab === 'makkah' ? makkahDistance : madinahDistance;
 
-  // Staged city selections — committed to the URL on Apply. Hydrated from
-  // the URL's ?city= param whenever the modal opens so back/forward
-  // navigation and external links work.
-  const [stagedCities, setStagedCities] = useState<SelectedCity[]>([]);
-  const cityIsActive = stagedCities.length > 0;
-  const urlCitySlugs = useMemo(() => {
+  // Staged city — single-select. Hydrated from `?city=` on every open so
+  // back/forward navigation and external links stay in sync.
+  const [stagedCity, setStagedCity] = useState<SelectedCity | null>(null);
+  const cityIsActive = !!stagedCity;
+  const urlCitySlug = useMemo(() => {
     const raw = searchParams.get(CITY_PARAM) || '';
-    return raw.split(',').map((s) => s.trim()).filter(Boolean);
+    return raw.split(',').map((s) => s.trim()).filter(Boolean)[0] ?? null;
   }, [searchParams]);
 
   useEffect(() => {
     if (!isOpen) return;
-    if (urlCitySlugs.length === 0) {
-      setStagedCities([]);
+    if (!urlCitySlug) {
+      setStagedCity(null);
       return;
     }
     let cancelled = false;
@@ -96,80 +86,49 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
       const { data, error } = await supabase
         .from('cities')
         .select('id, slug, name, admin1_name')
-        .in('slug', urlCitySlugs);
+        .eq('slug', urlCitySlug)
+        .maybeSingle();
       if (cancelled || error || !data) return;
-      const order = new Map(urlCitySlugs.map((s, i) => [s, i]));
-      setStagedCities(
-        data
-          .map((row) => ({
-            id: Number(row.id),
-            slug: String(row.slug),
-            name: String(row.name),
-            admin1_name: row.admin1_name as string | null,
-          }))
-          .sort((a, b) => (order.get(a.slug) ?? 0) - (order.get(b.slug) ?? 0))
-      );
+      setStagedCity({
+        id: Number(data.id),
+        slug: String(data.slug),
+        name: String(data.name),
+        admin1_name: data.admin1_name as string | null,
+      });
     })();
     return () => {
       cancelled = true;
     };
-  }, [isOpen, urlCitySlugs]);
+  }, [isOpen, urlCitySlug]);
 
-  // Local-only search state for the agent typeahead
-  const [agentSearch, setAgentSearch] = useState('');
-  const [debouncedAgentSearch, setDebouncedAgentSearch] = useState('');
+  // Staged agent — single-select. Same URL hydration pattern as city.
+  const [stagedAgent, setStagedAgent] = useState<AgentOption | null>(null);
+  const agentIsActive = !!stagedAgent;
+  const urlAgentSlug = useMemo(() => {
+    const raw = searchParams.get(AGENT_PARAM) || '';
+    return raw.split(',').map((s) => s.trim()).filter(Boolean)[0] ?? null;
+  }, [searchParams]);
 
-  // ── Data fetching (only when the modal is open) ──────────────────────────
-  const {
-    data: agents,
-    isLoading: agentsLoading,
-    error: agentsError,
-  } = useQuery<Agent[], Error>({
-    queryKey: ['agents', 'filter-list'],
-    queryFn: async () => {
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!urlAgentSlug) {
+      setStagedAgent(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
       const { data, error } = await supabase
         .from('agents')
         .select('id, known_as, slug')
-        .not('slug', 'is', null)
-        .not('known_as', 'is', null)
-        .order('known_as', { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as Agent[];
-    },
-    enabled: isOpen,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-
-  // ── Debounce helpers ─────────────────────────────────────────────────────
-  const debouncedAgentSearchUpdater = useMemo(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    return (val: string) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => setDebouncedAgentSearch(val), 300);
+        .eq('slug', urlAgentSlug)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      setStagedAgent(data as AgentOption);
+    })();
+    return () => {
+      cancelled = true;
     };
-  }, []);
-
-  // Reset typeahead inputs when the modal opens/closes
-  useEffect(() => {
-    if (!isOpen) {
-      setAgentSearch('');
-      setDebouncedAgentSearch('');
-    }
-  }, [isOpen]);
-
-  const filteredAgents = useMemo(
-    () =>
-      agents?.filter((a) =>
-        a.known_as?.toLowerCase().includes(debouncedAgentSearch.toLowerCase())
-      ) ?? [],
-    [agents, debouncedAgentSearch]
-  );
-
-  // ── Duration label ───────────────────────────────────────────────────────
-  let durationText = `${duration.value} days`;
-  if (duration.value === 30) durationText = '1 month';
-  else if (duration.value > 30) durationText = `1 month ${duration.value - 30} days`;
+  }, [isOpen, urlAgentSlug]);
 
   // ── Apply / Clear all ────────────────────────────────────────────────────
   // Critical: every filter write must go through a SINGLE replaceParams so
@@ -182,32 +141,29 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   const handleApplyAll = () => {
     replaceParams((params) => {
       params.delete(LEGACY_LOCATION_PARAM);
-      if (stagedCities.length === 0) params.delete(CITY_PARAM);
-      else params.set(CITY_PARAM, stagedCities.map((c) => c.slug).join(','));
+      if (!stagedCity) params.delete(CITY_PARAM);
+      else params.set(CITY_PARAM, stagedCity.slug);
 
-      agent.mutate(params);
+      if (!stagedAgent) params.delete(AGENT_PARAM);
+      else params.set(AGENT_PARAM, stagedAgent.slug);
+
       month.mutate(params);
-
-      // Single-value filters: only commit when the user has actually moved them
-      // off the default (otherwise we'd add unnecessary URL noise).
-      if (duration.value !== DURATION_MAX) duration.mutate(params);
-      else duration.mutateClear(params);
-      if (price.value !== PRICE_MAX) price.mutate(params);
-      else price.mutateClear(params);
-      if (hotelDistance.makkah !== DISTANCE_MAX || hotelDistance.madinah !== DISTANCE_MAX)
-        hotelDistance.mutate(params);
-      else hotelDistance.mutateClear(params);
+      duration.mutate(params);
+      price.mutate(params);
+      makkahDistance.mutate(params);
+      madinahDistance.mutate(params);
     });
     onClose();
   };
 
   const handleClearAll = () => {
-    setStagedCities([]);
+    setStagedCity(null);
+    setStagedAgent(null);
     // Same batching reasoning as handleApplyAll — every clear in one call.
     replaceParams((params) => {
       params.delete(CITY_PARAM);
       params.delete(LEGACY_LOCATION_PARAM);
-      params.delete('agent_name');
+      params.delete(AGENT_PARAM);
       params.delete('month');
       params.delete('total_duration_days');
       params.delete('price');
@@ -215,41 +171,40 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
       params.delete('madinah_hotel_distance_m');
     });
     // Local hook state still needs to reset its in-memory selection so the
-    // checkboxes flip off visually on the next open. The URL write above is
+    // controls flip off visually on the next open. The URL write above is
     // the source of truth; these calls won't race because they're internal
     // setState (no router involvement).
-    agent.setSelected([]);
     month.setSelected([]);
-    duration.setValue(DURATION_MAX);
-    price.setValue(PRICE_MAX);
-    hotelDistance.setMakkah(DISTANCE_MAX);
-    hotelDistance.setMadinah(DISTANCE_MAX);
-    setAgentSearch('');
-    setDebouncedAgentSearch('');
+    duration.setSelected([]);
+    price.setSelected([]);
+    makkahDistance.setSelected([]);
+    madinahDistance.setSelected([]);
     onClose();
   };
 
   return (
     <Transition appear show={isOpen} as={Fragment}>
-      <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={onClose}>
-        <div className="relative min-h-screen text-center">
-          {/* Backdrop */}
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <Dialog.Overlay className="fixed inset-0 z-0 bg-black bg-opacity-40 dark:bg-opacity-60" />
-          </Transition.Child>
+      {/* `overflow-hidden` (not -y-auto) keeps the whole dialog pinned to the
+          viewport — the footer was scrolling off on small phones because the
+          dialog itself was the scrollable container. Now scrolling happens
+          inside the body section, so the footer stays visible on every device.
+          `h-[100dvh]` instead of `h-screen` respects the mobile URL bar so the
+          modal is never taller than the actual visible viewport. */}
+      <Dialog as="div" className="fixed inset-0 z-50 overflow-hidden" onClose={onClose}>
+        {/* Backdrop */}
+        <Transition.Child
+          as={Fragment}
+          enter="ease-out duration-300"
+          enterFrom="opacity-0"
+          enterTo="opacity-100"
+          leave="ease-in duration-200"
+          leaveFrom="opacity-100"
+          leaveTo="opacity-0"
+        >
+          <Dialog.Overlay className="fixed inset-0 z-0 bg-black bg-opacity-40 dark:bg-opacity-60" />
+        </Transition.Child>
 
-          <span className="inline-block h-screen align-middle" aria-hidden="true">
-            &#8203;
-          </span>
-
+        <div className="fixed inset-0 z-10 flex items-stretch justify-center p-2 sm:p-4 pointer-events-none">
           {/* Modal panel */}
           <Transition.Child
             as={Fragment}
@@ -260,7 +215,7 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
             leaveFrom="opacity-100 scale-100"
             leaveTo="opacity-0 scale-95"
           >
-            <div className="relative z-10 inline-flex flex-col align-middle py-4 px-2 h-screen w-full max-w-4xl">
+            <div className="relative w-full max-w-4xl h-[100dvh] max-h-[calc(100dvh-1rem)] sm:max-h-[calc(100dvh-2rem)] pointer-events-auto">
               <div className="flex flex-col w-full h-full text-left overflow-hidden rounded-2xl bg-white dark:bg-neutral-900 dark:border dark:border-neutral-700 dark:text-neutral-100 shadow-xl">
                 {/* Header */}
                 <div className="relative flex-shrink-0 px-6 py-4 border-b border-neutral-200 dark:border-neutral-800 text-center">
@@ -283,12 +238,13 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                       <SectionHeader
                         title="Location"
                         active={cityIsActive}
-                        onClear={() => setStagedCities([])}
+                        onClear={() => setStagedCity(null)}
                       />
-                      <CityMultiSelect
-                        selected={stagedCities}
-                        onChange={setStagedCities}
-                        listClassName="max-h-44 overflow-y-auto space-y-3 pr-1"
+                      <SingleCityAutocomplete
+                        selected={stagedCity}
+                        onChange={setStagedCity}
+                        listClassName="max-h-44 overflow-y-auto pr-1"
+                        placeholder="Search city..."
                       />
                     </section>
 
@@ -296,42 +252,16 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                     <section className="py-5 sm:py-4 sm:border-b sm:border-neutral-200 sm:dark:border-neutral-800">
                       <SectionHeader
                         title="Agent"
-                        active={agent.isActive}
-                        onClear={() => {
-                          agent.clear();
-                          setAgentSearch('');
-                          setDebouncedAgentSearch('');
-                        }}
+                        active={agentIsActive}
+                        onClear={() => setStagedAgent(null)}
                       />
-                      <input
-                        type="text"
+                      <SingleAgentAutocomplete
+                        selected={stagedAgent}
+                        onChange={setStagedAgent}
+                        enabled={isOpen}
+                        listClassName="max-h-44 overflow-y-auto pr-1"
                         placeholder="Search agent..."
-                        aria-label="Search agent"
-                        className="mb-3 px-3 py-2 border border-neutral-300 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 rounded-md w-full text-sm focus:outline-none focus:ring focus:border-primary-500"
-                        value={agentSearch}
-                        onChange={(e) => {
-                          setAgentSearch(e.target.value);
-                          debouncedAgentSearchUpdater(e.target.value);
-                        }}
                       />
-                      <div className="max-h-44 overflow-y-auto space-y-3 pr-1">
-                        {agentsLoading && <p className="text-sm text-neutral-500">Loading…</p>}
-                        {agentsError && (
-                          <p className="text-sm text-red-500">Error loading agents.</p>
-                        )}
-                        {!agentsLoading && !agentsError && filteredAgents.length === 0 && (
-                          <p className="text-sm text-neutral-500">No agents found.</p>
-                        )}
-                        {filteredAgents.map((item) => (
-                          <Checkbox
-                            key={item.id}
-                            name={item.known_as}
-                            label={item.known_as}
-                            defaultChecked={agent.selected.includes(item.slug)}
-                            onChange={(checked) => agent.toggle(checked, item.slug)}
-                          />
-                        ))}
-                      </div>
                     </section>
 
                     {/* Month */}
@@ -359,20 +289,21 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                       <SectionHeader
                         title="Package Duration"
                         active={duration.isActive}
-                        onClear={() => duration.clear()}
+                        onClear={() => duration.setSelected([])}
                       />
-                      <p className="text-sm text-primary-500 mb-4">{durationText}</p>
-                      <Slider
-                        min={1}
-                        max={DURATION_MAX}
-                        value={duration.value}
-                        onChange={(value) => {
-                          if (typeof value === 'number') duration.setValue(value);
-                        }}
-                      />
-                      <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                        <span>1 day</span>
-                        <span>60 days</span>
+                      <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                        {DURATION_RANGES.map((range) => {
+                          const id = rangeId(range);
+                          const selected = duration.isSelected(range);
+                          return (
+                            <RangePill
+                              key={id}
+                              label={formatDurationRangeLabel(range)}
+                              selected={selected}
+                              onClick={() => duration.toggle(!selected, range)}
+                            />
+                          );
+                        })}
                       </div>
                     </section>
 
@@ -381,21 +312,21 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                       <SectionHeader
                         title="Price per person"
                         active={price.isActive}
-                        onClear={() => price.clear()}
+                        onClear={() => price.setSelected([])}
                       />
-                      <p className="text-sm text-primary-500 mb-4">
-                        Up to ₹ {formatIndianPrice(price.value)}
-                      </p>
-                      <Slider
-                        min={30000}
-                        max={PRICE_MAX}
-                        step={5000}
-                        value={price.value}
-                        onChange={(val) => price.setValue(val as number)}
-                      />
-                      <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                        <span>₹ 30K</span>
-                        <span>₹ 3 Lakh</span>
+                      <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                        {PRICE_RANGES.map((range) => {
+                          const id = rangeId(range);
+                          const selected = price.isSelected(range);
+                          return (
+                            <RangePill
+                              key={id}
+                              label={formatPriceRangeLabel(range)}
+                              selected={selected}
+                              onClick={() => price.toggle(!selected, range)}
+                            />
+                          );
+                        })}
                       </div>
                     </section>
 
@@ -403,48 +334,54 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                     <section className="py-5 sm:py-4 sm:col-span-2 sm:border-t sm:border-neutral-200 sm:dark:border-neutral-800">
                       <SectionHeader
                         title="Hotel Distance"
-                        active={hotelDistance.isActive}
-                        onClear={() => hotelDistance.clear()}
+                        active={hotelDistanceActive}
+                        onClear={() => {
+                          makkahDistance.setSelected([]);
+                          madinahDistance.setSelected([]);
+                        }}
                       />
-                      <div className="space-y-5">
-                        <div>
-                          <p className="text-sm font-medium mb-1">
-                            Makkah{' '}
-                            <span className="text-primary-500 font-normal">
-                              {formatDistance(hotelDistance.makkah)}
-                            </span>
-                          </p>
-                          <Slider
-                            min={0}
-                            max={DISTANCE_MAX}
-                            step={50}
-                            value={hotelDistance.makkah}
-                            onChange={(val) => hotelDistance.setMakkah(val as number)}
-                          />
-                          <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                            <span>0 m</span>
-                            <span>5 km</span>
-                          </div>
+                      <div className="mb-3 flex justify-center">
+                        <div className="inline-flex rounded-full border border-neutral-200 dark:border-neutral-700 p-1">
+                          {(['makkah', 'madinah'] as const).map((tab) => {
+                            const label = tab === 'makkah' ? 'Makkah' : 'Madinah';
+                            const count =
+                              tab === 'makkah' ? makkahDistance.count : madinahDistance.count;
+                            const selected = distanceTab === tab;
+                            return (
+                              <button
+                                key={tab}
+                                type="button"
+                                onClick={() => setDistanceTab(tab)}
+                                className={`flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-full focus:outline-none transition-colors ${
+                                  selected
+                                    ? 'bg-primary-50 text-primary-700 border border-primary-500'
+                                    : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                                }`}
+                              >
+                                <span>{label}</span>
+                                {count > 0 && (
+                                  <span className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold bg-primary-500 text-white">
+                                    {count}
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
                         </div>
-                        <div>
-                          <p className="text-sm font-medium mb-1">
-                            Madina{' '}
-                            <span className="text-primary-500 font-normal">
-                              {formatDistance(hotelDistance.madinah)}
-                            </span>
-                          </p>
-                          <Slider
-                            min={0}
-                            max={DISTANCE_MAX}
-                            step={50}
-                            value={hotelDistance.madinah}
-                            onChange={(val) => hotelDistance.setMadinah(val as number)}
-                          />
-                          <div className="flex justify-between text-xs text-neutral-400 mt-1">
-                            <span>0 m</span>
-                            <span>5 km</span>
-                          </div>
-                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">
+                        {DISTANCE_RANGES.map((range) => {
+                          const id = rangeId(range);
+                          const selected = currentDistance.isSelected(range);
+                          return (
+                            <RangePill
+                              key={`${distanceTab}-${id}`}
+                              label={formatDistanceRangeLabel(range)}
+                              selected={selected}
+                              onClick={() => currentDistance.toggle(!selected, range)}
+                            />
+                          );
+                        })}
                       </div>
                     </section>
                   </div>

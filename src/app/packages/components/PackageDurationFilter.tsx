@@ -4,18 +4,13 @@ import React, { Fragment } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
-import Slider from 'rc-slider';
-import { useSingleValueFilter } from '@/hooks/filters/useSingleValueFilter';
+import { useMultiRangeFilter, rangeId } from '@/hooks/filters/useMultiRangeFilter';
+import { DURATION_RANGES, formatDurationRangeLabel } from './filterRanges';
+import RangePill from './RangePill';
 import XClearIcon from './XClearIcon';
 
-const DURATION_MAX = 60;
-
 const PackageDurationFilter = () => {
-  const filter = useSingleValueFilter('total_duration_days', DURATION_MAX);
-
-  let tripTimeText = `${filter.value} days`;
-  if (filter.value === 30) tripTimeText = '1 month';
-  else if (filter.value > 30) tripTimeText = `1 month ${filter.value - 30} days`;
+  const filter = useMultiRangeFilter('total_duration_days');
 
   return (
     <Popover className="relative">
@@ -31,6 +26,11 @@ const PackageDurationFilter = () => {
               }`}
           >
             <span>Package Duration</span>
+            {filter.count > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary-500 text-[10px] font-semibold text-white">
+                {filter.count}
+              </span>
+            )}
             {!filter.isActive ? (
               <i className="las la-angle-down ml-2"></i>
             ) : (
@@ -55,23 +55,19 @@ const PackageDurationFilter = () => {
           >
             <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0">
               <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
-                <div className="relative flex flex-col px-5 py-6 space-y-8">
-                  <div className="space-y-5">
-                    <div className="font-medium">
-                      Package Duration
-                      <span className="text-sm font-normal ml-1 text-primary-500">
-                        {tripTimeText}
-                      </span>
-                    </div>
-                    <Slider
-                      min={1}
-                      max={DURATION_MAX}
-                      value={filter.value}
-                      onChange={(value) => {
-                        if (typeof value === 'number') filter.setValue(value);
-                      }}
-                    />
-                  </div>
+                <div className="relative grid grid-cols-2 gap-2 px-5 py-6 max-h-72 overflow-y-auto">
+                  {DURATION_RANGES.map((range) => {
+                    const id = rangeId(range);
+                    const selected = filter.isSelected(range);
+                    return (
+                      <RangePill
+                        key={id}
+                        label={formatDurationRangeLabel(range)}
+                        selected={selected}
+                        onClick={() => filter.toggle(!selected, range)}
+                      />
+                    );
+                  })}
                 </div>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird

@@ -1,6 +1,6 @@
 export const WA_TEMPLATES = {
   BOOKING_CONFIRMATION: 'booking_confirmation',
-  BOOKING_CONFIRMED: 'booking_success',
+  BOOKING_CONFIRMED: 'booking_confirmed',
   BOOKING_CANCELLED_BY_USER: 'booking_cancelled_by_user',
   BOOKING_CANCELLED_BY_AGENT: 'booking_cancelled_by_agent',
 } as const;

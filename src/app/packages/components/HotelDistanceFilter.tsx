@@ -1,24 +1,46 @@
 'use client';
 
-import React, { Fragment } from 'react';
+import React, { Fragment, useState } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
-import Slider from 'rc-slider';
-import { useHotelDistanceFilter } from '@/hooks/filters/useHotelDistanceFilter';
+import { useMultiRangeFilter, rangeId } from '@/hooks/filters/useMultiRangeFilter';
+import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
+import { DISTANCE_RANGES, formatDistanceRangeLabel } from './filterRanges';
+import RangePill from './RangePill';
 import XClearIcon from './XClearIcon';
 
-const DISTANCE_MAX = 5000;
-
-function formatDistance(val: number) {
-  if (val < 1000) return `${val} m`;
-  const km = Math.floor(val / 1000);
-  const m = val % 1000;
-  return `${km} km${m > 0 ? ` ${m} m` : ''}`;
-}
+type City = 'makkah' | 'madinah';
 
 const HotelDistanceFilter = () => {
-  const filter = useHotelDistanceFilter(DISTANCE_MAX);
+  const { replaceParams } = useFilterUrlSync();
+  const makkah = useMultiRangeFilter('makkah_hotel_distance_m');
+  const madinah = useMultiRangeFilter('madinah_hotel_distance_m');
+  const [activeTab, setActiveTab] = useState<City>('makkah');
+
+  const isActive = makkah.isActive || madinah.isActive;
+  const totalCount = makkah.count + madinah.count;
+
+  // Batch both writes — sequential .apply() / .clear() calls would each fire
+  // router.replace on a stale searchParams snapshot, and only the last write
+  // would land. See MobileFiltersModal.handleApplyAll for the same pattern.
+  const clearAll = () => {
+    makkah.setSelected([]);
+    madinah.setSelected([]);
+    replaceParams((params) => {
+      makkah.mutateClear(params);
+      madinah.mutateClear(params);
+    });
+  };
+
+  const applyAll = () => {
+    replaceParams((params) => {
+      makkah.mutate(params);
+      madinah.mutate(params);
+    });
+  };
+
+  const current = activeTab === 'makkah' ? makkah : madinah;
 
   return (
     <Popover className="relative">
@@ -28,19 +50,24 @@ const HotelDistanceFilter = () => {
             className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border focus:outline-none
               ${open ? '!border-primary-500' : ''}
               ${
-                filter.isActive
+                isActive
                   ? '!border-primary-500 bg-primary-50 text-primary-700'
                   : 'border-neutral-300 dark:border-neutral-700'
               }`}
           >
             <span>Hotel Distance</span>
-            {!filter.isActive ? (
+            {totalCount > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary-500 text-[10px] font-semibold text-white">
+                {totalCount}
+              </span>
+            )}
+            {!isActive ? (
               <i className="las la-angle-down ml-2"></i>
             ) : (
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  filter.clear();
+                  clearAll();
                 }}
               >
                 <XClearIcon />
@@ -58,42 +85,54 @@ const HotelDistanceFilter = () => {
           >
             <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0">
               <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
-                <div className="relative flex flex-col px-5 py-6 space-y-8">
-                  <div className="space-y-5">
-                    <span className="font-medium">
-                      Makkah Hotel Distance{' '}
-                      <span className="text-sm font-normal ml-1 text-primary-500">
-                        {formatDistance(filter.makkah)}
-                      </span>
-                    </span>
-                    <Slider
-                      min={0}
-                      max={DISTANCE_MAX}
-                      step={50}
-                      value={filter.makkah}
-                      onChange={(val) => filter.setMakkah(val as number)}
-                    />
+                <div className="px-5 pt-5 flex justify-center">
+                  <div className="inline-flex rounded-full border border-neutral-200 dark:border-neutral-700 p-1">
+                    {(['makkah', 'madinah'] as const).map((tab) => {
+                      const label = tab === 'makkah' ? 'Makkah' : 'Madinah';
+                      const count = tab === 'makkah' ? makkah.count : madinah.count;
+                      const selected = activeTab === tab;
+                      return (
+                        <button
+                          key={tab}
+                          type="button"
+                          onClick={() => setActiveTab(tab)}
+                          className={`flex items-center gap-1.5 px-4 py-1.5 text-sm rounded-full focus:outline-none transition-colors ${
+                            selected
+                              ? 'bg-primary-50 text-primary-700 border border-primary-500'
+                              : 'text-neutral-700 dark:text-neutral-200 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                          }`}
+                        >
+                          <span>{label}</span>
+                          {count > 0 && (
+                            <span
+                              className="inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full text-[10px] font-semibold bg-primary-500 text-white"
+                            >
+                              {count}
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
                   </div>
-                  <div className="space-y-5">
-                    <span className="font-medium">
-                      Madina Hotel Distance{' '}
-                      <span className="text-sm font-normal ml-1 text-primary-500">
-                        {formatDistance(filter.madinah)}
-                      </span>
-                    </span>
-                    <Slider
-                      min={0}
-                      max={DISTANCE_MAX}
-                      step={50}
-                      value={filter.madinah}
-                      onChange={(val) => filter.setMadinah(val as number)}
-                    />
-                  </div>
+                </div>
+                <div className="relative grid grid-cols-2 gap-2 px-5 py-5 max-h-72 overflow-y-auto">
+                  {DISTANCE_RANGES.map((range) => {
+                    const id = rangeId(range);
+                    const selected = current.isSelected(range);
+                    return (
+                      <RangePill
+                        key={`${activeTab}-${id}`}
+                        label={formatDistanceRangeLabel(range)}
+                        selected={selected}
+                        onClick={() => current.toggle(!selected, range)}
+                      />
+                    );
+                  })}
                 </div>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird
                     onClick={() => {
-                      filter.clear();
+                      clearAll();
                       close();
                     }}
                     sizeClass="px-4 py-2 sm:px-5"
@@ -102,7 +141,7 @@ const HotelDistanceFilter = () => {
                   </ButtonThird>
                   <ButtonPrimary
                     onClick={() => {
-                      filter.apply();
+                      applyAll();
                       close();
                     }}
                     sizeClass="px-4 py-2 sm:px-5"

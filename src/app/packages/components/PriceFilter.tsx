@@ -4,22 +4,13 @@ import React, { Fragment } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
-import Slider from 'rc-slider';
-import { useSingleValueFilter } from '@/hooks/filters/useSingleValueFilter';
+import { useMultiRangeFilter, rangeId } from '@/hooks/filters/useMultiRangeFilter';
+import { PRICE_RANGES, formatPriceRangeLabel } from './filterRanges';
+import RangePill from './RangePill';
 import XClearIcon from './XClearIcon';
 
-const PRICE_MIN = 30000;
-const PRICE_MAX = 300000;
-
-function formatIndianPrice(val: number) {
-  if (val < 100000) return `${Math.round(val / 1000)}K`;
-  const lakhs = Math.floor(val / 100000);
-  const thousands = Math.round((val % 100000) / 1000);
-  return `${lakhs} Lakh${thousands > 0 ? ` ${thousands}K` : ''}`;
-}
-
 const PriceFilter = () => {
-  const filter = useSingleValueFilter('price', PRICE_MAX);
+  const filter = useMultiRangeFilter('price');
 
   return (
     <Popover className="relative">
@@ -35,6 +26,11 @@ const PriceFilter = () => {
               }`}
           >
             <span>Price</span>
+            {filter.count > 0 && (
+              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary-500 text-[10px] font-semibold text-white">
+                {filter.count}
+              </span>
+            )}
             {!filter.isActive ? (
               <i className="las la-angle-down ml-2"></i>
             ) : (
@@ -59,22 +55,19 @@ const PriceFilter = () => {
           >
             <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0">
               <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
-                <div className="relative flex flex-col px-5 py-6 space-y-8">
-                  <div className="space-y-5">
-                    <span className="font-medium">
-                      Price per person{' '}
-                      <span className="text-sm font-normal ml-1 text-primary-500">
-                        ₹ {formatIndianPrice(filter.value)}
-                      </span>
-                    </span>
-                    <Slider
-                      min={PRICE_MIN}
-                      max={PRICE_MAX}
-                      step={5000}
-                      value={filter.value}
-                      onChange={(val) => filter.setValue(val as number)}
-                    />
-                  </div>
+                <div className="relative grid grid-cols-2 gap-2 px-5 py-6 max-h-72 overflow-y-auto">
+                  {PRICE_RANGES.map((range) => {
+                    const id = rangeId(range);
+                    const selected = filter.isSelected(range);
+                    return (
+                      <RangePill
+                        key={id}
+                        label={formatPriceRangeLabel(range)}
+                        selected={selected}
+                        onClick={() => filter.toggle(!selected, range)}
+                      />
+                    );
+                  })}
                 </div>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird

@@ -1,59 +1,60 @@
 'use client';
 
-import React, { Fragment, useState, useMemo } from 'react';
+import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Popover, Transition } from '@headlessui/react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
-import Checkbox from '@/shared/Checkbox';
-import { useQuery } from '@tanstack/react-query';
+import SingleAgentAutocomplete, { AgentOption } from './SingleAgentAutocomplete';
+import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
 import { supabase } from '@/utils/supabaseClient';
-import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
 import XClearIcon from './XClearIcon';
 
-type Agent = { id: string; known_as: string; slug: string };
+const AGENT_PARAM = 'agent_name';
 
 const AgentFilter = () => {
-  const filter = useMultiSelectFilter('agent_name');
-  const [agentSearch, setAgentSearch] = useState('');
-  const [debouncedAgentSearch, setDebouncedAgentSearch] = useState('');
+  const { searchParams, replaceParams } = useFilterUrlSync();
+  const [stagedAgent, setStagedAgent] = useState<AgentOption | null>(null);
   const [hasOpened, setHasOpened] = useState(false);
 
-  const {
-    data: agents,
-    isLoading: agentsLoading,
-    error: agentsError,
-  } = useQuery<Agent[], Error>({
-    queryKey: ['agents', 'filter-list'],
-    queryFn: async () => {
+  // Take the FIRST slug only — older multi-select URLs may carry a CSV.
+  const urlSlug = useMemo(() => {
+    const raw = searchParams.get(AGENT_PARAM) || '';
+    return raw.split(',').map((s) => s.trim()).filter(Boolean)[0] ?? null;
+  }, [searchParams]);
+
+  useEffect(() => {
+    if (!urlSlug) {
+      setStagedAgent(null);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
       const { data, error } = await supabase
         .from('agents')
         .select('id, known_as, slug')
-        .not('slug', 'is', null)
-        .not('known_as', 'is', null)
-        .order('known_as', { ascending: true });
-      if (error) throw error;
-      return (data ?? []) as Agent[];
-    },
-    enabled: hasOpened,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 10 * 60 * 1000,
-  });
-
-  const debouncedAgentSearchUpdater = useMemo(() => {
-    let timer: ReturnType<typeof setTimeout>;
-    return (val: string) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => setDebouncedAgentSearch(val), 300);
+        .eq('slug', urlSlug)
+        .maybeSingle();
+      if (cancelled || error || !data) return;
+      setStagedAgent(data as AgentOption);
+    })();
+    return () => {
+      cancelled = true;
     };
-  }, []);
+  }, [urlSlug]);
 
-  const filteredAgents = useMemo(
-    () =>
-      agents?.filter((a) =>
-        a.known_as?.toLowerCase().includes(debouncedAgentSearch.toLowerCase())
-      ) ?? [],
-    [agents, debouncedAgentSearch]
-  );
+  const apply = useCallback(() => {
+    replaceParams((params) => {
+      if (!stagedAgent) params.delete(AGENT_PARAM);
+      else params.set(AGENT_PARAM, stagedAgent.slug);
+    });
+  }, [stagedAgent, replaceParams]);
+
+  const clearAll = useCallback(() => {
+    setStagedAgent(null);
+    replaceParams((params) => params.delete(AGENT_PARAM));
+  }, [replaceParams]);
+
+  const isActive = !!urlSlug;
 
   return (
     <Popover className="relative">
@@ -63,24 +64,17 @@ const AgentFilter = () => {
             onClick={() => setHasOpened(true)}
             className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 focus:outline-none
              ${open ? '!border-primary-500 ' : ''}
-              ${filter.isActive ? '!border-primary-500 bg-primary-50' : ''}
+              ${isActive ? '!border-primary-500 bg-primary-50' : ''}
               `}
           >
             <span>Agent</span>
-            {filter.count > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary-500 text-[10px] font-semibold text-white">
-                {filter.count}
-              </span>
-            )}
-            {!filter.isActive ? (
+            {!isActive ? (
               <i className="las la-angle-down ml-2"></i>
             ) : (
               <span
                 onClick={(e) => {
                   e.stopPropagation();
-                  filter.clear();
-                  setAgentSearch('');
-                  setDebouncedAgentSearch('');
+                  clearAll();
                 }}
               >
                 <XClearIcon />
@@ -98,47 +92,18 @@ const AgentFilter = () => {
           >
             <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
               <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
-                <div className="sticky top-0 z-10 bg-white dark:bg-neutral-900 px-5 pt-6 pb-2">
-                  <input
-                    type="text"
+                <div className="px-5 pt-5">
+                  <SingleAgentAutocomplete
+                    selected={stagedAgent}
+                    onChange={setStagedAgent}
+                    enabled={hasOpened}
                     placeholder="Search agent..."
-                    aria-label="Search agent"
-                    className="mb-3 px-3 py-2 border border-neutral-300 rounded-md w-full focus:outline-none focus:ring focus:border-primary-500"
-                    value={agentSearch}
-                    onChange={(e) => {
-                      setAgentSearch(e.target.value);
-                      debouncedAgentSearchUpdater(e.target.value);
-                    }}
                   />
-                </div>
-                <div className="relative flex flex-col px-5 py-2 space-y-3 max-h-72 overflow-y-auto">
-                  {agentsLoading && (
-                    <div className="text-sm text-neutral-500">Loading agents...</div>
-                  )}
-                  {agentsError && (
-                    <div className="text-sm text-red-500">
-                      Error loading agents. Please try again.
-                    </div>
-                  )}
-                  {!agentsLoading && !agentsError && filteredAgents.length === 0 && (
-                    <div className="text-sm text-neutral-500">No agents found.</div>
-                  )}
-                  {filteredAgents.map((item) => (
-                    <Checkbox
-                      key={item.id}
-                      name={item.known_as}
-                      label={item.known_as}
-                      defaultChecked={filter.selected.includes(item.slug)}
-                      onChange={(checked) => filter.toggle(checked, item.slug)}
-                    />
-                  ))}
                 </div>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird
                     onClick={() => {
-                      filter.clear();
-                      setAgentSearch('');
-                      setDebouncedAgentSearch('');
+                      clearAll();
                       close();
                     }}
                     sizeClass="px-4 py-2 sm:px-5"
@@ -147,7 +112,7 @@ const AgentFilter = () => {
                   </ButtonThird>
                   <ButtonPrimary
                     onClick={() => {
-                      filter.apply();
+                      apply();
                       close();
                     }}
                     sizeClass="px-4 py-2 sm:px-5"
