@@ -11,6 +11,7 @@ import GovtVerifiedBadge from '@/components/GovtVerifiedBadge';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 import ShareButton from '@/shared/ShareButton';
 import { sanitizePackageTags, packageTagTone } from '@/constants/packageTags';
+import { formatPackageLocation } from '@/lib/packageLocation';
 
 // Neutral 2x2 gray JPEG used as fallback blur for packages without a stored LQIP
 const FALLBACK_BLUR_DATA_URL =
@@ -68,13 +69,12 @@ const Packages: FC<PackagesProps> = ({
     tags,
   } = data;
 
-  const agentLocationLabel = [
-    package_location || null,
-    package_admin1_name || agent_state || null,
-    (!package_admin1_name && !agent_state && agent_country) ? agent_country : null,
-  ]
-    .filter(Boolean)
-    .join(', ');
+  const agentLocationLabel = formatPackageLocation({
+    package_location,
+    package_admin1_name,
+    agent_state,
+    agent_country,
+  });
 
   const cardTags = sanitizePackageTags(tags);
 
@@ -261,19 +261,25 @@ const Packages: FC<PackagesProps> = ({
 
           <div className="mt-auto pt-3 border-t border-neutral-200 dark:border-neutral-700 flex items-end justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <Avatar
-                hasChecked
-                sizeClass="h-9 w-9"
-                radius="rounded-full"
-                imgUrl={
-                  getOptimizedImageUrl(profileImage, {
-                    width: 80,
-                    height: 80,
-                    resize: 'cover',
-                    quality: 70,
-                  }) || undefined
-                }
-              />
+              <Link
+                href={agentHref}
+                aria-label={displayAgentName}
+                className="relative z-20 flex-shrink-0"
+              >
+                <Avatar
+                  hasChecked
+                  sizeClass="h-9 w-9"
+                  radius="rounded-full"
+                  imgUrl={
+                    getOptimizedImageUrl(profileImage, {
+                      width: 80,
+                      height: 80,
+                      resize: 'cover',
+                      quality: 70,
+                    }) || undefined
+                  }
+                />
+              </Link>
               <div className="min-w-0">
                 <Link
                   href={agentHref}

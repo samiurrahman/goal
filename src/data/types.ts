@@ -136,6 +136,9 @@ export interface PackageDetails {
   arrival_city: string;
   arrival_date: string;
   package_location: string;
+  package_admin1_name?: string | null;
+  agent_state?: string | null;
+  agent_country?: string | null;
   details: {
     id: string;
     created_at: string;

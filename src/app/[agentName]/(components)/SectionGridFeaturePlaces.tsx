@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import type { Package, Agent } from '@/data/types';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
+import { formatPackageLocation } from '@/lib/packageLocation';
 
 const FALLBACK_BLUR_DATA_URL =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
@@ -178,13 +179,7 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
           pricePerPerson: sharingPeople
             ? `/ person · ${sharingPeople} sharing`
             : '/ person',
-          agentLocation: [
-            pkg.package_location || null,
-            pkg.package_admin1_name || pkg.agent_state || null,
-            (!pkg.package_admin1_name && !pkg.agent_state && pkg.agent_country) ? pkg.agent_country : null,
-          ]
-            .filter(Boolean)
-            .join(', '),
+          agentLocation: formatPackageLocation(pkg),
         } satisfies CardData;
       });
   }, [packages, agent]);

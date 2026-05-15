@@ -172,6 +172,14 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     totalDurationDays: package_details?.total_duration_days ?? null,
     sharingPeople: sharingPeopleForMeta,
     packageLocation: package_details?.package_location ?? 'Unknown Location',
+    packageAdmin1Name:
+      (package_details as { package_admin1_name?: string | null })?.package_admin1_name ?? null,
+    agentState:
+      (package_details as { agent_state?: string | null })?.agent_state ?? agentData?.state ?? null,
+    agentCountry:
+      (package_details as { agent_country?: string | null })?.agent_country ??
+      agentData?.country ??
+      null,
     makkahHotelName: package_details?.makkah_hotel_name ?? '',
     makkahHotelDistanceM: package_details?.makkah_hotel_distance_m ?? null,
     madinahHotelName: package_details?.madinah_hotel_name ?? '',

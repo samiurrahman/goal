@@ -15,6 +15,7 @@ import type { PackageDetails } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 import { sendWhatsApp, WA_TEMPLATES } from '@/lib/whatsapp';
 import NcInputNumber from '@/components/NcInputNumber';
+import { formatPackageLocation } from '@/lib/packageLocation';
 
 export interface CheckOutPagePageMainProps {
   className?: string;
@@ -649,7 +650,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
               <div className="flex justify-between gap-4">
                 <span>Location</span>
                 <span className="text-right text-neutral-900 dark:text-neutral-100">
-                  {packageDetails?.package_location ?? 'TBD'}
+                  {formatPackageLocation(packageDetails) ||
+                    packageDetails?.package_location ||
+                    'TBD'}
                 </span>
               </div>
             </div>

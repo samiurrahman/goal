@@ -8,6 +8,7 @@ import ShareButton from '@/shared/ShareButton';
 import { MakkahIcon, MadinaIcon } from '@/components/icons/icons';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 import { sanitizePackageTags, packageTagTone } from '@/constants/packageTags';
+import { formatPackageLocation } from '@/lib/packageLocation';
 
 const FALLBACK_BLUR_DATA_URL =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
@@ -29,6 +30,9 @@ export interface PackageMetaProps {
   totalDurationDays?: number | null;
   sharingPeople?: number;
   packageLocation?: string;
+  packageAdmin1Name?: string | null;
+  agentState?: string | null;
+  agentCountry?: string | null;
   makkahHotelName?: string;
   makkahHotelDistanceM?: number | null;
   madinahHotelName?: string;
@@ -53,6 +57,9 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
   totalDurationDays,
   sharingPeople,
   packageLocation,
+  packageAdmin1Name,
+  agentState,
+  agentCountry,
   makkahHotelName,
   makkahHotelDistanceM,
   madinahHotelName,
@@ -70,6 +77,13 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
   tags,
 }) => {
   const sanitizedTags = sanitizePackageTags(tags);
+  const locationLabel =
+    formatPackageLocation({
+      package_location: packageLocation,
+      package_admin1_name: packageAdmin1Name,
+      agent_state: agentState,
+      agent_country: agentCountry,
+    }) || packageLocation;
   return (
     <article className="nc-PackageMeta group relative bg-white dark:bg-neutral-900 border border-neutral-200/80 dark:border-neutral-700 rounded-2xl overflow-hidden shadow-sm">
       <div className="flex flex-col">
@@ -117,6 +131,26 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
             {title}
           </h1>
 
+          {sanitizedTags.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5">
+              {sanitizedTags.map((tag) => {
+                const tone = packageTagTone(tag);
+                return (
+                  <span
+                    key={tag}
+                    className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold leading-none ${
+                      tone === 'popular'
+                        ? 'bg-amber-100 text-amber-800'
+                        : 'bg-primary-50 text-primary-700'
+                    }`}
+                  >
+                    {tag}
+                  </span>
+                );
+              })}
+            </div>
+          ) : null}
+
           {/* Quick meta pills */}
           <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-sm text-neutral-600 dark:text-neutral-300">
             {totalDurationDays != null && (
@@ -131,10 +165,10 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
                 {sharingPeople} Sharing
               </span>
             )}
-            {packageLocation && (
+            {locationLabel && (
               <span className="inline-flex items-center gap-1.5">
                 <i className="las la-map-marker text-base"></i>
-                {packageLocation}
+                {locationLabel}
               </span>
             )}
           </div>
@@ -187,19 +221,25 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
 
           {/* Agent footer */}
           <div className="mt-auto pt-4 border-t border-neutral-200 dark:border-neutral-700 flex items-center gap-3">
-            <Avatar
-              hasChecked
-              sizeClass="h-10 w-10"
-              radius="rounded-full"
-              imgUrl={
-                getOptimizedImageUrl(agentProfileImage, {
-                  width: 96,
-                  height: 96,
-                  resize: 'cover',
-                  quality: 75,
-                }) || undefined
-              }
-            />
+            <Link
+              href={`/${agentSlug}`}
+              aria-label={agentDisplayName}
+              className="flex-shrink-0"
+            >
+              <Avatar
+                hasChecked
+                sizeClass="h-10 w-10"
+                radius="rounded-full"
+                imgUrl={
+                  getOptimizedImageUrl(agentProfileImage, {
+                    width: 96,
+                    height: 96,
+                    resize: 'cover',
+                    quality: 75,
+                  }) || undefined
+                }
+              />
+            </Link>
             <div className="min-w-0 flex-grow">
               <Link
                 href={`/${agentSlug}`}

@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import type { PackageDetails } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
+import { formatPackageLocation } from '@/lib/packageLocation';
 
 type GuestForm = {
   title: 'Mr' | 'Mrs' | 'Ms';
@@ -230,7 +231,9 @@ const CheckoutOrderPage: FC = () => {
                 <div className="flex text-neutral-6000 dark:text-neutral-300">
                   <span className="flex-1">Location</span>
                   <span className="flex-1 font-medium text-neutral-900 dark:text-neutral-100">
-                    {packageDetails?.package_location ?? 'TBD'}
+                    {formatPackageLocation(packageDetails) ||
+                      packageDetails?.package_location ||
+                      'TBD'}
                   </span>
                 </div>
                 <div className="flex text-neutral-6000 dark:text-neutral-300">

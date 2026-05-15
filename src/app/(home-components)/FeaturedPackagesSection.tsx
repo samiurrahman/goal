@@ -6,6 +6,7 @@ import Image from 'next/image';
 import { Package } from '@/data/types';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 import { sanitizePackageTags, packageTagTone } from '@/constants/packageTags';
+import { formatPackageLocation } from '@/lib/packageLocation';
 
 const FALLBACK_BLUR_DATA_URL =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
@@ -163,13 +164,7 @@ const PackageCard: FC<{ pkg: Package; priority?: boolean }> = ({ pkg, priority =
   const rating = Number(pkg.agent_rating_avg ?? 0);
   const reviews = Number(pkg.agent_rating_total ?? 0);
   const agentName = (pkg.agent_known_as || pkg.agent_name || 'Agent').trim();
-  const agentLocation = [
-    pkg.package_location || null,
-    pkg.package_admin1_name || pkg.agent_state || null,
-    (!pkg.package_admin1_name && !pkg.agent_state && pkg.agent_country) ? pkg.agent_country : null,
-  ]
-    .filter(Boolean)
-    .join(', ') || null;
+  const agentLocation = formatPackageLocation(pkg) || null;
   const nights =
     typeof pkg.total_duration_days === 'number' && pkg.total_duration_days > 0
       ? `${pkg.total_duration_days} nights`

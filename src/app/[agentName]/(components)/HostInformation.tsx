@@ -49,20 +49,22 @@ const HostInformation: React.FC<HostInformationProps> = ({
       <h2 className="text-xl font-normal text-gray-900">Host Information</h2>
       <div className="w-14 border-b border-neutral-200 dark:border-neutral-700"></div>
       <div className="flex items-center space-x-4">
-        <Avatar
-          hasChecked
-          hasCheckedClass="w-4 h-4 -top-0.5 right-0.5"
-          sizeClass="h-14 w-14"
-          radius="rounded-full"
-          imgUrl={
-            getOptimizedImageUrl(profileImage, {
-              width: 120,
-              height: 120,
-              resize: 'cover',
-              quality: 75,
-            }) || undefined
-          }
-        />
+        <Link href={normalizedProfileHref} aria-label={name} className="flex-shrink-0">
+          <Avatar
+            hasChecked
+            hasCheckedClass="w-4 h-4 -top-0.5 right-0.5"
+            sizeClass="h-14 w-14"
+            radius="rounded-full"
+            imgUrl={
+              getOptimizedImageUrl(profileImage, {
+                width: 120,
+                height: 120,
+                resize: 'cover',
+                quality: 75,
+              }) || undefined
+            }
+          />
+        </Link>
         <div>
           <Link href={normalizedProfileHref} className="block text-md font-medium hover:underline">
             {name}
