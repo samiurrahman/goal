@@ -7,7 +7,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Static routes
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: baseUrl, lastModified: new Date() },
-    { url: `${baseUrl}/packages`, lastModified: new Date() },
     { url: `${baseUrl}/about`, lastModified: new Date() },
     { url: `${baseUrl}/contact`, lastModified: new Date() },
     { url: `${baseUrl}/privacy`, lastModified: new Date() },
@@ -17,58 +16,66 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/signup`, lastModified: new Date() },
   ];
 
-  // Fetch all packages and agents from Supabase
-  let dynamicRoutes: MetadataRoute.Sitemap = [];
+  const dynamicRoutes: MetadataRoute.Sitemap = [];
 
+  // Agents → /{slug}
   try {
-    // Agents for /agentName
-    const { data: agents, error: agentsError } = await supabase
+    const { data: agents, error } = await supabase
       .from('agents')
-      .select('slug, auth_user_id, created_at');
+      .select('slug, created_at')
+      .not('slug', 'is', null);
 
-    if (!agentsError && agents) {
-      const agentRoutes = agents
-        .filter((agent) => agent.slug)
-        .map((agent) => ({
+    if (error) {
+      console.warn('[sitemap] agents query failed:', error.message);
+    } else if (agents) {
+      console.log(`[sitemap] agents fetched: ${agents.length}`);
+      for (const agent of agents) {
+        if (!agent.slug) continue;
+        dynamicRoutes.push({
           url: `${baseUrl}/${agent.slug}`,
           lastModified: new Date(agent.created_at || Date.now()),
-        }));
-      dynamicRoutes = [...dynamicRoutes, ...agentRoutes];
-
-      // Build agent_id (auth_user_id) → slug map for package URLs
-      const agentSlugByAuthId = new Map<string, string>();
-      for (const agent of agents) {
-        if (agent.auth_user_id && agent.slug) {
-          agentSlugByAuthId.set(agent.auth_user_id, agent.slug);
-        }
-      }
-
-      // Packages for /agentName/slug — only published packages with a slug,
-      // and only those whose agent has a resolvable slug.
-      const { data: packages, error: packagesError } = await supabase
-        .from('packages')
-        .select('slug, agent_id, created_at, published');
-
-      if (!packagesError && packages) {
-        const packageRoutes = packages
-          .filter(
-            (pkg) =>
-              pkg.published !== false && pkg.slug && pkg.agent_id && agentSlugByAuthId.has(pkg.agent_id)
-          )
-          .map((pkg) => ({
-            url: `${baseUrl}/${agentSlugByAuthId.get(pkg.agent_id as string)}/${pkg.slug}`,
-            lastModified: new Date(pkg.created_at || Date.now()),
-          }));
-        dynamicRoutes = [...dynamicRoutes, ...packageRoutes];
+        });
       }
     }
-  } catch (error) {
-    console.warn(
-      'Warning: Could not fetch dynamic routes for sitemap:',
-      error instanceof Error ? error.message : String(error)
-    );
-    // Sitemap will continue with static routes only
+  } catch (e) {
+    console.warn('[sitemap] agents fetch threw:', e instanceof Error ? e.message : String(e));
   }
 
+  // Packages → /{agentSlug}/{packageSlug}
+  // Use the packages_with_agent view which joins packages → agents on
+  // packages.agent_id = agents.auth_user_id (per 20260512_normalize_package_agent_fields.sql).
+  // The view doesn't expose agents.slug, so we query both and join in memory —
+  // but in a single round-trip via PostgREST's foreign-table embed.
+  try {
+    const { data: packages, error } = await supabase
+      .from('packages')
+      .select('slug, created_at, published, agents:agent_id(slug)')
+      .not('slug', 'is', null)
+      .or('published.is.null,published.eq.true');
+
+    if (error) {
+      console.warn('[sitemap] packages query failed:', error.message);
+    } else if (packages) {
+      console.log(`[sitemap] packages fetched: ${packages.length}`);
+      for (const pkg of packages as Array<{
+        slug: string | null;
+        created_at: string | null;
+        agents: { slug: string | null } | { slug: string | null }[] | null;
+      }>) {
+        if (!pkg.slug) continue;
+        const agent = Array.isArray(pkg.agents) ? pkg.agents[0] : pkg.agents;
+        const agentSlug = agent?.slug;
+        if (!agentSlug) continue;
+        dynamicRoutes.push({
+          url: `${baseUrl}/${agentSlug}/${pkg.slug}`,
+          lastModified: new Date(pkg.created_at || Date.now()),
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('[sitemap] packages fetch threw:', e instanceof Error ? e.message : String(e));
+  }
+
+  console.log(`[sitemap] total dynamic routes: ${dynamicRoutes.length}`);
   return [...staticRoutes, ...dynamicRoutes];
 }
