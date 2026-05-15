@@ -11,11 +11,10 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { SortValue } from '@/lib/queries/packages';
 
 const SORT_OPTIONS: { value: SortValue; label: string }[] = [
-  { value: '', label: 'Recommended' },
+  { value: '', label: 'Top rated' },
   { value: 'newest', label: 'Newest First' },
   { value: 'price-asc', label: 'Price: Low to High' },
   { value: 'price-desc', label: 'Price: High to Low' },
-  { value: 'rating', label: 'Top rated' },
 ];
 
 const SortByFilter = () => {
@@ -24,7 +23,7 @@ const SortByFilter = () => {
   const currentSort = (searchParams.get('sort') || '') as SortValue;
 
   const currentLabel =
-    SORT_OPTIONS.find((opt) => opt.value === currentSort)?.label || 'Recommended';
+    SORT_OPTIONS.find((opt) => opt.value === currentSort)?.label || 'Top rated';
 
   const handleSelect = (value: SortValue) => {
     const params = new URLSearchParams(searchParams.toString());

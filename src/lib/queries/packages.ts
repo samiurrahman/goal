@@ -742,14 +742,12 @@ export async function fetchPackages(args: {
     case 'price-desc':
       query = query.order('price_per_person', { ascending: false, nullsFirst: false });
       break;
-    case 'rating':
-      query = query.order('agent_rating_avg', { ascending: false, nullsFirst: false });
-      break;
     case 'newest':
       query = query.order('created_at', { ascending: false, nullsFirst: false });
       break;
+    case 'rating':
     default:
-      query = query.order('departure_date', { ascending: true, nullsFirst: false });
+      query = query.order('agent_rating_avg', { ascending: false, nullsFirst: false });
       break;
   }
 
