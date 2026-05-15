@@ -6,7 +6,7 @@ import { removeAccessToken } from '@/utils/authToken';
 import Input from '@/shared/Input';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Link from 'next/link';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const MIN_PASSWORD_LENGTH = 8;
 
@@ -211,7 +211,6 @@ const PageResetPassword = () => {
           ) : null}
         </div>
       </div>
-      <Toaster position="top-center" />
     </div>
   );
 };

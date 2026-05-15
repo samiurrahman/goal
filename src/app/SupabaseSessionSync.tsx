@@ -150,14 +150,29 @@ export default function SupabaseSessionSync() {
       const pictureFromMeta = meta.picture || meta.avatar_url || '';
 
       // Read userType from URL (set by signup page before OAuth redirect).
+      // Fall back to localStorage in case the param was stripped during the
+      // OAuth round-trip — without this, agents can silently land as users.
       const urlParams = new URLSearchParams(window.location.search);
-      const userTypeParam = urlParams.get('userType');
+      let userTypeParam = urlParams.get('userType');
       if (userTypeParam) {
         urlParams.delete('userType');
         const newUrl = urlParams.toString()
           ? `${window.location.pathname}?${urlParams.toString()}`
           : window.location.pathname;
         window.history.replaceState({}, '', newUrl);
+      } else {
+        try {
+          userTypeParam = window.localStorage.getItem('pendingUserType');
+        } catch {
+          /* private mode or sandboxed — userTypeParam stays null */
+        }
+      }
+      // Consume the pending intent now that OAuth has resolved, so a stale
+      // value can't leak into a future signup.
+      try {
+        window.localStorage.removeItem('pendingUserType');
+      } catch {
+        /* ignore */
       }
 
       // Look up existing user_details row
