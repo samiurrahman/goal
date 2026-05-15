@@ -10,8 +10,8 @@ export interface PageContactProps {}
 
 const info = [
   {
-    title: '🗺 plot 28, Jafar Nagar, Nagpur, India',
-    desc: 'Photo booth tattooed prism, portland taiyaki hoodie neutra typewriter',
+    title: '🗺 Address',
+    desc: 'Plot 28, Jafar Nagar, Nagpur, India',
   },
   {
     title: '💌 EMAIL',
