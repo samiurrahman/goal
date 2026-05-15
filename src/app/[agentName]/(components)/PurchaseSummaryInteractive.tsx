@@ -237,7 +237,7 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
             />
           </svg>
           <span>
-            HajjScanner <span className="font-semibold">never holds your money</span>. You pay the
+            Searchumrah <span className="font-semibold">never holds your money</span>. You pay the
             agent directly.
           </span>
         </li>

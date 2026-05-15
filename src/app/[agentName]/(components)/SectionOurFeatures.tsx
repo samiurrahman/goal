@@ -62,7 +62,7 @@ const SectionOurFeatures: FC<SectionOurFeaturesProps> = ({ className = '', agent
         </h2>
       ) : null}
       <p className="m-0 mb-6 break-words text-sm leading-[1.55] text-neutral-600">
-        The commitments behind every package we publish on HajjScanner.
+        The commitments behind every package we publish on Searchumrah.
       </p>
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-3">

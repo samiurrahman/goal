@@ -17,7 +17,7 @@ import { useCitySearch } from '@/hooks/useCitySearch';
 import { useUserLocation } from '@/hooks/useUserLocation';
 import { stripDiacritics } from '@/components/CityMultiSelect';
 
-// Desktop search pill that matches the HajjScanner design system wireframe:
+// Desktop search pill that matches the Searchumrah design system wireframe:
 //   - white rounded-full bar with column dividers
 //   - small uppercase label + value per field
 //   - circular primary search button on the right

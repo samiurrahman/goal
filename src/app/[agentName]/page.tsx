@@ -2,6 +2,7 @@ import React from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import type { Agent, Package, AgentReview } from '@/data/types';
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
@@ -232,6 +233,10 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
   const { agentName } = params;
   const agentDetails = await getAgentBySlug(agentName);
 
+  if (!agentDetails) {
+    notFound();
+  }
+
   const agentUrl = `${SITE_URL}/${agentDetails?.slug || agentName}`;
   const agentRatingPointEarly = Number(agentDetails?.rating_avg ?? 0);
   const agentReviewCountEarly = Number(agentDetails?.rating_total ?? 0);
@@ -314,7 +319,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
   const listingCount = Array.isArray(agentPackages) ? agentPackages.length : 0;
   const agentRatingPoint = Number(agentDetails?.rating_avg ?? 0);
   const agentReviewCount = Number(agentDetails?.rating_total ?? 0);
-  const agentRecord = (agentDetails || {}) as Record<string, unknown>;
+  const agentRecord = (agentDetails || {}) as unknown as Record<string, unknown>;
   const experienceFieldCandidates = ['experience_years', 'years_of_experience', 'experience'];
   const experienceField =
     experienceFieldCandidates.find((field) => field in agentRecord) || undefined;
@@ -814,7 +819,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
 
               <div className="rounded-[20px] border border-primary-100 bg-primary-50 p-[22px]">
                 <h3 className="m-0 mb-4 text-[13px] font-semibold uppercase tracking-[0.1em] text-primary-700">
-                  No payment on HajjScanner
+                  No payment on Searchumrah
                 </h3>
                 <p className="m-0 text-sm leading-[1.55] text-neutral-700">
                   All bookings are made directly with the agent. We never resell your contact

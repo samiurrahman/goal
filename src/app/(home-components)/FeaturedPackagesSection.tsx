@@ -13,6 +13,22 @@ const FALLBACK_BLUR_DATA_URL =
 
 const ALL_KEY = '__all__';
 
+// Fixed list of top Indian cities surfaced as filter chips. Always rendered,
+// regardless of whether any package matches — so the chip bar shape stays
+// stable as listings churn. Match is case-insensitive against package_location.
+const TOP_INDIAN_CITIES = [
+  'Mumbai',
+  'Delhi',
+  'Bangalore',
+  'Hyderabad',
+  'Ahmedabad',
+  'Chennai',
+  'Kolkata',
+  'Pune',
+  'Lucknow',
+  'Jaipur',
+];
+
 export interface FeaturedPackagesSectionProps {
   packages: Package[];
 }
@@ -20,21 +36,25 @@ export interface FeaturedPackagesSectionProps {
 const FeaturedPackagesSection: FC<FeaturedPackagesSectionProps> = ({ packages }) => {
   const [activeCity, setActiveCity] = useState<string>(ALL_KEY);
 
+  // Group by where the package/agent is based (package_location), not where
+  // the flight departs from. An Akola agent flying pilgrims via Mumbai should
+  // surface under "Akola" — pilgrims browse by who they're booking with.
   const cityCounts = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const pkg of packages) {
-      const city = (pkg.departure_city || '').trim();
-      if (!city) continue;
-      counts.set(city, (counts.get(city) || 0) + 1);
-    }
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([city, count]) => ({ city, count }));
+    return TOP_INDIAN_CITIES.map((city) => {
+      const target = city.toLowerCase();
+      const count = packages.filter(
+        (pkg) => (pkg.package_location || '').trim().toLowerCase() === target
+      ).length;
+      return { city, count };
+    });
   }, [packages]);
 
   const visiblePackages = useMemo(() => {
     if (activeCity === ALL_KEY) return packages;
-    return packages.filter((pkg) => (pkg.departure_city || '').trim() === activeCity);
+    const target = activeCity.toLowerCase();
+    return packages.filter(
+      (pkg) => (pkg.package_location || '').trim().toLowerCase() === target
+    );
   }, [activeCity, packages]);
 
   return (
@@ -44,7 +64,7 @@ const FeaturedPackagesSection: FC<FeaturedPackagesSectionProps> = ({ packages })
     // pushed down — i.e. avoids the layout shift the user reported.
     <section className="bg-white dark:bg-neutral-900 py-8 lg:py-12 min-h-[640px]">
       <div className="container">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-8 md:mb-10">
+        <div className="mb-8 md:mb-10">
           <div className="max-w-2xl">
             <span className="text-[12px] tracking-[0.12em] uppercase font-semibold text-primary-700">
               Featured Umrah packages
@@ -57,9 +77,13 @@ const FeaturedPackagesSection: FC<FeaturedPackagesSectionProps> = ({ packages })
               your departure city or hotel proximity to the Haram.
             </p> */}
           </div>
+        </div>
+
+        {/* "View all" sits just above the city chips, right-aligned */}
+        <div className="flex justify-end mb-2">
           <Link
             href="/packages"
-            className="inline-flex items-center justify-center self-start md:self-auto rounded-full bg-white dark:bg-neutral-800 border border-neutral-300 dark:border-neutral-700 px-5 py-3 text-sm font-semibold text-neutral-900 dark:text-neutral-100 hover:border-neutral-500 dark:hover:border-neutral-500 transition whitespace-nowrap"
+            className="text-[13px] font-medium text-primary-700 dark:text-primary-400 hover:text-primary-800 dark:hover:text-primary-300 hover:underline whitespace-nowrap"
           >
             View all →
           </Link>
@@ -90,9 +114,14 @@ const FeaturedPackagesSection: FC<FeaturedPackagesSectionProps> = ({ packages })
             No packages match this filter yet. Check back soon.
           </p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+          <div className="flex sm:grid sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 overflow-x-auto sm:overflow-visible snap-x snap-mandatory sm:snap-none -mx-4 px-4 sm:mx-0 sm:px-0 hiddenScrollbar">
             {visiblePackages.map((pkg, idx) => (
-              <PackageCard key={pkg.id ?? idx} pkg={pkg} priority={idx < 3} />
+              <div
+                key={pkg.id ?? idx}
+                className="flex-shrink-0 w-[85%] sm:w-auto snap-start"
+              >
+                <PackageCard pkg={pkg} priority={idx < 3} />
+              </div>
             ))}
           </div>
         )}

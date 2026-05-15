@@ -283,7 +283,7 @@ const ProfileGateModal = ({ isOpen, onClose, onComplete, agent }: ProfileGateMod
                   <Label>Public URL handle</Label>
                   <div className="mt-1.5 flex items-stretch overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-700 focus-within:border-primary-500">
                     <span className="flex items-center px-3 text-sm text-neutral-500 bg-neutral-50 dark:bg-neutral-800 dark:text-neutral-400 border-r border-neutral-200 dark:border-neutral-700">
-                      hajjscanner.com/
+                      searchumrah.com/
                     </span>
                     <input
                       className="flex-1 px-3 py-2 text-sm bg-transparent outline-none"
