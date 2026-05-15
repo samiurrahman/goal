@@ -143,8 +143,8 @@ const CheckoutOrderPage: FC = () => {
     <div className="nc-PayPage">
       <main className="container mt-11 mb-24 lg:mb-32 ">
         <div className="max-w-4xl mx-auto">
-          <div className="w-full flex flex-col sm:rounded-2xl space-y-10 px-0 sm:p-6 xl:p-8">
-            <div className="space-y-6">
+          <div className="w-full flex flex-col space-y-10 px-0 sm:px-0">
+            <div className="space-y-6 rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-6 sm:p-8">
               <h3 className="text-2xl font-semibold">Your booking</h3>
               <div className="flex flex-col sm:flex-row sm:items-center">
                 <div className="flex-shrink-0 w-full sm:w-40">
@@ -219,7 +219,7 @@ const CheckoutOrderPage: FC = () => {
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-6 rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-6 sm:p-8">
               <h3 className="text-2xl font-semibold">Booking detail</h3>
               <div className="flex flex-col space-y-4">
                 <div className="flex text-neutral-6000 dark:text-neutral-300">
@@ -275,7 +275,7 @@ const CheckoutOrderPage: FC = () => {
               </div>
             </div>
 
-            <div className="space-y-6">
+            <div className="space-y-6 rounded-3xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-6 sm:p-8">
               <div className="flex items-center justify-between gap-4">
                 <h3 className="text-2xl font-semibold">Travellers</h3>
                 <span className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -289,25 +289,15 @@ const CheckoutOrderPage: FC = () => {
                     className="flex flex-col sm:flex-row sm:items-start gap-4 rounded-3xl border border-neutral-200 dark:border-neutral-700 p-5"
                   >
                     <div className="min-w-0 flex-1 space-y-2">
+                      <div className="text-sm text-neutral-500 dark:text-neutral-400">Name</div>
                       <div className="text-lg font-semibold">
                         {guest.title} {guest.name || `Guest ${index + 1}`}
-                      </div>
-                      <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Traveller {index + 1}
                       </div>
                     </div>
                     <div className="w-full sm:w-auto grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm sm:min-w-[360px]">
                       <div>
-                        <div className="text-neutral-400">Name</div>
-                        <div className="mt-1 font-medium">{guest.name || 'TBD'}</div>
-                      </div>
-                      <div>
                         <div className="text-neutral-400">Age</div>
                         <div className="mt-1 font-medium">{guest.age || 'TBD'}</div>
-                      </div>
-                      <div>
-                        <div className="text-neutral-400">Title</div>
-                        <div className="mt-1 font-medium">{guest.title}</div>
                       </div>
                     </div>
                   </div>
