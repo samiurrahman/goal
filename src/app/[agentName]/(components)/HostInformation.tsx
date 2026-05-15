@@ -50,9 +50,6 @@ const HostInformation: React.FC<HostInformationProps> = ({
         <p className="text-[11.5px] font-semibold uppercase tracking-[0.08em] text-primary-700 dark:text-primary-400">
           Meet your host
         </p>
-        <h2 className="mt-2 text-[20px] sm:text-[22px] font-semibold leading-tight tracking-tight text-neutral-900 dark:text-neutral-100">
-          {name}
-        </h2>
       </div>
       <div className="flex items-center space-x-4">
         <Link href={normalizedProfileHref} aria-label={name} className="flex-shrink-0">

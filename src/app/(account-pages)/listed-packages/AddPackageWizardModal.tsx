@@ -352,6 +352,7 @@ const AddPackageWizardModal = ({
   const [amenityDraftDescription, setAmenityDraftDescription] = useState('');
   const [selectedTags, setSelectedTags] = useState<PackageTag[]>([]);
   const [stayInfoContentHtml, setStayInfoContentHtml] = useState('');
+  const [stayInfoLede, setStayInfoLede] = useState('');
   const [makkahHotelStars, setMakkahHotelStars] = useState<number | null>(null);
   const [makkahHotelAmenities, setMakkahHotelAmenities] = useState<HotelAmenityKey[]>([]);
   const [madinahHotelStars, setMadinahHotelStars] = useState<number | null>(null);
@@ -612,6 +613,7 @@ const AddPackageWizardModal = ({
         stayInfoRow.content_html || stayInfoRow.contentHtml || stayInfoRow.content || legacyHtml
       )
     );
+    setStayInfoLede(String(stayInfoRow.lede || stayInfoRow.subheading || ''));
     const hotelsRow = (stayInfoRow.hotels || {}) as {
       makkah?: { stars?: unknown; amenities?: unknown };
       madinah?: { stars?: unknown; amenities?: unknown };
@@ -674,6 +676,7 @@ const AddPackageWizardModal = ({
     setAmenityDraftLabel('');
     setSelectedTags([]);
     setStayInfoContentHtml('');
+    setStayInfoLede('');
     setMakkahHotelStars(null);
     setMakkahHotelAmenities([]);
     setMadinahHotelStars(null);
@@ -1061,6 +1064,7 @@ const AddPackageWizardModal = ({
         title: 'Stay information',
         details: [],
         content_html: stayInfoContentHtml.trim(),
+        lede: stayInfoLede.trim(),
         hotels: {
           makkah: {
             stars: makkahHotelStars,
@@ -1245,7 +1249,7 @@ const AddPackageWizardModal = ({
     <NcModal
       isOpenProp={isOpen}
       onCloseModal={closeModal}
-      modalTitle={`${editPackageId ? 'Edit Package' : 'Add New Package'} • ${stepTitle}`}
+      modalTitle=""
       contentExtraClass="max-w-5xl"
       contentPaddingClass="px-4 pb-5 pt-4 md:px-6 md:pb-6"
       renderTrigger={
@@ -1281,25 +1285,34 @@ const AddPackageWizardModal = ({
             </p>
           ) : (
             <>
-              <div className="flex flex-wrap items-center justify-end gap-2 -mt-1">
-                <ButtonSecondary
-                  type="button"
-                  onClick={() => handlePublish(false)}
-                  disabled={isSaving}
-                  sizeClass="px-3.5 py-2"
-                  fontSize="text-xs sm:text-sm font-medium"
-                >
-                  {isSaving ? 'Saving…' : 'Save'}
-                </ButtonSecondary>
-                <ButtonPrimary
-                  type="button"
-                  onClick={() => handlePublish(true)}
-                  disabled={isSaving}
-                  sizeClass="px-3.5 py-2"
-                  fontSize="text-xs sm:text-sm font-medium"
-                >
-                  {isSaving ? 'Saving…' : 'Save & Publish'}
-                </ButtonPrimary>
+              <div className="flex flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-between -mt-1">
+                <h2 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 sm:text-base">
+                  {editPackageId ? 'Edit Package' : 'Add New Package'}
+                  <span className="text-neutral-400 dark:text-neutral-500"> • </span>
+                  <span className="font-medium text-neutral-600 dark:text-neutral-300">
+                    {stepTitle}
+                  </span>
+                </h2>
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                  <ButtonSecondary
+                    type="button"
+                    onClick={() => handlePublish(false)}
+                    disabled={isSaving}
+                    sizeClass="px-3.5 py-2"
+                    fontSize="text-xs sm:text-sm font-medium"
+                  >
+                    {isSaving ? 'Saving…' : 'Save'}
+                  </ButtonSecondary>
+                  <ButtonPrimary
+                    type="button"
+                    onClick={() => handlePublish(true)}
+                    disabled={isSaving}
+                    sizeClass="px-3.5 py-2"
+                    fontSize="text-xs sm:text-sm font-medium"
+                  >
+                    {isSaving ? 'Saving…' : 'Save & Publish'}
+                  </ButtonPrimary>
+                </div>
               </div>
 
               <div className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -1972,6 +1985,20 @@ const AddPackageWizardModal = ({
 
                 {step === 'stay' && (
                   <div className="space-y-5">
+                    <div>
+                      <Label>Sub-heading</Label>
+                      <Textarea
+                        className="mt-1.5"
+                        rows={2}
+                        placeholder="Both hotels are within walking distance of the Haram and Masjid Nabawi — chosen for ease of access during prayer times."
+                        value={stayInfoLede}
+                        onChange={(e) => setStayInfoLede(e.target.value)}
+                      />
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        Shown above the hotel cards in the &ldquo;Where you&rsquo;ll stay&rsquo;&rsquo; section. Leave blank to use the default.
+                      </p>
+                    </div>
+
                     <div className="grid gap-4 md:grid-cols-2">
                       <HotelTagsField
                         label="Makkah hotel tags"

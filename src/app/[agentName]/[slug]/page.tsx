@@ -322,6 +322,8 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     content_html?: string;
     contentHtml?: string;
     content?: string;
+    lede?: string;
+    subheading?: string;
     hotels?: {
       makkah?: { stars?: unknown; amenities?: unknown };
       madinah?: { stars?: unknown; amenities?: unknown };
@@ -336,6 +338,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     details: Array.isArray(rawStayInfoData.details) ? rawStayInfoData.details : [],
     contentHtml:
       rawStayInfoData.contentHtml || rawStayInfoData.content_html || rawStayInfoData.content || '',
+    lede: String(rawStayInfoData.lede || rawStayInfoData.subheading || ''),
   };
   const makkahHotelMeta: { stars: number | null; amenities: HotelAmenityKey[] } = {
     stars: sanitizeHotelStars(rawStayInfoData.hotels?.makkah?.stars),

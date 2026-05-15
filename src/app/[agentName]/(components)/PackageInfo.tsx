@@ -14,9 +14,12 @@ interface HotelInfo {
 }
 
 interface PackageInfoProps {
-  data: { title: string; details: string[]; contentHtml?: string };
+  data: { title: string; details: string[]; contentHtml?: string; lede?: string };
   hotels?: HotelInfo[];
 }
+
+const DEFAULT_LEDE =
+  'Both hotels are within walking distance of the Haram and Masjid Nabawi — chosen for ease of access during prayer times.';
 
 const sanitizeMarkup = (markup: string) => {
   if (!markup) return '';
@@ -133,9 +136,8 @@ const PackageInfo: React.FC<PackageInfoProps> = ({ data, hotels }) => {
         <h2 className="mt-2 text-[20px] sm:text-[22px] font-semibold leading-tight tracking-tight text-neutral-900 dark:text-neutral-100">
           {data.title || 'Hotels close to the Haramain'}
         </h2>
-        <p className="mt-2 text-[14px] leading-relaxed text-neutral-600 dark:text-neutral-400">
-          Both hotels are within walking distance of the Haram and Masjid Nabawi &mdash; chosen for
-          ease of access during prayer times.
+        <p className="mt-2 text-[14px] leading-relaxed text-neutral-600 dark:text-neutral-400 whitespace-pre-wrap">
+          {(data.lede || '').trim() || DEFAULT_LEDE}
         </p>
       </div>
 
