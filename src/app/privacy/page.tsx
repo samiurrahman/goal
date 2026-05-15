@@ -29,7 +29,7 @@ export default function PrivacyPage() {
       </header>
 
       <p>
-        Searchumrah ("we", "us", "Searchumrah") connects pilgrims with verified travel agents
+        Searchumrah (&quot;we&quot;, &quot;us&quot;, &quot;Searchumrah&quot;) connects pilgrims with verified travel agents
         offering Hajj and Umrah packages. This policy explains what personal data we collect, why
         we collect it, who we share it with, and the choices you have. It applies to
         searchumrah.com and any subdomain we operate.

@@ -25,7 +25,7 @@ export default function AboutPage() {
           Why we exist
         </h2>
         <p>
-          Booking a sacred journey shouldn't feel like a gamble. Pilgrims juggle WhatsApp
+          Booking a sacred journey shouldn&apos;t feel like a gamble. Pilgrims juggle WhatsApp
           forwards, vague price lists, and word-of-mouth references. Agents struggle to be found
           by the right travelers. Searchumrah brings both sides into one place, with structured
           listings, verified profiles, and reviews from real pilgrims.
@@ -42,11 +42,11 @@ export default function AboutPage() {
             from Haram, duration, and price.
           </li>
           <li>
-            <strong>Compare.</strong> Each listing shows the full itinerary, what's included,
-            cancellation terms, and the agent's rating from past pilgrims.
+            <strong>Compare.</strong> Each listing shows the full itinerary, what&apos;s included,
+            cancellation terms, and the agent&apos;s rating from past pilgrims.
           </li>
           <li>
-            <strong>Contact the agent directly.</strong> Reveal the agent's number, ask
+            <strong>Contact the agent directly.</strong> Reveal the agent&apos;s number, ask
             questions, and book on terms agreed between you. Searchumrah does not handle payment.
           </li>
         </ol>
@@ -66,12 +66,12 @@ export default function AboutPage() {
 
       <section className="space-y-4">
         <h2 className="text-2xl font-semibold text-neutral-900 dark:text-neutral-100">
-          What we don't do
+          What we don&apos;t do
         </h2>
         <ul className="list-disc pl-6 space-y-1.5">
-          <li>We don't take payments — you pay the agent directly.</li>
-          <li>We don't add commission to package prices.</li>
-          <li>We don't accept paid placements that hide from regular search results.</li>
+          <li>We don&apos;t take payments — you pay the agent directly.</li>
+          <li>We don&apos;t add commission to package prices.</li>
+          <li>We don&apos;t accept paid placements that hide from regular search results.</li>
         </ul>
       </section>
 
@@ -80,7 +80,7 @@ export default function AboutPage() {
           Get in touch
         </h2>
         <p>
-          Pilgrim or agent — we'd love to hear from you.{' '}
+          Pilgrim or agent — we&apos;d love to hear from you.{' '}
           <Link className="text-primary-600 underline" href="/contact">
             Contact us
           </Link>{' '}
