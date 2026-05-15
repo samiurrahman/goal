@@ -50,7 +50,7 @@ export default function PrivacyPage() {
             views but retained server-side so the preference is reversible.
           </li>
           <li>
-            <strong>Lead information</strong> — when you "show interest" in or contact an agent,
+            <strong>Lead information</strong> — when you &quot;show interest&quot; in or contact an agent,
             we record your name, email, and phone so the agent can reach you.
           </li>
           <li>
@@ -149,7 +149,7 @@ export default function PrivacyPage() {
         </h2>
         <p>
           Our infrastructure providers may store data in countries outside India. Where this
-          happens, we rely on the providers' standard contractual safeguards.
+          happens, we rely on the providers&apos; standard contractual safeguards.
         </p>
       </section>
 
@@ -168,8 +168,8 @@ export default function PrivacyPage() {
           9. Changes
         </h2>
         <p>
-          We may update this policy. Material changes will be announced on the site and the "Last
-          updated" date above will change.
+          We may update this policy. Material changes will be announced on the site and the &quot;Last
+          updated&quot; date above will change.
         </p>
       </section>
 

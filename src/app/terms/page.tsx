@@ -68,7 +68,7 @@ export default function TermsPage() {
           <li>Reviews must reflect genuine first-hand experience.</li>
           <li>
             Do not post content that is false, defamatory, infringing, hateful, sexually explicit,
-            or that includes another person's private information.
+            or that includes another person&apos;s private information.
           </li>
           <li>
             By posting content you grant Searchumrah a worldwide, royalty-free license to host,
@@ -97,7 +97,7 @@ export default function TermsPage() {
           6. Prohibited use
         </h2>
         <ul className="list-disc pl-6 space-y-1.5">
-          <li>Scraping, automated access, or interfering with the Platform's operation.</li>
+          <li>Scraping, automated access, or interfering with the Platform&apos;s operation.</li>
           <li>Reverse engineering or attempting to bypass security or rate limits.</li>
           <li>Impersonation, manipulation of reviews, or running fake agent profiles.</li>
           <li>Using the Platform for any unlawful purpose.</li>

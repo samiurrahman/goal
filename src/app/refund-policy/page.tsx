@@ -25,18 +25,18 @@ export default function RefundPolicyPage() {
         <p>
           Searchumrah is a discovery and matching platform. We do not collect, hold, or process
           any payment for Hajj or Umrah packages. All payments — deposits, balances, and refunds —
-          are made directly between you and the travel agent you choose. The agent's own refund
+          are made directly between you and the travel agent you choose. The agent&apos;s own refund
           and cancellation terms govern the transaction.
         </p>
       </section>
 
       <section className="space-y-3">
         <h2 className="text-xl font-semibold text-neutral-900 dark:text-neutral-100">
-          Where to find the agent's terms
+          Where to find the agent&apos;s terms
         </h2>
         <p>
-          Each package page lists the agent's cancellation, refund, and change-of-date terms in
-          the "Cancellation policy" or "Purchase summary" section. Read these before paying. If
+          Each package page lists the agent&apos;s cancellation, refund, and change-of-date terms in
+          the &quot;Cancellation policy&quot; or &quot;Purchase summary&quot; section. Read these before paying. If
           they are missing or unclear, ask the agent in writing (WhatsApp or email) and keep a
           copy of the response.
         </p>
@@ -56,7 +56,7 @@ export default function RefundPolicyPage() {
             <a className="text-primary-600 underline" href="mailto:support@searchumrah.com">
               support@searchumrah.com
             </a>{' '}
-            within 30 days of the incident with: your booking details, the agent's name, what was
+            within 30 days of the incident with: your booking details, the agent&apos;s name, what was
             promised, what happened, and any messages or receipts. Use the same email address as
             your Searchumrah account.
           </li>
@@ -74,13 +74,13 @@ export default function RefundPolicyPage() {
         </h2>
         <ul className="list-disc pl-6 space-y-1.5">
           <li>
-            <strong>We can</strong> mediate, escalate within the agent's organization, hold the
+            <strong>We can</strong> mediate, escalate within the agent&apos;s organization, hold the
             agent accountable on the Platform (verification status, listing visibility), and
             preserve our records of your booking and conversations to support you.
           </li>
           <li>
             <strong>We cannot</strong> issue refunds for money paid to an agent, override the
-            agent's contractual terms, or guarantee a specific outcome to a dispute.
+            agent&apos;s contractual terms, or guarantee a specific outcome to a dispute.
           </li>
         </ul>
       </section>
