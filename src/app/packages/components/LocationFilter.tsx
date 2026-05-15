@@ -24,7 +24,12 @@ const LocationFilter = () => {
   // working, and let Apply rewrite the URL to single-slug form.
   const urlSlug = useMemo(() => {
     const raw = searchParams.get(CITY_PARAM) || '';
-    return raw.split(',').map((s) => s.trim()).filter(Boolean)[0] ?? null;
+    return (
+      raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)[0] ?? null
+    );
   }, [searchParams]);
 
   useEffect(() => {
@@ -118,7 +123,7 @@ const LocationFilter = () => {
           >
             <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
               <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
-                <div className="px-5">
+                <div className="px-5 mt-4">
                   <SingleCityAutocomplete
                     selected={stagedCity}
                     onChange={setStagedCity}
@@ -130,7 +135,7 @@ const LocationFilter = () => {
                     placeholder="Search city..."
                   />
                 </div>
-                <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
+                <div className="p-4 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird
                     onClick={() => {
                       clearAll();

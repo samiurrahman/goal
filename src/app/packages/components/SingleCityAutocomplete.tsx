@@ -114,7 +114,7 @@ const SingleCityAutocomplete: React.FC<Props> = ({
         </button>
       )}
       {selected && (
-        <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-200 border border-primary-200 dark:border-primary-900 px-3 py-1 text-sm">
+        <div className="mb-3 ml-2 inline-flex items-center gap-2 rounded-full bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-200 border border-primary-200 dark:border-primary-900 px-3 py-1 text-sm">
           <span>{formatLabel(selected)}</span>
           <button
             type="button"

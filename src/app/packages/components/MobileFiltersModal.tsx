@@ -72,7 +72,12 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   const cityIsActive = !!stagedCity;
   const urlCitySlug = useMemo(() => {
     const raw = searchParams.get(CITY_PARAM) || '';
-    return raw.split(',').map((s) => s.trim()).filter(Boolean)[0] ?? null;
+    return (
+      raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)[0] ?? null
+    );
   }, [searchParams]);
 
   useEffect(() => {
@@ -106,7 +111,12 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   const agentIsActive = !!stagedAgent;
   const urlAgentSlug = useMemo(() => {
     const raw = searchParams.get(AGENT_PARAM) || '';
-    return raw.split(',').map((s) => s.trim()).filter(Boolean)[0] ?? null;
+    return (
+      raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)[0] ?? null
+    );
   }, [searchParams]);
 
   useEffect(() => {
@@ -234,7 +244,7 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                 <div className="flex-grow overflow-y-auto">
                   <div className="px-4 sm:px-6 py-4 grid grid-cols-1 sm:grid-cols-2 gap-0 sm:gap-x-8 divide-y divide-neutral-200 dark:divide-neutral-800 sm:divide-y-0">
                     {/* Location */}
-                    <section className="py-5 sm:py-4 sm:border-b sm:border-neutral-200 sm:dark:border-neutral-800">
+                    <section className="py-5 pt-0 sm:py-4 sm:border-b sm:border-neutral-200 sm:dark:border-neutral-800">
                       <SectionHeader
                         title="Location"
                         active={cityIsActive}
