@@ -19,8 +19,8 @@ export default function TermsPage() {
       </header>
 
       <p>
-        These Terms govern your use of searchumrah.com and any related services (the "Platform")
-        operated by Searchumrah ("we", "us"). By creating an account or using the Platform you
+        These Terms govern your use of searchumrah.com and any related services (the &quot;Platform&quot;)
+        operated by Searchumrah (&quot;we&quot;, &quot;us&quot;). By creating an account or using the Platform you
         agree to these Terms. If you do not agree, do not use the Platform.
       </p>
 
@@ -120,7 +120,7 @@ export default function TermsPage() {
           8. Disclaimer
         </h2>
         <p>
-          The Platform is provided "as is" without warranties of any kind, express or implied,
+          The Platform is provided &quot;as is&quot; without warranties of any kind, express or implied,
           including merchantability, fitness for a particular purpose, and non-infringement. We do
           not warrant that listings are error-free or that the Platform will be uninterrupted.
         </p>
@@ -176,7 +176,7 @@ export default function TermsPage() {
         </h2>
         <p>
           We may update these Terms. Material changes will be announced on the Platform and the
-          "Last updated" date above will change. Continued use after the change means you accept
+          &quot;Last updated&quot; date above will change. Continued use after the change means you accept
           the updated Terms.
         </p>
       </section>
