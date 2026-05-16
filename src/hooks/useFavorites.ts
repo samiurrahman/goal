@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabaseClient';
-import { useSupabaseIsLoggedIn } from './useSupabaseIsLoggedIn';
 
 const FAVORITES_KEY = ['favorites'] as const;
 
@@ -12,17 +11,47 @@ const FAVORITES_KEY = ['favorites'] as const;
 type PackageId = string;
 type FavoritesSet = Set<PackageId>;
 
-const fetchFavoriteIds = async (): Promise<FavoritesSet> => {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+/**
+ * Direct supabase session check. We can't reuse `useSupabaseIsLoggedIn`
+ * because it ANDs the session with a `app_forced_logged_out` sessionStorage
+ * flag that only clears on a fresh SIGNED_IN event — auto-restored sessions
+ * leave the flag set and the hook reports "logged out" even when the cookie
+ * session is valid (the rest of the app, e.g. AvatarDropdown, ignores this
+ * flag and reads the session directly).
+ */
+const useSessionUserId = () => {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
-  if (!user) return new Set();
+  useEffect(() => {
+    let mounted = true;
 
+    supabase.auth.getSession().then(({ data }) => {
+      if (!mounted) return;
+      setUserId(data.session?.user?.id ?? null);
+      setIsReady(true);
+    });
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!mounted) return;
+      setUserId(session?.user?.id ?? null);
+      setIsReady(true);
+    });
+
+    return () => {
+      mounted = false;
+      listener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  return { userId, isReady };
+};
+
+const fetchFavoriteIds = async (userId: string): Promise<FavoritesSet> => {
   const { data, error } = await supabase
     .from('favorites')
     .select('package_id')
-    .eq('user_id', user.id)
+    .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
   if (error) {
@@ -34,23 +63,27 @@ const fetchFavoriteIds = async (): Promise<FavoritesSet> => {
 };
 
 export const useFavoriteIds = () => {
-  const { isLoggedIn, isAuthReady } = useSupabaseIsLoggedIn();
+  const { userId, isReady } = useSessionUserId();
   const queryClient = useQueryClient();
 
-  // When the user signs in/out, drop the cached set so the next read pulls
-  // the right user's favorites (and a logged-out card immediately stops
-  // showing hearts as filled).
+  // When the signed-in user changes, drop the cached set so a heart filled
+  // for user A doesn't bleed into user B's view.
   useEffect(() => {
-    if (!isAuthReady) return;
+    if (!isReady) return;
     queryClient.invalidateQueries({ queryKey: FAVORITES_KEY });
-  }, [isLoggedIn, isAuthReady, queryClient]);
+  }, [userId, isReady, queryClient]);
 
   return useQuery<FavoritesSet>({
     queryKey: FAVORITES_KEY,
-    queryFn: fetchFavoriteIds,
-    enabled: isAuthReady && isLoggedIn,
+    queryFn: () => (userId ? fetchFavoriteIds(userId) : Promise.resolve(new Set())),
+    enabled: isReady && !!userId,
     staleTime: 1000 * 60 * 5,
   });
+};
+
+export const useIsLoggedIn = () => {
+  const { userId, isReady } = useSessionUserId();
+  return { isLoggedIn: !!userId, isAuthReady: isReady };
 };
 
 export const useToggleFavorite = () => {
@@ -64,16 +97,17 @@ export const useToggleFavorite = () => {
   >({
     mutationFn: async ({ packageId, currentlyFavorited }) => {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const userId = session?.user?.id;
 
-      if (!user) throw new Error('Not logged in');
+      if (!userId) throw new Error('Not logged in');
 
       if (currentlyFavorited) {
         const { error } = await supabase
           .from('favorites')
           .delete()
-          .eq('user_id', user.id)
+          .eq('user_id', userId)
           .eq('package_id', packageId);
 
         if (error) throw new Error(error.message);
@@ -85,7 +119,7 @@ export const useToggleFavorite = () => {
       const { error } = await supabase
         .from('favorites')
         .upsert(
-          { user_id: user.id, package_id: packageId },
+          { user_id: userId, package_id: packageId },
           { onConflict: 'user_id,package_id', ignoreDuplicates: true }
         );
 

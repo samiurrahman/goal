@@ -5,6 +5,7 @@ import Avatar from '@/shared/Avatar';
 import StartRating from '@/components/StartRating';
 import GovtVerifiedBadge from '@/components/GovtVerifiedBadge';
 import ShareButton from '@/shared/ShareButton';
+import FavoriteButton from '@/components/FavoriteButton';
 import { MakkahIcon, MadinaIcon } from '@/components/icons/icons';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 import { sanitizePackageTags, packageTagTone } from '@/constants/packageTags';
@@ -24,6 +25,7 @@ const formatDateDMY = (dateInput?: string | Date) => {
 };
 
 export interface PackageMetaProps {
+  packageId?: string | number | null;
   title: string;
   thumbnailUrl?: string | null;
   thumbnailBlur?: string | null;
@@ -51,6 +53,7 @@ export interface PackageMetaProps {
 }
 
 const PackageMeta: React.FC<PackageMetaProps> = ({
+  packageId,
   title,
   thumbnailUrl,
   thumbnailBlur,
@@ -112,8 +115,8 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
             <GovtVerifiedBadge />
           </div>
 
-          {shareUrl ? (
-            <div className="absolute right-3 top-3">
+          <div className="absolute right-3 top-3 flex items-center gap-2">
+            {shareUrl ? (
               <ShareButton
                 url={shareUrl}
                 title={title}
@@ -121,8 +124,9 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
                 className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm shadow-sm"
                 ariaLabel="Share package"
               />
-            </div>
-          ) : null}
+            ) : null}
+            <FavoriteButton packageId={packageId} variant="overlay" />
+          </div>
         </div>
 
         {/* Content */}

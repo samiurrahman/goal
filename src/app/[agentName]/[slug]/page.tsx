@@ -246,6 +246,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   );
 
   const packageMetaData = {
+    packageId: package_details?.id ? String(package_details.id) : null,
     title: package_details?.title ?? 'Untitled Package',
     thumbnailUrl: (package_details as { thumbnail_url?: string | null })?.thumbnail_url ?? null,
     thumbnailBlur:

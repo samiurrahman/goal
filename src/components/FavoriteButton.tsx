@@ -3,8 +3,7 @@
 import React, { FC, MouseEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { useFavoriteIds, useToggleFavorite } from '@/hooks/useFavorites';
-import { useSupabaseIsLoggedIn } from '@/hooks/useSupabaseIsLoggedIn';
+import { useFavoriteIds, useIsLoggedIn, useToggleFavorite } from '@/hooks/useFavorites';
 
 export interface FavoriteButtonProps {
   // packages.id is a uuid at runtime even though Package.id is typed as
@@ -26,7 +25,7 @@ const FavoriteButton: FC<FavoriteButtonProps> = ({
 }) => {
   const router = useRouter();
   const pathname = usePathname();
-  const { isLoggedIn, isAuthReady } = useSupabaseIsLoggedIn();
+  const { isLoggedIn, isAuthReady } = useIsLoggedIn();
   const { data: favoriteIds } = useFavoriteIds();
   const toggle = useToggleFavorite();
 
