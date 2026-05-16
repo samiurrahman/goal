@@ -195,7 +195,6 @@ const AgentBookingsPage = () => {
 
     const parsed = (bookingRows || []) as BookingRow[];
     setBookings(parsed);
-    if (parsed.length > 0) setSelectedBookingId(parsed[0].id);
 
     const authUserIds = Array.from(new Set(parsed.map((b) => b.auth_user_id).filter(Boolean)));
     if (authUserIds.length > 0) {
@@ -515,7 +514,7 @@ const AgentBookingsPage = () => {
         )}
 
         {/* ─── TABS ─── */}
-        <div className="flex mt-4 px-5 border-b border-neutral-200 dark:border-neutral-700">
+        <div className="flex mt-4 px-5 overflow-x-auto hiddenScrollbar border-b border-neutral-200 dark:border-neutral-700">
           {TAB_LIST.map((tab) => {
             const count = tabCounts[tab];
             return (
