@@ -1,12 +1,11 @@
 'use client';
 
-import { Menu, Tab } from '@headlessui/react';
+import { Menu } from '@headlessui/react';
 import { Dialog, Transition } from '@headlessui/react';
 import {
   ArrowsUpDownIcon,
   CheckIcon,
   ChevronDownIcon,
-  ChevronUpIcon,
   DocumentDuplicateIcon,
   EyeIcon,
   EyeSlashIcon,
@@ -89,7 +88,7 @@ const formatDateLabel = (value: unknown) => {
   if (!value) return 'TBD';
   const date = new Date(value as string);
   if (Number.isNaN(date.getTime())) return 'TBD';
-  return date.toLocaleDateString('en-IN');
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
 const makeCloneTitle = (title: string) => `${title} Copy`;
@@ -101,18 +100,22 @@ const makeCloneSlug = (slug: string | null, title: string, packageId: number) =>
 
 const LOADER_CARD_COUNT = 6;
 
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_NAMES_FULL = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+const CURRENT_YEAR = new Date().getFullYear();
+
 const ListedPackagesPage = () => {
-  const categories = ['Umrah'];
   const router = useRouter();
   const queryClient = useQueryClient();
   const [agentUUID, setAgentUUID] = useState<string | null>(null);
   const [agentSlug, setAgentSlug] = useState<string>('');
   const [agentProfile, setAgentProfile] = useState<AgentProfileSnapshot | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [expandedPackageIds, setExpandedPackageIds] = useState<number[]>([]);
   const [deletePendingPackageId, setDeletePendingPackageId] = useState<number | null>(null);
   const [unpublishPendingPackage, setUnpublishPendingPackage] = useState<Package | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('newest');
+  const [selectedYear, setSelectedYear] = useState<number>(CURRENT_YEAR);
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [origin, setOrigin] = useState<string>('');
   const [isGateOpen, setIsGateOpen] = useState(false);
   // Monotonic counter; each increment tells AddPackageWizardModal to open.
@@ -260,27 +263,63 @@ const ListedPackagesPage = () => {
     },
   });
 
-  const sortedPackages = useMemo(() => {
-    const list = [...(agentPackages || [])];
-    if (sortKey === 'newest') {
-      list.sort((a, b) => Number(b.id) - Number(a.id));
-    } else if (sortKey === 'published') {
-      list.sort((a, b) => {
-        const ap = a.published === false ? 1 : 0;
-        const bp = b.published === false ? 1 : 0;
-        if (ap !== bp) return ap - bp;
-        return Number(b.id) - Number(a.id);
-      });
-    } else {
-      list.sort((a, b) => {
-        const ap = a.published === false ? 0 : 1;
-        const bp = b.published === false ? 0 : 1;
-        if (ap !== bp) return ap - bp;
-        return Number(b.id) - Number(a.id);
+  useEffect(() => {
+    setSelectedMonth(null);
+  }, [selectedYear]);
+
+  const years = useMemo(() => {
+    const fromPkgs = (agentPackages || [])
+      .map((p) => (p.departure_date ? new Date(p.departure_date as unknown as string).getFullYear() : null))
+      .filter((y): y is number => y !== null);
+    const set = new Set([CURRENT_YEAR, CURRENT_YEAR + 1, ...fromPkgs]);
+    return Array.from(set).sort((a, b) => a - b);
+  }, [agentPackages]);
+
+  const availableMonths = useMemo(() => {
+    const months = new Set<number>();
+    (agentPackages || []).forEach((p) => {
+      if (!p.departure_date) return;
+      const d = new Date(p.departure_date as unknown as string);
+      if (d.getFullYear() === selectedYear) months.add(d.getMonth());
+    });
+    return Array.from(months).sort((a, b) => a - b);
+  }, [agentPackages, selectedYear]);
+
+  const sortFn = (a: Package, b: Package): number => {
+    if (sortKey === 'published') {
+      const ap = a.published === false ? 1 : 0;
+      const bp = b.published === false ? 1 : 0;
+      if (ap !== bp) return ap - bp;
+    } else if (sortKey === 'unpublished') {
+      const ap = a.published === false ? 0 : 1;
+      const bp = b.published === false ? 0 : 1;
+      if (ap !== bp) return ap - bp;
+    }
+    return Number(b.id) - Number(a.id);
+  };
+
+  const filteredAndGrouped = useMemo(() => {
+    let list = (agentPackages || []).filter((p) => {
+      if (!p.departure_date) return selectedYear === CURRENT_YEAR;
+      return new Date(p.departure_date as unknown as string).getFullYear() === selectedYear;
+    });
+    if (selectedMonth !== null) {
+      list = list.filter((p) => {
+        if (!p.departure_date) return false;
+        return new Date(p.departure_date as unknown as string).getMonth() === selectedMonth;
       });
     }
-    return list;
-  }, [agentPackages, sortKey]);
+    const monthMap = new Map<number, Package[]>();
+    list.forEach((p) => {
+      const key = p.departure_date ? new Date(p.departure_date as unknown as string).getMonth() : -1;
+      if (!monthMap.has(key)) monthMap.set(key, []);
+      monthMap.get(key)!.push(p);
+    });
+    monthMap.forEach((pkgs) => pkgs.sort(sortFn));
+    return Array.from(monthMap.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([monthKey, packages]) => ({ monthKey, packages }));
+  }, [agentPackages, selectedYear, selectedMonth, sortKey]);
 
   const setPackagePublished = async (pkg: Package, nextPublished: boolean) => {
     const { error } = await supabase
@@ -413,12 +452,6 @@ const ListedPackagesPage = () => {
     queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
   };
 
-  const toggle = (id: number) => {
-    setExpandedPackageIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
-
   if (isAuthLoading) {
     return null;
   }
@@ -469,25 +502,8 @@ const ListedPackagesPage = () => {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8">
+    <>
       <Toaster position="top-center" />
-
-      {!profileComplete && agentProfile ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/10 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
-          <p className="text-sm text-amber-700 dark:text-amber-300">
-            <strong className="font-semibold">Complete your business profile</strong> to start
-            listing packages. Pilgrims use your business name, city, and contact info to find and
-            trust you.
-          </p>
-          <ButtonPrimary
-            type="button"
-            onClick={() => setIsGateOpen(true)}
-            className="!text-sm !px-4 !py-2"
-          >
-            Complete profile
-          </ButtonPrimary>
-        </div>
-      ) : null}
 
       {agentUUID && agentSlug ? (
         <AddPackageWizardModal
@@ -512,178 +528,267 @@ const ListedPackagesPage = () => {
         />
       ) : null}
 
-      <div className="flex justify-between items-center gap-3 flex-wrap">
-        <Menu as="div" className="relative inline-block text-left">
-          <Menu.Button className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:border-primary-500 hover:text-primary-700 dark:hover:text-primary-300 focus:outline-none transition-colors">
-            <ArrowsUpDownIcon className="w-4 h-4" />
-            <span className="hidden sm:inline text-neutral-500 dark:text-neutral-400">Sort:</span>
-            <span className="font-medium">{SORT_LABELS[sortKey]}</span>
-            <ChevronDownIcon className="w-4 h-4" aria-hidden="true" />
-          </Menu.Button>
-          <Transition
-            as={Fragment}
-            enter="transition ease-out duration-150"
-            enterFrom="opacity-0 translate-y-1"
-            enterTo="opacity-100 translate-y-0"
-            leave="transition ease-in duration-100"
-            leaveFrom="opacity-100 translate-y-0"
-            leaveTo="opacity-0 translate-y-1"
+    <div className="space-y-4">
+      {!profileComplete && agentProfile ? (
+        <div className="rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/10 px-4 py-3 flex items-center justify-between gap-3 flex-wrap">
+          <p className="text-sm text-amber-700 dark:text-amber-300">
+            <strong className="font-semibold">Complete your business profile</strong> to start
+            listing packages. Pilgrims use your business name, city, and contact info to find and
+            trust you.
+          </p>
+          <ButtonPrimary
+            type="button"
+            onClick={() => setIsGateOpen(true)}
+            className="!text-sm !px-4 !py-2"
           >
-            <Menu.Items className="absolute left-0 z-20 mt-2 w-56 origin-top-left rounded-2xl bg-white dark:bg-neutral-900 shadow-xl border border-neutral-200 dark:border-neutral-700 focus:outline-none overflow-hidden">
-              <div className="py-2">
-                {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
-                  <Menu.Item key={key}>
-                    {({ active }) => (
-                      <button
-                        type="button"
-                        onClick={() => setSortKey(key)}
-                        className={`w-full text-left flex items-center justify-between gap-3 px-4 py-2.5 text-sm transition ${
-                          active ? 'bg-neutral-100 dark:bg-neutral-800' : ''
-                        } ${
-                          sortKey === key
-                            ? 'text-primary-700 dark:text-primary-300 font-medium'
-                            : 'text-neutral-700 dark:text-neutral-200'
-                        }`}
-                      >
-                        <span>{SORT_LABELS[key]}</span>
-                        {sortKey === key ? <CheckIcon className="w-4 h-4" /> : null}
-                      </button>
-                    )}
-                  </Menu.Item>
-                ))}
-              </div>
-            </Menu.Items>
-          </Transition>
-        </Menu>
+            Complete profile
+          </ButtonPrimary>
+        </div>
+      ) : null}
 
-        {agentUUID && agentSlug ? (
-          <ButtonPrimary type="button" onClick={handleAddNewPackageClick}>
-            Add New Package
-          </ButtonPrimary>
-        ) : (
-          <ButtonPrimary type="button" onClick={() => router.push('/listing')}>
-            Add New Package
-          </ButtonPrimary>
-        )}
+      {/* Year tabs */}
+      <div className="flex items-center gap-3">
+        <span className="text-sm font-medium text-neutral-500 dark:text-neutral-400">Year</span>
+        <div className="flex items-center gap-1 rounded-full bg-neutral-100 dark:bg-neutral-800 p-1">
+          {years.map((year) => (
+            <button
+              key={year}
+              type="button"
+              onClick={() => setSelectedYear(year)}
+              className={`px-4 py-1.5 text-sm font-medium rounded-full transition focus:outline-none ${
+                selectedYear === year
+                  ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-50 shadow-sm'
+                  : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+              }`}
+            >
+              {year}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <Tab.Group>
-        <Tab.List className="inline-flex items-center gap-1 rounded-full bg-neutral-100 dark:bg-neutral-800 p-1">
-          {categories.map((item) => (
-            <Tab key={item} as={Fragment}>
-              {({ selected }) => (
+      {/* Month pills (left) + action buttons (right) — sits directly above the card */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
+          {!packagesLoading && availableMonths.length > 0 ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setSelectedMonth(null)}
+                className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
+                  selectedMonth === null
+                    ? 'bg-primary-700 text-white'
+                    : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+                }`}
+              >
+                All
+              </button>
+              {availableMonths.map((m) => (
                 <button
-                  className={`flex-shrink-0 block !leading-none font-medium px-5 py-2.5 text-sm sm:text-base sm:px-6 sm:py-3 capitalize rounded-full focus:outline-none transition ${
-                    selected
-                      ? 'bg-white text-neutral-900 shadow-sm dark:bg-neutral-900 dark:text-neutral-50'
-                      : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
+                  key={m}
+                  type="button"
+                  onClick={() => setSelectedMonth(m)}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition ${
+                    selectedMonth === m
+                      ? 'bg-primary-700 text-white'
+                      : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-neutral-100'
                   }`}
                 >
-                  {item}
+                  {MONTH_NAMES[m]}
                 </button>
-              )}
-            </Tab>
-          ))}
-        </Tab.List>
+              ))}
+            </>
+          ) : null}
+        </div>
 
-        <Tab.Panels>
-          <Tab.Panel className="mt-8">
-            {packagesLoading ? (
-              <div className="space-y-4">
-                {Array.from({ length: LOADER_CARD_COUNT }).map((_, index) => (
-                  <div
-                    key={`listed-package-skeleton-${index}`}
-                    className="rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5 animate-pulse"
-                  >
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="space-y-2">
-                        <div className="h-6 w-56 rounded bg-neutral-200 dark:bg-neutral-700" />
-                        <div className="h-4 w-28 rounded bg-neutral-200 dark:bg-neutral-700" />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="h-7 w-16 rounded-full bg-neutral-200 dark:bg-neutral-700" />
-                        <div className="h-7 w-16 rounded-full bg-neutral-200 dark:bg-neutral-700" />
-                        <div className="h-7 w-7 rounded bg-neutral-200 dark:bg-neutral-700" />
-                        <div className="h-7 w-7 rounded bg-neutral-200 dark:bg-neutral-700" />
-                      </div>
-                    </div>
-                    <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
-                      <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
-                      <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
-                      <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
-                      <div className="h-4 w-full rounded bg-neutral-200 dark:bg-neutral-700" />
-                    </div>
-                  </div>
-                ))}
+        <div className="flex items-center gap-2 ml-auto">
+          {agentUUID && agentSlug ? (
+            <ButtonPrimary type="button" onClick={handleAddNewPackageClick} className="!text-sm !px-4 !py-2">
+              + Package
+            </ButtonPrimary>
+          ) : (
+            <ButtonPrimary type="button" onClick={() => router.push('/listing')} className="!text-sm !px-4 !py-2">
+              + Package
+            </ButtonPrimary>
+          )}
+
+          <Menu as="div" className="relative inline-block text-left">
+            <Menu.Button className="inline-flex items-center gap-2 px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-neutral-700 dark:text-neutral-200 hover:border-primary-500 hover:text-primary-700 dark:hover:text-primary-300 focus:outline-none transition-colors">
+              <ArrowsUpDownIcon className="w-4 h-4" />
+              <span className="hidden sm:inline text-neutral-500 dark:text-neutral-400">Sort:</span>
+              <span className="font-medium">{SORT_LABELS[sortKey]}</span>
+              <ChevronDownIcon className="w-4 h-4" aria-hidden="true" />
+            </Menu.Button>
+            <Transition
+              as={Fragment}
+              enter="transition ease-out duration-150"
+              enterFrom="opacity-0 translate-y-1"
+              enterTo="opacity-100 translate-y-0"
+              leave="transition ease-in duration-100"
+              leaveFrom="opacity-100 translate-y-0"
+              leaveTo="opacity-0 translate-y-1"
+            >
+              <Menu.Items className="absolute right-0 z-20 mt-2 w-56 origin-top-right rounded-2xl bg-white dark:bg-neutral-900 shadow-xl border border-neutral-200 dark:border-neutral-700 focus:outline-none overflow-hidden">
+                <div className="py-2">
+                  {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+                    <Menu.Item key={key}>
+                      {({ active }) => (
+                        <button
+                          type="button"
+                          onClick={() => setSortKey(key)}
+                          className={`w-full text-left flex items-center justify-between gap-3 px-4 py-2.5 text-sm transition ${
+                            active ? 'bg-neutral-100 dark:bg-neutral-800' : ''
+                          } ${
+                            sortKey === key
+                              ? 'text-primary-700 dark:text-primary-300 font-medium'
+                              : 'text-neutral-700 dark:text-neutral-200'
+                          }`}
+                        >
+                          <span>{SORT_LABELS[key]}</span>
+                          {sortKey === key ? <CheckIcon className="w-4 h-4" /> : null}
+                        </button>
+                      )}
+                    </Menu.Item>
+                  ))}
+                </div>
+              </Menu.Items>
+            </Transition>
+          </Menu>
+        </div>
+      </div>
+
+      {/* Package groups */}
+      {packagesLoading ? (
+        <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 overflow-hidden shadow-sm">
+          {Array.from({ length: LOADER_CARD_COUNT }).map((_, index) => (
+            <div
+              key={`listed-package-skeleton-${index}`}
+              className="grid grid-cols-[auto_1fr_auto] gap-3.5 items-center px-4 py-4 border-t first:border-t-0 border-neutral-200 dark:border-neutral-700 animate-pulse"
+            >
+              <div className="w-14 h-14 rounded-xl bg-neutral-200 dark:bg-neutral-700 flex-shrink-0" />
+              <div className="space-y-2 min-w-0">
+                <div className="h-4 w-3/4 rounded bg-neutral-200 dark:bg-neutral-700" />
+                <div className="h-3 w-1/2 rounded bg-neutral-200 dark:bg-neutral-700" />
               </div>
-            ) : sortedPackages.length > 0 ? (
-              <>
-                <div className="space-y-4">
-                  {sortedPackages.map((pkg) => {
-                    const isUnpublished = pkg.published === false;
-                    const bookingCount = bookingCountsByPackage?.[pkg.id] ?? 0;
-                    const pkgSlug = (pkg.slug || '').trim();
-                    const detailUrl =
-                      agentSlug && pkgSlug ? `/${agentSlug}/${pkgSlug}` : '';
-                    const shareUrl =
-                      origin && pkgSlug ? `${origin}/${agentSlug}/${pkgSlug}` : '';
-                    return (
+              <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                <div className="h-5 w-16 rounded-full bg-neutral-200 dark:bg-neutral-700" />
+                <div className="h-3 w-20 rounded bg-neutral-200 dark:bg-neutral-700" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : filteredAndGrouped.length > 0 ? (
+        <div className="space-y-5">
+          {filteredAndGrouped.map(({ monthKey, packages: pkgs }) => (
+            <div key={monthKey}>
+              <h3 className="text-xs font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-widest mb-2 px-1">
+                {monthKey === -1
+                  ? 'No departure date'
+                  : `${MONTH_NAMES_FULL[monthKey]} ${selectedYear}`}
+                <span className="ml-2 normal-case tracking-normal font-medium text-neutral-400 dark:text-neutral-500">
+                  ({pkgs.length})
+                </span>
+              </h3>
+              <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 overflow-hidden shadow-sm">
+                {pkgs.map((pkg) => {
+                  const isUnpublished = pkg.published === false;
+                  const bookingCount = bookingCountsByPackage?.[pkg.id] ?? 0;
+                  const pkgSlug = (pkg.slug || '').trim();
+                  const detailUrl = agentSlug && pkgSlug ? `/${agentSlug}/${pkgSlug}` : '';
+                  const shareUrl = origin && pkgSlug ? `${origin}/${agentSlug}/${pkgSlug}` : '';
+                  return (
                     <div
                       key={pkg.id}
-                      className={`rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 sm:p-5 ${isUnpublished ? 'opacity-60 grayscale' : ''}`}
+                      className={`grid grid-cols-[auto_1fr_auto] gap-3.5 items-center px-4 py-4 border-t first:border-t-0 border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition-colors${isUnpublished ? ' opacity-60' : ''}`}
                     >
-                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                        <div>
-                          <h3 className="text-lg font-semibold">
-                            {detailUrl ? (
-                              <Link
-                                href={detailUrl}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="hover:text-primary-700 dark:hover:text-primary-300 hover:underline transition-colors"
-                              >
-                                {pkg.title || `Package ${pkg.id}`}
-                              </Link>
-                            ) : (
-                              pkg.title || `Package ${pkg.id}`
-                            )}
-                          </h3>
-                          <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                            Ref: {formatPackageRef(pkg.id)}
-                          </p>
-                        </div>
-
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="px-3 py-1 rounded-full text-xs font-medium bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
-                            {(pkg.type || 'UMRAH').toUpperCase()}
-                          </span>
-                          <span
-                            className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                            title={`${bookingCount} booking${bookingCount === 1 ? '' : 's'} for this package`}
+                      {/* Thumbnail */}
+                      <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary-100 to-secondary-50 dark:from-primary-900/30 dark:to-secondary-900/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {pkg.thumbnail_url ? (
+                          <img src={pkg.thumbnail_url} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <svg
+                            viewBox="0 0 100 60"
+                            className="w-[85%] h-[75%] text-primary-400 dark:text-primary-600"
+                            fill="currentColor"
+                            aria-hidden="true"
                           >
-                            {bookingCount} booking{bookingCount === 1 ? '' : 's'}
-                          </span>
+                            <rect x="40" y="8" width="20" height="50" />
+                            <rect x="46" y="2" width="3" height="6" />
+                            <circle cx="48" cy="20" r="3" fill="none" stroke="currentColor" strokeWidth="0.8" />
+                            <rect x="30" y="40" width="40" height="20" />
+                          </svg>
+                        )}
+                      </div>
+
+                      {/* Body */}
+                      <div className="min-w-0">
+                        <div className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+                          Dep. {formatDateLabel(pkg.departure_date)}
+                        </div>
+                        <div className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 truncate">
+                          {detailUrl ? (
+                            <Link
+                              href={detailUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-primary-700 dark:hover:text-primary-300 transition-colors"
+                            >
+                              {pkg.title || `Package ${pkg.id}`}
+                            </Link>
+                          ) : (
+                            pkg.title || `Package ${pkg.id}`
+                          )}
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                          {pkg.price_per_person ? (
+                            <span className="text-[12.5px] font-semibold text-primary-900 dark:text-primary-300">
+                              {pkg.currency || 'INR'} {Number(pkg.price_per_person).toLocaleString('en-IN')} / person
+                            </span>
+                          ) : null}
+                          {pkg.price_per_person && pkg.total_duration_days ? (
+                            <span className="w-1 h-1 rounded-full bg-neutral-300 dark:bg-neutral-600 inline-block flex-shrink-0" />
+                          ) : null}
+                          {pkg.total_duration_days ? (
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400">{pkg.total_duration_days} days</span>
+                          ) : null}
+                          {(pkg.departure_city || pkg.arrival_city) ? (
+                            <span className="w-1 h-1 rounded-full bg-neutral-300 dark:bg-neutral-600 inline-block flex-shrink-0" />
+                          ) : null}
+                          {(pkg.departure_city || pkg.arrival_city) ? (
+                            <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                              {[pkg.departure_city, pkg.arrival_city].filter(Boolean).join(' – ')}
+                            </span>
+                          ) : null}
+                        </div>
+                      </div>
+
+                      {/* Stats + Actions */}
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <div className="flex items-center gap-2">
                           <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11.5px] font-medium ${
                               isUnpublished
-                                ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300'
-                                : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                ? 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300'
+                                : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300'
                             }`}
                           >
-                            {isUnpublished ? 'Unpublished' : 'Published'}
+                            <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${isUnpublished ? 'bg-neutral-400' : 'bg-emerald-500'}`} />
+                            {isUnpublished ? 'Draft' : 'Active'}
                           </span>
+                          <span className="text-[11.5px] text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
+                            <span className="font-semibold text-neutral-900 dark:text-neutral-100">{bookingCount}</span>
+                            {pkg.total_seats ? `/${pkg.total_seats}` : ''} booked
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-0.5">
                           <button
-                            className="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
+                            className="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-800"
                             onClick={() => handleTogglePublished(pkg)}
                             type="button"
                             aria-label={isUnpublished ? 'Publish package' : 'Unpublish package'}
                             title={isUnpublished ? 'Publish' : 'Unpublish'}
                           >
-                            {isUnpublished ? (
-                              <EyeIcon className="w-5 h-5" />
-                            ) : (
-                              <EyeSlashIcon className="w-5 h-5" />
-                            )}
+                            {isUnpublished ? <EyeIcon className="w-4 h-4" /> : <EyeSlashIcon className="w-4 h-4" />}
                           </button>
                           {shareUrl ? (
                             <ShareButton
@@ -694,13 +799,13 @@ const ListedPackagesPage = () => {
                             />
                           ) : null}
                           <button
-                            className="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
+                            className="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-800"
                             onClick={() => handleClone(pkg)}
                             type="button"
                             aria-label="Clone package"
                             title="Clone"
                           >
-                            <DocumentDuplicateIcon className="w-5 h-5" />
+                            <DocumentDuplicateIcon className="w-4 h-4" />
                           </button>
                           {agentUUID && agentSlug ? (
                             <AddPackageWizardModal
@@ -708,12 +813,10 @@ const ListedPackagesPage = () => {
                               agentSlug={agentSlug}
                               agentCity={agentCityLabel}
                               editPackageId={pkg.id}
-                              triggerClassName="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-300 dark:hover:text-neutral-100 dark:hover:bg-neutral-800"
-                              triggerContent={<PencilSquareIcon className="w-5 h-5" />}
+                              triggerClassName="inline-flex items-center justify-center rounded-md p-1.5 text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:text-neutral-400 dark:hover:text-neutral-200 dark:hover:bg-neutral-800"
+                              triggerContent={<PencilSquareIcon className="w-4 h-4" />}
                               onCreated={() => {
-                                queryClient.invalidateQueries({
-                                  queryKey: ['agentPackages', agentUUID],
-                                });
+                                queryClient.invalidateQueries({ queryKey: ['agentPackages', agentUUID] });
                                 const paths = ['/packages', `/${agentSlug}`];
                                 if (pkgSlug) paths.push(`/${agentSlug}/${pkgSlug}`);
                                 void revalidatePaths(paths);
@@ -721,81 +824,28 @@ const ListedPackagesPage = () => {
                             />
                           ) : null}
                           <button
-                            className="inline-flex items-center justify-center rounded-md p-1.5 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="inline-flex items-center justify-center rounded-md p-1.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
                             onClick={() => requestDeletePackage(pkg.id)}
                             type="button"
                             aria-label="Delete package"
                             title="Delete"
                           >
-                            <TrashIcon className="w-5 h-5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => toggle(pkg.id)}
-                            className="inline-flex items-center justify-center text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-                            aria-label={
-                              expandedPackageIds.includes(pkg.id)
-                                ? 'Collapse package details'
-                                : 'Expand package details'
-                            }
-                          >
-                            {expandedPackageIds.includes(pkg.id) ? (
-                              <ChevronUpIcon className="w-5 h-5" />
-                            ) : (
-                              <ChevronDownIcon className="w-5 h-5" />
-                            )}
+                            <TrashIcon className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
-
-                      {expandedPackageIds.includes(pkg.id) && (
-                        <div className="mt-4 space-y-4 border-t border-neutral-200 dark:border-neutral-700 pt-4">
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                            <div>
-                              <p className="text-neutral-500 dark:text-neutral-400">Route</p>
-                              <p className="font-medium">
-                                {pkg.departure_city && pkg.arrival_city
-                                  ? `${pkg.departure_city} - ${pkg.arrival_city}`
-                                  : 'TBD'}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-neutral-500 dark:text-neutral-400">Duration</p>
-                              <p className="font-medium">{pkg.total_duration_days || 0} days</p>
-                            </div>
-                            <div>
-                              <p className="text-neutral-500 dark:text-neutral-400">Price</p>
-                              <p className="font-medium">
-                                {pkg.currency || 'INR'}{' '}
-                                {Number(pkg.price_per_person || 0).toLocaleString('en-IN')}
-                              </p>
-                            </div>
-                            <div>
-                              <p className="text-neutral-500 dark:text-neutral-400">
-                                Departure date
-                              </p>
-                              <p className="font-medium">{formatDateLabel(pkg.departure_date)}</p>
-                            </div>
-                            <div>
-                              <p className="text-neutral-500 dark:text-neutral-400">Arrival date</p>
-                              <p className="font-medium">{formatDateLabel(pkg.arrival_date)}</p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
-                    );
-                  })}
-                </div>
-              </>
-            ) : (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                No packages listed yet.
-              </p>
-            )}
-          </Tab.Panel>
-        </Tab.Panels>
-      </Tab.Group>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          No packages for {selectedMonth !== null ? `${MONTH_NAMES_FULL[selectedMonth]} ` : ''}{selectedYear}.
+        </p>
+      )}
 
       <Transition appear show={unpublishPendingPackage !== null} as={Fragment}>
         <Dialog
@@ -930,6 +980,7 @@ const ListedPackagesPage = () => {
         </Dialog>
       </Transition>
     </div>
+    </>
   );
 };
 
