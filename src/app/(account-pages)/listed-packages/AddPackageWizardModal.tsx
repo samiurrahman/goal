@@ -1306,7 +1306,7 @@ const AddPackageWizardModal = ({
             )
       }
       renderContent={() => (
-        <div className="flex flex-col h-full gap-4">
+        <div className="flex flex-col flex-1 min-h-0 gap-4">
           {isLoadingPackage ? (
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
               Loading package data...

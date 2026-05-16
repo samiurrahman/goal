@@ -108,10 +108,24 @@ const PageLogin = () => {
               className="flex w-full rounded-lg bg-primary-50 dark:bg-neutral-800 px-4 py-3 transform transition-transform sm:px-6 hover:translate-y-[-2px]"
               onClick={async () => {
                 setLoading(true);
-                // For OAuth, Supabase will handle the redirect and set the cookie on callback page
+                // Persist the post-login destination so SupabaseSessionSync can
+                // redirect there after the OAuth round-trip clears the URL params.
+                const redirectPath = searchParams.get('redirect');
+                if (redirectPath) {
+                  try {
+                    localStorage.setItem('postLoginRedirect', redirectPath);
+                  } catch {
+                    /* private mode — redirect will fall back to home */
+                  }
+                }
                 const { error } = await supabase.auth.signInWithOAuth({ provider: 'google' });
                 if (error) {
                   toast.error('Google sign-in failed. Please try again.');
+                  try {
+                    localStorage.removeItem('postLoginRedirect');
+                  } catch {
+                    /* ignore */
+                  }
                   setLoading(false);
                 }
               }}

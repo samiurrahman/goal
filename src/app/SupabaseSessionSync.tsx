@@ -121,6 +121,22 @@ export default function SupabaseSessionSync() {
         removeAccessToken();
         return;
       }
+      // After Google OAuth the URL params are gone. The login page saves the
+      // intended destination in localStorage before initiating OAuth; consume
+      // it here on the first SIGNED_IN event so the user lands on checkout
+      // (or wherever they were trying to go) instead of the homepage.
+      if (event === 'SIGNED_IN') {
+        try {
+          const pending = localStorage.getItem('postLoginRedirect');
+          if (pending) {
+            localStorage.removeItem('postLoginRedirect');
+            window.location.replace(pending);
+            return;
+          }
+        } catch {
+          /* localStorage unavailable — fall through */
+        }
+      }
       // A password-recovery link can land on any page — Supabase falls back to
       // the project's Site URL when the redirect target isn't allow-listed.
       // Funnel the user to the reset form wherever they touch down; the
