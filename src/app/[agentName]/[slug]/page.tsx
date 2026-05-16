@@ -467,7 +467,7 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
       ? amenitiesFromDb
       : Amenities_demos.map((item) => ({
           ...item,
-          icon: typeof item.icon === 'string' ? item.icon : (item.icon.src ?? ''),
+          icon: item.icon,
         }));
 
   const parsedDefaultPricing = parseJson<{ people?: number; value?: number; currency?: string }>(
