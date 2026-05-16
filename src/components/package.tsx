@@ -39,8 +39,8 @@ const PackageCard: FC<PackageCardProps> = ({ className = '', data = {} as Packag
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-y-6 gap-x-10 text-sm text-neutral-700 dark:text-neutral-300 ">
           {Amenities_demos.map((item, index) => (
             <div key={index} className="flex items-center space-x-4 ">
-              <div className="w-10 flex-shrink-0">
-                <Image src={item.icon} alt="" />
+              <div className="w-10 flex-shrink-0 flex items-center justify-center">
+                <i className={`${item.icon} text-2xl text-primary-700`} aria-hidden />
               </div>
               <span>{item.name}</span>
             </div>

@@ -5,14 +5,6 @@ import {
   twoPeopleIcon,
 } from '@/components/icons/icons';
 import { ListingGalleryImage } from '@/components/listing-image-gallery/utils/types';
-import carUtilities1 from '@/images/carUtilities/1.png';
-import carUtilities2 from '@/images/carUtilities/2.png';
-import carUtilities3 from '@/images/carUtilities/3.png';
-import carUtilities4 from '@/images/carUtilities/4.png';
-import carUtilities5 from '@/images/carUtilities/5.png';
-import carUtilities6 from '@/images/carUtilities/6.png';
-import carUtilities7 from '@/images/carUtilities/7.png';
-import carUtilities8 from '@/images/carUtilities/8.png';
 
 export const PHOTOS: string[] = [
   'https://images.pexels.com/photos/6129967/pexels-photo-6129967.jpeg?auto=compress&cs=tinysrgb&dpr=3&h=750&w=1260',
@@ -46,20 +38,14 @@ export const PHOTOS: string[] = [
 ];
 
 export const Amenities_demos = [
-  { name: '23rd Oct to 30th Oct', icon: carUtilities1 },
-  {
-    name: 'Meals',
-    icon: carUtilities2,
-  },
-  { name: 'Visa', icon: carUtilities3 },
-  { name: 'Laundry', icon: carUtilities4 },
-  {
-    name: 'Makkah Tower 1 or similler hotel in Makkah (~300m)',
-    icon: carUtilities5,
-  },
-  { name: 'Ajyad hotel in Madina (~400m)', icon: carUtilities6 },
-  { name: 'Makkah stay 10 Days', icon: carUtilities7 },
-  { name: 'Madina stay 8 Days', icon: carUtilities8 },
+  { name: '23rd Oct to 30th Oct', icon: 'las la-calendar-alt' },
+  { name: 'Meals', icon: 'las la-utensils' },
+  { name: 'Visa', icon: 'las la-passport' },
+  { name: 'Laundry', icon: 'las la-tshirt' },
+  { name: 'Makkah Tower 1 or similar hotel in Makkah (~300m)', icon: 'las la-hotel' },
+  { name: 'Ajyad hotel in Madina (~400m)', icon: 'las la-hotel' },
+  { name: 'Makkah stay 10 Days', icon: 'las la-mosque' },
+  { name: 'Madina stay 8 Days', icon: 'las la-mosque' },
 ];
 
 export const imageGallery: ListingGalleryImage[] = [...PHOTOS].map(
