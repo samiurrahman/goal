@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { ChevronDownIcon, ChevronUpIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Dialog, Transition } from '@headlessui/react';
 import { supabase } from '@/utils/supabaseClient';
@@ -61,6 +62,15 @@ const MyBookingsPage = () => {
   const [isCancelSubmitting, setIsCancelSubmitting] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Sync active tab with ?tab= URL param so notification deep-links land on the right tab.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const t = searchParams?.get('tab');
+    if (t === 'pending' || t === 'confirmed' || t === 'cancelled') {
+      setActiveTab(t);
+    }
+  }, [searchParams]);
 
   // Realtime subscription — scoped to this user's bookings rows
   useEffect(() => {

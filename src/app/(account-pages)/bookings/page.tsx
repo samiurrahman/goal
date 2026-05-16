@@ -2,6 +2,7 @@
 
 import React, { Fragment, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
   ArrowLeftIcon,
   ArrowRightIcon,
@@ -114,6 +115,15 @@ const AgentBookingsPage = () => {
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState<number>(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+
+  // Sync active tab with ?tab= URL param so notification deep-links land on the right tab.
+  const searchParams = useSearchParams();
+  useEffect(() => {
+    const t = searchParams?.get('tab');
+    if (t && (TAB_LIST as readonly string[]).includes(t)) {
+      setActiveTab(t as TabKey);
+    }
+  }, [searchParams]);
 
   // Realtime subscription
   useEffect(() => {
