@@ -10,6 +10,7 @@ import Avatar from '@/shared/Avatar';
 import GovtVerifiedBadge from '@/components/GovtVerifiedBadge';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 import ShareButton from '@/shared/ShareButton';
+import FavoriteButton from '@/components/FavoriteButton';
 import { sanitizePackageTags, packageTagTone } from '@/constants/packageTags';
 import { formatPackageLocation } from '@/lib/packageLocation';
 
@@ -161,8 +162,8 @@ const Packages: FC<PackagesProps> = ({
             <GovtVerifiedBadge />
           </div>
 
-          {packageHref !== '/packages' ? (
-            <div className="absolute right-3 top-3 z-20">
+          <div className="absolute right-3 top-3 z-20 flex items-center gap-2">
+            {packageHref !== '/packages' ? (
               <ShareButton
                 url={packageHref}
                 title={title}
@@ -170,8 +171,9 @@ const Packages: FC<PackagesProps> = ({
                 className="bg-white/90 dark:bg-neutral-900/90 backdrop-blur-sm shadow-sm"
                 ariaLabel="Share package"
               />
-            </div>
-          ) : null}
+            ) : null}
+            <FavoriteButton packageId={data.id} variant="overlay" />
+          </div>
         </div>
 
         <div className="flex flex-grow flex-col gap-3 p-4 sm:p-5 min-w-0">

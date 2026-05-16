@@ -5,6 +5,7 @@ export const PROTECTED_PATHS = [
   '/listed-packages',
   '/my-bookings',
   '/bookings',
+  '/favorites',
   '/account-settings',
   '/account-billing',
   '/listing',

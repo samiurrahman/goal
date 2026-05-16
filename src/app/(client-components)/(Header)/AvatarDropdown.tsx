@@ -435,6 +435,35 @@ export default function AvatarDropdown({ className = '' }: Props) {
                 </Link>
               )}
 
+              {userType !== 'agent' && (
+                <Link
+                  href={'/favorites'}
+                  className="flex items-center p-2 -m-3 transition duration-150 ease-in-out rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-700 focus:outline-none focus-visible:ring focus-visible:ring-orange-500 focus-visible:ring-opacity-50"
+                  onClick={() => setOpen(false)}
+                >
+                  <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </div>
+                  <div className="ml-4">
+                    <p className="text-sm font-medium ">{'Favorites'}</p>
+                  </div>
+                </Link>
+              )}
+
               {userType === 'agent' && (
                 <Link
                   href="/bookings"
@@ -688,6 +717,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
             : [
                 { label: 'Profile', href: myAccountHref, icon: 'la-user' },
                 { label: 'My Bookings', href: '/my-bookings', icon: 'la-clipboard-list' },
+                { label: 'Favorites', href: '/favorites', icon: 'la-heart' },
                 { label: 'Account Settings', href: '/account-settings', icon: 'la-cog' },
               ]
           ).map((link) => (

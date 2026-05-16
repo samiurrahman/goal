@@ -54,6 +54,7 @@ export const Nav = () => {
   const userTabs: NavItem[] = [
     { href: '/account', label: 'Profile' },
     { href: '/my-bookings', label: 'My bookings' },
+    { href: '/favorites' as Route, label: 'Favorites' },
     { href: '/account-settings', label: 'Account settings' },
   ];
 

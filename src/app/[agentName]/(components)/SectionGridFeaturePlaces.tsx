@@ -7,6 +7,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 import type { Package, Agent } from '@/data/types';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 import { formatPackageLocation } from '@/lib/packageLocation';
+import FavoriteButton from '@/components/FavoriteButton';
 
 const FALLBACK_BLUR_DATA_URL =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
@@ -18,6 +19,7 @@ export interface SectionGridFeaturePlacesProps {
 
 type CardData = {
   id: number | string;
+  packageId: string | null;
   href: string;
   title: string;
   thumbnail: string;
@@ -68,6 +70,9 @@ const PackageCard: FC<{ data: CardData; priority?: boolean }> = ({ data, priorit
           </svg>
           Verified
         </span>
+        <div className="absolute right-3.5 top-3.5 z-[2]">
+          <FavoriteButton packageId={data.packageId} variant="overlay" />
+        </div>
       </div>
 
       <div className="flex min-w-0 flex-1 flex-col gap-2 p-5">
@@ -163,6 +168,7 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
 
         return {
           id: pkg.id,
+          packageId: pkg.id != null ? String(pkg.id) : null,
           href,
           title: pkg.title || 'Package',
           thumbnail: thumb,

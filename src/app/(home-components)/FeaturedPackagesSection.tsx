@@ -7,6 +7,7 @@ import { Package } from '@/data/types';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 import { sanitizePackageTags, packageTagTone } from '@/constants/packageTags';
 import { formatPackageLocation } from '@/lib/packageLocation';
+import FavoriteButton from '@/components/FavoriteButton';
 
 const FALLBACK_BLUR_DATA_URL =
   'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
@@ -226,6 +227,9 @@ const PackageCard: FC<{ pkg: Package; priority?: boolean }> = ({ pkg, priority =
           className="object-cover"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-black/20" />
+        <div className="absolute top-3.5 right-3.5 z-20">
+          <FavoriteButton packageId={pkg.id} variant="overlay" />
+        </div>
         <span className="absolute top-3.5 left-3.5 z-20 inline-flex items-center gap-1.5 rounded-full bg-secondary-50 border border-secondary-200 text-secondary-700 px-2.5 py-1 text-[11px] font-semibold leading-none">
           <svg width="11" height="11" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
             <path d="M6 0L7.5 1.5L9.6 1L10 3.1L11.5 4.6L10.6 6.5L11 8.5L9 9L7.8 10.6L6 10L4.2 10.6L3 9L1 8.5L1.4 6.5L0.5 4.6L2 3.1L2.4 1L4.5 1.5L6 0z" />
