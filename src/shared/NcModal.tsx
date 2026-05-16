@@ -55,7 +55,7 @@ const NcModal: FC<NcModalProps> = ({
 
       <Transition appear show={isOpen} as={Fragment}>
         <Dialog as="div" className="fixed inset-0 z-50 overflow-y-auto" onClose={closeModal}>
-          <div className="min-h-screen px-1 text-center md:px-4">
+          <div className="min-h-screen px-1 flex items-center justify-center md:px-4">
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-75"
@@ -68,10 +68,6 @@ const NcModal: FC<NcModalProps> = ({
               <Dialog.Overlay className="fixed inset-0 bg-neutral-900 bg-opacity-50 dark:bg-opacity-80" />
             </Transition.Child>
 
-            {/* This element is to trick the browser into centering the modal contents. */}
-            <span className="inline-block h-screen align-middle" aria-hidden="true">
-              &#8203;
-            </span>
             <Transition.Child
               as={Fragment}
               enter="ease-out duration-75"
@@ -82,9 +78,9 @@ const NcModal: FC<NcModalProps> = ({
               leaveTo="opacity-0 scale-95"
             >
               <div
-                className={`inline-block w-full my-5 overflow-hidden text-left align-middle transition-all transform bg-white border border-black border-opacity-5 shadow-xl rounded-2xl sm:my-8 dark:bg-neutral-800 dark:border-neutral-700 text-neutral-900 dark:text-neutral-300 ${contentExtraClass}`}
+                className={`relative w-full my-5 overflow-hidden text-left transition-all transform bg-white border border-black border-opacity-5 shadow-xl rounded-2xl sm:my-8 dark:bg-neutral-800 dark:border-neutral-700 text-neutral-900 dark:text-neutral-300 flex flex-col max-h-[85dvh] sm:max-h-[90vh] ${contentExtraClass}`}
               >
-                <div className="py-4 px-6 text-center relative border-b border-neutral-100 dark:border-neutral-700 md:py-5">
+                <div className="shrink-0 py-4 px-6 text-center relative border-b border-neutral-100 dark:border-neutral-700 md:py-5">
                   <ButtonClose
                     onClick={closeModal}
                     className="absolute left-2 top-1/2 transform -translate-y-1/2 sm:left-4"
@@ -92,13 +88,13 @@ const NcModal: FC<NcModalProps> = ({
                   {modalTitle && (
                     <Dialog.Title
                       as="h3"
-                      className="text-base font-semibold text-neutral-900 lg:text-xl dark:text-neutral-200 mx-10"
+                      className="text-base font-semibold text-neutral-900 lg:text-xl dark:text-neutral-200 ml-10"
                     >
                       {modalTitle}
                     </Dialog.Title>
                   )}
                 </div>
-                <div className={contentPaddingClass}>{renderContent()}</div>
+                <div className={`${contentPaddingClass} flex-1 min-h-0 overflow-hidden flex flex-col`}>{renderContent()}</div>
               </div>
             </Transition.Child>
           </div>

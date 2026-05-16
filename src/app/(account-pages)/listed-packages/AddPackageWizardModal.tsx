@@ -1251,15 +1251,11 @@ const AddPackageWizardModal = ({
       onCloseModal={closeModal}
       modalTitle={
         isLoadingPackage ? null : (
-          <div className="flex items-center justify-between gap-3 text-left">
-            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 sm:text-base lg:text-base">
-              {editPackageId ? 'Edit Package' : 'Add New Package'}
-              <span className="font-normal text-neutral-400 dark:text-neutral-500"> • </span>
-              <span className="font-medium text-neutral-600 dark:text-neutral-300">
-                {stepTitle}
-              </span>
+          <div className="flex items-center justify-between gap-2 text-left">
+            <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 sm:text-base">
+              {editPackageId ? 'Edit' : 'Add Package'}
             </span>
-            <span className="flex flex-wrap items-center gap-2">
+            <span className="flex items-center gap-2">
               <ButtonSecondary
                 type="button"
                 onClick={() => handlePublish(false)}
@@ -1310,18 +1306,14 @@ const AddPackageWizardModal = ({
             )
       }
       renderContent={() => (
-        <div className="space-y-5">
+        <div className="flex flex-col h-full gap-4">
           {isLoadingPackage ? (
             <p className="text-sm text-neutral-500 dark:text-neutral-400">
               Loading package data...
             </p>
           ) : (
             <>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400 -mt-1">
-                Step {currentStepIndex + 1} of {WIZARD_STEPS.length}
-              </div>
-
-              <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
+              <div className="shrink-0 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:overflow-visible sm:px-0">
                 <div className="flex min-w-max items-start">
                   {WIZARD_STEPS.map((wizardStep, index) => {
                     const isActive = wizardStep === step;
@@ -1376,7 +1368,7 @@ const AddPackageWizardModal = ({
                 </div>
               </div>
 
-              <div className="max-h-[58vh] overflow-y-auto pr-1 space-y-5 sm:max-h-[62vh]">
+              <div className="flex-1 min-h-0 overflow-y-auto pr-1 space-y-5">
                 {step === 'meta' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
@@ -2116,7 +2108,7 @@ const AddPackageWizardModal = ({
                 )}
               </div>
 
-              <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
+              <div className="shrink-0 flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">
                 <ButtonSecondary
                   type="button"
                   className="w-full sm:w-auto"

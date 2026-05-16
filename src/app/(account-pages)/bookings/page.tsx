@@ -218,7 +218,9 @@ const AgentBookingsPage = () => {
 
   useEffect(() => { void loadBookings(); }, [refreshKey]);
 
-  useEffect(() => { setSelectedMonth(null); }, [selectedYear]);
+  useEffect(() => { setSelectedMonth(null); setSelectedBookingId(null); }, [selectedYear]);
+
+  useEffect(() => { setSelectedBookingId(null); }, [selectedMonth]);
 
   const handleConfirm = async (bookingId: number) => {
     const { error } = await supabase.from('bookings').update({ status: 'confirmed' }).eq('id', bookingId);
@@ -347,11 +349,19 @@ const AgentBookingsPage = () => {
     return () => { cancelled = true; };
   }, [debouncedQuery, agentUserId]);
 
-  // Counts
-  const allCount = bookings.length;
-  const pendingCount = useMemo(() => bookings.filter((b) => b.status?.toLowerCase() === 'pending').length, [bookings]);
-  const confirmedCount = useMemo(() => bookings.filter((b) => b.status?.toLowerCase() === 'confirmed').length, [bookings]);
-  const cancelledCount = useMemo(() => bookings.filter((b) => b.status?.toLowerCase() === 'cancelled').length, [bookings]);
+  // Counts scoped to the current year + month selection
+  const yearMonthFiltered = useMemo(() => {
+    let list = bookings.filter((b) => new Date(b.created_at).getFullYear() === selectedYear);
+    if (selectedMonth !== null) {
+      list = list.filter((b) => new Date(b.created_at).getMonth() === selectedMonth);
+    }
+    return list;
+  }, [bookings, selectedYear, selectedMonth]);
+
+  const allCount = yearMonthFiltered.length;
+  const pendingCount = useMemo(() => yearMonthFiltered.filter((b) => b.status?.toLowerCase() === 'pending').length, [yearMonthFiltered]);
+  const confirmedCount = useMemo(() => yearMonthFiltered.filter((b) => b.status?.toLowerCase() === 'confirmed').length, [yearMonthFiltered]);
+  const cancelledCount = useMemo(() => yearMonthFiltered.filter((b) => b.status?.toLowerCase() === 'cancelled').length, [yearMonthFiltered]);
 
   const tabCounts: Record<TabKey, number> = { all: allCount, pending: pendingCount, confirmed: confirmedCount, cancelled: cancelledCount };
 
