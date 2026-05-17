@@ -242,7 +242,12 @@ const SectionGridFeaturePlaces: FC<SectionGridFeaturePlacesProps> = ({
               key={card.id || index}
               className="w-[82vw] max-w-[340px] shrink-0 snap-start sm:w-[calc(50%-10px)] sm:max-w-none md:w-[calc(50%-12px)] xl:w-[calc(33.333%-16px)]"
             >
-              <PackageCard data={card} priority={index < 2} />
+              {/*
+                Only the first card preloads. The agent page's LCP is the
+                banner image at the top, which is already priority — racing
+                multiple card images against it on mobile hurts the score.
+              */}
+              <PackageCard data={card} priority={index === 0} />
             </div>
           ))}
         </div>

@@ -292,7 +292,7 @@ const SectionGridFilterCard: FC<SectionGridFilterCardProps> = ({
               <Packages
                 key={item.id || index}
                 data={item}
-                priority={index < 3}
+                priority={index === 0}
                 agentProfileImage={item.agent_profile_image || undefined}
                 agentDisplayName={item.agent_known_as || undefined}
                 agentSlug={item.agent_name || undefined}

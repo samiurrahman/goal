@@ -121,7 +121,13 @@ const FeaturedPackagesSection: FC<FeaturedPackagesSectionProps> = ({ packages })
                 key={pkg.id ?? idx}
                 className="flex-shrink-0 w-[85%] sm:w-auto snap-start"
               >
-                <PackageCard pkg={pkg} priority={idx < 3} />
+                {/*
+                  Only the FIRST card gets priority — mobile Lighthouse sees
+                  one card above the fold, and preloading 3 images races
+                  bandwidth against the actual LCP image, hurting the score.
+                  Desktop shows 3 cards but they still load fast eagerly.
+                */}
+                <PackageCard pkg={pkg} priority={idx === 0} />
               </div>
             ))}
           </div>
