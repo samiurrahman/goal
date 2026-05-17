@@ -2,13 +2,14 @@
 
 import React, { Fragment } from 'react';
 import { Popover, Transition } from '@headlessui/react';
+import { ClockIcon } from '@heroicons/react/24/outline';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import { rangeId } from '@/hooks/filters/useMultiRangeFilter';
 import { useSingleRangeFilter } from '@/hooks/filters/useSingleRangeFilter';
 import { DURATION_RANGES, formatDurationRangeLabel } from './filterRanges';
 import RangePill from './RangePill';
-import XClearIcon from './XClearIcon';
+import FilterPillButton from './FilterPillButton';
 
 const PackageDurationFilter = () => {
   const filter = useSingleRangeFilter('total_duration_days');
@@ -18,28 +19,14 @@ const PackageDurationFilter = () => {
       {({ open, close }) => (
         <>
           <Popover.Button
-            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border bg-white dark:bg-neutral-800 focus:outline-none
-              ${open ? '!border-primary-500' : ''}
-              ${
-                filter.isActive
-                  ? '!border-primary-500 !bg-primary-50 text-primary-700'
-                  : 'border-neutral-300 dark:border-neutral-700'
-              }`}
-          >
-            <span>Package Duration</span>
-            {!filter.isActive ? (
-              <i className="las la-angle-down ml-2"></i>
-            ) : (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  filter.clear();
-                }}
-              >
-                <XClearIcon />
-              </span>
-            )}
-          </Popover.Button>
+            as={FilterPillButton}
+            icon={<ClockIcon className="h-4 w-4" />}
+            label="Duration"
+            activeText={filter.selected ? formatDurationRangeLabel(filter.selected) : null}
+            isActive={filter.isActive}
+            isOpen={open}
+            onClear={filter.clear}
+          />
           <Transition
             as={Fragment}
             enter="transition ease-out duration-200"

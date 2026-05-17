@@ -2,6 +2,7 @@
 
 import React, { Fragment, useEffect, useRef, useState } from 'react';
 import { Popover, Transition } from '@headlessui/react';
+import { BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import { rangeId } from '@/hooks/filters/useMultiRangeFilter';
@@ -9,7 +10,7 @@ import { useSingleRangeFilter } from '@/hooks/filters/useSingleRangeFilter';
 import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
 import { DISTANCE_RANGES, formatDistanceRangeLabel } from './filterRanges';
 import RangePill from './RangePill';
-import XClearIcon from './XClearIcon';
+import FilterPillButton from './FilterPillButton';
 
 type City = 'makkah' | 'madinah';
 
@@ -52,33 +53,28 @@ const HotelDistanceFilter = () => {
 
   const current = activeTab === 'makkah' ? makkah : madinah;
 
+  const pillValue: string | null = (() => {
+    if (makkah.isActive && madinah.isActive) return null; // show count badge instead
+    if (makkah.selected) return `Makkah ${formatDistanceRangeLabel(makkah.selected)}`;
+    if (madinah.selected) return `Madinah ${formatDistanceRangeLabel(madinah.selected)}`;
+    return null;
+  })();
+  const pillCount = makkah.isActive && madinah.isActive ? 2 : 0;
+
   return (
     <Popover className="relative">
       {({ open, close }) => (
         <>
           <Popover.Button
-            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border bg-white dark:bg-neutral-800 focus:outline-none
-              ${open ? '!border-primary-500' : ''}
-              ${
-                isActive
-                  ? '!border-primary-500 !bg-primary-50 text-primary-700'
-                  : 'border-neutral-300 dark:border-neutral-700'
-              }`}
-          >
-            <span>Hotel Distance</span>
-            {!isActive ? (
-              <i className="las la-angle-down ml-2"></i>
-            ) : (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  clearAll();
-                }}
-              >
-                <XClearIcon />
-              </span>
-            )}
-          </Popover.Button>
+            as={FilterPillButton}
+            icon={<BuildingOfficeIcon className="h-4 w-4" />}
+            label="Hotel Distance"
+            activeText={pillValue}
+            count={pillCount}
+            isActive={isActive}
+            isOpen={open}
+            onClear={clearAll}
+          />
           <Transition
             as={Fragment}
             enter="transition ease-out duration-200"

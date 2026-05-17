@@ -2,12 +2,13 @@
 
 import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Popover, Transition } from '@headlessui/react';
+import { MapPinIcon } from '@heroicons/react/24/outline';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import SingleCityAutocomplete, { SelectedCity } from './SingleCityAutocomplete';
 import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
 import { supabase } from '@/utils/supabaseClient';
-import XClearIcon from './XClearIcon';
+import FilterPillButton from './FilterPillButton';
 
 // `?city=akola-in-mh`. Single slug now — multi-select was retired in favour
 // of a typeahead. Legacy `?location=` continues to soft-resolve to a slug
@@ -93,25 +94,14 @@ const LocationFilter = () => {
       {({ open, close }) => (
         <>
           <Popover.Button
-            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:outline-none
-             ${open ? '!border-primary-500 ' : ''}
-              ${isActive ? '!border-primary-500 !bg-primary-50' : ''}
-              `}
-          >
-            <span>Location</span>
-            {!isActive ? (
-              <i className="las la-angle-down ml-2"></i>
-            ) : (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  clearAll();
-                }}
-              >
-                <XClearIcon />
-              </span>
-            )}
-          </Popover.Button>
+            as={FilterPillButton}
+            icon={<MapPinIcon className="h-4 w-4" />}
+            label="Location"
+            activeText={stagedCity?.name ?? null}
+            isActive={isActive}
+            isOpen={open}
+            onClear={clearAll}
+          />
           <Transition
             as={Fragment}
             enter="transition ease-out duration-200"

@@ -2,12 +2,13 @@
 
 import React, { Fragment } from 'react';
 import { Popover, Transition } from '@headlessui/react';
+import { CalendarDaysIcon } from '@heroicons/react/24/outline';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST } from '@/contains/contants';
 import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
-import XClearIcon from './XClearIcon';
+import FilterPillButton from './FilterPillButton';
 
 const MonthFilter = () => {
   const filter = useMultiSelectFilter('month');
@@ -17,30 +18,15 @@ const MonthFilter = () => {
       {({ open, close }) => (
         <>
           <Popover.Button
-            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:outline-none
-             ${open ? '!border-primary-500 ' : ''}
-              ${filter.isActive ? '!border-primary-500 !bg-primary-50' : ''}
-              `}
-          >
-            <span>Month</span>
-            {filter.count > 0 && (
-              <span className="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-primary-500 text-[10px] font-semibold text-white">
-                {filter.count}
-              </span>
-            )}
-            {!filter.isActive ? (
-              <i className="las la-angle-down ml-2"></i>
-            ) : (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  filter.clear();
-                }}
-              >
-                <XClearIcon />
-              </span>
-            )}
-          </Popover.Button>
+            as={FilterPillButton}
+            icon={<CalendarDaysIcon className="h-4 w-4" />}
+            label="Month"
+            activeText={filter.count === 1 ? filter.selected[0] : null}
+            count={filter.count > 1 ? filter.count : 0}
+            isActive={filter.isActive}
+            isOpen={open}
+            onClear={filter.clear}
+          />
           <Transition
             as={Fragment}
             enter="transition ease-out duration-200"

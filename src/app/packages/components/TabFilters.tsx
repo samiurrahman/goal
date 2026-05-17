@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
+import { AdjustmentsHorizontalIcon } from '@heroicons/react/24/outline';
 import LocationFilter from './LocationFilter';
 import AgentFilter from './AgentFilter';
 import MonthFilter from './MonthFilter';
@@ -34,23 +35,11 @@ const TabFilters = () => {
       {/* FOR MOBILE / TABLET */}
       <div className="flex lg:hidden">
         <button
+          type="button"
           onClick={() => setisOpenMoreFilter(true)}
-          className="flex items-center justify-center gap-2 px-4 py-2 text-sm rounded-full border border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300 dark:border-primary-700 focus:outline-none active:scale-95 transition-transform"
+          className="group inline-flex items-center justify-center gap-2 h-10 px-4 text-sm font-medium rounded-full border border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-100 dark:border-primary-400/80 shadow-sm shadow-primary-500/15 hover:shadow-md hover:shadow-primary-500/25 transition-[box-shadow,transform] duration-200 active:scale-[0.98] focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-500/40"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-4 w-4"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2a1 1 0 01-.293.707L13 13.414V19a1 1 0 01-.553.894l-4 2A1 1 0 017 21v-7.586L3.293 6.707A1 1 0 013 6V4z"
-            />
-          </svg>
+          <AdjustmentsHorizontalIcon className="h-4 w-4" />
           <span>Filters</span>
         </button>
 

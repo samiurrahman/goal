@@ -2,12 +2,13 @@
 
 import React, { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { Popover, Transition } from '@headlessui/react';
+import { BuildingOffice2Icon } from '@heroicons/react/24/outline';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonThird from '@/shared/ButtonThird';
 import SingleAgentAutocomplete, { AgentOption } from './SingleAgentAutocomplete';
 import { useFilterUrlSync } from '@/hooks/filters/useFilterUrlSync';
 import { supabase } from '@/utils/supabaseClient';
-import XClearIcon from './XClearIcon';
+import FilterPillButton from './FilterPillButton';
 
 const AGENT_PARAM = 'agent_name';
 
@@ -61,26 +62,15 @@ const AgentFilter = () => {
       {({ open, close }) => (
         <>
           <Popover.Button
+            as={FilterPillButton}
             onClick={() => setHasOpened(true)}
-            className={`flex items-center justify-center px-4 py-2 text-sm rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 focus:outline-none
-             ${open ? '!border-primary-500 ' : ''}
-              ${isActive ? '!border-primary-500 !bg-primary-50' : ''}
-              `}
-          >
-            <span>Agent</span>
-            {!isActive ? (
-              <i className="las la-angle-down ml-2"></i>
-            ) : (
-              <span
-                onClick={(e) => {
-                  e.stopPropagation();
-                  clearAll();
-                }}
-              >
-                <XClearIcon />
-              </span>
-            )}
-          </Popover.Button>
+            icon={<BuildingOffice2Icon className="h-4 w-4" />}
+            label="Agent"
+            activeText={stagedAgent?.known_as ?? null}
+            isActive={isActive}
+            isOpen={open}
+            onClear={clearAll}
+          />
           <Transition
             as={Fragment}
             enter="transition ease-out duration-200"
