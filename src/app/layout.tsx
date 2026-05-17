@@ -7,9 +7,11 @@ import SiteHeader from './(client-components)/(Header)/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import ClientCommons from './ClientCommons';
 import './globals.css';
-import '@/fonts/line-awesome-1.3.0/css/line-awesome.css';
 import '@/styles/index.scss';
-import 'rc-slider/assets/index.css';
+// Line Awesome is loaded non-blocking via <link> in <head> below (was a
+// blocking ~108KB CSS import on every page). The `rc-slider` global CSS was
+// removed entirely — the package is unused; only stray .rc-slider-* selectors
+// remain in __theme_custom.scss as dead style overrides.
 import { ReactQueryProvider } from './providers';
 import { Metadata } from 'next';
 import StructuredData from '@/components/StructuredData';
@@ -109,9 +111,49 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     .filter(Boolean);
   const telephone = process.env.NEXT_PUBLIC_CONTACT_PHONE || '+91 79 7235 1081';
 
+  // LCP-critical card images come from Supabase Storage. Preconnecting lets the
+  // browser do DNS + TLS while HTML is still parsing instead of after the
+  // image preload kicks off — typically a 100–300ms head start on LCP.
+  let supabaseOrigin: string | null = null;
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    if (supabaseUrl) supabaseOrigin = new URL(supabaseUrl).origin;
+  } catch {
+    supabaseOrigin = null;
+  }
+
   return (
     <html lang="en" className={poppins.className}>
       <head>
+        {supabaseOrigin ? (
+          <>
+            <link rel="preconnect" href={supabaseOrigin} crossOrigin="anonymous" />
+            <link rel="dns-prefetch" href={supabaseOrigin} />
+          </>
+        ) : null}
+        {/*
+          Line Awesome is large (~108KB CSS + icon font files) and was previously
+          imported globally, render-blocking every page. Above-the-fold homepage
+          content (hero, header) uses inline SVG instead, so we can load this
+          non-blocking: media="print" lets the browser fetch without blocking
+          first paint, then the inline script flips it to media="all" once the
+          stylesheet is parsed. <noscript> covers the JS-disabled path.
+        */}
+        {/* eslint-disable-next-line @next/next/no-css-tags -- intentional: manual <link> is required so we can load non-blocking via media-print swap. A bundled import would be render-blocking, which is the regression we're fixing. */}
+        <link
+          rel="stylesheet"
+          href="/line-awesome/css/line-awesome.min.css"
+          media="print"
+        />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){var l=document.querySelector('link[href*="line-awesome"][media="print"]');if(!l)return;var swap=function(){l.media='all';};l.sheet?swap():l.addEventListener('load',swap,{once:true});})();`,
+          }}
+        />
+        <noscript>
+          {/* eslint-disable-next-line @next/next/no-css-tags -- same reason as above; only used when JS is off so icons still appear. */}
+          <link rel="stylesheet" href="/line-awesome/css/line-awesome.min.css" />
+        </noscript>
         <StructuredData
           type="Organization"
           data={{
