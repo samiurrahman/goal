@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
+import { pingIndexNow } from '@/lib/indexNow';
 
 // Paths that can be revalidated on demand. Whitelisting prevents an authenticated
 // caller from forcing a refresh of arbitrary pages (cheap DoS vector otherwise).
@@ -64,5 +65,17 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  return NextResponse.json({ ok: true, revalidated: accepted, rejected });
+  // Ping IndexNow for public-facing paths only. Best-effort — never blocks
+  // the response. Skip the homepage and /packages here since they aggregate
+  // many items; engines pick those up via the sitemap.
+  const indexNowTargets = accepted.filter(
+    (p) => p !== '/' && p !== '/packages'
+  );
+  let indexNow: { status: number; submitted: number } | undefined;
+  if (indexNowTargets.length > 0) {
+    const result = await pingIndexNow(indexNowTargets);
+    indexNow = { status: result.status, submitted: result.submitted.length };
+  }
+
+  return NextResponse.json({ ok: true, revalidated: accepted, rejected, indexNow });
 }

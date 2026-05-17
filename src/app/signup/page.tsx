@@ -10,7 +10,7 @@ import Input from '@/shared/Input';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Image from 'next/image';
 import Link from 'next/link';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const getFriendlySignupMessage = (rawMessage: string) => {
   const message = rawMessage.toLowerCase();
@@ -491,7 +491,6 @@ const PageSignUp = () => {
           ) : null}
         </div>
       </div>
-      <Toaster position="top-center" />
     </div>
   );
 };

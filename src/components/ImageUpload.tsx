@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { resolvePublicImageUrl, uploadImageToStorage } from '@/utils/supabaseStorageHelper';
 import toast from 'react-hot-toast';
+import { showApiError } from '@/lib/apiErrors';
 
 interface ImageUploadProps {
   label: string;
@@ -69,7 +70,7 @@ export default function ImageUpload({
     });
 
     if (result.error) {
-      toast.error(`Upload failed: ${result.error}`);
+      showApiError(new Error(result.error), { message: 'Upload failed. Please try again.' });
       setIsUploading(false);
       return;
     }

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { Fragment, useEffect, useMemo, useState } from 'react';
+import React, { Fragment, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
 import { ChevronDownIcon, ChevronUpIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
 import { Dialog, Transition } from '@headlessui/react';
 import Label from '@/components/Label';
@@ -9,10 +10,11 @@ import ButtonSecondary from '@/shared/ButtonSecondary';
 import Input from '@/shared/Input';
 import Select from '@/shared/Select';
 import Textarea from '@/shared/Textarea';
+import CityAutocomplete, { SelectedCity } from '@/components/CityAutocomplete';
 import { supabase } from '@/utils/supabaseClient';
-import toast, { Toaster } from 'react-hot-toast';
-import { useCities } from '@/hooks/useCities';
-import ImageUpload from '@/components/ImageUpload';
+import toast from 'react-hot-toast';
+import { resolvePublicImageUrl, uploadImageToStorage } from '@/utils/supabaseStorageHelper';
+import { showApiError } from '@/lib/apiErrors';
 
 export interface AccountPageProps {}
 
@@ -51,12 +53,6 @@ interface TravelerFormState {
   known_traveler_number: string;
   meal_preference: string;
   special_assistance: string;
-}
-
-interface CityRecord {
-  id: string | number;
-  name: string;
-  state?: string | null;
 }
 
 const normalizeDateForInput = (value: unknown): string => {
@@ -126,15 +122,26 @@ const isTravelerEmpty = (traveler: TravelerEmptyCheckInput): boolean => {
   ].every((value) => (value || '').trim() === '');
 };
 
+const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
+
+const initialsFrom = (value: string): string => {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return 'U';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+};
+
 const AccountPage = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [authUserId, setAuthUserId] = useState<string | null>(null);
   const [initialTravelerIds, setInitialTravelerIds] = useState<string[]>([]);
-  const [selectedCityId, setSelectedCityId] = useState<string>('');
   const [collapsedTravelerKeys, setCollapsedTravelerKeys] = useState<string[]>([]);
   const [deletePendingKey, setDeletePendingKey] = useState<string | null>(null);
   const [userProfileUrl, setUserProfileUrl] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'profile' | 'travelers'>('profile');
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const [accountForm, setAccountForm] = useState<AccountFormState>({
     first_name: '',
@@ -147,17 +154,9 @@ const AccountPage = () => {
     gender: 'unspecified',
   });
 
-  const { data: citiesData, isLoading: citiesLoading } = useCities();
-  const cities = useMemo<CityRecord[]>(() => {
-    if (!Array.isArray(citiesData)) return [];
-    return citiesData as CityRecord[];
-  }, [citiesData]);
-
   const [travelers, setTravelers] = useState<TravelerFormState[]>([createEmptyTraveler()]);
 
-  const canSave = useMemo(() => {
-    return !!authUserId && !isLoading && !isSaving;
-  }, [authUserId, isLoading, isSaving]);
+  const canSave = !!authUserId && !isLoading && !isSaving;
 
   useEffect(() => {
     let isMounted = true;
@@ -201,7 +200,7 @@ const AccountPage = () => {
       if (!isMounted) return;
 
       if (detailsResult.error) {
-        toast.error(`Failed to load account details: ${detailsResult.error.message}`);
+        showApiError(detailsResult.error, { message: 'Failed to load account details. Please try again.' });
       }
 
       const fullNameFromMetadata =
@@ -253,7 +252,7 @@ const AccountPage = () => {
         if (isMissingTable) {
           toast.error('Traveler table is not created yet. Please run the migration SQL once.');
         } else {
-          toast.error(`Failed to load travelers: ${travelersResult.error.message}`);
+          showApiError(travelersResult.error, { message: 'Failed to load travelers. Please try again.' });
         }
       } else {
         const mappedTravelers: TravelerFormState[] = (travelersResult.data || []).map((row) => ({
@@ -293,43 +292,19 @@ const AccountPage = () => {
     };
   }, []);
 
-  useEffect(() => {
-    if (!cities.length) return;
-    if (!accountForm.city) {
-      setSelectedCityId('');
-      return;
-    }
-
-    const matched = cities.find((city) => {
-      const sameCity = (city.name || '').toLowerCase() === accountForm.city.toLowerCase();
-      if (!sameCity) return false;
-
-      if (!accountForm.state) return true;
-      return ((city.state || '').toLowerCase() || '') === accountForm.state.toLowerCase();
-    });
-
-    setSelectedCityId(matched ? String(matched.id) : '');
-  }, [cities, accountForm.city, accountForm.state]);
-
   const updateAccountField = (field: keyof AccountFormState, value: string) => {
     setAccountForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleCitySelect = (cityId: string) => {
-    setSelectedCityId(cityId);
-
-    if (!cityId) {
+  const handleCityPick = (city: SelectedCity | null) => {
+    if (!city) {
       setAccountForm((prev) => ({ ...prev, city: '', state: '' }));
       return;
     }
-
-    const selectedCity = cities.find((city) => String(city.id) === cityId);
-    if (!selectedCity) return;
-
     setAccountForm((prev) => ({
       ...prev,
-      city: selectedCity.name || '',
-      state: selectedCity.state || '',
+      city: city.name,
+      state: city.admin1_name ?? '',
     }));
   };
 
@@ -345,40 +320,14 @@ const AccountPage = () => {
     );
   };
 
-  const getCityIdFromNames = (cityName: string, stateName: string) => {
-    if (!cityName) return '';
-    const foundCity = cities.find((city) => {
-      const sameCity = (city.name || '').toLowerCase() === cityName.toLowerCase();
-      if (!sameCity) return false;
-      if (!stateName) return true;
-      return ((city.state || '').toLowerCase() || '') === stateName.toLowerCase();
-    });
-
-    return foundCity ? String(foundCity.id) : '';
-  };
-
-  const handleTravelerCitySelect = (tempKey: string, cityId: string) => {
-    if (!cityId) {
-      setTravelers((prev) =>
-        prev.map((traveler) =>
-          traveler.tempKey === tempKey
-            ? { ...traveler, traveler_city: '', traveler_state: '' }
-            : traveler
-        )
-      );
-      return;
-    }
-
-    const selectedCity = cities.find((city) => String(city.id) === cityId);
-    if (!selectedCity) return;
-
+  const handleTravelerCityPick = (tempKey: string, city: SelectedCity | null) => {
     setTravelers((prev) =>
       prev.map((traveler) =>
         traveler.tempKey === tempKey
           ? {
               ...traveler,
-              traveler_city: selectedCity.name || '',
-              traveler_state: selectedCity.state || '',
+              traveler_city: city?.name ?? '',
+              traveler_state: city?.admin1_name ?? '',
             }
           : traveler
       )
@@ -402,7 +351,7 @@ const AccountPage = () => {
     if (traveler?.id) {
       const { error } = await supabase.from('traveler_profiles').delete().eq('id', traveler.id);
       if (error) {
-        toast.error(`Failed to delete traveler: ${error.message}`);
+        showApiError(error, { message: 'Failed to delete traveler. Please try again.' });
         return;
       }
       setInitialTravelerIds((prev) => prev.filter((id) => id !== traveler.id));
@@ -421,6 +370,28 @@ const AccountPage = () => {
     );
   };
 
+  const handleAvatarFile = async (file: File | undefined) => {
+    if (!file || !authUserId) return;
+    if (file.size > MAX_AVATAR_SIZE) {
+      toast.error('Image must be smaller than 5MB');
+      return;
+    }
+    setAvatarUploading(true);
+    const result = await uploadImageToStorage(file, `users/${authUserId}`, userProfileUrl, {
+      fixedFileName: 'profile',
+    });
+    setAvatarUploading(false);
+    if (result.error) {
+      showApiError(new Error(result.error), { message: 'Upload failed. Please try again.' });
+      return;
+    }
+    if (result.url) {
+      setUserProfileUrl(result.url);
+      void persistUserProfileUrl(result.url);
+      toast.success('Profile photo updated.');
+    }
+  };
+
   const persistUserProfileUrl = async (url: string) => {
     if (!authUserId) return;
 
@@ -431,7 +402,7 @@ const AccountPage = () => {
       .maybeSingle();
 
     if (existingDetailsError) {
-      toast.error(`Failed to save profile image: ${existingDetailsError.message}`);
+      showApiError(existingDetailsError, { message: 'Failed to save profile image. Please try again.' });
       return;
     }
 
@@ -442,7 +413,7 @@ const AccountPage = () => {
         .eq('auth_user_id', authUserId);
 
       if (updateError) {
-        toast.error(`Failed to save profile image: ${updateError.message}`);
+        showApiError(updateError, { message: 'Failed to save profile image. Please try again.' });
         return;
       }
     } else {
@@ -453,7 +424,7 @@ const AccountPage = () => {
       });
 
       if (insertError) {
-        toast.error(`Failed to save profile image: ${insertError.message}`);
+        showApiError(insertError, { message: 'Failed to save profile image. Please try again.' });
         return;
       }
     }
@@ -483,7 +454,7 @@ const AccountPage = () => {
       .maybeSingle();
 
     if (existingDetailsError) {
-      toast.error(`Failed to save account details: ${existingDetailsError.message}`);
+      showApiError(existingDetailsError, { message: 'Failed to save account details. Please try again.' });
       setIsSaving(false);
       return;
     }
@@ -495,7 +466,7 @@ const AccountPage = () => {
         .eq('auth_user_id', authUserId);
 
       if (updateError) {
-        toast.error(`Failed to save account details: ${updateError.message}`);
+        showApiError(updateError, { message: 'Failed to save account details. Please try again.' });
         setIsSaving(false);
         return;
       }
@@ -507,7 +478,7 @@ const AccountPage = () => {
       });
 
       if (insertError) {
-        toast.error(`Failed to save account details: ${insertError.message}`);
+        showApiError(insertError, { message: 'Failed to save account details. Please try again.' });
         setIsSaving(false);
         return;
       }
@@ -549,7 +520,7 @@ const AccountPage = () => {
         .eq('auth_user_id', authUserId);
 
       if (deleteError) {
-        toast.error(`Failed to remove old travelers: ${deleteError.message}`);
+        showApiError(deleteError, { message: 'Failed to remove old travelers. Please try again.' });
         setIsSaving(false);
         return;
       }
@@ -589,7 +560,7 @@ const AccountPage = () => {
       const updateResults = await Promise.all(updatePromises);
       const failedUpdate = updateResults.find((result) => result.error);
       if (failedUpdate?.error) {
-        toast.error(`Failed to update traveler: ${failedUpdate.error.message}`);
+        showApiError(failedUpdate.error, { message: 'Failed to update traveler. Please try again.' });
         setIsSaving(false);
         return;
       }
@@ -621,7 +592,7 @@ const AccountPage = () => {
       );
 
       if (insertTravelersError) {
-        toast.error(`Failed to create traveler: ${insertTravelersError.message}`);
+        showApiError(insertTravelersError, { message: 'Failed to create traveler. Please try again.' });
         setIsSaving(false);
         return;
       }
@@ -673,15 +644,114 @@ const AccountPage = () => {
 
   return (
     <div className="gap-4">
-      <Toaster position="top-center" />
-
       {isLoading ? (
         <p className="text-sm text-neutral-600 dark:text-neutral-300">Loading account data...</p>
       ) : (
-        <div className="space-y-4">
-          <>
-            <div className="overflow-hidden rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="inline-flex rounded-full border border-neutral-200 bg-white p-1 shadow-sm dark:border-neutral-700 dark:bg-neutral-900">
+              {(
+                [
+                  { key: 'profile', label: 'Profile Info' },
+                  { key: 'travelers', label: 'Travelers' },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => setActiveTab(tab.key)}
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                    activeTab === tab.key
+                      ? 'bg-primary-6000 text-white shadow-sm'
+                      : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-300 dark:hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {activeTab === 'profile' ? (
+            <>
+              <div className="overflow-hidden rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
+                <div className="flex items-center gap-4 px-5 py-5 md:px-7">
+                  <div
+                    className="group relative h-[92px] w-[92px] shrink-0 cursor-pointer overflow-hidden rounded-full border-[3px] border-white bg-white shadow-md dark:border-neutral-900 md:h-[104px] md:w-[104px]"
+                    onClick={() => !avatarUploading && avatarInputRef.current?.click()}
+                    role="button"
+                    tabIndex={0}
+                    aria-label="Change profile photo"
+                    onKeyDown={(e) => {
+                      if ((e.key === 'Enter' || e.key === ' ') && !avatarUploading) {
+                        e.preventDefault();
+                        avatarInputRef.current?.click();
+                      }
+                    }}
+                  >
+                    {resolvePublicImageUrl(userProfileUrl) ? (
+                      <Image
+                        src={resolvePublicImageUrl(userProfileUrl) as string}
+                        alt="Profile photo"
+                        fill
+                        className="object-cover"
+                        sizes="104px"
+                      />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-700 to-primary-900 text-2xl font-semibold tracking-tight text-white">
+                        {initialsFrom(
+                          `${accountForm.first_name} ${accountForm.last_name}`.trim() || 'User'
+                        )}
+                      </div>
+                    )}
+
+                    <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition-colors group-hover:bg-black/45">
+                      <svg
+                        viewBox="0 0 24 24"
+                        className="h-6 w-6 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+                        <circle cx="12" cy="13" r="4" />
+                      </svg>
+                    </div>
+
+                    {avatarUploading && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                        <span className="h-6 w-6 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="truncate text-lg font-semibold leading-tight text-neutral-900 dark:text-white">
+                      {`${accountForm.first_name} ${accountForm.last_name}`.trim() || 'Your name'}
+                    </p>
+                    <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
+                      Click your photo to upload a new one
+                    </p>
+                  </div>
+
+                  <input
+                    ref={avatarInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    disabled={avatarUploading}
+                    onChange={(e) => {
+                      void handleAvatarFile(e.target.files?.[0]);
+                      e.target.value = '';
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <Label>First Name</Label>
                   <Input
@@ -704,26 +774,14 @@ const AccountPage = () => {
 
                 <div>
                   <Label>Location</Label>
-                  <Select
-                    className="mt-1.5"
-                    value={selectedCityId}
-                    onChange={(e) => handleCitySelect(e.target.value)}
-                    disabled={citiesLoading}
-                  >
-                    <option value="">{citiesLoading ? 'Loading cities...' : 'Select city'}</option>
-                    {cities.map((city) => (
-                      <option key={city.id} value={String(city.id)}>
-                        {city.name}
-                        {city.state ? `, ${city.state}` : ''}
-                      </option>
-                    ))}
-                  </Select>
-                  {accountForm.city && !selectedCityId && (
-                    <p className="mt-2 text-xs text-neutral-500">
-                      Saved city: {accountForm.city}
-                      {accountForm.state ? `, ${accountForm.state}` : ''}
-                    </p>
-                  )}
+                  <div className="mt-1.5">
+                    <CityAutocomplete
+                      value={null}
+                      onChange={handleCityPick}
+                      placeholder="Search city (e.g. Hyderabad)"
+                      initialQuery={accountForm.city || undefined}
+                    />
+                  </div>
                 </div>
 
                 <div>
@@ -771,21 +829,9 @@ const AccountPage = () => {
                 </div>
               </div>
 
-              <div className="pt-4 border-t border-neutral-200 dark:border-neutral-700">
-                <ImageUpload
-                  label="Profile Picture"
-                  folder={`users/${authUserId}`}
-                  currentImageUrl={userProfileUrl}
-                  fixedFileName="profile"
-                  onUploadSuccess={(url) => {
-                    setUserProfileUrl(url);
-                    void persistUserProfileUrl(url);
-                  }}
-                  aspectRatio="square"
-                />
               </div>
-            </div>
-
+            </>
+          ) : (
             <div className="space-y-4 overflow-hidden rounded-2xl shadow-sm bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 p-4 md:p-6">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-xl font-semibold">Saved Travelers / Family Details</h3>
@@ -876,37 +922,14 @@ const AccountPage = () => {
 
                         <div>
                           <Label>Traveler City</Label>
-                          <Select
-                            className="mt-1.5"
-                            value={getCityIdFromNames(
-                              traveler.traveler_city,
-                              traveler.traveler_state
-                            )}
-                            onChange={(e) =>
-                              handleTravelerCitySelect(traveler.tempKey, e.target.value)
-                            }
-                            disabled={citiesLoading}
-                          >
-                            <option value="">
-                              {citiesLoading ? 'Loading cities...' : 'Select city'}
-                            </option>
-                            {cities.map((city) => (
-                              <option key={city.id} value={String(city.id)}>
-                                {city.name}
-                                {city.state ? `, ${city.state}` : ''}
-                              </option>
-                            ))}
-                          </Select>
-                          {traveler.traveler_city &&
-                            !getCityIdFromNames(
-                              traveler.traveler_city,
-                              traveler.traveler_state
-                            ) && (
-                              <p className="mt-2 text-xs text-neutral-500">
-                                Saved city: {traveler.traveler_city}
-                                {traveler.traveler_state ? `, ${traveler.traveler_state}` : ''}
-                              </p>
-                            )}
+                          <div className="mt-1.5">
+                            <CityAutocomplete
+                              value={null}
+                              onChange={(city) => handleTravelerCityPick(traveler.tempKey, city)}
+                              placeholder="Search city"
+                              initialQuery={traveler.traveler_city || undefined}
+                            />
+                          </div>
                         </div>
 
                         <div>
@@ -1113,7 +1136,7 @@ const AccountPage = () => {
                 </div>
               ))}
             </div>
-          </>
+          )}
 
           <div className="pt-2">
             <ButtonPrimary disabled={!canSave} onClick={handleSave}>

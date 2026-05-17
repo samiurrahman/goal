@@ -2,7 +2,7 @@
 import React, { createContext, useCallback, useContext, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 /**
  * Gating for the phone + WhatsApp surfaces on an agent profile.
@@ -167,7 +167,6 @@ export function AgentContactProvider({
   return (
     <RevealContext.Provider value={{ revealed, pending, data, reveal }}>
       {children}
-      <Toaster position="top-center" />
     </RevealContext.Provider>
   );
 }

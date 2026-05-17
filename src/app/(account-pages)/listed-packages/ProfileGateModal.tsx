@@ -4,6 +4,7 @@ import React, { Fragment, useEffect, useState } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
+import { showApiError } from '@/lib/apiErrors';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonSecondary from '@/shared/ButtonSecondary';
 import Input from '@/shared/Input';
@@ -170,7 +171,7 @@ const ProfileGateModal = ({ isOpen, onClose, onComplete, agent }: ProfileGateMod
         toast.error('That URL handle was just taken by someone else. Please pick a different one.');
         return;
       }
-      toast.error(`Failed to save profile: ${error.message}`);
+      showApiError(error, { message: 'Failed to save profile. Please try again.' });
       return;
     }
 

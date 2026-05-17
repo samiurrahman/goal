@@ -1,7 +1,13 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import I404Png from '@/images/404.png';
 import Image from 'next/image';
 import ButtonPrimary from '@/shared/ButtonPrimary';
+
+export const metadata: Metadata = {
+  title: 'Page not found',
+  robots: { index: false, follow: true },
+};
 
 const Page404 = () => (
   <div className="nc-Page404">

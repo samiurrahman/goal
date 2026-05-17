@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDownIcon, ChevronUpIcon, TrashIcon, XMarkIcon } from '@heroicons/react/24/outline';
-import React, { FC, useEffect, useMemo, useState } from 'react';
+import React, { FC, useEffect, useMemo, useRef, useState } from 'react';
 import Input from '@/shared/Input';
 import Select from '@/shared/Select';
 import Label from '@/components/Label';
@@ -14,6 +14,8 @@ import { useQuery } from '@tanstack/react-query';
 import type { PackageDetails } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 import { sendWhatsApp, WA_TEMPLATES } from '@/lib/whatsapp';
+import toast from 'react-hot-toast';
+import { showApiError } from '@/lib/apiErrors';
 import NcInputNumber from '@/components/NcInputNumber';
 import { formatPackageLocation } from '@/lib/packageLocation';
 
@@ -141,6 +143,18 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
   // pilgrim users see the normal booking flow.
   const [isAgent, setIsAgent] = useState(false);
   const [isMobileSummaryOpen, setIsMobileSummaryOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // One idempotency key per checkout page mount. We send it with the
+  // booking INSERT and a unique (auth_user_id, client_request_id) index
+  // turns any replay — double-click, back-button-then-resubmit, network
+  // retry, StrictMode double-fire — into a 23505 the client treats as
+  // success (re-fetching the original booking). Generated lazily in a
+  // ref so it stays stable across re-renders without re-firing effects.
+  const clientRequestIdRef = useRef<string | null>(null);
+  if (clientRequestIdRef.current === null) {
+    clientRequestIdRef.current = crypto.randomUUID();
+  }
 
   const sharingRates = useMemo<SharingRate[]>(() => {
     try {
@@ -460,6 +474,10 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     // Agents can't book — the UI also disables the button, but guard the
     // submit handler against direct invocation just in case.
     if (isAgent) return;
+    // Reentrancy guard. The button is also disabled while submitting,
+    // but a rapid double-click can fire two handlers before React paints
+    // the disabled state, so we check the flag here too.
+    if (isSubmitting) return;
 
     const nextErrors = guestForms.map((form) => ({
       name: validateGuestName(form.name),
@@ -480,17 +498,20 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       return;
     }
 
+    setIsSubmitting(true);
+    try {
     const {
       data: { user },
     } = await supabase.auth.getUser();
 
     if (!user) {
       setBookingMobileError('Please login to continue with booking.');
+      toast.error('Please login to continue with booking.');
       return;
     }
 
     if (!packageDetails?.id) {
-      console.error('Missing package context for booking creation.');
+      toast.error('Package details are still loading. Please try again in a moment.');
       return;
     }
 
@@ -514,7 +535,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     }
 
     if (!resolvedSlug || !resolvedAgentName || !isUuid(resolvedAgentId)) {
-      console.error('Missing agent/package details for booking creation.');
+      toast.error("This package is missing agent information and can't be booked. Please contact support.");
       return;
     }
 
@@ -546,7 +567,11 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       );
 
       if (saveTravelersError) {
+        // Non-fatal: booking still proceeds. Surface as a low-key toast so
+        // the user knows their "save for future" checkbox didn't take but
+        // their booking is otherwise going through.
         console.error('Failed to save travelers for future:', saveTravelersError.message);
+        toast.error("Couldn't save travelers for future use, but your booking will continue.");
       }
     }
 
@@ -554,7 +579,9 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       Number(activeRate?.value ?? packageDetails?.price_per_person ?? 0) * totalGuests;
     const totalAmount = subtotalAmount + subtotalAmount * 0.05;
 
-    const { data: createdBooking, error: bookingError } = await supabase
+    const clientRequestId = clientRequestIdRef.current!;
+
+    const { data: insertedBooking, error: bookingError } = await supabase
       .from('bookings')
       .insert([
         {
@@ -569,13 +596,43 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
           total_amount: totalAmount,
           currency: packageDetails?.currency ?? 'INR',
           status: 'pending',
+          client_request_id: clientRequestId,
         },
       ])
       .select('id')
       .single();
 
+    // 23505 = unique_violation on (auth_user_id, client_request_id).
+    // Means this exact submit has already been processed (back-button
+    // replay, double-click that lost the race, retried network request).
+    // Treat as success and fetch the original booking instead of erroring.
+    let createdBooking = insertedBooking;
     if (bookingError) {
-      console.error('Failed to create booking:', bookingError.message);
+      if (bookingError.code === '23505') {
+        const { data: existingBooking, error: lookupError } = await supabase
+          .from('bookings')
+          .select('id')
+          .eq('auth_user_id', user.id)
+          .eq('client_request_id', clientRequestId)
+          .maybeSingle();
+
+        if (lookupError || !existingBooking) {
+          console.error(
+            'Failed to recover existing booking after duplicate insert:',
+            lookupError?.message
+          );
+          toast.error("Couldn't load your existing booking. Please check My Bookings.");
+          return;
+        }
+        createdBooking = existingBooking;
+      } else {
+        showApiError(bookingError, { message: 'Booking failed. Please try again.' });
+        return;
+      }
+    }
+
+    if (!createdBooking) {
+      toast.error('Booking failed: no confirmation returned. Please try again.');
       return;
     }
 
@@ -612,7 +669,21 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
     params.set('booking_mobile', bookingMobile.trim());
     params.set('guest_forms', JSON.stringify(guestForms));
 
-    router.push(`/checkout/order?${params.toString()}`);
+    // PRG: replace (not push) so the back button skips /checkout entirely
+    // and returns to whatever the user was viewing before. Without this,
+    // back lands on a still-mounted checkout form and a second click on
+    // Book Now would try to re-submit (the idempotency key catches it,
+    // but PRG removes the temptation in the first place).
+    router.replace(`/checkout/order?${params.toString()}`);
+    } catch (err) {
+      // Catches anything that escaped the per-path handling above —
+      // network failure on auth.getUser(), unexpected throws inside the
+      // supabase client, etc. Without this the button would un-stick via
+      // finally but the user would see nothing.
+      showApiError(err, { message: 'Booking failed. Please try again.' });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const renderSidebar = () => {
@@ -991,10 +1062,11 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
             ) : null}
             <ButtonPrimary
               onClick={handleConfirmAndPay}
-              disabled={isAgent}
+              disabled={isAgent || isSubmitting}
+              loading={isSubmitting}
               className="hidden lg:inline-flex"
             >
-              Book Now
+              {isSubmitting ? 'Booking...' : 'Book Now'}
             </ButtonPrimary>
           </div>
         </div>
@@ -1004,7 +1076,7 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
 
   return (
     <div className={`nc-CheckOutPagePageMain ${className}`}>
-      <main className="container mb-4 lex flex-col lg:flex-row gap-8 lg:gap-0 lg:pb-0">
+      <main className="container mb-4 flex flex-col lg:flex-row gap-8 lg:gap-0 lg:pb-0">
         <div className="w-full lg:w-3/5 xl:w-2/3 lg:pr-10">{renderMain()}</div>
         <div className="hidden lg:block flex-grow">{renderSidebar()}</div>
       </main>
@@ -1027,8 +1099,13 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
             <ChevronUpIcon className="w-3 h-3" />
           </button>
         </div>
-        <ButtonPrimary onClick={handleConfirmAndPay} disabled={isAgent} className="flex-1 !py-3">
-          Book Now
+        <ButtonPrimary
+          onClick={handleConfirmAndPay}
+          disabled={isAgent || isSubmitting}
+          loading={isSubmitting}
+          className="flex-1 !py-3"
+        >
+          {isSubmitting ? 'Booking...' : 'Book Now'}
         </ButtonPrimary>
       </div>
 

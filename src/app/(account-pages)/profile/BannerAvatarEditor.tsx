@@ -4,6 +4,7 @@ import React, { useRef, useState } from 'react';
 import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { resolvePublicImageUrl, uploadImageToStorage } from '@/utils/supabaseStorageHelper';
+import { showApiError } from '@/lib/apiErrors';
 
 // Banner + overlapping circular avatar editor for the profile page — mirrors
 // the layout of the public /[agentName] header so the agent edits what they
@@ -69,7 +70,7 @@ export default function BannerAvatarEditor({
     });
     setUploading(false);
     if (result.error) {
-      toast.error(`Upload failed: ${result.error}`);
+      showApiError(new Error(result.error), { message: 'Upload failed. Please try again.' });
       return;
     }
     if (result.url) {

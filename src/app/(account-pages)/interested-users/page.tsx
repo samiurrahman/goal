@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/utils/supabaseClient';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 interface InterestRow {
   id: number;
@@ -86,8 +86,6 @@ const InterestedUsersPage = () => {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <Toaster position="top-center" />
-
       <div>
         <h1 className="text-2xl sm:text-3xl font-semibold text-neutral-900 dark:text-neutral-100">
           Interested users

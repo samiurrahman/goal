@@ -11,7 +11,8 @@ import {
 } from '@heroicons/react/24/outline';
 import { Dialog, Transition } from '@headlessui/react';
 import { supabase } from '@/utils/supabaseClient';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import { showApiError } from '@/lib/apiErrors';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonSecondary from '@/shared/ButtonSecondary';
 import { sendWhatsApp, WA_TEMPLATES } from '@/lib/whatsapp';
@@ -233,7 +234,7 @@ const AgentBookingsPage = () => {
 
   const handleConfirm = async (bookingId: number) => {
     const { error } = await supabase.from('bookings').update({ status: 'confirmed' }).eq('id', bookingId);
-    if (error) { toast.error('Failed to confirm booking: ' + error.message); return; }
+    if (error) { showApiError(error, { message: 'Failed to confirm booking. Please try again.' }); return; }
 
     setBookings((prev) => prev.map((b) => (b.id === bookingId ? { ...b, status: 'confirmed' } : b)));
 
@@ -304,7 +305,9 @@ const AgentBookingsPage = () => {
 
     if (!response.ok) {
       const payload = await response.json().catch(() => ({}));
-      toast.error(`Failed to reject booking: ${payload?.error || response.statusText}`);
+      showApiError(new Error(payload?.error || response.statusText), {
+        message: 'Failed to reject booking. Please try again.',
+      });
       setIsRejectSubmitting(false);
       return;
     }
@@ -430,8 +433,6 @@ const AgentBookingsPage = () => {
 
   return (
     <div>
-      <Toaster position="top-center" />
-
       {/* ─── MAIN CARD ─── */}
       <div className="rounded-2xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 overflow-hidden">
 

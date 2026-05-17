@@ -9,7 +9,7 @@ import Input from '@/shared/Input';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Image from 'next/image';
 import Link from 'next/link';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const getFriendlyAuthMessage = (rawMessage: string) => {
   const original = (rawMessage || '').trim();
@@ -205,7 +205,6 @@ const PageLogin = () => {
           </div>
         </div>
       </div>
-      <Toaster position="top-center" />
     </div>
   );
 };

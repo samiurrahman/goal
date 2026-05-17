@@ -11,6 +11,7 @@ import Select from '@/shared/Select';
 import RichTextEditor from '@/shared/RichTextEditor';
 import NcModal from '@/shared/NcModal';
 import { supabase } from '@/utils/supabaseClient';
+import { showApiError } from '@/lib/apiErrors';
 
 interface AgentProfileEditModalProps {
   agentId?: string;
@@ -147,7 +148,7 @@ const AgentProfileEditModal = ({ agentId, initialData }: AgentProfileEditModalPr
       .upload(filePath, file, { upsert: true, contentType: file.type || 'image/jpeg' });
 
     if (uploadError) {
-      toast.error(`Upload failed: ${uploadError.message}`);
+      showApiError(uploadError, { message: 'Upload failed. Please try again.' });
       return null;
     }
 
@@ -240,7 +241,7 @@ const AgentProfileEditModal = ({ agentId, initialData }: AgentProfileEditModalPr
     setIsSaving(false);
 
     if (error) {
-      toast.error(`Failed to update profile: ${error.message}`);
+      showApiError(error, { message: 'Failed to update profile. Please try again.' });
       return;
     }
 

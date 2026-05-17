@@ -5,7 +5,8 @@ import Label from '@/components/Label';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Input from '@/shared/Input';
 import { supabase } from '@/utils/supabaseClient';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import { showApiError } from '@/lib/apiErrors';
 import { useSearchParams } from 'next/navigation';
 
 const AccountSettings = () => {
@@ -53,7 +54,7 @@ const AccountSettings = () => {
     setEmailLoading(false);
 
     if (error) {
-      toast.error('Failed to send verification email: ' + error.message);
+      showApiError(error, { message: 'Failed to send verification email. Please try again.' });
       return;
     }
 
@@ -96,7 +97,7 @@ const AccountSettings = () => {
     setPasswordLoading(false);
 
     if (error) {
-      toast.error('Failed to update password: ' + error.message);
+      showApiError(error, { message: 'Failed to update password. Please try again.' });
       return;
     }
 
@@ -111,8 +112,6 @@ const AccountSettings = () => {
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <Toaster position="top-center" />
-
       <div className={cardClass}>
         <h3 className="text-lg font-semibold mb-5">Change Password</h3>
         <div className="max-w-xl space-y-5">

@@ -4,16 +4,19 @@ import { supabase } from '@/utils/supabaseClient';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
 
-  // Static routes
+  // Static routes — priority/changeFrequency are hints to crawlers about how
+  // important and how volatile a page is relative to others on this site.
+  const now = new Date();
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: baseUrl, lastModified: new Date() },
-    { url: `${baseUrl}/about`, lastModified: new Date() },
-    { url: `${baseUrl}/contact`, lastModified: new Date() },
-    { url: `${baseUrl}/privacy`, lastModified: new Date() },
-    { url: `${baseUrl}/terms`, lastModified: new Date() },
-    { url: `${baseUrl}/refund-policy`, lastModified: new Date() },
-    { url: `${baseUrl}/login`, lastModified: new Date() },
-    { url: `${baseUrl}/signup`, lastModified: new Date() },
+    { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${baseUrl}/packages`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${baseUrl}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/refund-policy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/login`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${baseUrl}/signup`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
   ];
 
   const dynamicRoutes: MetadataRoute.Sitemap = [];
@@ -34,6 +37,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         dynamicRoutes.push({
           url: `${baseUrl}/${agent.slug}`,
           lastModified: new Date(agent.created_at || Date.now()),
+          changeFrequency: 'weekly',
+          priority: 0.7,
         });
       }
     }
@@ -69,6 +74,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         dynamicRoutes.push({
           url: `${baseUrl}/${agentSlug}/${pkg.slug}`,
           lastModified: new Date(pkg.created_at || Date.now()),
+          changeFrequency: 'weekly',
+          priority: 0.8,
         });
       }
     }

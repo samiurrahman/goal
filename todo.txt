@@ -51,3 +51,39 @@ Both must be flipped for the optimization to actually kick in.
 Verify the domain in Google Search Console and Bing Webmaster
 Submit sitemap: https://searchumrah.com/sitemap.xml
 Add SPF/DKIM/DMARC DNS records (will need this anyway when you start sending booking-confirmation emails)
+
+
+google console
+bing Webmaster
+sitemap
+open graph tags
+index now
+
+
+
+What I need from you (collect this while I work)
+Required
+
+Production domain confirmation — code uses searchumrah.com, but CLAUDE.md mentions hajjscanner.com. Which is the live one?
+Google Search Console verification meta tag — from GSC → Settings → Ownership verification → HTML tag, copy the content="..." value
+Bing Webmaster verification meta tag — from Bing Webmaster → Settings → Verify ownership → Meta tag, copy content="..." value
+Phone number for Organization JSON-LD (currently placeholder +1-XXX-XXX-XXXX)
+Social media URLs — Facebook, Instagram, Twitter/X, YouTube, LinkedIn (whichever you have) for sameAs in Organization schema
+Twitter/X handle — currently @searchumrah, confirm or change
+Nice to have
+7. Brand OG image artwork — 1200×630 PNG. If you don't have one, I can build a dynamic generator that creates one from the logo + tagline automatically (no design work needed).
+8. High-res logo — SVG or PNG ≥ 512×512 (you have src/app/icon.svg, I'll check if it's enough)
+9. Yandex Webmaster verification (optional — covers Russia/CIS)
+
+Step-by-step plan (what I'll build)
+Default OG image — dynamic 1200×630 image via Next.js opengraph-image.tsx so homepage shares look professional
+PWA manifest + full favicons — apple-touch-icon, favicon-16/32, manifest.webmanifest for "Add to home screen"
+Verification meta tags — wire your GSC/Bing codes into root metadata.verification
+IndexNow integration — auto-pings Bing/Yandex when an agent or package is published. One key file in /public, one API helper, calls fired from your publish endpoints.
+Sitemap improvements — add changeFrequency + priority hints, send proper cache headers
+Organization schema enrichment — phone, social links, logo URL
+Per-package OG image — dynamic OG image per package showing title, agent, price (best-in-class for shares)
+404 handling check — ensure notFound() returns proper status (it does, but I'll verify)
+Core Web Vitals audit — run Lighthouse, list specific fixes (won't fix blindly — will report and let you pick)
+Manual submission checklist — what you do in GSC + Bing after deploy
+Let me kick off with the work that doesn't need your inputs (items 1, 2, 5, 7, 8). Items 3, 4, 6, 10 wait for the values above. Item 9 happens after deploy.

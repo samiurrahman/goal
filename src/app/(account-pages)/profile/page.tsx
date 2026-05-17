@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import { showApiError } from '@/lib/apiErrors';
 import ImageUpload from '@/components/ImageUpload';
 import Label from '@/components/Label';
 import CityAutocomplete, { SelectedCity } from '@/components/CityAutocomplete';
@@ -252,7 +253,7 @@ const AgentProfilePage = () => {
       if (!isMounted) return;
 
       if (error) {
-        toast.error(`Failed to load agent profile: ${error.message}`);
+        showApiError(error, { message: 'Failed to load agent profile. Please try again.' });
         setIsLoading(false);
         return;
       }
@@ -538,7 +539,7 @@ const AgentProfilePage = () => {
         toast.error('That URL was just taken by someone else. Please pick a different one.');
         return;
       }
-      toast.error(`Failed to update profile: ${error.message}`);
+      showApiError(error, { message: 'Failed to update profile. Please try again.' });
       return;
     }
 
@@ -630,7 +631,7 @@ const AgentProfilePage = () => {
         });
 
       if (uploadError) {
-        toast.error(`Image upload failed: ${uploadError.message}`);
+        showApiError(uploadError, { message: 'Image upload failed. Please try again.' });
         setIsSavingInfoSection(false);
         return;
       }
@@ -657,7 +658,7 @@ const AgentProfilePage = () => {
     setIsSavingInfoSection(false);
 
     if (error) {
-      toast.error(`Failed to save info section: ${error.message}`);
+      showApiError(error, { message: 'Failed to save info section. Please try again.' });
       return;
     }
 
@@ -667,8 +668,6 @@ const AgentProfilePage = () => {
 
   return (
     <div className="gap-4">
-      <Toaster position="top-center" />
-
       {isLoading ? (
         <p className="text-sm text-neutral-600 dark:text-neutral-300">Loading profile...</p>
       ) : !agent ? (

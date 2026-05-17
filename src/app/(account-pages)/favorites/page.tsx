@@ -7,6 +7,7 @@ import { Package } from '@/data/types';
 import Packages from '@/app/packages/components/packages';
 import { useFavoriteIds } from '@/hooks/useFavorites';
 import ButtonPrimary from '@/shared/ButtonPrimary';
+import { showApiError } from '@/lib/apiErrors';
 
 const LOADER_CARD_COUNT = 4;
 
@@ -21,7 +22,12 @@ const PACKAGE_COLUMNS = `
 `;
 
 const FavoritesPage = () => {
-  const { data: favoriteIds, isLoading: idsLoading, isFetching: idsFetching } = useFavoriteIds();
+  const {
+    data: favoriteIds,
+    isLoading: idsLoading,
+    isFetching: idsFetching,
+    isAuthReady,
+  } = useFavoriteIds();
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoadingPackages, setIsLoadingPackages] = useState(true);
 
@@ -31,8 +37,12 @@ const FavoritesPage = () => {
     let isMounted = true;
 
     const load = async () => {
-      // Wait for the favorites query to settle before deciding the list is empty.
-      if (idsLoading) return;
+      // Don't decide "no favorites" until both (a) auth has resolved so we
+      // know which user we're loading for, and (b) the favorites query has
+      // actually returned. Otherwise the initial render (auth pending,
+      // query disabled, idList=[]) would briefly flip to the empty state
+      // before the real fetch even starts.
+      if (!isAuthReady || idsLoading) return;
 
       if (idList.length === 0) {
         if (isMounted) {
@@ -44,15 +54,22 @@ const FavoritesPage = () => {
 
       setIsLoadingPackages(true);
 
+      // Read from the `packages_with_agent` view, not `packages`. The agent
+      // metadata (known_as, profile_image, rating_*) and location fields
+      // (package_location, package_admin1_name, agent_state, agent_country)
+      // were moved off the `packages` table by the 20260512 / 20260514
+      // migrations and now live only on the joining view. Querying `packages`
+      // directly fails with "column does not exist" and silently empties
+      // the list.
       const { data, error } = await supabase
-        .from('packages')
+        .from('packages_with_agent')
         .select(PACKAGE_COLUMNS)
         .in('id', idList);
 
       if (!isMounted) return;
 
       if (error) {
-        console.error('Failed to load favorited packages:', error.message);
+        showApiError(error, { message: 'Could not load your favorite packages. Please try again.' });
         setPackages([]);
       } else {
         // Preserve the order from the favorites set (insertion order =
@@ -77,7 +94,7 @@ const FavoritesPage = () => {
     // We intentionally depend on the JSON-stringified id list so the effect
     // doesn't loop on a freshly-allocated Set with identical contents.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idList.join(','), idsLoading]);
+  }, [idList.join(','), idsLoading, isAuthReady]);
 
   // Re-check that the displayed cards still match the live favorites set —
   // when the user unhearts one from this page, the React Query cache updates
@@ -87,17 +104,12 @@ const FavoritesPage = () => {
     [packages, favoriteIds]
   );
 
-  const showSkeletons = idsLoading || isLoadingPackages || idsFetching;
+  // Keep skeletons up until auth has resolved too — otherwise the empty
+  // state flashes during the mount → getSession round-trip on a fresh load.
+  const showSkeletons = !isAuthReady || idsLoading || isLoadingPackages || idsFetching;
 
   return (
     <div className="space-y-6 sm:space-y-8">
-      <div>
-        <h2 className="text-2xl sm:text-3xl font-semibold">Your favorites</h2>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-          Packages you&apos;ve saved. Tap the heart again to remove one.
-        </p>
-      </div>
-
       {showSkeletons ? (
         <div className="space-y-4">
           {Array.from({ length: LOADER_CARD_COUNT }).map((_, index) => (

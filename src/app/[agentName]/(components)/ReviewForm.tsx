@@ -75,6 +75,10 @@ export default function ReviewForm({
   }, [editingReview]);
 
   const submitReviewMutation = useMutation({
+    // Local onError already toasts the server-provided friendly message
+    // (api/agents/reviews returns user-facing text in `error`). Silence
+    // the global handler so we don't double-toast.
+    meta: { silent: true },
     mutationFn: async () => {
       setFormError('');
 

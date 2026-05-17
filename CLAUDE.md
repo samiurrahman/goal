@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-HajjScanner is a Hajj & Umrah travel booking platform built with Next.js 13 (App Router). It connects pilgrims with verified travel agents, allowing users to browse agent profiles, compare packages, read/write reviews, and proceed to checkout. The site is live at hajjscanner.com.
+Searchumrah is a Hajj & Umrah travel booking platform built with Next.js 13 (App Router). It connects pilgrims with verified travel agents, allowing users to browse agent profiles, compare packages, read/write reviews, and proceed to checkout. The site is live at searchumrah.com.
 
 ## Commands
 

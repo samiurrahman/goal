@@ -5,7 +5,7 @@ import { useRedirectIfAuthenticated } from '@/hooks/useRedirectIfAuthenticated';
 import Input from '@/shared/Input';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Link from 'next/link';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const getFriendlyResetMessage = (rawMessage: string) => {
   const message = (rawMessage || '').toLowerCase();
@@ -128,7 +128,6 @@ const PageForgotPassword = () => {
           )}
         </div>
       </div>
-      <Toaster position="top-center" />
     </div>
   );
 };

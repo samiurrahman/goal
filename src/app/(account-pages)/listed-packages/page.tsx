@@ -24,7 +24,8 @@ import ButtonPrimary from '@/shared/ButtonPrimary';
 import ButtonSecondary from '@/shared/ButtonSecondary';
 import ShareButton from '@/shared/ShareButton';
 import { revalidatePaths } from '@/utils/revalidate';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import { showApiError } from '@/lib/apiErrors';
 
 type SortKey = 'newest' | 'published' | 'unpublished';
 
@@ -328,7 +329,7 @@ const ListedPackagesPage = () => {
       .eq('id', pkg.id);
 
     if (error) {
-      toast.error('Failed to update visibility: ' + error.message);
+      showApiError(error, { message: 'Failed to update visibility. Please try again.' });
       return;
     }
 
@@ -503,8 +504,6 @@ const ListedPackagesPage = () => {
 
   return (
     <>
-      <Toaster position="top-center" />
-
       {agentUUID && agentSlug ? (
         <AddPackageWizardModal
           agentAuthUserId={agentUUID}

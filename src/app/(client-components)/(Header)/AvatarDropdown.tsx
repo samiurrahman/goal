@@ -10,6 +10,7 @@ import { resolvePublicImageUrl } from '@/utils/supabaseStorageHelper';
 import useOutsideAlerter from '@/hooks/useOutsideAlerter';
 import { shouldRedirectHomeOnLogout } from '@/constants/protectedRoutes';
 import { clearHeaderCache, readHeaderCache, writeHeaderCache } from '@/utils/headerCache';
+import { showApiError } from '@/lib/apiErrors';
 import MobileBottomSheet from '@/shared/MobileBottomSheet';
 import type { User } from '@supabase/supabase-js';
 interface Props {
@@ -288,7 +289,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
     }
 
     if (error) {
-      console.error('Failed to sign out:', error.message || 'Unknown error');
+      showApiError(error, { message: 'Sign out failed. Please try again.' });
       setIsSigningOut(false);
       return;
     }
@@ -522,7 +523,21 @@ export default function AvatarDropdown({ className = '' }: Props) {
                   <div className="flex items-center justify-center flex-shrink-0 text-neutral-500 dark:text-neutral-300">
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
                       <path
-                        d="M12.62 20.81C12.28 20.93 11.72 20.93 11.38 20.81C8.48 19.82 2 15.69 2 8.68998C2 5.59998 4.49 3.09998 7.56 3.09998C9.38 3.09998 10.99 3.97998 12 5.33998C13.01 3.97998 14.63 3.09998 16.44 3.09998C19.51 3.09998 22 5.59998 22 8.68998C22 15.69 15.52 19.82 12.62 20.81Z"
+                        d="M3.17 7.44L12 12.55L20.77 7.47"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M12 21.61V12.54"
+                        stroke="currentColor"
+                        strokeWidth="1.5"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                      <path
+                        d="M9.93 2.48L4.59 5.45C3.38 6.12 2.39 7.8 2.39 9.18V14.83C2.39 16.21 3.38 17.89 4.59 18.56L9.93 21.53C11.07 22.16 12.94 22.16 14.08 21.53L19.42 18.56C20.63 17.89 21.62 16.21 21.62 14.83V9.18C21.62 7.8 20.63 6.12 19.42 5.45L14.08 2.48C12.93 1.84 11.07 1.84 9.93 2.48Z"
                         stroke="currentColor"
                         strokeWidth="1.5"
                         strokeLinecap="round"

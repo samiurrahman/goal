@@ -58,6 +58,25 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  // Search engine site verification. Values come from env vars so they can be
+  // rotated without code changes. Find these in:
+  //   - GSC: Settings → Ownership verification → HTML tag
+  //   - Bing: Settings → Verify ownership → Meta tag
+  //   - Yandex: Right column → Add site → Meta tag
+  verification: {
+    google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION,
+    other: {
+      'msvalidate.01': process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || '',
+      'yandex-verification': process.env.NEXT_PUBLIC_YANDEX_VERIFICATION || '',
+    },
+  },
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+    ],
+    apple: [{ url: '/apple-icon', sizes: '180x180', type: 'image/png' }],
+  },
+  manifest: '/manifest.webmanifest',
   openGraph: {
     type: 'website',
     locale: 'en_US',
@@ -82,6 +101,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
 
+  // Social links are comma-separated absolute URLs in NEXT_PUBLIC_SOCIAL_LINKS.
+  // Empty / missing → no sameAs emitted, which is fine; Google ignores empty arrays.
+  const socialLinks = (process.env.NEXT_PUBLIC_SOCIAL_LINKS || '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const telephone = process.env.NEXT_PUBLIC_CONTACT_PHONE || '+91 79 7235 1081';
+
   return (
     <html lang="en" className={poppins.className}>
       <head>
@@ -90,14 +117,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           data={{
             name: 'Searchumrah',
             url: baseUrl,
+            logo: `${baseUrl}/icon.svg`,
             description:
               'Premium Umrah travel booking platform connecting pilgrims with verified travel agents',
-            telephone: '+1-XXX-XXX-XXXX',
-            socialLinks: [
-              // Add your social media links here
-              // 'https://facebook.com/yourpage',
-              // 'https://twitter.com/yourhandle',
-            ],
+            telephone,
+            socialLinks,
           }}
         />
         <StructuredData

@@ -1,7 +1,8 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import { showApiError } from '@/lib/apiErrors';
 import { supabase } from '@/utils/supabaseClient';
 import Label from '@/components/Label';
 import Input from '@/shared/Input';
@@ -112,7 +113,7 @@ export default function ListingPage() {
           setForm(normalized);
         }
         setLoading(false);
-        if (error) toast.error('Failed to fetch package: ' + error.message);
+        if (error) showApiError(error, { message: 'Failed to fetch package. Please try again.' });
       };
       fetchPackage();
     } else {
@@ -211,7 +212,7 @@ export default function ListingPage() {
         const { allocateAgentSlug } = await import('@/lib/slug');
         agentSlug = await allocateAgentSlug(sourceName);
       } catch (err) {
-        toast.error('Failed to allocate agent URL: ' + (err instanceof Error ? err.message : 'Unknown error'));
+        showApiError(err, { message: 'Failed to allocate agent URL. Please try again.' });
         setLoading(false);
         return;
       }
@@ -221,7 +222,7 @@ export default function ListingPage() {
         .eq('id', agentRow.id);
 
       if (slugUpdateError) {
-        toast.error('Failed to create agent slug: ' + slugUpdateError.message);
+        showApiError(slugUpdateError, { message: 'Failed to create agent URL. Please try again.' });
         setLoading(false);
         return;
       }
@@ -243,7 +244,7 @@ export default function ListingPage() {
       const { error } = await supabase.from('packages').update(packagePayload).eq('id', id);
       setLoading(false);
       if (error) {
-        toast.error('Failed to update package: ' + error.message);
+        showApiError(error, { message: 'Failed to update package. Please try again.' });
       } else {
         toast.success('Package updated successfully!');
         router.push('/listed-packages');
@@ -295,7 +296,6 @@ export default function ListingPage() {
 
   return (
     <div className="space-y-6 sm:space-y-8 max-w-2xl mx-auto">
-      <Toaster position="top-center" />
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <Label>Title</Label>

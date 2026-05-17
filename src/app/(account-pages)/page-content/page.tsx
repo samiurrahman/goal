@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
-import toast, { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
+import { showApiError } from '@/lib/apiErrors';
 import { supabase } from '@/utils/supabaseClient';
 import Label from '@/components/Label';
 import Input from '@/shared/Input';
@@ -39,7 +40,7 @@ const PageContent = () => {
       })
       .eq('id', agentId);
     if (error) {
-      toast.error('Failed to update agent: ' + error.message);
+      showApiError(error, { message: 'Failed to update agent. Please try again.' });
     } else {
       toast.success('Agent updated successfully!');
     }
@@ -47,7 +48,6 @@ const PageContent = () => {
 
   return (
     <div className="space-y-6 sm:space-y-8 max-w-2xl mx-auto">
-      <Toaster position="top-center" />
       <form onSubmit={handleSubmit} className="space-y-6">
         <div>
           <Label>Name</Label>

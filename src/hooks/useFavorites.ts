@@ -3,8 +3,17 @@
 import { useEffect, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabaseClient';
+import { readHeaderCache } from '@/utils/headerCache';
+import { showApiError } from '@/lib/apiErrors';
 
-const FAVORITES_KEY = ['favorites'] as const;
+// Cache key is scoped by the signed-in user. Without this, an optimistic
+// favorite added by user A (or by an anonymous-but-soon-to-sign-in tab)
+// would leak into user B's view on the same browser, producing a
+// "favorite flashes then disappears" bug after the per-user refetch lands.
+// `anon` is used for logged-out viewers so we don't collide with user keys.
+const favoritesKey = (userId: string | null | undefined) =>
+  ['favorites', userId ?? 'anon'] as const;
+const VIEWER_TYPE_KEY = ['viewerUserType'] as const;
 
 // packages.id is a UUID (DB-side), even though the TS Package type claims
 // `number`. Treat as opaque string throughout this module.
@@ -54,31 +63,33 @@ const fetchFavoriteIds = async (userId: string): Promise<FavoritesSet> => {
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Failed to load favorites:', error.message);
-    return new Set();
-  }
+  // Throw so the global QueryCache.onError surfaces a friendly toast. The
+  // old code swallowed and returned an empty set, which made a real RLS or
+  // network failure indistinguishable from "no favorites yet" — the page
+  // would just look empty.
+  if (error) throw error;
 
   return new Set((data || []).map((row) => String(row.package_id)));
 };
 
 export const useFavoriteIds = () => {
   const { userId, isReady } = useSessionUserId();
-  const queryClient = useQueryClient();
 
-  // When the signed-in user changes, drop the cached set so a heart filled
-  // for user A doesn't bleed into user B's view.
-  useEffect(() => {
-    if (!isReady) return;
-    queryClient.invalidateQueries({ queryKey: FAVORITES_KEY });
-  }, [userId, isReady, queryClient]);
-
-  return useQuery<FavoritesSet>({
-    queryKey: FAVORITES_KEY,
+  // The query key includes userId, so a different signed-in user gets a
+  // different cache slice automatically — no manual invalidate on user
+  // change is needed.
+  const query = useQuery<FavoritesSet>({
+    queryKey: favoritesKey(userId),
     queryFn: () => (userId ? fetchFavoriteIds(userId) : Promise.resolve(new Set())),
     enabled: isReady && !!userId,
     staleTime: 1000 * 60 * 5,
   });
+
+  // Expose `isAuthReady` so callers can distinguish "we haven't checked
+  // who the user is yet" from "we checked and they have no favorites".
+  // Without it the favorites page would flash the empty state during
+  // the mount → getSession round-trip, before the query is even enabled.
+  return { ...query, isAuthReady: isReady };
 };
 
 export const useIsLoggedIn = () => {
@@ -86,28 +97,73 @@ export const useIsLoggedIn = () => {
   return { isLoggedIn: !!userId, isAuthReady: isReady };
 };
 
+/**
+ * Resolve the signed-in viewer's user_type ('user' | 'agent' | null).
+ * Warm-started from headerCache (populated by AvatarDropdown) so agents
+ * don't see a heart flash on warm page loads. Falls back to a direct
+ * `user_details` read when the cache is cold. Logged-out viewers resolve
+ * to null without hitting the DB.
+ */
+export const useViewerUserType = () => {
+  const { userId, isReady } = useSessionUserId();
+
+  const query = useQuery<string | null>({
+    queryKey: [...VIEWER_TYPE_KEY, userId ?? 'anon'],
+    queryFn: async () => {
+      if (!userId) return null;
+      const { data, error } = await supabase
+        .from('user_details')
+        .select('user_type')
+        .eq('auth_user_id', userId)
+        .maybeSingle();
+      // Intentionally silent: this just gates the heart icon for agents.
+      // A failure degrades to "treat as user" which is fine — we don't
+      // want a toast here for a UI-only signal.
+      if (error) {
+        showApiError(error, { silent: true });
+        return null;
+      }
+      return (data?.user_type as string | null) ?? null;
+    },
+    enabled: isReady,
+    staleTime: 1000 * 60 * 5,
+    initialData: () => {
+      if (typeof window === 'undefined') return undefined;
+      const cache = readHeaderCache();
+      if (!cache?.loggedIn) return undefined;
+      return cache.userType ?? null;
+    },
+  });
+
+  return {
+    userType: query.data ?? null,
+    isReady: isReady && (query.isSuccess || query.data !== undefined),
+  };
+};
+
 export const useToggleFavorite = () => {
   const queryClient = useQueryClient();
+  const { userId } = useSessionUserId();
 
   return useMutation<
     { packageId: PackageId; nowFavorited: boolean },
     Error,
     { packageId: PackageId; currentlyFavorited: boolean },
-    { previous?: FavoritesSet }
+    { previous?: FavoritesSet; key: ReturnType<typeof favoritesKey> }
   >({
     mutationFn: async ({ packageId, currentlyFavorited }) => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      const userId = session?.user?.id;
+      const id = session?.user?.id;
 
-      if (!userId) throw new Error('Not logged in');
+      if (!id) throw new Error('Not logged in');
 
       if (currentlyFavorited) {
         const { error } = await supabase
           .from('favorites')
           .delete()
-          .eq('user_id', userId)
+          .eq('user_id', id)
           .eq('package_id', packageId);
 
         if (error) throw new Error(error.message);
@@ -119,7 +175,7 @@ export const useToggleFavorite = () => {
       const { error } = await supabase
         .from('favorites')
         .upsert(
-          { user_id: userId, package_id: packageId },
+          { user_id: id, package_id: packageId },
           { onConflict: 'user_id,package_id', ignoreDuplicates: true }
         );
 
@@ -127,21 +183,24 @@ export const useToggleFavorite = () => {
       return { packageId, nowFavorited: true };
     },
     onMutate: async ({ packageId, currentlyFavorited }) => {
-      await queryClient.cancelQueries({ queryKey: FAVORITES_KEY });
-      const previous = queryClient.getQueryData<FavoritesSet>(FAVORITES_KEY);
+      const key = favoritesKey(userId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const previous = queryClient.getQueryData<FavoritesSet>(key);
       const next = new Set(previous ?? []);
       if (currentlyFavorited) next.delete(packageId);
       else next.add(packageId);
-      queryClient.setQueryData(FAVORITES_KEY, next);
-      return { previous };
+      queryClient.setQueryData(key, next);
+      return { previous, key };
     },
     onError: (_err, _vars, context) => {
-      if (context?.previous) {
-        queryClient.setQueryData(FAVORITES_KEY, context.previous);
+      if (context?.previous && context?.key) {
+        queryClient.setQueryData(context.key, context.previous);
       }
     },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: FAVORITES_KEY });
+    onSettled: (_data, _err, _vars, context) => {
+      queryClient.invalidateQueries({
+        queryKey: context?.key ?? favoritesKey(userId),
+      });
     },
   });
 };

@@ -9,22 +9,29 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
   let structuredData = {};
 
   switch (type) {
-    case 'Organization':
-      structuredData = {
+    case 'Organization': {
+      const org: Record<string, unknown> = {
         '@context': 'https://schema.org',
         '@type': 'Organization',
         name: data.name || 'Searchumrah',
         url: data.url || process.env.NEXT_PUBLIC_SITE_URL,
         description: data.description || 'Premium Umrah travel booking platform',
-        contactPoint: {
+      };
+      if (data.logo) org.logo = data.logo;
+      if (data.telephone) {
+        org.contactPoint = {
           '@type': 'ContactPoint',
-          telephone: data.telephone || '+1-XXX-XXX-XXXX',
+          telephone: data.telephone,
           contactType: 'customer service',
           availableLanguage: ['en', 'ar'],
-        },
-        sameAs: data.socialLinks || [],
-      };
+        };
+      }
+      if (Array.isArray(data.socialLinks) && data.socialLinks.length > 0) {
+        org.sameAs = data.socialLinks;
+      }
+      structuredData = org;
       break;
+    }
 
     case 'WebSite':
       structuredData = {

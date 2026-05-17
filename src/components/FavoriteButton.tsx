@@ -1,9 +1,14 @@
 'use client';
 
-import React, { FC, MouseEvent } from 'react';
+import React, { FC, MouseEvent, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
-import { useFavoriteIds, useIsLoggedIn, useToggleFavorite } from '@/hooks/useFavorites';
+import {
+  useFavoriteIds,
+  useIsLoggedIn,
+  useToggleFavorite,
+  useViewerUserType,
+} from '@/hooks/useFavorites';
 
 export interface FavoriteButtonProps {
   // packages.id is a uuid at runtime even though Package.id is typed as
@@ -26,8 +31,23 @@ const FavoriteButton: FC<FavoriteButtonProps> = ({
   const router = useRouter();
   const pathname = usePathname();
   const { isLoggedIn, isAuthReady } = useIsLoggedIn();
+  const { userType } = useViewerUserType();
   const { data: favoriteIds } = useFavoriteIds();
   const toggle = useToggleFavorite();
+
+  // The server has no user context and always emits the <button>. If we
+  // checked userType during the first client render too, a warm headerCache
+  // would resolve 'agent' synchronously and we'd return null — producing a
+  // hydration mismatch. Defer the gate to a post-mount render so SSR output
+  // and the first client render always agree.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Agents don't shop packages — favorites are a buyer-side feature only.
+  // Logged-out viewers still see the heart (click prompts login).
+  if (mounted && userType === 'agent') return null;
 
   const id =
     packageId === null || packageId === undefined || packageId === ''
@@ -52,14 +72,10 @@ const FavoriteButton: FC<FavoriteButtonProps> = ({
       return;
     }
 
-    toggle.mutate(
-      { packageId: id, currentlyFavorited: isFavorited },
-      {
-        onError: (err) => {
-          toast.error(err.message || 'Could not update favorite');
-        },
-      }
-    );
+    // No local onError: the global MutationCache handler in
+    // ReactQueryProvider already toasts a friendly message on failure,
+    // and useToggleFavorite handles the optimistic rollback.
+    toggle.mutate({ packageId: id, currentlyFavorited: isFavorited });
   };
 
   const sizeClass = size === 'sm' ? 'w-8 h-8' : 'w-9 h-9';

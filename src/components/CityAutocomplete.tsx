@@ -141,7 +141,7 @@ const CityAutocomplete: FC<CityAutocompleteProps> = ({
         </button>
       )}
       {showResults && (
-        <div className="absolute left-0 right-0 z-20 mt-1 overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-lg">
+        <div className="absolute left-0 right-0 z-50 mt-1 overflow-hidden rounded-md border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 shadow-xl">
           {isFetching && visibleSuggestions.length === 0 && (
             <div className="px-3 py-2 text-sm text-neutral-500">Searching…</div>
           )}
