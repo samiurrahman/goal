@@ -55,8 +55,14 @@ export async function middleware(request: NextRequest) {
   if (segments.length > 0) {
     const firstSegment = segments[0].toLowerCase();
 
-    // Skip system routes — never look up agent redirects for these
-    if (!RESERVED_AGENT_SLUGS.has(firstSegment) && !firstSegment.includes('.')) {
+    // Skip system routes and known SEO landing-page prefixes — never look
+    // up agent redirects for these. The umrah-packages-from-* prefix is
+    // rewritten to /city/:city in next.config.js and can never be an agent.
+    if (
+      !RESERVED_AGENT_SLUGS.has(firstSegment) &&
+      !firstSegment.includes('.') &&
+      !firstSegment.startsWith('umrah-packages-from-')
+    ) {
       const newSlug = await findRedirectFor(firstSegment);
       if (newSlug && newSlug !== firstSegment) {
         const rest = segments.slice(1).join('/');

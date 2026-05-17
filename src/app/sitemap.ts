@@ -1,5 +1,6 @@
 import { MetadataRoute } from 'next';
 import { supabase } from '@/utils/supabaseClient';
+import { SEO_CITIES } from '@/lib/seo/cities';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
@@ -18,6 +19,17 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${baseUrl}/login`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
     { url: `${baseUrl}/signup`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
   ];
+
+  // Programmatic city landing pages. Priority sits between /packages (0.9)
+  // and individual package detail pages (0.8) — these are the city-level
+  // hubs that absorb long-tail "umrah from <city>" queries and funnel into
+  // both the listing and detail pages.
+  const cityRoutes: MetadataRoute.Sitemap = SEO_CITIES.map((c) => ({
+    url: `${baseUrl}/umrah-packages-from-${c.urlSlug}`,
+    lastModified: now,
+    changeFrequency: 'weekly',
+    priority: 0.85,
+  }));
 
   const dynamicRoutes: MetadataRoute.Sitemap = [];
 
@@ -84,5 +96,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   console.log(`[sitemap] total dynamic routes: ${dynamicRoutes.length}`);
-  return [...staticRoutes, ...dynamicRoutes];
+  return [...staticRoutes, ...cityRoutes, ...dynamicRoutes];
 }

@@ -24,6 +24,7 @@ export const RESERVED_AGENT_SLUGS: ReadonlySet<string> = new Set([
   'booking-success',
   'bookings',
   'checkout',
+  'city',
   'contact',
   'dashboard',
   'forgot-password',
