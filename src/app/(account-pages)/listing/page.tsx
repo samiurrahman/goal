@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { showApiError } from '@/lib/apiErrors';
@@ -80,7 +80,7 @@ const parseLegacyDefaultPricing = (pkg: Partial<Package>): DefaultPricing => {
   return fallback;
 };
 
-export default function ListingPage() {
+function ListingPageContent() {
   const [form, setForm] = useState<Partial<Package>>(initialState);
   const [loading, setLoading] = useState(false);
   const [authUserId, setAuthUserId] = useState<string | null>(null);
@@ -453,5 +453,13 @@ export default function ListingPage() {
         </div>
       </form>
     </div>
+  );
+}
+
+export default function ListingPage() {
+  return (
+    <Suspense fallback={null}>
+      <ListingPageContent />
+    </Suspense>
   );
 }

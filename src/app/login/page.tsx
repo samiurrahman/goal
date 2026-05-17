@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken } from '@/utils/authToken';
@@ -209,4 +209,12 @@ const PageLogin = () => {
   );
 };
 
-export default PageLogin;
+// Wrap in Suspense because PageLogin → useSearchParams(). Without this,
+// Next 14's static prerender errors with "missing-suspense-with-csr-bailout".
+export default function PageLoginRoute() {
+  return (
+    <Suspense fallback={null}>
+      <PageLogin />
+    </Suspense>
+  );
+}

@@ -1,5 +1,5 @@
 'use client';
-import React, { useMemo, useState } from 'react';
+import React, { Suspense, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/utils/supabaseClient';
 import { storeAccessToken } from '@/utils/authToken';
@@ -495,4 +495,10 @@ const PageSignUp = () => {
   );
 };
 
-export default PageSignUp;
+export default function PageSignUpRoute() {
+  return (
+    <Suspense fallback={null}>
+      <PageSignUp />
+    </Suspense>
+  );
+}

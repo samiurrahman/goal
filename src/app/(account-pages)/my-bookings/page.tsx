@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Fragment, useEffect, useMemo, useState } from 'react';
+import React, { Fragment, Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -876,4 +876,10 @@ const MyBookingsPage = () => {
   );
 };
 
-export default MyBookingsPage;
+export default function MyBookingsRoute() {
+  return (
+    <Suspense fallback={null}>
+      <MyBookingsPage />
+    </Suspense>
+  );
+}

@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { Suspense, useState } from 'react';
 import { supabase } from '@/utils/supabaseClient';
 import { useRedirectIfAuthenticated } from '@/hooks/useRedirectIfAuthenticated';
 import Input from '@/shared/Input';
@@ -132,4 +132,10 @@ const PageForgotPassword = () => {
   );
 };
 
-export default PageForgotPassword;
+export default function PageForgotPasswordRoute() {
+  return (
+    <Suspense fallback={null}>
+      <PageForgotPassword />
+    </Suspense>
+  );
+}

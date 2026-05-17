@@ -1,6 +1,6 @@
 'use client';
 
-import React, { FC, useMemo } from 'react';
+import React, { FC, Suspense, useMemo } from 'react';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -326,4 +326,10 @@ const CheckoutOrderPage: FC = () => {
   );
 };
 
-export default CheckoutOrderPage;
+export default function CheckoutOrderRoute() {
+  return (
+    <Suspense fallback={null}>
+      <CheckoutOrderPage />
+    </Suspense>
+  );
+}

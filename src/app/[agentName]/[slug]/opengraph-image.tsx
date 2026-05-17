@@ -1,7 +1,10 @@
 import { ImageResponse } from 'next/og';
 import { createClient } from '@supabase/supabase-js';
 
-export const runtime = 'edge';
+// nodejs runtime — edge is unreliable for Supabase queries in dev mode and
+// the env-var loading semantics differ from prod. We pay nothing meaningful
+// in cold-start cost since OG images are cached aggressively by social engines.
+export const runtime = 'nodejs';
 export const alt = 'Umrah package on Searchumrah';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
@@ -32,14 +35,23 @@ export default async function Image({
   const supabase = getSupabase();
   let pkg: PkgRow | null = null;
   if (supabase) {
+    // Multiple packages can share a slug across agents. Fetch up to 5 and pick
+    // the one whose agent_name matches the URL agent slug — mirrors what
+    // [slug]/page.tsx does so the OG image describes the same package the
+    // page renders.
     const { data } = await supabase
       .from('packages_with_agent')
       .select(
         'title, total_duration_days, makkah_days, madinah_days, price_per_person, currency, agent_name, thumbnail_url'
       )
       .ilike('slug', params.slug)
-      .limit(1);
-    pkg = Array.isArray(data) && data.length > 0 ? (data[0] as PkgRow) : null;
+      .limit(5);
+    const candidates = (data ?? []) as PkgRow[];
+    const lowerAgent = params.agentName.toLowerCase();
+    pkg =
+      candidates.find((p) => (p.agent_name || '').toLowerCase() === lowerAgent) ??
+      candidates[0] ??
+      null;
   }
 
   const title = pkg?.title || 'Umrah Package';

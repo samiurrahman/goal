@@ -1,4 +1,3 @@
-import { Suspense } from 'react';
 import NextTopLoader from 'nextjs-toploader';
 import dynamic from 'next/dynamic';
 import { QueryClientProvider } from '@tanstack/react-query';
@@ -145,11 +144,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ReactQueryProvider>
           <SupabaseSessionSync />
           <SiteHeader />
-          {/* Suspense boundary required by Next 14 for any descendant client
-              component that calls useSearchParams() — login, signup, checkout,
-              account pages, etc. fallback=null preserves the prior behavior
-              of rendering nothing during streaming. */}
-          <Suspense fallback={null}>{children}</Suspense>
+          {children}
           <SiteFooter />
         </ReactQueryProvider>
       </body>

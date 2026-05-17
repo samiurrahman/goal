@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Label from '@/components/Label';
 import ButtonPrimary from '@/shared/ButtonPrimary';
 import Input from '@/shared/Input';
@@ -193,4 +193,10 @@ const AccountSettings = () => {
   );
 };
 
-export default AccountSettings;
+export default function AccountSettingsRoute() {
+  return (
+    <Suspense fallback={null}>
+      <AccountSettings />
+    </Suspense>
+  );
+}
