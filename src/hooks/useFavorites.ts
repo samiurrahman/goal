@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/utils/supabaseClient';
 import { readHeaderCache } from '@/utils/headerCache';
@@ -27,34 +27,56 @@ type FavoritesSet = Set<PackageId>;
  * leave the flag set and the hook reports "logged out" even when the cookie
  * session is valid (the rest of the app, e.g. AvatarDropdown, ignores this
  * flag and reads the session directly).
+ *
+ * Module-level singleton: every FavoriteButton on a page calls multiple
+ * favorites hooks, and each hook used to spin up its own getSession() and
+ * onAuthStateChange listener. On the home page (12 cards × 4 hooks) that
+ * meant 48 redundant auth subscriptions competing with image paint on the
+ * main thread — a measurable LCP regression. The store below collapses all
+ * of that down to one getSession() and one listener, shared across every
+ * component on every page via useSyncExternalStore.
  */
-const useSessionUserId = () => {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false);
+type SessionState = { userId: string | null; isReady: boolean };
 
-  useEffect(() => {
-    let mounted = true;
+let sessionState: SessionState = { userId: null, isReady: false };
+const sessionListeners = new Set<() => void>();
+let sessionInitialized = false;
 
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setUserId(data.session?.user?.id ?? null);
-      setIsReady(true);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return;
-      setUserId(session?.user?.id ?? null);
-      setIsReady(true);
-    });
-
-    return () => {
-      mounted = false;
-      listener?.subscription?.unsubscribe();
-    };
-  }, []);
-
-  return { userId, isReady };
+const notifySessionListeners = () => {
+  for (const listener of sessionListeners) listener();
 };
+
+const initSessionStore = () => {
+  if (sessionInitialized || typeof window === 'undefined') return;
+  sessionInitialized = true;
+
+  supabase.auth.getSession().then(({ data }) => {
+    sessionState = { userId: data.session?.user?.id ?? null, isReady: true };
+    notifySessionListeners();
+  });
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    sessionState = { userId: session?.user?.id ?? null, isReady: true };
+    notifySessionListeners();
+  });
+};
+
+const subscribeSession = (listener: () => void) => {
+  initSessionStore();
+  sessionListeners.add(listener);
+  return () => {
+    sessionListeners.delete(listener);
+  };
+};
+
+const getSessionSnapshot = () => sessionState;
+// Server snapshot is stable; useSyncExternalStore requires referential equality
+// across SSR calls to avoid an infinite loop.
+const SERVER_SESSION_SNAPSHOT: SessionState = { userId: null, isReady: false };
+const getServerSessionSnapshot = () => SERVER_SESSION_SNAPSHOT;
+
+const useSessionUserId = () =>
+  useSyncExternalStore(subscribeSession, getSessionSnapshot, getServerSessionSnapshot);
 
 const fetchFavoriteIds = async (userId: string): Promise<FavoritesSet> => {
   const { data, error } = await supabase

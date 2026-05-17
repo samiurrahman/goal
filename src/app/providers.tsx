@@ -6,9 +6,20 @@ import {
   QueryClient,
   QueryClientProvider,
 } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { showApiError } from '@/lib/apiErrors';
+
+// Devtools are ~40KB and add no value in production. Dynamic-import + dev-only
+// render keeps them out of the client bundle for prod builds (Next tree-shakes
+// the import call entirely when the condition is statically false).
+const ReactQueryDevtools =
+  process.env.NODE_ENV === 'development'
+    ? dynamic(
+        () => import('@tanstack/react-query-devtools').then((m) => m.ReactQueryDevtools),
+        { ssr: false }
+      )
+    : () => null;
 
 // Per-query/mutation opt-out: pass `meta: { silent: true }` and the
 // global error toast is skipped. Use it when the caller renders its
