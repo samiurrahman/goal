@@ -14,16 +14,25 @@ export default function AppleIcon() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(135deg, #4338CA 0%, #1e1b4b 100%)',
-          color: 'white',
-          fontSize: 110,
-          fontWeight: 800,
-          letterSpacing: '-6px',
-          borderRadius: 36,
-          fontFamily: 'sans-serif',
         }}
       >
-        S
+        <svg
+          width="180"
+          height="180"
+          viewBox="0 0 256 256"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <rect width="256" height="256" rx="56" fill="#4338CA" />
+          <mask id="crescent">
+            <rect width="256" height="256" fill="white" />
+            <circle cx="130" cy="128" r="64" fill="black" />
+          </mask>
+          <circle cx="110" cy="128" r="72" fill="white" mask="url(#crescent)" />
+          <polygon
+            points="175,110 179,122 192,122 182,130 186,143 175,135 164,143 168,130 158,122 171,122"
+            fill="white"
+          />
+        </svg>
       </div>
     ),
     { ...size }

@@ -1,11 +1,9 @@
-<svg width="256" height="256" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <g fill="#4338CA" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif">
-    
-    <rect x="0" y="62" width="13" height="13" />
-    
-    <text x="16" y="75" font-weight="700" font-size="75">H</text>
-
-    <text x="64" y="75" font-weight="700" font-size="75">S</text>
-    
-  </g>
+<svg width="256" height="256" viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" rx="56" fill="#4338CA"/>
+  <mask id="crescent">
+    <rect width="256" height="256" fill="white"/>
+    <circle cx="130" cy="128" r="64" fill="black"/>
+  </mask>
+  <circle cx="110" cy="128" r="72" fill="white" mask="url(#crescent)"/>
+  <polygon points="175,110 179,122 192,122 182,130 186,143 175,135 164,143 168,130 158,122 171,122" fill="white"/>
 </svg>
