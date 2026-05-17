@@ -431,74 +431,22 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                 WebkitMaskImage: 'linear-gradient(180deg, black 0%, transparent 90%)',
               }}
             />
-            {/* Makkah + Madinah skyline sketch */}
-            <div
-              className="absolute inset-x-0 -bottom-px leading-[0] text-black/60 opacity-[0.22]"
+            {/* Makkah + Madinah skyline sketch. Served from /public as an <img>
+              rather than inlined so it qualifies as an LCP candidate — without
+              this, agents with no custom banner_image have no image element
+              above the fold and Lighthouse reports NO_LCP. fetchPriority="high"
+              promotes it past the default low priority for in-viewport images.
+              Plain <img> is intentional: it's a tiny static SVG served from
+              /public, and next/image would refuse it without dangerouslyAllowSVG. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/agent-banner-skyline.svg"
+              alt=""
               aria-hidden="true"
-            >
-              <svg
-                viewBox="0 0 1440 120"
-                preserveAspectRatio="xMidYMax slice"
-                className="block h-auto w-full"
-              >
-                <g fill="currentColor">
-                  <rect x="100" y="40" width="5" height="80" />
-                  <ellipse cx="102.5" cy="38" rx="7" ry="6" />
-                  <rect x="101" y="22" width="3" height="16" />
-                  <path d="M99 22 L102.5 14 L106 22 Z" />
-                  <rect x="158" y="34" width="5" height="86" />
-                  <ellipse cx="160.5" cy="32" rx="7" ry="6" />
-                  <rect x="159" y="14" width="3" height="18" />
-                  <rect x="240" y="36" width="5" height="84" />
-                  <ellipse cx="242.5" cy="34" rx="7" ry="6" />
-                  <rect x="241" y="18" width="3" height="16" />
-                  <rect x="296" y="42" width="5" height="78" />
-                  <ellipse cx="298.5" cy="40" rx="7" ry="6" />
-                  <rect x="297" y="24" width="3" height="16" />
-                  <rect x="115" y="76" width="170" height="44" />
-                  <rect x="160" y="60" width="80" height="22" />
-                  <path d="M156 64 Q200 26 244 64 Z" />
-                  <rect x="197" y="38" width="6" height="22" />
-                  <ellipse cx="200" cy="36" rx="4" ry="3" />
-                  <rect x="350" y="92" width="36" height="28" />
-                  <rect x="390" y="84" width="28" height="36" />
-                  <rect x="422" y="96" width="50" height="24" />
-                  <rect x="478" y="86" width="30" height="34" />
-                  <rect x="900" y="50" width="5" height="70" />
-                  <ellipse cx="902.5" cy="48" rx="6" ry="5" />
-                  <rect x="901" y="34" width="3" height="14" />
-                  <rect x="958" y="42" width="5" height="78" />
-                  <ellipse cx="960.5" cy="40" rx="6" ry="5" />
-                  <rect x="959" y="26" width="3" height="14" />
-                  <rect x="1030" y="46" width="5" height="74" />
-                  <ellipse cx="1032.5" cy="44" rx="6" ry="5" />
-                  <rect x="1031" y="30" width="3" height="14" />
-                  <rect x="1140" y="52" width="5" height="68" />
-                  <ellipse cx="1142.5" cy="50" rx="6" ry="5" />
-                  <rect x="1141" y="36" width="3" height="14" />
-                  <rect x="908" y="86" width="240" height="34" />
-                  <rect x="976" y="72" width="100" height="20" />
-                  <rect x="1018" y="96" width="22" height="24" />
-                  <rect x="1240" y="14" width="80" height="106" />
-                  <rect x="1232" y="24" width="96" height="8" />
-                  <rect x="1252" y="32" width="56" height="38" />
-                  <circle
-                    cx="1280"
-                    cy="51"
-                    r="13"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                  />
-                  <rect x="1273" y="6" width="14" height="10" />
-                  <rect x="1277" y="0" width="6" height="8" />
-                  <rect x="1156" y="56" width="28" height="64" />
-                  <rect x="1192" y="42" width="22" height="78" />
-                  <rect x="1342" y="42" width="22" height="78" />
-                  <rect x="1372" y="56" width="28" height="64" />
-                </g>
-              </svg>
-            </div>
+              fetchPriority="high"
+              decoding="async"
+              className="pointer-events-none absolute inset-x-0 -bottom-px block h-auto w-full opacity-[0.13]"
+            />
             {/* Custom uploaded banner image (kept on top when present) */}
             {bannerImageUrl ? (
               <>

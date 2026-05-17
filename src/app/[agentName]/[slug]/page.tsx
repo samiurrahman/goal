@@ -69,14 +69,34 @@ export const generateMetadata = async ({ params }: PackageDetailProps): Promise<
     };
   }
 
-  const title = `${pkg.title} — ${pkg.total_duration_days} Days`;
+  const title = `${pkg.title} — ${pkg.total_duration_days} Days | Searchumrah`;
+
+  // Two-sentence narrative: short_description (or a synthesized lede) sets the
+  // hook; a second sentence lists the concrete facts a buyer cares about
+  // (Makkah/Madinah split, departure city, price). Modeled on GetYourGuide's
+  // OG style — reads like prose rather than dot-separated tags.
+  const lede = stripHtml(pkg.short_description || '').replace(/[.\s]+$/, '');
+  const synthesizedLede = `${pkg.total_duration_days || ''}-day Umrah package${
+    pkg.agent_name ? ` by ${pkg.agent_name}` : ''
+  }`.trim();
+
+  const factParts: string[] = [];
+  if (pkg.makkah_days && pkg.madinah_days) {
+    factParts.push(`${pkg.makkah_days} days in Makkah and ${pkg.madinah_days} in Madinah`);
+  }
+  if (pkg.departure_city) {
+    factParts.push(`departing from ${pkg.departure_city}`);
+  }
+  let factsSentence = factParts.length > 0 ? `Includes ${factParts.join(', ')}.` : '';
+  if (pkg.price_per_person) {
+    factsSentence += `${factsSentence ? ' ' : ''}From ${
+      pkg.currency || 'INR'
+    } ${Number(pkg.price_per_person).toLocaleString('en-IN')} per person.`;
+  }
+
   const description = clampText(
-    pkg.short_description ||
-      `Book ${pkg.title} with ${pkg.agent_name || 'a verified agent'}. ${
-        pkg.total_duration_days
-      } days including ${pkg.makkah_days} in Makkah and ${pkg.madinah_days} in Madinah. From ${
-        pkg.currency || 'INR'
-      } ${pkg.price_per_person} per person.`
+    [`${lede || synthesizedLede}.`, factsSentence].filter(Boolean).join(' '),
+    220
   );
 
   return {
