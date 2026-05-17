@@ -18,6 +18,10 @@ type PkgRow = {
   currency: string | null;
   agent_name: string | null;
   thumbnail_url: string | null;
+  departure_city: string | null;
+  arrival_city: string | null;
+  departure_date: string | null;
+  arrival_date: string | null;
 };
 
 const getSupabase = () => {
@@ -42,7 +46,7 @@ export default async function Image({
     const { data } = await supabase
       .from('packages_with_agent')
       .select(
-        'title, total_duration_days, makkah_days, madinah_days, price_per_person, currency, agent_name, thumbnail_url'
+        'title, total_duration_days, makkah_days, madinah_days, price_per_person, currency, agent_name, thumbnail_url, departure_city, arrival_city, departure_date, arrival_date'
       )
       .ilike('slug', params.slug)
       .limit(5);
@@ -61,6 +65,23 @@ export default async function Image({
   const price = pkg?.price_per_person || null;
   const currency = pkg?.currency || 'INR';
   const agentName = pkg?.agent_name || params.agentName;
+  const departureCity = (pkg?.departure_city || '').trim();
+  const arrivalCity = (pkg?.arrival_city || '').trim();
+  const flightRoute =
+    departureCity && arrivalCity
+      ? `${departureCity} → ${arrivalCity}`
+      : departureCity || arrivalCity || '';
+
+  // Compact "12 Nov" style — keeps the chip readable at thumbnail size.
+  const fmtDate = (raw: string | null) => {
+    if (!raw) return '';
+    const d = new Date(raw);
+    if (Number.isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+  };
+  const depDate = fmtDate(pkg?.departure_date ?? null);
+  const retDate = fmtDate(pkg?.arrival_date ?? null);
+  const flightDates = depDate && retDate ? `${depDate} – ${retDate}` : depDate || retDate;
 
   const formattedPrice = price
     ? `${currency} ${Number(price).toLocaleString('en-IN')}`
@@ -146,7 +167,7 @@ export default async function Image({
                 fontWeight: 500,
               }}
             >
-              {durationDays} days
+              {`${durationDays} days`}
             </div>
           ) : null}
           {makkahDays ? (
@@ -159,7 +180,7 @@ export default async function Image({
                 fontWeight: 500,
               }}
             >
-              {makkahDays}D Makkah
+              {`${makkahDays}D Makkah`}
             </div>
           ) : null}
           {madinahDays ? (
@@ -172,7 +193,34 @@ export default async function Image({
                 fontWeight: 500,
               }}
             >
-              {madinahDays}D Madinah
+              {`${madinahDays}D Madinah`}
+            </div>
+          ) : null}
+          {flightRoute ? (
+            <div
+              style={{
+                background: 'rgba(99,102,241,0.30)',
+                padding: '12px 22px',
+                borderRadius: 999,
+                fontSize: 26,
+                fontWeight: 500,
+                border: '1px solid rgba(255,255,255,0.25)',
+              }}
+            >
+              {`✈ ${flightRoute}`}
+            </div>
+          ) : null}
+          {flightDates ? (
+            <div
+              style={{
+                background: 'rgba(255,255,255,0.18)',
+                padding: '12px 22px',
+                borderRadius: 999,
+                fontSize: 26,
+                fontWeight: 500,
+              }}
+            >
+              {flightDates}
             </div>
           ) : null}
         </div>
