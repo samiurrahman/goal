@@ -4,20 +4,19 @@ import { supabase } from '@/utils/supabaseClient';
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
 
-  // Static routes. We previously emitted priority/changeFrequency hints but
-  // those fields are only typed in Next 13.5+ and Google ignores them anyway.
-  // Bing still honors them; if/when Next is upgraded, they can be reintroduced.
+  // Static routes — priority/changeFrequency are hints to crawlers about how
+  // important and how volatile a page is relative to others on this site.
   const now = new Date();
   const staticRoutes: MetadataRoute.Sitemap = [
-    { url: baseUrl, lastModified: now },
-    { url: `${baseUrl}/packages`, lastModified: now },
-    { url: `${baseUrl}/about`, lastModified: now },
-    { url: `${baseUrl}/contact`, lastModified: now },
-    { url: `${baseUrl}/privacy`, lastModified: now },
-    { url: `${baseUrl}/terms`, lastModified: now },
-    { url: `${baseUrl}/refund-policy`, lastModified: now },
-    { url: `${baseUrl}/login`, lastModified: now },
-    { url: `${baseUrl}/signup`, lastModified: now },
+    { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
+    { url: `${baseUrl}/packages`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${baseUrl}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/terms`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/refund-policy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
+    { url: `${baseUrl}/login`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
+    { url: `${baseUrl}/signup`, lastModified: now, changeFrequency: 'yearly', priority: 0.2 },
   ];
 
   const dynamicRoutes: MetadataRoute.Sitemap = [];
@@ -38,6 +37,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         dynamicRoutes.push({
           url: `${baseUrl}/${agent.slug}`,
           lastModified: new Date(agent.created_at || Date.now()),
+          changeFrequency: 'weekly',
+          priority: 0.7,
         });
       }
     }
@@ -73,6 +74,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
         dynamicRoutes.push({
           url: `${baseUrl}/${agentSlug}/${pkg.slug}`,
           lastModified: new Date(pkg.created_at || Date.now()),
+          changeFrequency: 'weekly',
+          priority: 0.8,
         });
       }
     }

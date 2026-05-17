@@ -87,3 +87,57 @@ Per-package OG image — dynamic OG image per package showing title, agent, pric
 Core Web Vitals audit — run Lighthouse, list specific fixes (won't fix blindly — will report and let you pick)
 Manual submission checklist — what you do in GSC + Bing after deploy
 Let me kick off with the work that doesn't need your inputs (items 1, 2, 5, 7, 8). Items 3, 4, 6, 10 wait for the values above. Item 9 happens after deploy.
+
+
+
+
+
+
+1. Verify all the new endpoints respond
+Open each URL in a browser, confirm it loads:
+
+https://searchumrah.com/opengraph-image → the OG image (your custom one once dropped in)
+https://searchumrah.com/apple-icon → 180×180 PNG
+https://searchumrah.com/manifest.webmanifest → JSON
+https://searchumrah.com/e05b572b2a12b07f250abb7b9456364e.txt → just the key text, nothing else
+https://searchumrah.com/sitemap.xml → agents + packages visible
+https://searchumrah.com/<any-agent>/<any-package>/opengraph-image → per-package OG with price
+If any 404, ping me.
+
+2. Test rich results
+search.google.com/test/rich-results → paste:
+
+Homepage URL → should detect Organization, WebSite
+Any agent URL → should detect TravelAgency, BreadcrumbList, AggregateRating (if reviews exist)
+Any package URL → should detect Product, Offer, BreadcrumbList, AggregateRating
+3. Test social card previews
+Facebook: developers.facebook.com/tools/debug — paste homepage, click "Scrape Again" if cached
+Twitter/X: cards-dev.twitter.com/validator (or just tweet a draft to preview)
+LinkedIn: linkedin.com/post-inspector
+WhatsApp: send the URL to yourself
+4. Register IndexNow key (one-time)
+Go to indexnow.org → there's no signup, just send a test ping. Or curl:
+
+
+curl -X POST "https://api.indexnow.org/IndexNow" \
+  -H "Content-Type: application/json" \
+  -d '{"host":"searchumrah.com","key":"e05b572b2a12b07f250abb7b9456364e","keyLocation":"https://searchumrah.com/e05b572b2a12b07f250abb7b9456364e.txt","urlList":["https://searchumrah.com/"]}'
+Expect HTTP 200 or 202. Once accepted, all future agent/package publishes auto-ping via your /api/revalidate route.
+
+5. Resubmit sitemap in GSC + Bing
+GSC: Search Console → Sitemaps → enter sitemap.xml → Submit
+Bing Webmaster: Sitemaps → Submit a sitemap → paste full URL
+Even if already submitted, resubmit to force a re-crawl (we added priority hints + /packages).
+
+6. Run Lighthouse (optional but recommended)
+Chrome → DevTools → Lighthouse → Mobile → Performance + SEO + Best Practices. Run on:
+
+/ (homepage)
+one agent page
+one package page
+Send me the LCP, INP, CLS numbers. If any are red/orange, I'll prioritize fixes.
+
+7. Yandex Webmaster (optional, ~3 min)
+webmaster.yandex.com → Add site → DNS or meta verification. Adds Russia/CIS reach.
+
+That's it. Deploy when ready, work through 1→5 today (10 min), do 6+7 whenever. Ping me if anything 404s.
