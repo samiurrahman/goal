@@ -97,8 +97,10 @@ const SearchForm = () => {
     [requestGeo, geoError, handleSelectLocation]
   );
 
+  // Double-rAF defers past the Popover.Panel's enter transition so focus
+  // isn't lost to HeadlessUI's own focus management mid-animation.
   const focusLocationInput = useCallback((el: HTMLInputElement | null) => {
-    if (el) requestAnimationFrame(() => el.focus());
+    if (el) requestAnimationFrame(() => requestAnimationFrame(() => el.focus()));
   }, []);
 
   return (
@@ -154,11 +156,15 @@ const SearchForm = () => {
                       <MagnifyingGlassIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                       <input
                         ref={focusLocationInput}
+                        autoFocus
                         type="text"
                         placeholder="Search city"
                         value={locationQuery}
                         onChange={(e) => setLocationQuery(e.target.value)}
-                        className="w-full pl-9 pr-9 py-2 border border-neutral-400 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-100 rounded-md focus:outline-none"
+                        // Explicit light-mode bg/text — the form lives inside
+                        // the hero's `text-white` section, so without these
+                        // typed text inherits white and is invisible.
+                        className="w-full pl-9 pr-9 py-2 border border-neutral-400 dark:border-neutral-600 bg-white text-neutral-900 placeholder:text-neutral-500 dark:bg-neutral-800 dark:text-neutral-100 dark:placeholder:text-neutral-400 rounded-md focus:outline-none"
                       />
                       {locationQuery ? (
                         <button

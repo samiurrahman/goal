@@ -723,7 +723,7 @@ export default function AvatarDropdown({ className = '' }: Props) {
         <nav className="space-y-1 pt-2">
           {(userType === 'agent'
             ? [
-                { label: 'Profile', href: agentSlug ? `/${agentSlug}` : '/profile', icon: 'la-user' },
+                { label: 'Profile', href: '/profile', icon: 'la-user' },
                 { label: 'Bookings', href: '/bookings', icon: 'la-clipboard-list' },
                 { label: 'Packages', href: '/listed-packages', icon: 'la-box' },
                 { label: 'Interested users', href: '/interested-users', icon: 'la-user-friends' },
