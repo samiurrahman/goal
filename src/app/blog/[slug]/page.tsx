@@ -15,7 +15,7 @@ export function generateStaticParams() {
 // template empty. Same pattern as the city/facet pages.
 export const dynamicParams = false;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
 
 type PageParams = { params: { slug: string } };
 

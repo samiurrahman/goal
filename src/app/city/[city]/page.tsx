@@ -29,7 +29,7 @@ export function generateStaticParams() {
 export const dynamicParams = false;
 
 const PAGE_SIZE = 12;
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
 
 type PageParams = { params: { city: string } };
 

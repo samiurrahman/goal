@@ -10,7 +10,7 @@ import { BLOG_CATEGORY_LABEL } from '@/content/blog/types';
 // this page, the sitemap, and the [slug] route.
 export const revalidate = 3600;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
 
 export const metadata: Metadata = {
   title: 'Umrah Travel Guide — Tips, How-Tos, and Planning Articles',

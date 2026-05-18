@@ -5,7 +5,7 @@ import { SEO_FACETS } from '@/lib/seo/facets';
 import { BLOG_POSTS } from '@/content/blog/registry';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
 
   // Static routes — priority/changeFrequency are hints to crawlers about how
   // important and how volatile a page is relative to others on this site.

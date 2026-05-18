@@ -24,7 +24,7 @@ const poppins = Poppins({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com'),
   title: {
     default: 'Umrah Packages | Best Islamic Travel Deals',
     template: '%s | Searchumrah',
@@ -82,7 +82,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com',
+    url: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com',
     siteName: 'Searchumrah',
     title: 'Premium Umrah Packages',
     description:
@@ -101,7 +101,7 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
 
   // Social links are comma-separated absolute URLs in NEXT_PUBLIC_SOCIAL_LINKS.
   // Empty / missing → no sameAs emitted, which is fine; Google ignores empty arrays.

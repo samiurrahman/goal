@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     | 'email'
     | undefined;
 
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
 
   if (!tokenHash || !type) {
     return NextResponse.redirect(`${baseUrl}/account-settings`);

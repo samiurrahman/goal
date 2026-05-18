@@ -29,7 +29,7 @@ export interface AgentDetailsProps {
 // this is a huge perf win over `force-dynamic` for repeat visits.
 export const revalidate = 60;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
 
 const stripHtml = (html: string) =>
   html

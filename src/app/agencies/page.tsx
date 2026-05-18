@@ -22,7 +22,7 @@ import { SEO_CITIES } from '@/lib/seo/cities';
 // totals update via cache invalidation in the existing trigger.
 export const revalidate = 3600;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
 
 type AgencyRow = {
   slug: string;

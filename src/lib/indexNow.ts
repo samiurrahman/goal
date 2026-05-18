@@ -16,7 +16,7 @@ const INDEXNOW_KEY =
 const INDEXNOW_ENDPOINT = 'https://api.indexnow.org/IndexNow';
 
 const getHost = () => {
-  const raw = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
+  const raw = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
   return raw.replace(/\/+$/, '');
 };
 
