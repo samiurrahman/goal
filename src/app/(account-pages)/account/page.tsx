@@ -15,6 +15,7 @@ import { supabase } from '@/utils/supabaseClient';
 import toast from 'react-hot-toast';
 import { resolvePublicImageUrl, uploadImageToStorage } from '@/utils/supabaseStorageHelper';
 import { showApiError } from '@/lib/apiErrors';
+import ImageCropModal from '@/components/ImageCropModal';
 
 export interface AccountPageProps {}
 
@@ -141,6 +142,7 @@ const AccountPage = () => {
   const [userProfileUrl, setUserProfileUrl] = useState<string>('');
   const [activeTab, setActiveTab] = useState<'profile' | 'travelers'>('profile');
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const [accountForm, setAccountForm] = useState<AccountFormState>({
@@ -370,14 +372,20 @@ const AccountPage = () => {
     );
   };
 
-  const handleAvatarFile = async (file: File | undefined) => {
-    if (!file || !authUserId) return;
+  const queueAvatarForCrop = (file: File | undefined) => {
+    if (!file) return;
     if (file.size > MAX_AVATAR_SIZE) {
       toast.error('Image must be smaller than 5MB');
       return;
     }
+    setPendingAvatarFile(file);
+  };
+
+  const handleAvatarCropConfirm = async (croppedFile: File) => {
+    setPendingAvatarFile(null);
+    if (!authUserId) return;
     setAvatarUploading(true);
-    const result = await uploadImageToStorage(file, `users/${authUserId}`, userProfileUrl, {
+    const result = await uploadImageToStorage(croppedFile, `users/${authUserId}`, userProfileUrl, {
       fixedFileName: 'profile',
     });
     setAvatarUploading(false);
@@ -743,7 +751,7 @@ const AccountPage = () => {
                     className="hidden"
                     disabled={avatarUploading}
                     onChange={(e) => {
-                      void handleAvatarFile(e.target.files?.[0]);
+                      queueAvatarForCrop(e.target.files?.[0]);
                       e.target.value = '';
                     }}
                   />
@@ -1145,6 +1153,18 @@ const AccountPage = () => {
           </div>
         </div>
       )}
+
+      <ImageCropModal
+        open={!!pendingAvatarFile}
+        file={pendingAvatarFile}
+        aspect={1}
+        cropShape="round"
+        title="Adjust profile photo"
+        onCancel={() => setPendingAvatarFile(null)}
+        onConfirm={(cropped) => {
+          void handleAvatarCropConfirm(cropped);
+        }}
+      />
 
       {/* Delete confirmation modal */}
       <Transition appear show={!!deletePendingKey} as={Fragment}>

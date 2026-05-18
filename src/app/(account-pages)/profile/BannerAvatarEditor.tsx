@@ -5,6 +5,7 @@ import Image from 'next/image';
 import toast from 'react-hot-toast';
 import { resolvePublicImageUrl, uploadImageToStorage } from '@/utils/supabaseStorageHelper';
 import { showApiError } from '@/lib/apiErrors';
+import ImageCropModal from '@/components/ImageCropModal';
 
 // Banner + overlapping circular avatar editor for the profile page — mirrors
 // the layout of the public /[agentName] header so the agent edits what they
@@ -45,6 +46,10 @@ export default function BannerAvatarEditor({
 }: BannerAvatarEditorProps) {
   const [bannerUploading, setBannerUploading] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
+  const [pendingCrop, setPendingCrop] = useState<{
+    slot: 'banner' | 'profile';
+    file: File;
+  } | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,20 +57,26 @@ export default function BannerAvatarEditor({
   const resolvedProfile = resolvePublicImageUrl(profileUrl);
   const displayName = knownAs.trim() || legalName.trim() || 'Your business';
 
-  const handleUpload = async (
-    file: File | undefined,
-    slot: 'banner' | 'profile',
-    currentUrl: string,
-    setUploading: (v: boolean) => void,
-    onChange: (url: string) => void
-  ) => {
+  const queueForCrop = (file: File | undefined, slot: 'banner' | 'profile') => {
     if (!file) return;
     if (file.size > MAX_FILE_SIZE) {
       toast.error('Image must be smaller than 5MB');
       return;
     }
+    setPendingCrop({ slot, file });
+  };
+
+  const handleCropConfirm = async (croppedFile: File) => {
+    if (!pendingCrop) return;
+    const { slot } = pendingCrop;
+    setPendingCrop(null);
+
+    const setUploading = slot === 'banner' ? setBannerUploading : setAvatarUploading;
+    const onChange = slot === 'banner' ? onBannerChange : onProfileChange;
+    const currentUrl = slot === 'banner' ? bannerUrl : profileUrl;
+
     setUploading(true);
-    const result = await uploadImageToStorage(file, `agents/${agentId}`, currentUrl, {
+    const result = await uploadImageToStorage(croppedFile, `agents/${agentId}`, currentUrl, {
       fixedFileName: slot,
     });
     setUploading(false);
@@ -209,13 +220,7 @@ export default function BannerAvatarEditor({
         className="hidden"
         disabled={bannerUploading}
         onChange={(e) => {
-          void handleUpload(
-            e.target.files?.[0],
-            'banner',
-            bannerUrl,
-            setBannerUploading,
-            onBannerChange
-          );
+          queueForCrop(e.target.files?.[0], 'banner');
           e.target.value = '';
         }}
       />
@@ -226,14 +231,20 @@ export default function BannerAvatarEditor({
         className="hidden"
         disabled={avatarUploading}
         onChange={(e) => {
-          void handleUpload(
-            e.target.files?.[0],
-            'profile',
-            profileUrl,
-            setAvatarUploading,
-            onProfileChange
-          );
+          queueForCrop(e.target.files?.[0], 'profile');
           e.target.value = '';
+        }}
+      />
+
+      <ImageCropModal
+        open={!!pendingCrop}
+        file={pendingCrop?.file ?? null}
+        aspect={pendingCrop?.slot === 'banner' ? 4 / 1 : 1}
+        cropShape={pendingCrop?.slot === 'profile' ? 'round' : 'rect'}
+        title={pendingCrop?.slot === 'banner' ? 'Adjust banner' : 'Adjust profile photo'}
+        onCancel={() => setPendingCrop(null)}
+        onConfirm={(cropped) => {
+          void handleCropConfirm(cropped);
         }}
       />
     </div>

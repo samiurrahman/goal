@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { resolvePublicImageUrl, uploadImageToStorage } from '@/utils/supabaseStorageHelper';
 import toast from 'react-hot-toast';
 import { showApiError } from '@/lib/apiErrors';
+import ImageCropModal from '@/components/ImageCropModal';
 
 interface ImageUploadProps {
   label: string;
@@ -16,6 +17,14 @@ interface ImageUploadProps {
   aspectRatio?: 'square' | 'wide' | 'auto'; // For display preview
   maxFileSize?: number; // in bytes, default 5MB
 }
+
+const cropAspectFor = (aspectRatio: 'square' | 'wide' | 'auto'): number => {
+  if (aspectRatio === 'square') return 1;
+  // 'auto' has no fixed display ratio but we still need a crop target — 16:9
+  // is the sensible default since every current 'auto'/'wide' call site is
+  // banner-shaped imagery.
+  return 16 / 9;
+};
 
 export default function ImageUpload({
   label,
@@ -31,33 +40,39 @@ export default function ImageUpload({
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     resolvePublicImageUrl(currentImageUrl) || null
   );
+  const [pendingRawFile, setPendingRawFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setPreviewUrl(resolvePublicImageUrl(currentImageUrl) || null);
   }, [currentImageUrl]);
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    // Reset input now so the same file can be re-picked if the user cancels
+    // the crop dialog and wants to try again.
+    if (fileInputRef.current) fileInputRef.current.value = '';
     if (!file) return;
 
-    // Validate file size
     if (file.size > maxFileSize) {
       toast.error('File must be smaller than 5MB');
       return;
     }
 
-    // Show preview immediately
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setPreviewUrl(event.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    setPendingRawFile(file);
+  };
 
-    // Deferred mode: just hand the file back, no upload
+  const handleCropConfirm = async (croppedFile: File) => {
+    setPendingRawFile(null);
+
+    // Preview from the cropped file so the user sees exactly what was committed.
+    const reader = new FileReader();
+    reader.onload = (event) => setPreviewUrl(event.target?.result as string);
+    reader.readAsDataURL(croppedFile);
+
+    // Deferred mode: just hand the cropped file back
     if (onFileSelected) {
-      onFileSelected(file);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      onFileSelected(croppedFile);
       return;
     }
 
@@ -65,7 +80,7 @@ export default function ImageUpload({
     if (!folder || !onUploadSuccess) return;
 
     setIsUploading(true);
-    const result = await uploadImageToStorage(file, folder, currentImageUrl, {
+    const result = await uploadImageToStorage(croppedFile, folder, currentImageUrl, {
       fixedFileName,
     });
 
@@ -81,11 +96,6 @@ export default function ImageUpload({
     }
 
     setIsUploading(false);
-
-    // Reset input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
   };
 
   const handleClick = () => {
@@ -165,6 +175,18 @@ export default function ImageUpload({
         onChange={handleFileSelect}
         disabled={isUploading}
         className="hidden"
+      />
+
+      <ImageCropModal
+        open={!!pendingRawFile}
+        file={pendingRawFile}
+        aspect={cropAspectFor(aspectRatio)}
+        cropShape="rect"
+        title={`Adjust ${label.toLowerCase()}`}
+        onCancel={() => setPendingRawFile(null)}
+        onConfirm={(cropped) => {
+          void handleCropConfirm(cropped);
+        }}
       />
     </div>
   );
