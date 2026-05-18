@@ -8,6 +8,7 @@ import ButtonClose from '@/shared/ButtonClose';
 import Checkbox from '@/shared/Checkbox';
 import { supabase } from '@/utils/supabaseClient';
 import { MONTHS_LIST } from '@/contains/contants';
+import { getHijriMonthsForGregorianMonth } from '@/lib/hijri';
 import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
 import { rangeId } from '@/hooks/filters/useMultiRangeFilter';
 import { useSingleRangeFilter } from '@/hooks/filters/useSingleRangeFilter';
@@ -59,6 +60,7 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
   // ── Shared filter hooks ──────────────────────────────────────────────────
   const { searchParams, replaceParams } = useFilterUrlSync();
   const month = useMultiSelectFilter('month');
+  const currentYear = new Date().getFullYear();
   const duration = useSingleRangeFilter('total_duration_days');
   const price = useSingleRangeFilter('price');
   const makkahDistance = useSingleRangeFilter('makkah_hotel_distance_m');
@@ -291,16 +293,22 @@ const MobileFiltersModal = ({ isOpen, onClose }: MobileFiltersModalProps) => {
                         active={month.isActive}
                         onClear={() => month.clear()}
                       />
-                      <div className="grid grid-cols-3 gap-2">
-                        {MONTHS_LIST.map((m) => (
-                          <Checkbox
-                            key={m}
-                            name={m}
-                            label={m}
-                            defaultChecked={month.selected.includes(m)}
-                            onChange={(checked) => month.toggle(checked, m)}
-                          />
-                        ))}
+                      <div className="grid grid-cols-2 gap-3">
+                        {MONTHS_LIST.map((m, idx) => {
+                          const hijri = getHijriMonthsForGregorianMonth(currentYear, idx).join(
+                            ' / '
+                          );
+                          return (
+                            <Checkbox
+                              key={m}
+                              name={m}
+                              label={`${m} ${currentYear}`}
+                              subLabel={hijri}
+                              defaultChecked={month.selected.includes(m)}
+                              onChange={(checked) => month.toggle(checked, m)}
+                            />
+                          );
+                        })}
                       </div>
                     </section>
 

@@ -8,10 +8,12 @@ import ButtonThird from '@/shared/ButtonThird';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST } from '@/contains/contants';
 import { useMultiSelectFilter } from '@/hooks/filters/useMultiSelectFilter';
+import { getHijriMonthsForGregorianMonth } from '@/lib/hijri';
 import FilterPillButton from './FilterPillButton';
 
 const MonthFilter = () => {
   const filter = useMultiSelectFilter('month');
+  const year = new Date().getFullYear();
 
   return (
     <Popover className="relative">
@@ -39,15 +41,19 @@ const MonthFilter = () => {
             <Popover.Panel className="absolute z-10 w-screen max-w-sm px-4 mt-3 left-0 sm:px-0 lg:max-w-md">
               <div className="overflow-hidden rounded-2xl shadow-xl bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700">
                 <div className="relative flex flex-col px-5 py-6 space-y-5 max-h-72 overflow-y-auto">
-                  {MONTHS_LIST.map((month) => (
-                    <Checkbox
-                      key={month}
-                      name={month}
-                      label={month}
-                      defaultChecked={filter.selected.includes(month)}
-                      onChange={(checked) => filter.toggle(checked, month)}
-                    />
-                  ))}
+                  {MONTHS_LIST.map((month, idx) => {
+                    const hijri = getHijriMonthsForGregorianMonth(year, idx).join(' / ');
+                    return (
+                      <Checkbox
+                        key={month}
+                        name={month}
+                        label={`${month} ${year}`}
+                        subLabel={hijri}
+                        defaultChecked={filter.selected.includes(month)}
+                        onChange={(checked) => filter.toggle(checked, month)}
+                      />
+                    );
+                  })}
                 </div>
                 <div className="p-5 bg-neutral-50 dark:bg-neutral-900 dark:border-t dark:border-neutral-800 flex items-center justify-between">
                   <ButtonThird
