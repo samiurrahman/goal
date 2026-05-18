@@ -1,7 +1,14 @@
 import React from 'react';
 
 interface StructuredDataProps {
-  type: 'Organization' | 'WebSite' | 'WebPage' | 'BreadcrumbList' | 'TravelAgency' | 'Product';
+  type:
+    | 'Organization'
+    | 'WebSite'
+    | 'WebPage'
+    | 'BreadcrumbList'
+    | 'TravelAgency'
+    | 'Product'
+    | 'ItemList';
   data: any;
 }
 
@@ -95,6 +102,27 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
         })),
       };
       break;
+
+    case 'ItemList': {
+      // Generic ordered list — used on the homepage to surface the
+      // departure-city index as a machine-readable list of related pages.
+      // Google may render this as a sitelink-style cluster on SERPs.
+      const list: Record<string, unknown> = {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        itemListElement: (data.items || []).map((item: any, index: number) => ({
+          '@type': 'ListItem',
+          position: index + 1,
+          name: item.name,
+          url: item.url,
+        })),
+      };
+      if (data.name) list.name = data.name;
+      if (data.description) list.description = data.description;
+      if (typeof data.numberOfItems === 'number') list.numberOfItems = data.numberOfItems;
+      structuredData = list;
+      break;
+    }
 
     case 'TravelAgency':
       structuredData = {

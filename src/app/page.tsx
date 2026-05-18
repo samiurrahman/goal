@@ -189,8 +189,28 @@ async function PageHome() {
         ("Umrah from {City}").
       */}
       <section className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 py-12 lg:py-16">
+        {/*
+          Machine-readable index of the 25 departure-city pages. Gives Google
+          an explicit ordered list of related URLs from the most-linked page
+          on the site — eligible for sitelink-cluster rendering in SERPs.
+          Ordered by SEO_CITIES priority (metros first), which matches the
+          visual grid order.
+        */}
+        <StructuredData
+          type="ItemList"
+          data={{
+            name: 'Umrah packages from your city',
+            description:
+              'Compare Umrah packages from verified travel agents across India by departure city.',
+            numberOfItems: SEO_CITIES.length,
+            items: SEO_CITIES.map((c) => ({
+              name: `Umrah packages from ${c.name}`,
+              url: `${baseUrl}/umrah-packages-from-${c.urlSlug}`,
+            })),
+          }}
+        />
         <div className="container">
-          <div className="flex items-end justify-between gap-4 mb-6 lg:mb-8 border-b border-neutral-200 dark:border-neutral-700 pb-3">
+          <div className="flex items-end justify-between gap-4 mb-3 border-b border-neutral-200 dark:border-neutral-700 pb-3">
             <h2 className="text-lg lg:text-xl font-semibold text-neutral-900 dark:text-neutral-100">
               Umrah packages from your city
             </h2>
@@ -202,8 +222,21 @@ async function PageHome() {
             </Link>
           </div>
           {/*
+            Short keyword-dense intro paragraph. This section used to be all
+            link anchors with zero body text — adding 1–2 sentences of real
+            content addresses search intent ("umrah from india", departure
+            cities) in scan-friendly prose, and gives Google something more
+            than just a link list to weigh.
+          */}
+          <p className="max-w-3xl mb-6 lg:mb-8 text-[14px] leading-relaxed text-neutral-600 dark:text-neutral-400">
+            Departing for Umrah from India? Compare verified packages from {SEO_CITIES.length}{' '}
+            departure cities — including major hubs like Mumbai, Delhi, Hyderabad and Bangalore,
+            plus Kerala gateways Kochi and Calicut. Transparent pricing, hotels near Haram, and
+            direct agent contact.
+          </p>
+          {/*
             Visible anchor text inside each <a> remains keyword-rich
-            ("{City} · Umrah packages · {IATA}") so crawlers still see
+            ("{City} {count} Umrah packages {IATA}") so crawlers still see
             the canonical phrase. We just stop visually repeating
             "Umrah from" 25 times — the city name carries the eye.
           */}
@@ -226,17 +259,15 @@ async function PageHome() {
                           {count} Umrah {count === 1 ? 'package' : 'packages'}
                         </>
                       ) : (
-                        <>
-                          Umrah packages
-                          {c.airportCode ? (
-                            <>
-                              {' '}
-                              <span className="text-neutral-400 dark:text-neutral-500">·</span>{' '}
-                              <span className="font-medium tracking-wide">{c.airportCode}</span>
-                            </>
-                          ) : null}
-                        </>
+                        <>Umrah packages</>
                       )}
+                      {c.airportCode ? (
+                        <>
+                          {' '}
+                          <span className="text-neutral-400 dark:text-neutral-500">·</span>{' '}
+                          <span className="font-medium tracking-wide">{c.airportCode}</span>
+                        </>
+                      ) : null}
                     </div>
                   </Link>
                 </li>
