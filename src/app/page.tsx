@@ -154,15 +154,19 @@ async function PageHome() {
         </div>
       </section>
 
+      {/* ============== FEATURED PACKAGES ============== */}
+      <FeaturedPackagesSection packages={featured} />
+
       {/* ============== POPULAR DEPARTURE CITIES ============== */}
       {/*
         Surfaces the programmatic city landing pages from the homepage so they
-        get PageRank flow from the most-linked page on the site. Pill row is
-        intentionally compact (one horizontal scroll on mobile, single line on
-        desktop) — not a full grid, since that would dilute the hero CTA. Each
-        link's anchor text matches the destination page's H1 ("Umrah from {City}").
+        get PageRank flow from the most-linked page on the site. Placed below
+        the featured-package funnel so it acts as supplementary navigation
+        rather than interrupting the hero → search → packages buying path.
+        Each link's anchor text matches the destination page's H1
+        ("Umrah from {City}").
       */}
-      <section className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 py-6 lg:py-8">
+      <section className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 py-8 lg:py-10">
         <div className="container">
           <div className="flex items-center justify-between gap-4 mb-3.5">
             <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-500 dark:text-neutral-400">
@@ -176,7 +180,7 @@ async function PageHome() {
             </Link>
           </div>
           <ul className="flex flex-wrap gap-2 lg:gap-2.5">
-            {SEO_CITIES.slice(0, 14).map((c) => (
+            {SEO_CITIES.map((c) => (
               <li key={c.urlSlug}>
                 <Link
                   href={`/umrah-packages-from-${c.urlSlug}`}
@@ -189,9 +193,6 @@ async function PageHome() {
           </ul>
         </div>
       </section>
-
-      {/* ============== FEATURED PACKAGES ============== */}
-      <FeaturedPackagesSection packages={featured} />
 
       {/* ============== FOR AGENTS ============== */}
       <section className="relative overflow-hidden bg-primary-900 text-white py-16 lg:py-24">
