@@ -9,6 +9,7 @@ import { useTimeoutFn } from 'react-use';
 import toast from 'react-hot-toast';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
+import { getHijriMonthsForGregorianMonth } from '@/lib/hijri';
 import { usePackageSearch, type CityItem } from '@/hooks/usePackageSearch';
 import { useCitySearch } from '@/hooks/useCitySearch';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -272,19 +273,28 @@ const HeroSearchTrigger = () => {
           <div className="p-5">
             <span className="block font-semibold text-xl sm:text-2xl">Month</span>
             <div className="mt-5 space-y-3 max-h-[40vh] overflow-y-auto">
-              {MONTHS_LIST_WITH_ANY.map((month) => (
-                <span
-                  key={`${month}-${monthStates.includes(month)}`}
-                  className="flex items-center py-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-2xl px-2"
-                >
-                  <Checkbox
-                    name={month}
-                    label={month}
-                    defaultChecked={monthStates.includes(month)}
-                    onChange={(checked) => handleChangeMonth(checked, month)}
-                  />
-                </span>
-              ))}
+              {MONTHS_LIST_WITH_ANY.map((month, idx) => {
+                const isAny = idx === 0;
+                const monthIndex = idx - 1;
+                const year = new Date().getFullYear();
+                const hijri = isAny
+                  ? ''
+                  : getHijriMonthsForGregorianMonth(year, monthIndex).join(' / ');
+                return (
+                  <span
+                    key={`${month}-${monthStates.includes(month)}`}
+                    className="flex items-center py-1 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-2xl px-2"
+                  >
+                    <Checkbox
+                      name={month}
+                      label={isAny ? month : `${month} ${year}`}
+                      subLabel={hijri}
+                      defaultChecked={monthStates.includes(month)}
+                      onChange={(checked) => handleChangeMonth(checked, month)}
+                    />
+                  </span>
+                );
+              })}
             </div>
           </div>
         )}

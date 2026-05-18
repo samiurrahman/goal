@@ -12,6 +12,7 @@ import {
 import toast from 'react-hot-toast';
 import Checkbox from '@/shared/Checkbox';
 import { MONTHS_LIST_WITH_ANY } from '@/contains/contants';
+import { getHijriMonthsForGregorianMonth } from '@/lib/hijri';
 import { usePackageSearch, type CityItem } from '@/hooks/usePackageSearch';
 import { useCitySearch } from '@/hooks/useCitySearch';
 import { useUserLocation } from '@/hooks/useUserLocation';
@@ -261,19 +262,30 @@ const SearchForm = () => {
                     popover renders much shorter and the two feel unbalanced.
                   */}
                   <div className="h-[22.5rem] overflow-y-auto p-3">
-                    {MONTHS_LIST_WITH_ANY.map((month) => (
-                      <span
-                        key={`${month}-${monthStates.includes(month)}`}
-                        className="flex items-center px-3 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl"
-                      >
-                        <Checkbox
-                          name={month}
-                          label={month}
-                          defaultChecked={monthStates.includes(month)}
-                          onChange={(checked) => handleChangeMonth(checked, month)}
-                        />
-                      </span>
-                    ))}
+                    {MONTHS_LIST_WITH_ANY.map((month, idx) => {
+                      // idx 0 is 'Any' (no Hijri); idx 1..12 maps to Jan..Dec
+                      // (monthIndex 0..11) for the current Gregorian year.
+                      const isAny = idx === 0;
+                      const monthIndex = idx - 1;
+                      const year = new Date().getFullYear();
+                      const hijri = isAny
+                        ? ''
+                        : getHijriMonthsForGregorianMonth(year, monthIndex).join(' / ');
+                      return (
+                        <span
+                          key={`${month}-${monthStates.includes(month)}`}
+                          className="flex items-center px-3 py-1.5 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl"
+                        >
+                          <Checkbox
+                            name={month}
+                            label={isAny ? month : `${month} ${year}`}
+                            subLabel={hijri}
+                            defaultChecked={monthStates.includes(month)}
+                            onChange={(checked) => handleChangeMonth(checked, month)}
+                          />
+                        </span>
+                      );
+                    })}
                   </div>
                   {monthStates.length > 0 ? (
                     <div className="px-4 py-3 border-t border-neutral-200 dark:border-neutral-700">

@@ -143,6 +143,10 @@ const AccountPage = () => {
   const [activeTab, setActiveTab] = useState<'profile' | 'travelers'>('profile');
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [pendingAvatarFile, setPendingAvatarFile] = useState<File | null>(null);
+  // Optimistic local preview of the cropped avatar — shows immediately on Save
+  // while the upload runs, so the user sees the change without waiting for the
+  // CDN round-trip.
+  const [localAvatarPreview, setLocalAvatarPreview] = useState<string | null>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const [accountForm, setAccountForm] = useState<AccountFormState>({
@@ -384,18 +388,32 @@ const AccountPage = () => {
   const handleAvatarCropConfirm = async (croppedFile: File) => {
     setPendingAvatarFile(null);
     if (!authUserId) return;
+
+    // Show the cropped image immediately so the user gets instant feedback.
+    try {
+      const reader = new FileReader();
+      reader.onload = (event) => setLocalAvatarPreview(event.target?.result as string);
+      reader.readAsDataURL(croppedFile);
+    } catch {
+      // Preview is best-effort.
+    }
+
     setAvatarUploading(true);
     const result = await uploadImageToStorage(croppedFile, `users/${authUserId}`, userProfileUrl, {
       fixedFileName: 'profile',
     });
     setAvatarUploading(false);
     if (result.error) {
+      setLocalAvatarPreview(null);
       showApiError(new Error(result.error), { message: 'Upload failed. Please try again.' });
       return;
     }
     if (result.url) {
       setUserProfileUrl(result.url);
       void persistUserProfileUrl(result.url);
+      // Hand display back to the resolved URL on the next render — it carries
+      // a ?v=… cache-bust so <Image> sees a new src.
+      setLocalAvatarPreview(null);
       toast.success('Profile photo updated.');
     }
   };
@@ -697,7 +715,16 @@ const AccountPage = () => {
                       }
                     }}
                   >
-                    {resolvePublicImageUrl(userProfileUrl) ? (
+                    {localAvatarPreview ? (
+                      // Plain <img> for the data URL preview — next/image's
+                      // optimizer can't handle data URLs.
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={localAvatarPreview}
+                        alt="Profile photo preview"
+                        className="absolute inset-0 h-full w-full object-cover"
+                      />
+                    ) : resolvePublicImageUrl(userProfileUrl) ? (
                       <Image
                         src={resolvePublicImageUrl(userProfileUrl) as string}
                         alt="Profile photo"

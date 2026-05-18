@@ -50,11 +50,20 @@ export default function BannerAvatarEditor({
     slot: 'banner' | 'profile';
     file: File;
   } | null>(null);
+  // Optimistic local previews. Stay set the moment a crop is confirmed so the
+  // agent sees the new image instantly while the upload runs. Cleared once
+  // the resolved CDN URL has visibly changed (URLs include a ?v=… cache-bust
+  // from supabaseStorageHelper so the change is detectable even when the
+  // underlying object path is the same).
+  const [localBannerPreview, setLocalBannerPreview] = useState<string | null>(null);
+  const [localProfilePreview, setLocalProfilePreview] = useState<string | null>(null);
   const bannerInputRef = useRef<HTMLInputElement>(null);
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
   const resolvedBanner = resolvePublicImageUrl(bannerUrl);
   const resolvedProfile = resolvePublicImageUrl(profileUrl);
+  const displayBanner = localBannerPreview || resolvedBanner;
+  const displayProfile = localProfilePreview || resolvedProfile;
   const displayName = knownAs.trim() || legalName.trim() || 'Your business';
 
   const queueForCrop = (file: File | undefined, slot: 'banner' | 'profile') => {
@@ -66,14 +75,32 @@ export default function BannerAvatarEditor({
     setPendingCrop({ slot, file });
   };
 
+  const readFileAsDataUrl = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+
   const handleCropConfirm = async (croppedFile: File) => {
     if (!pendingCrop) return;
     const { slot } = pendingCrop;
     setPendingCrop(null);
 
     const setUploading = slot === 'banner' ? setBannerUploading : setAvatarUploading;
+    const setLocalPreview = slot === 'banner' ? setLocalBannerPreview : setLocalProfilePreview;
     const onChange = slot === 'banner' ? onBannerChange : onProfileChange;
     const currentUrl = slot === 'banner' ? bannerUrl : profileUrl;
+
+    // Show the cropped image immediately so the agent gets instant feedback,
+    // independent of how long the upload + CDN propagation takes.
+    try {
+      const dataUrl = await readFileAsDataUrl(croppedFile);
+      setLocalPreview(dataUrl);
+    } catch {
+      // Preview is best-effort; the upload still proceeds.
+    }
 
     setUploading(true);
     const result = await uploadImageToStorage(croppedFile, `agents/${agentId}`, currentUrl, {
@@ -81,11 +108,15 @@ export default function BannerAvatarEditor({
     });
     setUploading(false);
     if (result.error) {
+      setLocalPreview(null);
       showApiError(new Error(result.error), { message: 'Upload failed. Please try again.' });
       return;
     }
     if (result.url) {
       onChange(result.url);
+      // Let the resolved URL take over on the next render — the URL carries a
+      // ?v=… cache-buster so <Image> sees a new src.
+      setLocalPreview(null);
       toast.success(
         `${slot === 'banner' ? 'Banner' : 'Profile photo'} updated — click "Update info" to save.`
       );
@@ -108,7 +139,7 @@ export default function BannerAvatarEditor({
           }
         }}
         style={
-          resolvedBanner
+          displayBanner
             ? undefined
             : {
                 background:
@@ -116,14 +147,24 @@ export default function BannerAvatarEditor({
               }
         }
       >
-        {resolvedBanner ? (
-          <Image
-            src={resolvedBanner}
-            alt="Profile banner"
-            fill
-            className="object-cover"
-            sizes="100vw"
-          />
+        {displayBanner ? (
+          localBannerPreview ? (
+            // Plain <img> for data URLs — next/image's optimizer can't handle them.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={localBannerPreview}
+              alt="Profile banner preview"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <Image
+              src={displayBanner}
+              alt="Profile banner"
+              fill
+              className="object-cover"
+              sizes="100vw"
+            />
+          )
         ) : null}
 
         {/* Hover affordance */}
@@ -166,14 +207,23 @@ export default function BannerAvatarEditor({
             }
           }}
         >
-          {resolvedProfile ? (
-            <Image
-              src={resolvedProfile}
-              alt={displayName}
-              fill
-              className="object-cover"
-              sizes="104px"
-            />
+          {displayProfile ? (
+            localProfilePreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={localProfilePreview}
+                alt="Profile photo preview"
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <Image
+                src={displayProfile}
+                alt={displayName}
+                fill
+                className="object-cover"
+                sizes="104px"
+              />
+            )
           ) : (
             <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-700 to-primary-900 text-2xl font-semibold tracking-tight text-white">
               {initialsFrom(displayName)}
