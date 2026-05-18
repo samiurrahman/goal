@@ -3,10 +3,13 @@
 // underlying `cities.slug` used by the listings query — keeping URLs short
 // and stable while letting the DB slug change format without breaking SEO.
 //
-// dbCitySlug follows the cities-table convention `<city>-in-<state>` (see
-// 20260512_cities_postgis.sql). When adding a city, verify the slug exists
-// in the cities table; an unknown slug will simply render an empty result
-// set on its landing page.
+// dbCitySlug follows the cities-table convention `<city>-<country>-<admin1>`
+// where admin1 is the GeoNames numeric admin1 code (see scripts/seed-cities.ts).
+// For India that's a 2-digit number (Maharashtra="16", Kerala="13", etc.) —
+// NOT the ISO 3166-2 alpha state code. Verify with:
+//   pnpm tsx scripts/discover-seo-city-slugs.ts
+// An unknown slug renders an empty result set on its landing page and zero
+// counts on the homepage city grid.
 
 export type SeoCity = {
   urlSlug: string;
@@ -17,31 +20,31 @@ export type SeoCity = {
 };
 
 export const SEO_CITIES: SeoCity[] = [
-  { urlSlug: 'mumbai', dbCitySlug: 'mumbai-in-mh', name: 'Mumbai', state: 'Maharashtra', airportCode: 'BOM' },
-  { urlSlug: 'delhi', dbCitySlug: 'new-delhi-in-dl', name: 'Delhi', state: 'Delhi', airportCode: 'DEL' },
-  { urlSlug: 'hyderabad', dbCitySlug: 'hyderabad-in-tg', name: 'Hyderabad', state: 'Telangana', airportCode: 'HYD' },
-  { urlSlug: 'bangalore', dbCitySlug: 'bengaluru-in-ka', name: 'Bangalore', state: 'Karnataka', airportCode: 'BLR' },
-  { urlSlug: 'chennai', dbCitySlug: 'chennai-in-tn', name: 'Chennai', state: 'Tamil Nadu', airportCode: 'MAA' },
-  { urlSlug: 'kolkata', dbCitySlug: 'kolkata-in-wb', name: 'Kolkata', state: 'West Bengal', airportCode: 'CCU' },
-  { urlSlug: 'pune', dbCitySlug: 'pune-in-mh', name: 'Pune', state: 'Maharashtra', airportCode: 'PNQ' },
-  { urlSlug: 'ahmedabad', dbCitySlug: 'ahmedabad-in-gj', name: 'Ahmedabad', state: 'Gujarat', airportCode: 'AMD' },
-  { urlSlug: 'lucknow', dbCitySlug: 'lucknow-in-up', name: 'Lucknow', state: 'Uttar Pradesh', airportCode: 'LKO' },
-  { urlSlug: 'jaipur', dbCitySlug: 'jaipur-in-rj', name: 'Jaipur', state: 'Rajasthan', airportCode: 'JAI' },
-  { urlSlug: 'kochi', dbCitySlug: 'kochi-in-kl', name: 'Kochi', state: 'Kerala', airportCode: 'COK' },
-  { urlSlug: 'calicut', dbCitySlug: 'kozhikode-in-kl', name: 'Calicut', state: 'Kerala', airportCode: 'CCJ' },
-  { urlSlug: 'thiruvananthapuram', dbCitySlug: 'thiruvananthapuram-in-kl', name: 'Thiruvananthapuram', state: 'Kerala', airportCode: 'TRV' },
-  { urlSlug: 'mangalore', dbCitySlug: 'mangaluru-in-ka', name: 'Mangalore', state: 'Karnataka', airportCode: 'IXE' },
-  { urlSlug: 'srinagar', dbCitySlug: 'srinagar-in-jk', name: 'Srinagar', state: 'Jammu and Kashmir', airportCode: 'SXR' },
-  { urlSlug: 'patna', dbCitySlug: 'patna-in-br', name: 'Patna', state: 'Bihar', airportCode: 'PAT' },
-  { urlSlug: 'bhopal', dbCitySlug: 'bhopal-in-mp', name: 'Bhopal', state: 'Madhya Pradesh', airportCode: 'BHO' },
-  { urlSlug: 'nagpur', dbCitySlug: 'nagpur-in-mh', name: 'Nagpur', state: 'Maharashtra', airportCode: 'NAG' },
-  { urlSlug: 'aurangabad', dbCitySlug: 'aurangabad-in-mh', name: 'Aurangabad', state: 'Maharashtra', airportCode: 'IXU' },
-  { urlSlug: 'indore', dbCitySlug: 'indore-in-mp', name: 'Indore', state: 'Madhya Pradesh', airportCode: 'IDR' },
-  { urlSlug: 'chandigarh', dbCitySlug: 'chandigarh-in-ch', name: 'Chandigarh', state: 'Chandigarh', airportCode: 'IXC' },
-  { urlSlug: 'guwahati', dbCitySlug: 'guwahati-in-as', name: 'Guwahati', state: 'Assam', airportCode: 'GAU' },
-  { urlSlug: 'vijayawada', dbCitySlug: 'vijayawada-in-ap', name: 'Vijayawada', state: 'Andhra Pradesh', airportCode: 'VGA' },
-  { urlSlug: 'visakhapatnam', dbCitySlug: 'visakhapatnam-in-ap', name: 'Visakhapatnam', state: 'Andhra Pradesh', airportCode: 'VTZ' },
-  { urlSlug: 'coimbatore', dbCitySlug: 'coimbatore-in-tn', name: 'Coimbatore', state: 'Tamil Nadu', airportCode: 'CJB' },
+  { urlSlug: 'mumbai', dbCitySlug: 'mumbai-in-16', name: 'Mumbai', state: 'Maharashtra', airportCode: 'BOM' },
+  { urlSlug: 'delhi', dbCitySlug: 'delhi-in-07', name: 'Delhi', state: 'Delhi', airportCode: 'DEL' },
+  { urlSlug: 'hyderabad', dbCitySlug: 'hyderabad-in-40', name: 'Hyderabad', state: 'Telangana', airportCode: 'HYD' },
+  { urlSlug: 'bangalore', dbCitySlug: 'bengaluru-in-19', name: 'Bangalore', state: 'Karnataka', airportCode: 'BLR' },
+  { urlSlug: 'chennai', dbCitySlug: 'chennai-in-25', name: 'Chennai', state: 'Tamil Nadu', airportCode: 'MAA' },
+  { urlSlug: 'kolkata', dbCitySlug: 'kolkata-in-28', name: 'Kolkata', state: 'West Bengal', airportCode: 'CCU' },
+  { urlSlug: 'pune', dbCitySlug: 'pune-in-16', name: 'Pune', state: 'Maharashtra', airportCode: 'PNQ' },
+  { urlSlug: 'ahmedabad', dbCitySlug: 'ahmedabad-in-09', name: 'Ahmedabad', state: 'Gujarat', airportCode: 'AMD' },
+  { urlSlug: 'lucknow', dbCitySlug: 'lucknow-in-36', name: 'Lucknow', state: 'Uttar Pradesh', airportCode: 'LKO' },
+  { urlSlug: 'jaipur', dbCitySlug: 'jaipur-in-24', name: 'Jaipur', state: 'Rajasthan', airportCode: 'JAI' },
+  { urlSlug: 'kochi', dbCitySlug: 'kochi-in-13', name: 'Kochi', state: 'Kerala', airportCode: 'COK' },
+  { urlSlug: 'calicut', dbCitySlug: 'kozhikode-in-13', name: 'Calicut', state: 'Kerala', airportCode: 'CCJ' },
+  { urlSlug: 'thiruvananthapuram', dbCitySlug: 'thiruvananthapuram-in-13', name: 'Thiruvananthapuram', state: 'Kerala', airportCode: 'TRV' },
+  { urlSlug: 'mangalore', dbCitySlug: 'mangaluru-in-19', name: 'Mangalore', state: 'Karnataka', airportCode: 'IXE' },
+  { urlSlug: 'srinagar', dbCitySlug: 'srinagar-in-12', name: 'Srinagar', state: 'Jammu and Kashmir', airportCode: 'SXR' },
+  { urlSlug: 'patna', dbCitySlug: 'patna-in-34', name: 'Patna', state: 'Bihar', airportCode: 'PAT' },
+  { urlSlug: 'bhopal', dbCitySlug: 'bhopal-in-35', name: 'Bhopal', state: 'Madhya Pradesh', airportCode: 'BHO' },
+  { urlSlug: 'nagpur', dbCitySlug: 'nagpur-in-16', name: 'Nagpur', state: 'Maharashtra', airportCode: 'NAG' },
+  { urlSlug: 'aurangabad', dbCitySlug: 'aurangabad-in-16', name: 'Aurangabad', state: 'Maharashtra', airportCode: 'IXU' },
+  { urlSlug: 'indore', dbCitySlug: 'indore-in-35', name: 'Indore', state: 'Madhya Pradesh', airportCode: 'IDR' },
+  { urlSlug: 'chandigarh', dbCitySlug: 'chandigarh-in-05', name: 'Chandigarh', state: 'Chandigarh', airportCode: 'IXC' },
+  { urlSlug: 'guwahati', dbCitySlug: 'guwahati-in-03', name: 'Guwahati', state: 'Assam', airportCode: 'GAU' },
+  { urlSlug: 'vijayawada', dbCitySlug: 'vijayawada-in-02', name: 'Vijayawada', state: 'Andhra Pradesh', airportCode: 'VGA' },
+  { urlSlug: 'visakhapatnam', dbCitySlug: 'visakhapatnam-in-02', name: 'Visakhapatnam', state: 'Andhra Pradesh', airportCode: 'VTZ' },
+  { urlSlug: 'coimbatore', dbCitySlug: 'coimbatore-in-25', name: 'Coimbatore', state: 'Tamil Nadu', airportCode: 'CJB' },
 ];
 
 export const SEO_CITY_BY_URL_SLUG: Map<string, SeoCity> = new Map(
