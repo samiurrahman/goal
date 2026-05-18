@@ -29,16 +29,14 @@ const StarDisplay = ({ rating }: { rating: number }) => {
   );
 };
 
-const getInitials = (email: string, fullName?: string) => {
-  if (fullName) {
-    return fullName
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  }
-  return (email?.[0] || '?').toUpperCase();
+const getInitials = (fullName?: string) => {
+  if (!fullName) return '?';
+  return fullName
+    .split(' ')
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 };
 
 export default function ReviewsList({
@@ -68,10 +66,8 @@ export default function ReviewsList({
     <div>
       {reviews.map((review) => {
         const anonymous = !!review.is_anonymous;
-        const initials = anonymous ? '?' : getInitials(review.user_email, review.user_name);
-        const displayName = anonymous
-          ? 'Anonymous'
-          : review.user_name || review.user_email?.split('@')[0] || 'Anonymous';
+        const initials = anonymous ? '?' : getInitials(review.user_name);
+        const displayName = anonymous ? 'Anonymous' : review.user_name || 'Anonymous';
         const hasProfileImage = !anonymous && !!review.user_profile_image;
         const isOwn = !!currentUserId && review.user_id === currentUserId;
         const isEditingThis = !!editingReviewId && String(review.id) === editingReviewId;

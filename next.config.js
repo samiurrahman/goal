@@ -34,6 +34,51 @@ const remotePatterns = [
 // Security headers applied to every response. CSP is intentionally permissive
 // for img/style because Tailwind, Line Awesome icons, and Supabase Storage all
 // inject inline styles or load remote assets; tighten as the asset list stabilizes.
+//
+// CSP is shipped in REPORT-ONLY mode initially. The browser will surface any
+// violation in the console + (optionally) POST it to a report endpoint, but
+// nothing breaks. Once the report stream is clean for a release or two,
+// flip the header key to `Content-Security-Policy` to start enforcing.
+//
+// What's allowed and why:
+//   - script-src: 'self' + 'unsafe-inline' for the line-awesome media-swap shim
+//     in app/layout.tsx and for JSON-LD blocks. 'unsafe-eval' is reluctantly
+//     allowed because Next.js dev / framer-motion / google-map-react use it;
+//     drop it once verified clean in prod.
+//   - style-src: 'unsafe-inline' is required by Tailwind (style="...") and
+//     react-datepicker / rc-slider inline styles.
+//   - img-src: 'self', the Supabase storage CDN, Google profile photos
+//     (OAuth-signed-up users), and data: URIs for LQIP blurDataURL.
+//   - connect-src: 'self', Supabase (REST + Storage + Realtime websocket),
+//     and the Nominatim reverse-geocoder used by /api/geocode/reverse and
+//     the location autocomplete fallback.
+//   - frame-ancestors: 'self' mirrors X-Frame-Options=SAMEORIGIN.
+const SUPABASE_ORIGIN = (() => {
+  try {
+    const url =
+      process.env.NEXT_PUBLIC_SUPABASE_URL ||
+      process.env.SUPABASE_URL ||
+      process.env.SUPABASE_PROJECT_URL;
+    return url ? new URL(url).origin : null;
+  } catch {
+    return null;
+  }
+})();
+const SUPABASE_WS = SUPABASE_ORIGIN ? SUPABASE_ORIGIN.replace(/^https/, 'wss') : null;
+
+const csp = [
+  `default-src 'self'`,
+  `script-src 'self' 'unsafe-inline' 'unsafe-eval'`,
+  `style-src 'self' 'unsafe-inline'`,
+  `img-src 'self' data: blob: https://lh3.googleusercontent.com${SUPABASE_ORIGIN ? ` ${SUPABASE_ORIGIN}` : ''}`,
+  `font-src 'self' data:`,
+  `connect-src 'self' https://nominatim.openstreetmap.org${SUPABASE_ORIGIN ? ` ${SUPABASE_ORIGIN} ${SUPABASE_WS}` : ''}`,
+  `frame-ancestors 'self'`,
+  `base-uri 'self'`,
+  `form-action 'self'`,
+  `object-src 'none'`,
+].join('; ');
+
 const securityHeaders = [
   { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
   { key: 'X-Content-Type-Options', value: 'nosniff' },
@@ -41,6 +86,7 @@ const securityHeaders = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=(self), interest-cohort=()' },
   { key: 'X-DNS-Prefetch-Control', value: 'on' },
+  { key: 'Content-Security-Policy-Report-Only', value: csp },
 ];
 
 const nextConfig = {

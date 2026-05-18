@@ -402,6 +402,44 @@ const AgentProfilePage = () => {
     }
   };
 
+  // Persist a single image column (banner_image or profile_image) right after
+  // a successful storage upload. Without this, the new image would only live
+  // in form state until the agent clicked "Update info" — and a reload before
+  // that click would silently revert to the old image. Other form fields keep
+  // the explicit-save model; only the two image slots auto-persist.
+  const persistImage = async (
+    slot: 'banner' | 'profile',
+    url: string
+  ): Promise<{ ok: boolean }> => {
+    if (!agent?.id) return { ok: false };
+    const column = slot === 'banner' ? 'banner_image' : 'profile_image';
+    const { data, error } = await supabase
+      .from('agents')
+      .update({ [column]: url || null })
+      .eq('id', agent.id)
+      .select('*')
+      .maybeSingle();
+
+    if (error) {
+      showApiError(error, {
+        message:
+          'Image uploaded but failed to save. Click "Update info" or try again.',
+      });
+      return { ok: false };
+    }
+
+    if (data) setAgent(data as Agent);
+
+    // Bust ISR for the public profile and the listings grid (avatar shows on
+    // package cards via the packages_with_agent view).
+    const slug = (agent.slug || '').trim();
+    const paths = ['/packages'];
+    if (slug) paths.push(`/${slug}`);
+    void revalidatePaths(paths);
+
+    return { ok: true };
+  };
+
   const updateField = (field: keyof AgentProfileFormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     // Clear the inline error for this field on each keystroke so a stale
@@ -749,6 +787,7 @@ const AgentProfilePage = () => {
                 knownAs={form.known_as}
                 onBannerChange={(url) => updateField('banner_image', url)}
                 onProfileChange={(url) => updateField('profile_image', url)}
+                onPersist={persistImage}
               />
 
               <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-700 dark:bg-neutral-900 md:p-6">

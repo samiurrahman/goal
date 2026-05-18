@@ -12,9 +12,11 @@ import ImageCropModal from '@/components/ImageCropModal';
 // actually see. Hovering the banner or the avatar reveals a "change" control;
 // clicking anywhere on either opens the file picker.
 //
-// Upload is immediate to storage (same as the old ImageUpload boxes), but the
-// agents row is only written when the agent clicks "Update info" — the parent
-// owns persistence via onBannerChange / onProfileChange updating form state.
+// Upload is immediate to storage. If onPersist is provided, the corresponding
+// agents column is written to the DB right after upload so the change survives
+// a reload without the agent having to click "Update info" — matches the
+// FB/LinkedIn "change photo" mental model. Other form fields still save on
+// the explicit Update info click.
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
@@ -26,6 +28,7 @@ interface BannerAvatarEditorProps {
   knownAs: string;
   onBannerChange: (url: string) => void;
   onProfileChange: (url: string) => void;
+  onPersist?: (slot: 'banner' | 'profile', url: string) => Promise<{ ok: boolean }>;
 }
 
 const initialsFrom = (value: string): string => {
@@ -43,6 +46,7 @@ export default function BannerAvatarEditor({
   knownAs,
   onBannerChange,
   onProfileChange,
+  onPersist,
 }: BannerAvatarEditorProps) {
   const [bannerUploading, setBannerUploading] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -117,9 +121,21 @@ export default function BannerAvatarEditor({
       // Let the resolved URL take over on the next render — the URL carries a
       // ?v=… cache-buster so <Image> sees a new src.
       setLocalPreview(null);
-      toast.success(
-        `${slot === 'banner' ? 'Banner' : 'Profile photo'} updated — click "Update info" to save.`
-      );
+
+      // Persist this one column to the agents row immediately so a reload
+      // doesn't show the old image. Other form fields still wait for the
+      // explicit Update info click.
+      if (onPersist) {
+        const persistResult = await onPersist(slot, result.url);
+        if (persistResult.ok) {
+          toast.success(`${slot === 'banner' ? 'Banner' : 'Profile photo'} saved.`);
+        }
+        // On failure the parent surfaces its own error toast.
+      } else {
+        toast.success(
+          `${slot === 'banner' ? 'Banner' : 'Profile photo'} updated — click "Update info" to save.`
+        );
+      }
     }
   };
 

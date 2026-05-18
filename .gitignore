@@ -4,7 +4,7 @@ client_secret_244391185334-ajae4isl9h8903l3ul3ph83ttqllkmms.apps.googleuserconte
 .yarn/
 # Build directories
 build/
-pnpm-lock.yaml
+# Stale lockfile from a previous yarn era — pnpm is the package manager.
 yarn.lock
 
 # Next.js build output
@@ -53,3 +53,26 @@ tmp/
 # Design assets (not part of the shipped app)
 HajjScanner Design System/
 HajjScanner Design System.zip
+
+# ---------------------------------------------------------------------------
+# Sensitive data / internal docs — anything below this line MUST stay out of
+# the repo. If a file matching one of these patterns is already tracked,
+# `git rm --cached <file>` it (and then scrub history with git-filter-repo
+# if it ever contained real credentials).
+# ---------------------------------------------------------------------------
+# Spreadsheets, DB dumps, internal docs
+*.xlsx
+*.csv
+*.docx
+*.pdf
+# Bundled source archives — never check these in
+*.zip
+*.tar
+*.tar.gz
+*.7z
+# Internal screenshots / design exports not used by the app
+tabs.png
+# Empty placeholder that has no business being in the repo
+sitemap_live.xml
+# Legacy script registry from the Chisfis template
+package-scripts.json

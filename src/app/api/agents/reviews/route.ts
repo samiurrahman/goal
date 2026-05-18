@@ -42,6 +42,11 @@ const getAdminSupabase = () => {
   return null;
 };
 
+// user_email is stored in agent_reviews for legacy reasons but must NEVER be
+// returned in public responses — reviews are readable without auth, so any
+// leak here exposes the reviewer's email. The DB column is also consulted to
+// derive a fallback display name when user_name is missing, but the resulting
+// name is the only piece of identity we expose.
 const normalizeReview = (row: Record<string, any>) => {
   const anonymous = !!row.is_anonymous;
   const email = anonymous ? '' : (row.user_email as string | undefined) || '';
@@ -50,7 +55,6 @@ const normalizeReview = (row: Record<string, any>) => {
     id: row.id,
     agent_id: row.agent_id,
     user_id: row.user_id,
-    user_email: email,
     user_name: anonymous ? 'Anonymous' : row.user_name || emailName || 'User',
     user_profile_image: anonymous ? null : row.user_profile_image || null,
     rating: row.rating,

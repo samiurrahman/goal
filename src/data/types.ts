@@ -187,12 +187,15 @@ export interface PackageDetails {
   };
 }
 
-// AgentReview interface for agent reviews
+// AgentReview interface for agent reviews.
+// NOTE: user_email is intentionally NOT part of this shape — reviews are
+// publicly readable, so the email column in the DB must never round-trip
+// to the client. The normalizers in [agentName]/page.tsx and the reviews
+// API route enforce this.
 export interface AgentReview {
   id: number;
   agent_id: string;
   user_id: string;
-  user_email: string;
   user_name: string;
   user_profile_image?: string | null;
   rating: number;

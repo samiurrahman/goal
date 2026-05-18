@@ -44,13 +44,60 @@ const clampText = (text: string, max = 160) => {
   return `${clean.slice(0, max - 1).trimEnd()}…`;
 };
 
+// about_us is authored in an internal editor but rendered with
+// dangerouslySetInnerHTML on a public, unauthenticated page — so this regex
+// pass is the final line of defense against XSS. If we ever need richer
+// HTML (custom video embeds etc.), swap this for sanitize-html / DOMPurify
+// rather than extending the list below.
+const DANGEROUS_TAGS = [
+  'script',
+  'iframe',
+  'object',
+  'embed',
+  'applet',
+  'frame',
+  'frameset',
+  'style',
+  'link',
+  'meta',
+  'base',
+  'form',
+  'input',
+  'button',
+  'textarea',
+  'select',
+  'svg',
+  'math',
+];
+
 const sanitizeProfileMarkup = (markup: string) => {
   if (!markup) return '';
 
-  return markup
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
-    .replace(/\son\w+=("[^"]*"|'[^']*')/gi, '')
-    .replace(/javascript:/gi, '');
+  let out = markup;
+
+  for (const tag of DANGEROUS_TAGS) {
+    // Paired form: <tag ...>...</tag>, including malformed/nested content.
+    out = out.replace(new RegExp(`<${tag}\\b[\\s\\S]*?<\\/${tag}\\s*>`, 'gi'), '');
+    // Orphan / self-closing form: <tag ...> with no matching close.
+    out = out.replace(new RegExp(`<${tag}\\b[^>]*\\/?>`, 'gi'), '');
+  }
+
+  // Inline event handlers (onclick, onerror, onload, etc.) on any element.
+  out = out.replace(/\son\w+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+
+  // Script-running URI schemes. data: is allowed broadly (inline images use
+  // data:image/...), but data:text/html and data:*/javascript can execute.
+  out = out.replace(/\b(?:javascript|vbscript|livescript|mocha)\s*:/gi, '');
+  out = out.replace(
+    /\bdata\s*:\s*(?:text\/html|text\/javascript|application\/javascript|application\/x-javascript)/gi,
+    ''
+  );
+
+  // srcdoc renders arbitrary HTML in iframes — kill it even if the iframe
+  // tag itself was stripped above, in case it appears on another element.
+  out = out.replace(/\ssrcdoc\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+
+  return out;
 };
 
 const getAgentBySlug = async (agentName: string): Promise<Agent | null> => {
@@ -82,6 +129,10 @@ const buildReviewerName = (profile?: { first_name?: string | null; last_name?: s
   return fullName || 'User';
 };
 
+// Reviews are readable without auth, so user_email — even though it's
+// in the agent_reviews table — must NEVER appear in the normalized object
+// we ship to the client. We still read it from the row to derive a fallback
+// display name when user_name is missing.
 const normalizeReview = (row: Record<string, any>) => {
   const anonymous = !!row.is_anonymous;
   const email = anonymous ? '' : (row.user_email as string | undefined) || '';
@@ -90,7 +141,6 @@ const normalizeReview = (row: Record<string, any>) => {
     id: row.id,
     agent_id: row.agent_id,
     user_id: row.user_id,
-    user_email: email,
     user_name: anonymous ? 'Anonymous' : row.user_name || emailName || 'User',
     user_profile_image: anonymous ? null : row.user_profile_image || null,
     is_anonymous: anonymous,
@@ -217,15 +267,15 @@ export const generateMetadata = async ({ params }: AgentDetailsProps): Promise<M
   const ratingTotal = Number(agentDetails.rating_total ?? 0);
   const ratingAvg = Number(agentDetails.rating_avg ?? 0);
 
-  // Title built for SERP CTR: brand name first (matches branded search),
-  // then "Reviews & Umrah Packages" — "reviews" is a high-CTR modifier and
-  // also captures the very common "{agent} reviews" query pattern. Location
-  // last so the city is visible on desktop SERPs but truncates first on
-  // mobile when needed. The root layout appends "| Searchumrah" via
-  // title.template, so we don't repeat the brand.
-  const title = cityLabel
-    ? `${displayName} — Reviews & Verified Umrah Packages in ${cityLabel}`
-    : `${displayName} — Reviews & Verified Umrah Packages`;
+  // Title kept under ~46 chars so the full string — including the
+  // " | Searchumrah" suffix appended by the root layout's title.template —
+  // fits Google's mobile SERP cutoff (~60 chars). City alone (not state)
+  // because state push the line past truncation for most Indian agents.
+  // "Reviews" moves to the description; the city + "Umrah Packages" is the
+  // stronger non-branded keyword combination.
+  const title = agentDetails.city
+    ? `${displayName} — Umrah Packages in ${agentDetails.city}`
+    : `${displayName} — Umrah Travel Agent`;
 
   // Description prioritises the concrete trust signals (rating count,
   // verification) that drive click-through, then drops into the agent's
@@ -296,7 +346,6 @@ export const generateMetadata = async ({ params }: AgentDetailsProps): Promise<M
     },
     other: {
       'article:section': 'Umrah Travel Agents',
-      ...(agentDetails.country ? { 'geo.region': agentDetails.country } : {}),
     },
   };
 };
@@ -827,7 +876,7 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
 
                 {/* Trust strip */}
                 <dl
-                  className="m-0 grid grid-cols-2 gap-px overflow-hidden rounded-[14px] border border-neutral-200 bg-neutral-200 sm:grid-cols-4"
+                  className="m-0 grid grid-cols-3 gap-px overflow-hidden rounded-[14px] border border-neutral-200 bg-neutral-200"
                   aria-label="Agent credentials"
                 >
                   <div className="min-w-0 bg-neutral-50 p-3.5">
@@ -909,26 +958,6 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                       <small className="text-xs font-medium text-neutral-500">&nbsp;active</small>
                     </dd>
                   </div>
-                  <div className="bg-neutral-50 p-3.5">
-                    <dt className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-neutral-500">
-                      <svg
-                        viewBox="0 0 24 24"
-                        className="h-3 w-3 text-neutral-400"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                        <polyline points="22 4 12 14.01 9 11.01" />
-                      </svg>
-                      Reply time
-                    </dt>
-                    <dd className="m-0 mt-1.5 flex items-baseline gap-1 text-base font-semibold leading-tight text-neutral-900">
-                      Quick
-                    </dd>
-                  </div>
                 </dl>
               </div>
             </div>
@@ -948,32 +977,8 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                 About {displayName}
               </h2>
 
-              <div className="mt-6 grid grid-cols-1 gap-3.5 border-b border-neutral-200 pb-6 sm:grid-cols-2 lg:grid-cols-2">
-                <div className="flex items-start gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700">
-                    <svg
-                      viewBox="0 0 24 24"
-                      className="h-5 w-5"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth={1.8}
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                      <polyline points="22,6 12,13 2,6" />
-                    </svg>
-                  </span>
-                  <div className="min-w-0">
-                    <div className="text-xs font-medium uppercase tracking-[0.04em] text-neutral-500">
-                      Email
-                    </div>
-                    <div className="mt-0.5 break-words text-sm font-medium text-neutral-900">
-                      {agentDetails?.email_id || 'Not available'}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-start gap-3">
+              {agentDetails?.address ? (
+                <div className="mt-6 flex items-start gap-3 border-b border-neutral-200 pb-6">
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700">
                     <svg
                       viewBox="0 0 24 24"
@@ -993,11 +998,11 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                       Address
                     </div>
                     <div className="mt-0.5 break-words text-sm font-medium text-neutral-900">
-                      {agentDetails?.address || 'Not available'}
+                      {agentDetails.address}
                     </div>
                   </div>
                 </div>
-              </div>
+              ) : null}
 
               {sanitizedAboutMarkup ? (
                 <div
