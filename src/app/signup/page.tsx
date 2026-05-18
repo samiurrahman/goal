@@ -163,52 +163,73 @@ const PageSignUp = () => {
       return;
     }
 
-    const { error: detailsError } = await supabase.from('user_details').insert({
-      auth_user_id: data.user.id,
-      user_type: userType,
-      first_name: profileFirstName,
-      last_name: profileLastName,
-      phone: isAgent ? trimmedPhone : null,
-    });
-    if (detailsError) {
+    // Supabase returns an obfuscated user object (empty `identities` array) when
+    // the email is already registered, to prevent enumeration. The id in that
+    // case is a fresh random UUID that is NOT in auth.users — inserting into
+    // user_details would fail the FK with 23503. Detect and bail early.
+    if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
       setLoading(false);
-      toast.error('Account created, but profile setup failed. Please contact support.');
+      toast.error('This email is already registered. Please sign in instead.');
       return;
     }
 
-    if (isAgent) {
-      try {
-        const { error: agentError } = await insertAgentWithUniqueSlug(trimmedAgencyName, {
-          auth_user_id: data.user.id,
-          email_id: emailValue,
-          name: trimmedAgencyName,
-          known_as: trimmedAgencyName,
-          contact_number: trimmedPhone,
-        });
-        if (agentError) {
-          setLoading(false);
-          toast.error('Account created, but agent profile setup failed. Please contact support.');
-          return;
-        }
-      } catch (slugErr) {
+    // When email confirmation is enabled, signUp returns no session. RLS on
+    // user_details requires auth.uid() = auth_user_id, so a client-side insert
+    // here would be rejected. SupabaseSessionSync creates the row on first
+    // confirmed sign-in instead — fall through to the "check your email"
+    // message without touching user_details / agents from this anon context.
+    const hasSession = !!data.session?.access_token;
+
+    if (hasSession) {
+      const { error: detailsError } = await supabase.from('user_details').insert({
+        auth_user_id: data.user.id,
+        user_type: userType,
+        first_name: profileFirstName,
+        last_name: profileLastName,
+        phone: isAgent ? trimmedPhone : null,
+      });
+      if (detailsError) {
         setLoading(false);
-        if (slugErr instanceof ReservedSlugError) {
-          toast.error(
-            'That agency name is reserved. Please pick a different name or contact support.'
-          );
-        } else {
-          toast.error('Account created, but slug allocation failed. Please contact support.');
-        }
+        toast.error('Account created, but profile setup failed. Please contact support.');
         return;
       }
-    }
 
-    if (data.session?.access_token) {
-      storeAccessToken(data.session.access_token);
+      if (isAgent) {
+        try {
+          const { error: agentError } = await insertAgentWithUniqueSlug(trimmedAgencyName, {
+            auth_user_id: data.user.id,
+            email_id: emailValue,
+            name: trimmedAgencyName,
+            known_as: trimmedAgencyName,
+            contact_number: trimmedPhone,
+          });
+          if (agentError) {
+            setLoading(false);
+            toast.error('Account created, but agent profile setup failed. Please contact support.');
+            return;
+          }
+        } catch (slugErr) {
+          setLoading(false);
+          if (slugErr instanceof ReservedSlugError) {
+            toast.error(
+              'That agency name is reserved. Please pick a different name or contact support.'
+            );
+          } else {
+            toast.error('Account created, but slug allocation failed. Please contact support.');
+          }
+          return;
+        }
+      }
+
+      storeAccessToken(data.session!.access_token);
     }
 
     setLoading(false);
-    toast.success('Account created successfully. Please check your email to verify, then sign in.');
+    toast.success(
+      hasSession
+        ? 'Account created successfully.'
+        : 'Account created. Please check your email to verify, then sign in.'
+    );
     const redirectParam = searchParams.get('redirect');
     const loginHref = redirectParam
       ? `/login?redirect=${encodeURIComponent(redirectParam)}`
