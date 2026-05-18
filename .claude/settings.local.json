@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(curl -sL \"https://019e0171-fd85-743c-a1bf-ab77eef18ffd.claudeusercontent.com/v1/design/projects/019e0171-fd85-743c-a1bf-ab77eef18ffd/serve/snippets/itinerary.html?t=bed3f11c3f4bc188fd5b82c4aab8d0812de75be529ad933192f177e825fb0ee2.f64540cd-e07c-474a-955b-9188c61fe996.b42f3797-58fa-4923-971a-77e7d21365f8.1778499773&direct=1\" -o /tmp/itinerary.html)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(pnpm audit *)",
+      "Bash(xargs grep -l -i \"bucket\\\\|storage\")"
     ]
   }
 }
