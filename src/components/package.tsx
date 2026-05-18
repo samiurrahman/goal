@@ -78,11 +78,11 @@ const PackageCard: FC<PackageCardProps> = ({ className = '', data = {} as Packag
           </span>
           <span className="flex items-center">
             <MakkahIcon />
-            <span className="ml-1 text-sm"> Ajyad Hotel (~300m)</span>
+            <span className="ml-1 text-sm"> Ajyad Hotel (just 300m)</span>
           </span>
           <span className="flex items-center">
             <MadinaIcon />
-            <span className="ml-1.5 text-sm"> Milton Hotel (~500m)</span>
+            <span className="ml-1.5 text-sm"> Milton Hotel (just 500m)</span>
           </span>
 
           <StartRating />

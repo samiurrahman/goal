@@ -189,7 +189,7 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
                   {makkahHotelDistanceM != null
-                    ? `~${makkahHotelDistanceM}m from Haram`
+                    ? `Just ${makkahHotelDistanceM}m from Haram`
                     : 'Distance from Haram TBD'}
                 </p>
               </div>
@@ -204,7 +204,7 @@ const PackageMeta: React.FC<PackageMetaProps> = ({
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
                   {madinahHotelDistanceM != null
-                    ? `~${madinahHotelDistanceM}m from Masjid`
+                    ? `Just ${madinahHotelDistanceM}m from Masjid`
                     : 'Distance from Masjid TBD'}
                 </p>
               </div>

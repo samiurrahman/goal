@@ -231,7 +231,7 @@ const Packages: FC<PackagesProps> = ({
                   {makkah_hotel_name}
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  ~{makkah_hotel_distance_m}m from Haram
+                  Just {makkah_hotel_distance_m}m from Haram
                 </p>
               </div>
             </div>
@@ -244,7 +244,7 @@ const Packages: FC<PackagesProps> = ({
                   {madinah_hotel_name}
                 </p>
                 <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  ~{madinah_hotel_distance_m}m from Masjid
+                  Just {madinah_hotel_distance_m}m from Masjid
                 </p>
               </div>
             </div>

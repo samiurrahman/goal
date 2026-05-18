@@ -42,8 +42,8 @@ export const Amenities_demos = [
   { name: 'Meals', icon: 'las la-utensils' },
   { name: 'Visa', icon: 'las la-passport' },
   { name: 'Laundry', icon: 'las la-tshirt' },
-  { name: 'Makkah Tower 1 or similar hotel in Makkah (~300m)', icon: 'las la-hotel' },
-  { name: 'Ajyad hotel in Madina (~400m)', icon: 'las la-hotel' },
+  { name: 'Makkah Tower 1 or similar hotel in Makkah (just 300m)', icon: 'las la-hotel' },
+  { name: 'Ajyad hotel in Madina (just 400m)', icon: 'las la-hotel' },
   { name: 'Makkah stay 10 Days', icon: 'las la-mosque' },
   { name: 'Madina stay 8 Days', icon: 'las la-mosque' },
 ];
