@@ -11,13 +11,16 @@ export const STORAGE_BUCKET = 'uploads';
 export const extractPathFromUrl = (url: string): string | null => {
   if (!url) return null;
   try {
-    const match = url.match(/\/storage\/v1\/object\/public\/uploads\/(.+)$/);
+    // Strip any ?v=... cache-buster query before matching so the path we hand
+    // to Supabase Storage references the actual object key.
+    const withoutQuery = url.split('?')[0];
+    const match = withoutQuery.match(/\/storage\/v1\/object\/public\/uploads\/(.+)$/);
     if (match?.[1]) return match[1];
 
-    const fallbackMatch = url.match(/\/uploads\/(.+)$/);
+    const fallbackMatch = withoutQuery.match(/\/uploads\/(.+)$/);
     if (fallbackMatch?.[1]) return fallbackMatch[1];
 
-    const trimmed = url.trim();
+    const trimmed = withoutQuery.trim();
     if (trimmed.startsWith('users/') || trimmed.startsWith('agents/')) {
       return trimmed;
     }
@@ -172,6 +175,14 @@ export const uploadImageToStorage = async (
     return { path: null, url: null, error: error.message };
   }
 
-  const cdnUrl = generateCdnUrl(data.path);
+  // When fixedFileName is used (avatar/banner slots), each upload overwrites
+  // the same storage path so the CDN URL is byte-identical between uploads.
+  // Browsers and next/image cache on URL, so the displayed image stays stale
+  // until a hard refresh. Append a one-shot cache-buster so the src actually
+  // changes — resolvePublicImageUrl passes full URLs through untouched, and
+  // extractPathFromUrl strips the query before matching the storage key.
+  const cdnUrl = fixedFileName
+    ? `${generateCdnUrl(data.path)}?v=${Date.now()}`
+    : generateCdnUrl(data.path);
   return { path: data.path, url: cdnUrl, lqip, error: undefined };
 };
