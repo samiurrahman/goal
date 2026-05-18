@@ -7,6 +7,7 @@ import SiteHeader from './(client-components)/(Header)/SiteHeader';
 import SiteFooter from '@/components/SiteFooter';
 import ClientCommons from './ClientCommons';
 import './globals.css';
+import 'react-datepicker/dist/react-datepicker.css';
 import '@/styles/index.scss';
 // Line Awesome is loaded non-blocking via <link> in <head> below (was a
 // blocking ~108KB CSS import on every page). The `rc-slider` global CSS was

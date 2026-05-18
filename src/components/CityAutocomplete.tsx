@@ -116,7 +116,11 @@ const CityAutocomplete: FC<CityAutocompleteProps> = ({
         id={inputId}
         type="text"
         autoComplete="off"
-        className={`w-full rounded-md border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-2 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 ${className}`}
+        // Visual parity with the shared `Input` component (h-11, rounded-2xl,
+        // px-4 py-3, border-neutral-400) so a CityAutocomplete dropped into
+        // any form aligns vertically and matches its siblings. Filter call
+        // sites that need a smaller pill override via the `className` prop.
+        className={`block w-full h-11 rounded-2xl border border-neutral-400 dark:border-neutral-600 bg-white dark:bg-neutral-900 px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary-200 ${className}`}
         placeholder={placeholder}
         value={query}
         onChange={(e) => {

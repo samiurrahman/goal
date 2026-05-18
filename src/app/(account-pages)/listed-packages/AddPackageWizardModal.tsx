@@ -10,6 +10,7 @@ import Label from '@/components/Label';
 import Input from '@/shared/Input';
 import Textarea from '@/shared/Textarea';
 import Select from '@/shared/Select';
+import DateSegmentInput from '@/components/DateSegmentInput';
 import RichTextEditor from '@/shared/RichTextEditor';
 import ImageUpload from '@/components/ImageUpload';
 import { supabase } from '@/utils/supabaseClient';
@@ -187,6 +188,67 @@ interface SharingRateItem {
   default: boolean;
 }
 
+// Room sizes the wizard offers as toggleable tiers. 1 covers single
+// occupancy (premium); 6 covers very budget group packages. Anything outside
+// this range is rare enough that we'd rather force the agent to call us than
+// guess at the UX. Saved packages with people-counts outside this range
+// still round-trip correctly — they just won't get a toggle pill (the row
+// for that tier renders if it's already in sharingRates, but can't be re-
+// added once removed). Realistically this never matters because legacy data
+// is all within [2, 5].
+const SUPPORTED_SHARING_PEOPLE = [1, 2, 3, 4, 5, 6] as const;
+
+const SHARING_PEOPLE_LABEL: Record<number, string> = {
+  1: 'Single occupancy — private room',
+  2: 'Twin / double room',
+  3: 'Triple room',
+  4: 'Quad room',
+  5: 'Five-bed room',
+  6: 'Six-bed room — most economical',
+};
+
+// Add or remove a tier while keeping two invariants:
+//   1. Tiers stay sorted ascending so render order is stable regardless of
+//      toggle order.
+//   2. The CHEAPEST tier — by convention the one with the most people per
+//      room — is always the default. "Default" is what cards show as the
+//      "starting from" price, so it must always be the lowest. Letting the
+//      first-toggled tier win silently surprised agents: they'd enter
+//      Price Per Person, toggle 2-share (priced as default), then toggle
+//      5-share expecting the cheaper tier to inherit "starting from" — but
+//      2-share stayed default and 5-share showed up empty.
+// When the default changes we also reflow `pricePerPerson` into the new
+// default tier *if it's empty*, so the most common workflow (enter price →
+// add a cheaper tier) lands the price in the right row without overwriting
+// anything the agent typed by hand.
+const toggleSharingTier = (
+  current: SharingRateItem[],
+  people: number,
+  pricePerPerson: string
+): SharingRateItem[] => {
+  const exists = current.some((r) => r.people === people);
+  let next: SharingRateItem[];
+  if (exists) {
+    next = current.filter((r) => r.people !== people);
+  } else {
+    next = [
+      ...current,
+      { people, value: '', default: false },
+    ].sort((a, b) => a.people - b.people);
+  }
+  if (next.length === 0) return next;
+  // Cheapest = highest people count. Crown it the default and seed its
+  // value from pricePerPerson when the tier doesn't already have one.
+  const cheapest = next.reduce((a, b) => (a.people >= b.people ? a : b));
+  return next.map((r) => {
+    if (r.people !== cheapest.people) {
+      return r.default ? { ...r, default: false } : r;
+    }
+    const seeded = !r.value && pricePerPerson ? pricePerPerson : r.value;
+    return { ...r, default: true, value: seeded };
+  });
+};
+
 const slugify = (value: string): string =>
   value
     .toLowerCase()
@@ -337,11 +399,15 @@ const AddPackageWizardModal = ({
   const [step, setStep] = useState<WizardStep>('meta');
 
   const [meta, setMeta] = useState<PackageMetaForm>(initialMetaForm);
+  // Sharing tiers offered by this package. Agents are NOT forced to offer
+  // every size — some sell only quads, some only twin+quad, etc. The wizard
+  // surfaces a toggle row of all SUPPORTED_SHARING_PEOPLE values; this
+  // state holds only the ones the agent has switched on. Editing a saved
+  // package replaces this with whatever tiers were previously stored
+  // (prefillForEdit). Default initial state mirrors the most common case:
+  // quad-share marked as the default (cheapest tier shown on cards).
   const [sharingRates, setSharingRates] = useState<SharingRateItem[]>([
-    { people: 2, value: '', default: false },
-    { people: 3, value: '', default: false },
-    { people: 4, value: '', default: false },
-    { people: 5, value: '', default: true },
+    { people: 4, value: '', default: true },
   ]);
   const [startFlight, setStartFlight] = useState<FlightItemInput>(makeEmptyFlight());
   const [dayItems, setDayItems] = useState<DayItemInput[]>([makeEmptyDay()]);
@@ -662,12 +728,7 @@ const AddPackageWizardModal = ({
 
   const resetForm = () => {
     setMeta(initialMetaForm);
-    setSharingRates([
-      { people: 2, value: '', default: false },
-      { people: 3, value: '', default: false },
-      { people: 4, value: '', default: false },
-      { people: 5, value: '', default: true },
-    ]);
+    setSharingRates([{ people: 4, value: '', default: true }]);
     setStartFlight(makeEmptyFlight());
     setDayItems([makeEmptyDay()]);
     setEndFlight(makeEmptyFlight());
@@ -770,6 +831,27 @@ const AddPackageWizardModal = ({
     ]
   );
 
+  // Day-count helpers used by the auto-inference rules below. Trip length is
+  // (arrival - departure) calendar days; we don't add a +1 because the
+  // convention in this codebase (and the on-card display) treats Total Days
+  // as nights/days-in-country, not "inclusive day count".
+  const daysBetween = (fromYmd: string, toYmd: string): number | null => {
+    if (!fromYmd || !toYmd) return null;
+    const from = new Date(`${fromYmd}T00:00:00Z`);
+    const to = new Date(`${toYmd}T00:00:00Z`);
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) return null;
+    const diff = Math.round((to.getTime() - from.getTime()) / 86400000);
+    return diff > 0 ? diff : null;
+  };
+
+  const addDaysToYmd = (fromYmd: string, days: number): string | null => {
+    if (!fromYmd || !Number.isFinite(days) || days <= 0) return null;
+    const from = new Date(`${fromYmd}T00:00:00Z`);
+    if (Number.isNaN(from.getTime())) return null;
+    from.setUTCDate(from.getUTCDate() + days);
+    return from.toISOString().slice(0, 10);
+  };
+
   const handleMetaChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -785,6 +867,78 @@ const AddPackageWizardModal = ({
       if (name === 'title') {
         next.slug = slugify(value);
       }
+      // "Price Per Person" represents the starting / cheapest price.
+      // Auto-sync it into whichever tier the agent has marked as default, so
+      // they don't have to type the same number twice. Only sync when the
+      // default rate is empty OR still equals the previous price_per_person
+      // (i.e. the agent hasn't manually overridden it) — otherwise we'd
+      // clobber a deliberately-different value.
+      if (name === 'price_per_person') {
+        setSharingRates((rates) =>
+          rates.map((rate) => {
+            if (!rate.default) return rate;
+            const currentValue = String(rate.value || '').trim();
+            const prevPrice = String(prev.price_per_person || '').trim();
+            if (currentValue && currentValue !== prevPrice) return rate;
+            return { ...rate, value };
+          })
+        );
+      }
+
+      // Date ↔ Total Days bidirectional inference. The two date fields and
+      // the total-days field describe the same trip — knowing any two pins
+      // the third. We compute the third only when it's empty so the agent
+      // can override (e.g. they want to advertise a "10-day package" even
+      // if their flight dates span 11 nights).
+      if (name === 'departure_date' || name === 'arrival_date') {
+        const dep = name === 'departure_date' ? value : next.departure_date;
+        const arr = name === 'arrival_date' ? value : next.arrival_date;
+        const computed = daysBetween(dep, arr);
+        if (computed && !next.total_duration_days.trim()) {
+          next.total_duration_days = String(computed);
+        }
+        // If both dates are now set and total days is filled, leave it —
+        // the agent already committed to a number. Conflict warning is
+        // handled inline by the helper text below the field.
+      }
+      if (name === 'total_duration_days' && next.departure_date && !next.arrival_date.trim()) {
+        const days = Number(value);
+        const computed = addDaysToYmd(next.departure_date, days);
+        if (computed) next.arrival_date = computed;
+      }
+
+      // Makkah / Madinah / Total balance. If two are known the third is
+      // determined. Same "only fill if empty" guard so the agent can split
+      // hours (or fudge the math for marketing) without us overwriting.
+      if (name === 'makkah_days' || name === 'madinah_days' || name === 'total_duration_days') {
+        const total = Number(next.total_duration_days);
+        const mak = Number(next.makkah_days);
+        const mad = Number(next.madinah_days);
+        const isPos = (n: number) => Number.isFinite(n) && n > 0;
+        if (name === 'makkah_days' && isPos(total) && isPos(mak) && !next.madinah_days.trim()) {
+          const derived = total - mak;
+          if (derived > 0) next.madinah_days = String(derived);
+        } else if (
+          name === 'madinah_days' &&
+          isPos(total) &&
+          isPos(mad) &&
+          !next.makkah_days.trim()
+        ) {
+          const derived = total - mad;
+          if (derived > 0) next.makkah_days = String(derived);
+        } else if (name === 'total_duration_days' && isPos(total)) {
+          // Newly-set total days: if exactly one of Makkah/Madinah is set,
+          // auto-fill the other. If both are set, leave them.
+          if (isPos(mak) && !next.madinah_days.trim()) {
+            const derived = total - mak;
+            if (derived > 0) next.madinah_days = String(derived);
+          } else if (isPos(mad) && !next.makkah_days.trim()) {
+            const derived = total - mad;
+            if (derived > 0) next.makkah_days = String(derived);
+          }
+        }
+      }
+
       return next;
     });
   };
@@ -1411,16 +1565,6 @@ const AddPackageWizardModal = ({
                       />
                     </div>
                     <div>
-                      <Label>Price Per Person</Label>
-                      <Input
-                        name="price_per_person"
-                        type="number"
-                        className="mt-1.5"
-                        value={meta.price_per_person}
-                        onChange={handleMetaChange}
-                      />
-                    </div>
-                    <div>
                       <Label>Total Days</Label>
                       <Input
                         name="total_duration_days"
@@ -1428,7 +1572,11 @@ const AddPackageWizardModal = ({
                         className="mt-1.5"
                         value={meta.total_duration_days}
                         onChange={handleMetaChange}
+                        placeholder="Auto from dates"
                       />
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        Auto-filled from your departure & arrival dates. Override if needed.
+                      </p>
                     </div>
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -1449,8 +1597,37 @@ const AddPackageWizardModal = ({
                           className="mt-1.5"
                           value={meta.madinah_days}
                           onChange={handleMetaChange}
+                          placeholder="Auto from Total − Makkah"
                         />
                       </div>
+                      {(() => {
+                        // Inline mismatch hint when Makkah + Madinah doesn't
+                        // equal Total. Doesn't block save — agents sometimes
+                        // include travel days in one bucket — but flags the
+                        // discrepancy so it isn't accidental.
+                        const total = Number(meta.total_duration_days);
+                        const mak = Number(meta.makkah_days);
+                        const mad = Number(meta.madinah_days);
+                        if (![total, mak, mad].every((n) => Number.isFinite(n) && n > 0)) {
+                          return null;
+                        }
+                        const sum = mak + mad;
+                        if (sum === total) {
+                          return (
+                            <p className="md:col-span-2 text-xs text-green-600 dark:text-green-400">
+                              <i className="las la-check-circle mr-1" />
+                              {mak} + {mad} = {total} days. Balanced.
+                            </p>
+                          );
+                        }
+                        return (
+                          <p className="md:col-span-2 text-xs text-amber-600 dark:text-amber-400">
+                            <i className="las la-exclamation-triangle mr-1" />
+                            Makkah + Madinah = {sum}, but Total Days is {total}. Difference of{' '}
+                            {Math.abs(sum - total)} day{Math.abs(sum - total) === 1 ? '' : 's'}.
+                          </p>
+                        );
+                      })()}
                     </div>
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
@@ -1496,9 +1673,8 @@ const AddPackageWizardModal = ({
                     </div>
                     <div>
                       <Label>Departure Date</Label>
-                      <Input
+                      <DateSegmentInput
                         name="departure_date"
-                        type="date"
                         className="mt-1.5"
                         value={meta.departure_date}
                         onChange={handleMetaChange}
@@ -1506,9 +1682,8 @@ const AddPackageWizardModal = ({
                     </div>
                     <div>
                       <Label>Arrival Date</Label>
-                      <Input
+                      <DateSegmentInput
                         name="arrival_date"
-                        type="date"
                         className="mt-1.5"
                         value={meta.arrival_date}
                         onChange={handleMetaChange}
@@ -1531,83 +1706,177 @@ const AddPackageWizardModal = ({
                         Pilgrims will find this package under this city in the location filter.
                       </p>
                     </div>
-                    <div>
-                      <Label>Makkah Hotel Name</Label>
-                      <Input
-                        name="makkah_hotel_name"
-                        className="mt-1.5"
-                        value={meta.makkah_hotel_name}
-                        onChange={handleMetaChange}
-                      />
-                    </div>
-                    <div>
-                      <Label>Makkah Hotel Distance (m)</Label>
-                      <Input
-                        name="makkah_hotel_distance_m"
-                        type="number"
-                        className="mt-1.5"
-                        value={meta.makkah_hotel_distance_m}
-                        onChange={handleMetaChange}
-                      />
-                    </div>
-                    <div>
-                      <Label>Madinah Hotel Name</Label>
-                      <Input
-                        name="madinah_hotel_name"
-                        className="mt-1.5"
-                        value={meta.madinah_hotel_name}
-                        onChange={handleMetaChange}
-                      />
-                    </div>
-                    <div>
-                      <Label>Madinah Hotel Distance (m)</Label>
-                      <Input
-                        name="madinah_hotel_distance_m"
-                        type="number"
-                        className="mt-1.5"
-                        value={meta.madinah_hotel_distance_m}
-                        onChange={handleMetaChange}
-                      />
-                    </div>
-
-                    <div className="md:col-span-2 space-y-3">
-                      <Label>Sharing Rates</Label>
-                      {sharingRates.map((rate, idx) => (
+                    {/* Hotel info: name + walking distance grouped into one card
+                        per city. Stars and amenities live in the Stay Info
+                        step (separate visual section so the meta step stays
+                        scannable). */}
+                    {(
+                      [
+                        {
+                          city: 'Makkah',
+                          nameField: 'makkah_hotel_name' as const,
+                          distField: 'makkah_hotel_distance_m' as const,
+                          landmark: 'Masjid al-Haram',
+                          icon: 'la-kaaba',
+                        },
+                        {
+                          city: 'Madinah',
+                          nameField: 'madinah_hotel_name' as const,
+                          distField: 'madinah_hotel_distance_m' as const,
+                          landmark: 'Masjid an-Nabawi',
+                          icon: 'la-mosque',
+                        },
+                      ] as const
+                    ).map(({ city, nameField, distField, landmark, icon }) => {
+                      const distanceM = Number(meta[distField]);
+                      const km = Number.isFinite(distanceM) && distanceM > 0 ? distanceM / 1000 : null;
+                      return (
                         <div
-                          key={rate.people}
-                          className="grid grid-cols-[80px_1fr_auto] gap-3 items-center"
+                          key={city}
+                          className="md:col-span-2 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4 space-y-3"
                         >
-                          <span className="text-sm text-neutral-600">{rate.people} Share</span>
-                          <Input
-                            type="number"
-                            value={rate.value}
-                            onChange={(e) => {
-                              const value = e.target.value;
-                              setSharingRates((prev) =>
-                                prev.map((item, i) => (i === idx ? { ...item, value } : item))
-                              );
-                            }}
-                          />
-                          <button
-                            type="button"
-                            className={`text-xs px-3 py-2 rounded-full border ${
-                              rate.default
-                                ? 'border-green-600 text-green-700 bg-green-50 dark:bg-green-900/20 dark:text-green-300'
-                                : 'border-neutral-300 text-neutral-600'
-                            }`}
-                            onClick={() => {
-                              setSharingRates((prev) =>
-                                prev.map((item, i) => ({ ...item, default: i === idx }))
-                              );
-                            }}
-                          >
-                            <span className="inline-flex items-center gap-1">
-                              {rate.default ? <i className="las la-check-circle text-sm" /> : null}
-                              {rate.default ? 'Default' : 'Set Default'}
-                            </span>
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <i className={`las ${icon} text-lg text-primary-6000`} aria-hidden />
+                            <h4 className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
+                              {city} Hotel
+                            </h4>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-3">
+                            <div>
+                              <Label className="text-xs">Hotel name</Label>
+                              <Input
+                                name={nameField}
+                                className="mt-1.5"
+                                value={meta[nameField]}
+                                onChange={handleMetaChange}
+                                placeholder={`e.g. ${city === 'Makkah' ? 'Pullman Zamzam' : 'Anwar Al Madinah Mövenpick'}`}
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Walking distance (m)</Label>
+                              <Input
+                                name={distField}
+                                type="number"
+                                className="mt-1.5"
+                                value={meta[distField]}
+                                onChange={handleMetaChange}
+                                placeholder="e.g. 250"
+                              />
+                              {km !== null ? (
+                                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                                  ≈ {km.toFixed(km < 1 ? 2 : 1)} km from {landmark}
+                                </p>
+                              ) : (
+                                <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+                                  Distance from {landmark}
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      ))}
+                      );
+                    })}
+
+                    <div className="md:col-span-2 space-y-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
+                      <div>
+                        <Label>Sharing Rates ({meta.currency || 'INR'} per person)</Label>
+                        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                          Toggle on each sharing option you actually offer. Fewer people per
+                          room = more privacy = higher price. The cheapest tier (most people
+                          per room) is automatically the{' '}
+                          <span className="font-medium">Default</span> — that&apos;s the
+                          &ldquo;from&rdquo; price shown on package cards.
+                        </p>
+                      </div>
+
+                      <div className="rounded-xl bg-primary-50/60 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-900/30 p-3">
+                        <Label className="text-xs">
+                          Starting price (&ldquo;From&rdquo; on cards)
+                        </Label>
+                        <Input
+                          name="price_per_person"
+                          type="number"
+                          className="mt-1.5"
+                          value={meta.price_per_person}
+                          onChange={handleMetaChange}
+                          placeholder="e.g. 75000"
+                        />
+                        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                          Flows into the cheapest tier you enable below. Add a cheaper tier
+                          later and this number follows it.
+                        </p>
+                      </div>
+
+                      {/* Toggle row: turn each tier on/off. Removing the last
+                          enabled tier is blocked — there must be at least one
+                          price quoted or the package would have nothing to
+                          sell. */}
+                      <div className="flex flex-wrap gap-2">
+                        {SUPPORTED_SHARING_PEOPLE.map((people) => {
+                          const enabled = sharingRates.some((r) => r.people === people);
+                          const wouldBeLast = enabled && sharingRates.length === 1;
+                          return (
+                            <button
+                              key={people}
+                              type="button"
+                              disabled={wouldBeLast}
+                              onClick={() =>
+                                setSharingRates((prev) =>
+                                  toggleSharingTier(prev, people, meta.price_per_person)
+                                )
+                              }
+                              title={
+                                wouldBeLast
+                                  ? 'Keep at least one sharing option — packages need a price'
+                                  : SHARING_PEOPLE_LABEL[people]
+                              }
+                              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+                                enabled
+                                  ? 'border-primary-6000 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                                  : 'border-neutral-300 text-neutral-600 hover:border-neutral-400 dark:border-neutral-600 dark:text-neutral-300'
+                              } ${wouldBeLast ? 'cursor-not-allowed opacity-60' : ''}`}
+                              aria-pressed={enabled}
+                            >
+                              {enabled ? <i className="las la-check text-sm" /> : null}
+                              {people}-sharing
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      {sharingRates.map((rate, idx) => {
+                        const hint = SHARING_PEOPLE_LABEL[rate.people] || '';
+                        return (
+                          <div key={rate.people} className="space-y-1">
+                            <Label className="text-xs">
+                              {rate.people}-sharing{hint ? ` (${hint})` : ''}
+                              {rate.default ? (
+                                <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/20 dark:text-green-300">
+                                  <i className="las la-check-circle" />
+                                  Default · &ldquo;from&rdquo; price
+                                </span>
+                              ) : null}
+                            </Label>
+                            <Input
+                              type="number"
+                              value={rate.value}
+                              placeholder={
+                                rate.default && meta.price_per_person
+                                  ? meta.price_per_person
+                                  : `Price per person in ${rate.people}-sharing room`
+                              }
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setSharingRates((prev) =>
+                                  prev.map((item, i) =>
+                                    i === idx ? { ...item, value } : item
+                                  )
+                                );
+                              }}
+                            />
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

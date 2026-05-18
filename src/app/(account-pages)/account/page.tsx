@@ -10,6 +10,7 @@ import ButtonSecondary from '@/shared/ButtonSecondary';
 import Input from '@/shared/Input';
 import Select from '@/shared/Select';
 import Textarea from '@/shared/Textarea';
+import DateSegmentInput from '@/components/DateSegmentInput';
 import CityAutocomplete, { SelectedCity } from '@/components/CityAutocomplete';
 import { supabase } from '@/utils/supabaseClient';
 import toast from 'react-hot-toast';
@@ -841,9 +842,8 @@ const AccountPage = () => {
 
                 <div>
                   <Label>Date of Birth</Label>
-                  <Input
+                  <DateSegmentInput
                     className="mt-1.5"
-                    type="date"
                     value={accountForm.date_of_birth}
                     onChange={(e) => updateAccountField('date_of_birth', e.target.value)}
                   />
@@ -1001,9 +1001,8 @@ const AccountPage = () => {
 
                         <div>
                           <Label>Date of Birth</Label>
-                          <Input
+                          <DateSegmentInput
                             className="mt-1.5"
-                            type="date"
                             value={traveler.date_of_birth}
                             onChange={(e) =>
                               updateTravelerField(traveler.tempKey, 'date_of_birth', e.target.value)
@@ -1059,9 +1058,8 @@ const AccountPage = () => {
 
                         <div>
                           <Label>Passport Expiry</Label>
-                          <Input
+                          <DateSegmentInput
                             className="mt-1.5"
-                            type="date"
                             value={traveler.passport_expiry}
                             onChange={(e) =>
                               updateTravelerField(

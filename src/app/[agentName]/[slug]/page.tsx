@@ -461,8 +461,16 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   })();
 
   const defaultRate = sharingRateList.find((rate) => rate.default) ?? sharingRateList[0];
-  const sharingFromQuery = Number(searchParams?.sharing ?? defaultRate?.people ?? 5);
-  const sharingCount = clamp(Number.isFinite(sharingFromQuery) ? sharingFromQuery : 5, 2, 5);
+  // Resolve the active sharing tier without assuming a [2, 5] range — agents
+  // configure their own tier list per package, sometimes just one. Honor the
+  // URL param when it matches an available tier, else fall back to the
+  // agent's marked default, else the first available tier.
+  const requestedSharing = Number(searchParams?.sharing ?? defaultRate?.people ?? 0);
+  const sharingCount =
+    sharingRateList.find((rate) => rate.people === requestedSharing)?.people ??
+    defaultRate?.people ??
+    sharingRateList[0]?.people ??
+    requestedSharing;
   const selectedRate = sharingRateList.find((rate) => rate.people === sharingCount) ?? defaultRate;
 
   const guestsFromQuery = Number(searchParams?.guests ?? 1);

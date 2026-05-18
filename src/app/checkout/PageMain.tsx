@@ -16,7 +16,7 @@ import { supabase } from '@/utils/supabaseClient';
 import { sendWhatsApp, WA_TEMPLATES } from '@/lib/whatsapp';
 import toast from 'react-hot-toast';
 import { showApiError } from '@/lib/apiErrors';
-import NcInputNumber from '@/components/NcInputNumber';
+import SharingPillSelector from './SharingPillSelector';
 import { formatPackageLocation } from '@/lib/packageLocation';
 
 export interface CheckOutPagePageMainProps {
@@ -305,16 +305,6 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
       total: total.toLocaleString('en-IN'),
     };
   }, [activeRate?.value, packageDetails?.currency, packageDetails?.price_per_person, totalGuests]);
-
-  const sharingMin = useMemo(() => {
-    if (sharingRates.length === 0) return 1;
-    return Math.min(...sharingRates.map((rate) => rate.people));
-  }, [sharingRates]);
-
-  const sharingMax = useMemo(() => {
-    if (sharingRates.length === 0) return 5;
-    return Math.max(...sharingRates.map((rate) => rate.people));
-  }, [sharingRates]);
 
   const getTravelerDisplayName = (traveler: SavedTraveler) => {
     const fullName = [traveler.first_name || '', traveler.last_name || ''].join(' ').trim();
@@ -743,13 +733,10 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
         <div className="flex flex-col space-y-4">
           <h3 className="text-2xl font-semibold">Price detail</h3>
           <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
-            <NcInputNumber
-              label="Sharing"
-              desc="Adjust room sharing"
-              defaultValue={sharingCount}
-              min={sharingMin}
-              max={sharingMax}
-              onChange={(value) => setSharingCount(value)}
+            <SharingPillSelector
+              rates={sharingRates}
+              value={sharingCount}
+              onChange={setSharingCount}
             />
           </div>
           <div className="flex justify-between text-neutral-6000 dark:text-neutral-300">
@@ -1147,13 +1134,10 @@ const CheckOutPagePageMain: FC<CheckOutPagePageMainProps> = ({ className = '' })
         >
           <div className="flex flex-col space-y-4">
             <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
-              <NcInputNumber
-                label="Sharing"
-                desc="Adjust room sharing"
-                defaultValue={sharingCount}
-                min={sharingMin}
-                max={sharingMax}
-                onChange={(value) => setSharingCount(value)}
+              <SharingPillSelector
+                rates={sharingRates}
+                value={sharingCount}
+                onChange={setSharingCount}
               />
             </div>
             <div className="flex justify-between text-neutral-600 dark:text-neutral-300">

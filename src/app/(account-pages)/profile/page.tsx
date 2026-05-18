@@ -134,6 +134,84 @@ const validateContactNumber = (value: string): string | undefined => {
   return undefined;
 };
 
+// Fixed country code prefix. The platform is India-first, so the phone
+// inputs render "+91" as a non-editable segment (same visual pattern as the
+// slug field's "searchumrah.com/" prefix). Agents in other countries would
+// need a different code, but per product decision we lock to +91 today; if
+// we ever support multi-country agents we'd promote this to a dropdown.
+const PHONE_DIAL_CODE = '91';
+
+// Convert raw stored digits → the local part the agent sees inside the
+// input. The stored value includes the country code (e.g. "919876543210");
+// we strip the leading "91" so the input shows just "9876543210". If the
+// stored value somehow doesn't start with 91 (legacy data) we leave it as-is
+// rather than mangling it.
+const localPartFromStored = (stored: string): string => {
+  const digits = (stored || '').replace(/\D/g, '');
+  if (digits.startsWith(PHONE_DIAL_CODE)) return digits.slice(PHONE_DIAL_CODE.length);
+  return digits;
+};
+
+// Inverse of localPartFromStored: take what the agent typed (digits only)
+// and prepend the country code for storage. An empty local part stores as
+// empty (no "91" alone) so the field semantics stay "no number set".
+const storedFromLocalPart = (localPart: string): string => {
+  const digits = (localPart || '').replace(/\D/g, '');
+  if (!digits) return '';
+  return `${PHONE_DIAL_CODE}${digits}`;
+};
+
+// Quick auto-fill helpers — they nudge the agent toward valid URLs without
+// hijacking what they typed. All are conservative: only run when the source
+// field has enough signal AND the target field is empty / clearly partial.
+
+// Phone-like input → wa.me URL. Strips non-digits and prepends the country
+// code if the agent typed only the local part (10 digits). If they already
+// included the country code (11+ digits) we use what they have.
+const buildWhatsAppUrl = (phoneLike: string): string => {
+  const digits = (phoneLike.match(/\d/g) || []).join('');
+  if (digits.length < 7) return '';
+  const withCountry = digits.startsWith(PHONE_DIAL_CODE) ? digits : `${PHONE_DIAL_CODE}${digits}`;
+  return `https://wa.me/${withCountry}`;
+};
+
+// Bare handle (with or without leading @) → full social profile URL. Returns
+// the input unchanged if it already looks like a URL (contains "://" or a
+// dot) so we don't double-wrap something the agent pasted from the address
+// bar.
+const normalizeSocialHandle = (value: string, base: string): string => {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (trimmed.includes('/') || trimmed.includes('.')) return trimmed;
+  const handle = trimmed.replace(/^@+/, '');
+  if (!handle) return '';
+  return `${base.replace(/\/$/, '')}/${handle}`;
+};
+
+// Email domain auto-complete. When the user has typed past the "@" but the
+// part after it doesn't yet match a full known domain, surface a small chip
+// row with the most common completions. We deliberately only suggest popular
+// consumer providers — pilgrims overwhelmingly use these, and showing too
+// many options turns into noise.
+const EMAIL_SUGGEST_DOMAINS = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com'];
+
+const buildEmailSuggestions = (value: string): string[] => {
+  const trimmed = value.trim();
+  const atIndex = trimmed.lastIndexOf('@');
+  // Show suggestions once the user has typed a local part and the @ sign.
+  if (atIndex <= 0) return [];
+  const local = trimmed.slice(0, atIndex);
+  const partial = trimmed.slice(atIndex + 1).toLowerCase();
+  // Hide once the domain is fully entered (it matches one of our suggestions
+  // exactly) — no point offering them their own completed value.
+  if (EMAIL_SUGGEST_DOMAINS.includes(partial)) return [];
+  const filtered = partial
+    ? EMAIL_SUGGEST_DOMAINS.filter((d) => d.startsWith(partial))
+    : EMAIL_SUGGEST_DOMAINS;
+  return filtered.map((d) => `${local}@${d}`);
+};
+
 interface AgentProfileFormState {
   name: string;
   known_as: string;
@@ -845,13 +923,13 @@ const AgentProfilePage = () => {
                   <div className="md:col-span-2">
                     <Label>Public URL</Label>
                     <div
-                      className={`mt-1.5 flex items-stretch rounded-2xl border overflow-hidden focus-within:ring-2 ${
+                      className={`mt-1.5 flex items-stretch overflow-hidden rounded-2xl border focus-within:ring-2 ${
                         fieldErrors.slug
                           ? 'border-red-500 focus-within:ring-red-200'
-                          : 'border-neutral-300 dark:border-neutral-600 focus-within:ring-primary-500'
+                          : 'border-neutral-400 dark:border-neutral-600 focus-within:ring-primary-200'
                       }`}
                     >
-                      <span className="inline-flex items-center px-3 bg-neutral-50 dark:bg-neutral-800 text-sm text-neutral-500 dark:text-neutral-400 border-r border-neutral-300 dark:border-neutral-600 select-none whitespace-nowrap">
+                      <span className="inline-flex items-center select-none whitespace-nowrap border-r border-neutral-300 bg-neutral-50 px-3 text-sm font-medium text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
                         searchumrah.com/
                       </span>
                       <input
@@ -930,37 +1008,69 @@ const AgentProfilePage = () => {
 
                   <div>
                     <Label>Contact Number</Label>
-                    <Input
-                      className={`mt-1.5 ${
+                    <div
+                      className={`mt-1.5 flex items-stretch overflow-hidden rounded-2xl border focus-within:ring-2 ${
                         fieldErrors.contact_number
-                          ? 'border-red-500 focus:border-red-500 focus:ring-red-200'
-                          : ''
+                          ? 'border-red-500 focus-within:ring-red-200'
+                          : 'border-neutral-400 dark:border-neutral-600 focus-within:ring-primary-200'
                       }`}
-                      value={form.contact_number}
-                      onChange={(e) => updateField('contact_number', e.target.value)}
-                      onBlur={(e) =>
-                        setFieldErrors((prev) => ({
-                          ...prev,
-                          contact_number: validateContactNumber(e.target.value),
-                        }))
-                      }
-                      placeholder="Primary phone number"
-                    />
+                    >
+                      <span className="inline-flex items-center select-none whitespace-nowrap border-r border-neutral-300 bg-neutral-50 px-3 text-sm font-medium text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                        +{PHONE_DIAL_CODE}
+                      </span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        autoComplete="tel-national"
+                        value={localPartFromStored(form.contact_number)}
+                        onChange={(e) =>
+                          updateField('contact_number', storedFromLocalPart(e.target.value))
+                        }
+                        onBlur={(e) => {
+                          const stored = storedFromLocalPart(e.target.value);
+                          setFieldErrors((prev) => ({
+                            ...prev,
+                            contact_number: validateContactNumber(stored),
+                          }));
+                          // Don't clobber a custom wa.me / business link.
+                          if (!form.whatsapp_url.trim()) {
+                            const url = buildWhatsAppUrl(stored);
+                            if (url) updateField('whatsapp_url', url);
+                          }
+                        }}
+                        placeholder="9876543210"
+                        className="flex-1 bg-transparent px-3 py-3 text-sm focus:outline-none"
+                      />
+                    </div>
                     {fieldErrors.contact_number ? (
                       <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
                         {fieldErrors.contact_number}
                       </p>
-                    ) : null}
+                    ) : (
+                      <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                        We&apos;ll auto-create your WhatsApp link from this number.
+                      </p>
+                    )}
                   </div>
 
                   <div>
                     <Label>Alternate Number</Label>
-                    <Input
-                      className="mt-1.5"
-                      value={form.alternate_number}
-                      onChange={(e) => updateField('alternate_number', e.target.value)}
-                      placeholder="Backup phone number"
-                    />
+                    <div className="mt-1.5 flex items-stretch overflow-hidden rounded-2xl border border-neutral-400 dark:border-neutral-600 focus-within:ring-2 focus-within:ring-primary-200">
+                      <span className="inline-flex items-center select-none whitespace-nowrap border-r border-neutral-300 bg-neutral-50 px-3 text-sm font-medium text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300">
+                        +{PHONE_DIAL_CODE}
+                      </span>
+                      <input
+                        type="tel"
+                        inputMode="numeric"
+                        autoComplete="tel-national"
+                        value={localPartFromStored(form.alternate_number)}
+                        onChange={(e) =>
+                          updateField('alternate_number', storedFromLocalPart(e.target.value))
+                        }
+                        placeholder="Backup number (optional)"
+                        className="flex-1 bg-transparent px-3 py-3 text-sm focus:outline-none"
+                      />
+                    </div>
                   </div>
 
                   <div>
@@ -982,17 +1092,36 @@ const AgentProfilePage = () => {
                         type="email"
                         value={form.email_id}
                         onChange={(e) => updateField('email_id', e.target.value)}
-                        placeholder="Email address"
+                        placeholder="you@gmail.com"
                       />
                       <button
                         type="button"
                         onClick={handleVerifyEmail}
                         disabled={isSendingVerify || !form.email_id.trim()}
-                        className="rounded-2xl bg-primary-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="inline-flex items-center justify-center gap-1.5 rounded-2xl bg-primary-6000 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
                       >
+                        <i className="las la-paper-plane text-base" />
                         {isSendingVerify ? 'Sending…' : 'Verify'}
                       </button>
                     </div>
+                    {(() => {
+                      const suggestions = buildEmailSuggestions(form.email_id);
+                      if (suggestions.length === 0) return null;
+                      return (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {suggestions.map((suggestion) => (
+                            <button
+                              key={suggestion}
+                              type="button"
+                              onClick={() => updateField('email_id', suggestion)}
+                              className="inline-flex items-center rounded-full border border-neutral-300 bg-white px-2.5 py-1 text-xs text-neutral-700 hover:border-primary-500 hover:text-primary-700 dark:border-neutral-600 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:border-primary-400 dark:hover:text-primary-300"
+                            >
+                              {suggestion}
+                            </button>
+                          ))}
+                        </div>
+                      );
+                    })()}
                     <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
                       {agent?.email_isVerified === 'true'
                         ? "To change your email, enter a new one and click Verify. You'll get a confirmation link."
@@ -1006,6 +1135,16 @@ const AgentProfilePage = () => {
                       className="mt-1.5"
                       value={form.whatsapp_url}
                       onChange={(e) => updateField('whatsapp_url', e.target.value)}
+                      onBlur={(e) => {
+                        // If the agent typed just a phone number, convert it
+                        // to a wa.me URL on blur. Leaves any explicit URL
+                        // (https://wa.me/..., https://wa.link/..., etc.)
+                        // untouched.
+                        const value = e.target.value.trim();
+                        if (!value || /^https?:\/\//i.test(value)) return;
+                        const url = buildWhatsAppUrl(value);
+                        if (url) updateField('whatsapp_url', url);
+                      }}
                       placeholder="https://wa.me/919876543210"
                     />
                   </div>
@@ -1016,7 +1155,16 @@ const AgentProfilePage = () => {
                       className="mt-1.5"
                       value={form.instagram_url}
                       onChange={(e) => updateField('instagram_url', e.target.value)}
-                      placeholder="https://instagram.com/yourpage"
+                      onBlur={(e) => {
+                        const normalized = normalizeSocialHandle(
+                          e.target.value,
+                          'https://instagram.com'
+                        );
+                        if (normalized && normalized !== e.target.value.trim()) {
+                          updateField('instagram_url', normalized);
+                        }
+                      }}
+                      placeholder="@yourpage or https://instagram.com/yourpage"
                     />
                   </div>
 
@@ -1026,7 +1174,16 @@ const AgentProfilePage = () => {
                       className="mt-1.5"
                       value={form.facebook_url}
                       onChange={(e) => updateField('facebook_url', e.target.value)}
-                      placeholder="https://facebook.com/yourpage"
+                      onBlur={(e) => {
+                        const normalized = normalizeSocialHandle(
+                          e.target.value,
+                          'https://facebook.com'
+                        );
+                        if (normalized && normalized !== e.target.value.trim()) {
+                          updateField('facebook_url', normalized);
+                        }
+                      }}
+                      placeholder="yourpage or https://facebook.com/yourpage"
                     />
                   </div>
 

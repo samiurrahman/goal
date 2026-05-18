@@ -35,13 +35,41 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
   className = '',
   flat = false,
 }) => {
+  // The set of tiers the agent actually quoted, sorted small-to-large.
+  // Drives the sharing pill selector below — we never offer the user a
+  // sharing option the agent didn't price, since clicking it would just
+  // fall back to default without explanation.
+  const availableSharing = useMemo(
+    () =>
+      [...sharingRates]
+        .map((r) => Number(r.people))
+        .filter((n) => Number.isFinite(n) && n > 0)
+        .sort((a, b) => a - b),
+    [sharingRates]
+  );
+
+  // Pick the initial sharing tier: prefer the URL/parent-supplied value if
+  // it matches a real rate; otherwise the agent's marked default; otherwise
+  // the first available tier. Never clamp to a hardcoded [2, 5] — that
+  // silently masked agents who only sold quads.
+  const resolveInitialSharing = (requested: number): number => {
+    if (availableSharing.includes(requested)) return requested;
+    const defaultRate = sharingRates.find((r) => r.default);
+    if (defaultRate?.people && availableSharing.includes(defaultRate.people)) {
+      return defaultRate.people;
+    }
+    return availableSharing[0] ?? requested;
+  };
+
   const [numberOfGuests, setNumberOfGuests] = useState(() => clamp(initialGuests, 1, 20));
-  const [sharingCount, setSharingCount] = useState(() => clamp(initialSharing, 2, 5));
+  const [sharingCount, setSharingCount] = useState(() => resolveInitialSharing(initialSharing));
 
   useEffect(() => {
     setNumberOfGuests(clamp(initialGuests, 1, 20));
-    setSharingCount(clamp(initialSharing, 2, 5));
-  }, [initialGuests, initialSharing]);
+    setSharingCount(resolveInitialSharing(initialSharing));
+    // resolveInitialSharing closes over availableSharing / sharingRates.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialGuests, initialSharing, availableSharing.join(',')]);
 
   const selectedRate =
     sharingRates.find((rate) => rate.people === sharingCount) ??
@@ -138,35 +166,38 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
+        <div className="space-y-2">
           <div>
             <div className="text-[14px] font-semibold text-neutral-900 dark:text-neutral-100">
               Sharing
             </div>
             <div className="text-[12px] text-neutral-500 dark:text-neutral-400">
-              Per-room occupancy
+              Per-room occupancy — pick from what the agent offers
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setSharingCount((prev) => clamp(prev - 1, 2, 5))}
-              disabled={sharingCount <= 2}
-              aria-label="Decrease sharing"
-              className={minusBtnClass}
-            >
-              −
-            </button>
-            <span className="w-5 text-center text-[14px] font-medium">{sharingCount}</span>
-            <button
-              type="button"
-              onClick={() => setSharingCount((prev) => clamp(prev + 1, 2, 5))}
-              disabled={sharingCount >= 5}
-              aria-label="Increase sharing"
-              className={plusBtnClass}
-            >
-              +
-            </button>
+          <div className="flex flex-wrap gap-1.5">
+            {availableSharing.length === 0 ? (
+              <span className="text-[12px] text-neutral-500">No sharing options listed.</span>
+            ) : (
+              availableSharing.map((people) => {
+                const active = people === sharingCount;
+                return (
+                  <button
+                    key={people}
+                    type="button"
+                    onClick={() => setSharingCount(people)}
+                    aria-pressed={active}
+                    className={`inline-flex items-center rounded-full border px-3 py-1 text-[12px] font-medium transition ${
+                      active
+                        ? 'border-primary-6000 bg-primary-6000 text-white shadow-sm'
+                        : 'border-neutral-300 text-neutral-700 hover:border-primary-400 dark:border-neutral-600 dark:text-neutral-300'
+                    }`}
+                  >
+                    {people}-sharing
+                  </button>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
