@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import NcModal from '@/shared/NcModal';
@@ -17,7 +17,12 @@ import { supabase } from '@/utils/supabaseClient';
 import { uploadImageToStorage } from '@/utils/supabaseStorageHelper';
 import { useCities } from '@/hooks/useCities';
 import { allocatePackageSlug, slugify as slugifyShared } from '@/lib/slug';
-import { PACKAGE_TAGS, sanitizePackageTags, type PackageTag } from '@/constants/packageTags';
+import {
+  PACKAGE_TAGS,
+  packageTagTone,
+  sanitizePackageTags,
+  type PackageTag,
+} from '@/constants/packageTags';
 import {
   AMENITY_ICON_OPTIONS,
   DEFAULT_AMENITY_ICON,
@@ -34,26 +39,22 @@ import {
   type HotelAmenityKey,
 } from '@/constants/hotelAmenities';
 
-type WizardStep = 'meta' | 'itinerary' | 'amenities' | 'tags' | 'stay' | 'policies' | 'media';
+type WizardStep = 'meta' | 'itinerary' | 'amenities' | 'stay' | 'policies';
 
 const WIZARD_STEPS: WizardStep[] = [
   'meta',
   'itinerary',
   'amenities',
-  'tags',
   'stay',
   'policies',
-  'media',
 ];
 
 const WIZARD_STEP_LABELS: Record<WizardStep, string> = {
   meta: 'Package Info',
   itinerary: 'Itinerary',
   amenities: 'Amenities',
-  tags: 'Tags',
   stay: 'Stay Information',
   policies: 'Cancellation Policy',
-  media: 'Package Image',
 };
 
 const POLICY_TIME_OPTIONS = Array.from({ length: 24 }, (_, hour) => {
@@ -211,11 +212,11 @@ const SHARING_PEOPLE_LABEL: Record<number, string> = {
 //   1. Tiers stay sorted ascending so render order is stable regardless of
 //      toggle order.
 //   2. The CHEAPEST tier — by convention the one with the most people per
-//      room — is always the default. "Default" is what cards show as the
-//      "starting from" price, so it must always be the lowest. Letting the
-//      first-toggled tier win silently surprised agents: they'd enter
-//      Price Per Person, toggle 2-share (priced as default), then toggle
-//      5-share expecting the cheaper tier to inherit "starting from" — but
+//      room — is always the default. "Default" is the price cards show as
+//      the per-person rate, so it must always be the lowest. Letting the
+//      first-toggled tier win silently surprised agents: they'd enter the
+//      default-tier price, toggle 2-share (priced as default), then toggle
+//      5-share expecting the cheaper tier to inherit the default — but
 //      2-share stayed default and 5-share showed up empty.
 // When the default changes we also reflow `pricePerPerson` into the new
 // default tier *if it's empty*, so the most common workflow (enter price →
@@ -256,6 +257,98 @@ const slugify = (value: string): string =>
     .replace(/[^a-z0-9\s-]/g, '')
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-');
+
+type MetaErrors = Partial<Record<keyof PackageMetaForm, string>>;
+type SharingRateErrors = Record<number, string>;
+
+// All Package Info fields that must be filled before the user can move past
+// step 1. Mirrors the checkout page's per-field validation pattern: each
+// validator returns the error string for the field, or undefined when the
+// value passes.
+const META_REQUIRED_FIELDS: (keyof PackageMetaForm)[] = [
+  'title',
+  'short_description',
+  'total_duration_days',
+  'makkah_days',
+  'madinah_days',
+  'departure_city',
+  'arrival_city',
+  'departure_date',
+  'arrival_date',
+  'makkah_hotel_name',
+  'makkah_hotel_distance_m',
+  'madinah_hotel_name',
+  'madinah_hotel_distance_m',
+];
+
+const validateMetaField = (
+  name: keyof PackageMetaForm,
+  raw: string,
+  all: PackageMetaForm
+): string | undefined => {
+  const value = String(raw || '').trim();
+  switch (name) {
+    case 'title':
+      return value ? undefined : 'Title is required';
+    case 'short_description':
+      return value ? undefined : 'Short description is required';
+    case 'total_duration_days':
+    case 'makkah_days':
+    case 'madinah_days': {
+      if (!value) return 'Required';
+      const n = Number(value);
+      if (!Number.isFinite(n) || n <= 0) return 'Enter a positive number of days';
+      return undefined;
+    }
+    case 'departure_city':
+      return value ? undefined : 'Departure city is required';
+    case 'arrival_city':
+      return value ? undefined : 'Arrival city is required';
+    case 'departure_date': {
+      if (!value) return 'Departure date is required';
+      const d = new Date(`${value}T00:00:00`);
+      if (Number.isNaN(d.getTime())) return 'Enter a valid date';
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (d < today) return 'Date cannot be in the past';
+      return undefined;
+    }
+    case 'arrival_date': {
+      if (!value) return 'Arrival date is required';
+      const d = new Date(`${value}T00:00:00`);
+      if (Number.isNaN(d.getTime())) return 'Enter a valid date';
+      const dep = all.departure_date ? new Date(`${all.departure_date}T00:00:00`) : null;
+      if (dep && !Number.isNaN(dep.getTime()) && d < dep) {
+        return 'Must be on or after departure date';
+      }
+      return undefined;
+    }
+    case 'makkah_hotel_name':
+      return value ? undefined : 'Makkah hotel name is required';
+    case 'madinah_hotel_name':
+      return value ? undefined : 'Madinah hotel name is required';
+    case 'makkah_hotel_distance_m':
+    case 'madinah_hotel_distance_m': {
+      if (!value) return 'Walking distance is required';
+      const n = Number(value);
+      if (!Number.isFinite(n) || n < 0) return 'Enter a non-negative number';
+      return undefined;
+    }
+    default:
+      return undefined;
+  }
+};
+
+const validateSharingRate = (value: string): string | undefined => {
+  const trimmed = String(value || '').trim();
+  if (!trimmed) return 'Price is required';
+  const n = Number(trimmed);
+  if (!Number.isFinite(n) || n <= 0) return 'Enter a positive price';
+  return undefined;
+};
+
+const errorBorderClass = (err?: string): string =>
+  err ? 'border-red-500 focus:border-red-500 focus:ring-red-200' : '';
 
 const initialMetaForm: PackageMetaForm = {
   title: '',
@@ -311,6 +404,60 @@ const dayHasContent = (day: DayItemInput): boolean =>
   [day.dayLabel, day.subtitle, day.title, day.icon].some((value) =>
     String(value || '').trim()
   ) || hasHtmlContent(day.description);
+
+const formatYmdDisplay = (ymd: string): string => {
+  if (!ymd) return '';
+  const date = new Date(`${ymd}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return '';
+  return date.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+};
+
+// Auto-compose a short description from the structured fields the agent has
+// already filled in. Used to prefill the Short Description textarea so agents
+// don't have to write SEO copy by hand. The agent can still overwrite it —
+// the effect that calls this respects manual edits.
+const composeShortDescription = (
+  meta: PackageMetaForm,
+  defaultRate: SharingRateItem | undefined
+): string => {
+  const days = Number(meta.total_duration_days);
+  const hasDays = Number.isFinite(days) && days > 0;
+  const depDate = formatYmdDisplay(meta.departure_date);
+  const arrDate = formatYmdDisplay(meta.arrival_date);
+  const hasRoute = Boolean(meta.departure_city || meta.arrival_city);
+  const hasDates = Boolean(depDate || arrDate);
+
+  // Nothing concrete to say yet — leave the textarea empty so the placeholder
+  // shows. We only emit the generic "Umrah package" prefix once it can be
+  // anchored to at least one fact (duration, route, or dates).
+  if (!hasDays && !hasRoute && !hasDates) return '';
+
+  const facts: string[] = [];
+  facts.push(hasDays ? `${days}-day Umrah package` : 'Umrah package');
+  if (meta.departure_city && meta.arrival_city) {
+    facts.push(`from ${meta.departure_city} to ${meta.arrival_city}`);
+  } else if (meta.departure_city) {
+    facts.push(`from ${meta.departure_city}`);
+  }
+  let dateLabel = '';
+  if (depDate && arrDate) dateLabel = `${depDate} – ${arrDate}`;
+  else if (depDate) dateLabel = `departing ${depDate}`;
+  const head = facts.join(' ') + (dateLabel ? `, ${dateLabel}` : '');
+
+  const priceValue = Number(defaultRate?.value || meta.price_per_person || 0);
+  const sharingPeople = defaultRate?.people;
+  if (Number.isFinite(priceValue) && priceValue > 0) {
+    const formattedPrice = `${meta.currency || 'INR'} ${priceValue.toLocaleString('en-IN')}`;
+    const tier = sharingPeople ? ` (${sharingPeople}-sharing)` : '';
+    return `${head}. ${formattedPrice} per person${tier}.`;
+  }
+  return `${head}.`;
+};
 
 const HotelTagsField: React.FC<{
   label: string;
@@ -399,6 +546,15 @@ const AddPackageWizardModal = ({
   const [step, setStep] = useState<WizardStep>('meta');
 
   const [meta, setMeta] = useState<PackageMetaForm>(initialMetaForm);
+  // Tracks which of makkah_days / madinah_days currently holds an auto-derived
+  // value (total − the other field). Needed because the inference fires per
+  // keystroke: typing "11" arrives as "1" then "11", and without this flag the
+  // first keystroke fills the opposite field and locks it in. Cleared whenever
+  // the user types into the field directly, so a manual override sticks.
+  const daysAutofilledRef = useRef<{ makkah: boolean; madinah: boolean }>({
+    makkah: false,
+    madinah: false,
+  });
   // Sharing tiers offered by this package. Agents are NOT forced to offer
   // every size — some sell only quads, some only twin+quad, etc. The wizard
   // surfaces a toggle row of all SUPPORTED_SHARING_PEOPLE values; this
@@ -429,7 +585,48 @@ const AddPackageWizardModal = ({
   const [policyNotesText, setPolicyNotesText] = useState('');
   const [pendingImageFile, setPendingImageFile] = useState<File | null>(null);
   const [currentImageUrl, setCurrentImageUrl] = useState<string | undefined>(undefined);
+  // Per-field validation errors for the meta (Package Info) step. Set on
+  // blur and on Next-click; cleared as the underlying value becomes valid
+  // via the useEffect below. Mirrors the checkout page's pattern.
+  const [metaErrors, setMetaErrors] = useState<MetaErrors>({});
+  // Sharing-rate errors keyed by people-per-room. Each enabled tier must
+  // have a positive price before the user can leave the meta step.
+  const [sharingRateErrors, setSharingRateErrors] = useState<SharingRateErrors>({});
   const { data: citiesData, isLoading: citiesLoading } = useCities();
+
+  // True once the agent has typed their own copy into the short-description
+  // textarea. While true, auto-fill backs off so we don't overwrite their
+  // work. Reset to false when they clear the textarea (resuming auto-fill)
+  // or when the form is reset for a new package. On edit prefill we mirror
+  // whether the saved description has any content.
+  const shortDescTouchedRef = useRef<boolean>(false);
+
+  // Auto-fill the short description from structured fields. Runs whenever a
+  // dependent field changes. Skipped entirely while the agent has manual
+  // copy — gated by shortDescTouchedRef rather than string-diffing the last
+  // generated value, which was fragile across modal reopens and edits.
+  useEffect(() => {
+    if (shortDescTouchedRef.current) return;
+    const defaultRate = sharingRates.find((r) => r.default) ?? sharingRates[0];
+    const generated = composeShortDescription(meta, defaultRate);
+    setMeta((prev) => {
+      if (generated === prev.short_description) return prev;
+      return { ...prev, short_description: generated };
+    });
+    // composeShortDescription pulls many fields off `meta`, but only the
+    // listed primitives drive the output — depending on the whole object
+    // would loop because this effect also calls setMeta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    meta.total_duration_days,
+    meta.departure_city,
+    meta.arrival_city,
+    meta.departure_date,
+    meta.arrival_date,
+    meta.currency,
+    meta.price_per_person,
+    sharingRates,
+  ]);
 
   // Triggerless mode: the parent controls open via an incrementing counter.
   // Skip the very first render's value (0 or the initial mount value) so the
@@ -627,6 +824,8 @@ const AddPackageWizardModal = ({
       }
     })();
 
+    daysAutofilledRef.current = { makkah: false, madinah: false };
+    shortDescTouchedRef.current = Boolean(String(packageRow.short_description || '').trim());
     setMeta({
       title: String(packageRow.title || ''),
       slug: slugify(String(packageRow.title || '')),
@@ -727,6 +926,8 @@ const AddPackageWizardModal = ({
   };
 
   const resetForm = () => {
+    daysAutofilledRef.current = { makkah: false, madinah: false };
+    shortDescTouchedRef.current = false;
     setMeta(initialMetaForm);
     setSharingRates([{ people: 4, value: '', default: true }]);
     setStartFlight(makeEmptyFlight());
@@ -749,12 +950,105 @@ const AddPackageWizardModal = ({
     setPolicyNotesText('');
     setPendingImageFile(null);
     setIsDraftPackage(false);
+    setMetaErrors({});
+    setSharingRateErrors({});
     setStep('meta');
+  };
+
+  // Keep existing field errors in sync with the current value: clear the
+  // error when the value becomes valid, and refresh the message when the
+  // reason changes (e.g. "Departure date is required" → "Date cannot be in
+  // the past" once the user fills a past date). We never *add* errors for
+  // untouched fields here — only existing ones are reconciled.
+  useEffect(() => {
+    setMetaErrors((prev) => {
+      let changed = false;
+      const next: MetaErrors = { ...prev };
+      (Object.keys(prev) as (keyof PackageMetaForm)[]).forEach((field) => {
+        const err = validateMetaField(field, meta[field], meta);
+        if (!err) {
+          delete next[field];
+          changed = true;
+        } else if (err !== prev[field]) {
+          next[field] = err;
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [meta]);
+
+  useEffect(() => {
+    setSharingRateErrors((prev) => {
+      let changed = false;
+      const next: SharingRateErrors = { ...prev };
+      Object.keys(prev).forEach((peopleStr) => {
+        const people = Number(peopleStr);
+        const rate = sharingRates.find((r) => r.people === people);
+        if (!rate) {
+          delete next[people];
+          changed = true;
+          return;
+        }
+        const err = validateSharingRate(rate.value);
+        if (!err) {
+          delete next[people];
+          changed = true;
+        }
+      });
+      return changed ? next : prev;
+    });
+  }, [sharingRates]);
+
+  const validateMetaStep = (): boolean => {
+    const errors: MetaErrors = {};
+    META_REQUIRED_FIELDS.forEach((field) => {
+      const err = validateMetaField(field, meta[field], meta);
+      if (err) errors[field] = err;
+    });
+    setMetaErrors(errors);
+
+    const rateErrors: SharingRateErrors = {};
+    sharingRates.forEach((rate) => {
+      const err = validateSharingRate(rate.value);
+      if (err) rateErrors[rate.people] = err;
+    });
+    setSharingRateErrors(rateErrors);
+
+    return Object.keys(errors).length === 0 && Object.keys(rateErrors).length === 0;
+  };
+
+  const validateCurrentStep = (): boolean => {
+    if (step === 'meta') {
+      if (!validateMetaStep()) {
+        toast.error('Please complete all required fields in Package Info.');
+        return false;
+      }
+      if (!pendingImageFile && !currentImageUrl) {
+        toast.error('Please upload a package image.');
+        return false;
+      }
+    }
+    return true;
   };
 
   const goNext = () => {
     if (isLastStep) return;
+    if (!validateCurrentStep()) return;
     setStep(WIZARD_STEPS[currentStepIndex + 1]);
+  };
+
+  const tryGoToStep = (target: WizardStep) => {
+    const targetIndex = WIZARD_STEPS.indexOf(target);
+    if (targetIndex === currentStepIndex) return;
+    // Backward navigation is always allowed.
+    if (targetIndex < currentStepIndex) {
+      setStep(target);
+      return;
+    }
+    // Forward jumps must pass the same validation as the Next button.
+    if (!validateCurrentStep()) return;
+    setStep(target);
   };
 
   const goBack = () => {
@@ -785,7 +1079,6 @@ const AddPackageWizardModal = ({
         [
           meta.title,
           meta.short_description,
-          meta.price_per_person,
           meta.total_duration_days,
           meta.makkah_days,
           meta.madinah_days,
@@ -798,20 +1091,20 @@ const AddPackageWizardModal = ({
           meta.madinah_hotel_name,
           meta.madinah_hotel_distance_m,
         ].some((value) => String(value || '').trim()) ||
-        sharingRates.some((rate) => String(rate.value || '').trim()),
+        sharingRates.some((rate) => String(rate.value || '').trim()) ||
+        Boolean(pendingImageFile || currentImageUrl) ||
+        selectedTags.length > 0,
       itinerary:
         flightHasContent(startFlight) ||
         flightHasContent(endFlight) ||
         dayItems.some(dayHasContent),
       amenities: amenities.length > 0,
-      tags: selectedTags.length > 0,
       stay: hasHtmlContent(stayInfoContentHtml),
       policies:
         Boolean(policyCancellation.trim()) ||
         Boolean(policyCheckIn.trim()) ||
         Boolean(policyCheckOut.trim()) ||
         hasHtmlContent(policyNotesText),
-      media: Boolean(pendingImageFile || currentImageUrl),
     }),
     [
       amenities,
@@ -852,6 +1145,23 @@ const AddPackageWizardModal = ({
     return from.toISOString().slice(0, 10);
   };
 
+  const handleMetaBlur = (
+    e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const name = e.target.name as keyof PackageMetaForm;
+    if (!META_REQUIRED_FIELDS.includes(name)) return;
+    const err = validateMetaField(name, e.target.value, meta);
+    setMetaErrors((prev) => {
+      if (!err) {
+        if (!(name in prev)) return prev;
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      }
+      return { ...prev, [name]: err };
+    });
+  };
+
   const handleMetaChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -862,29 +1172,21 @@ const AddPackageWizardModal = ({
       return;
     }
 
+    // Any direct edit to makkah/madinah clears that field's auto-filled flag
+    // so future inference won't overwrite the user's typed value.
+    if (name === 'makkah_days') daysAutofilledRef.current.makkah = false;
+    if (name === 'madinah_days') daysAutofilledRef.current.madinah = false;
+    // Typing in the short-description textarea marks it as user-owned; an
+    // empty value (clear) hands control back to the auto-fill effect.
+    if (name === 'short_description') {
+      shortDescTouchedRef.current = value.trim().length > 0;
+    }
+
     setMeta((prev) => {
       const next = { ...prev, [name]: value };
       if (name === 'title') {
         next.slug = slugify(value);
       }
-      // "Price Per Person" represents the starting / cheapest price.
-      // Auto-sync it into whichever tier the agent has marked as default, so
-      // they don't have to type the same number twice. Only sync when the
-      // default rate is empty OR still equals the previous price_per_person
-      // (i.e. the agent hasn't manually overridden it) — otherwise we'd
-      // clobber a deliberately-different value.
-      if (name === 'price_per_person') {
-        setSharingRates((rates) =>
-          rates.map((rate) => {
-            if (!rate.default) return rate;
-            const currentValue = String(rate.value || '').trim();
-            const prevPrice = String(prev.price_per_person || '').trim();
-            if (currentValue && currentValue !== prevPrice) return rate;
-            return { ...rate, value };
-          })
-        );
-      }
-
       // Date ↔ Total Days bidirectional inference. The two date fields and
       // the total-days field describe the same trip — knowing any two pins
       // the third. We compute the third only when it's empty so the agent
@@ -915,26 +1217,39 @@ const AddPackageWizardModal = ({
         const mak = Number(next.makkah_days);
         const mad = Number(next.madinah_days);
         const isPos = (n: number) => Number.isFinite(n) && n > 0;
-        if (name === 'makkah_days' && isPos(total) && isPos(mak) && !next.madinah_days.trim()) {
+        // An auto-filled side is treated as "free to overwrite" so that typing
+        // additional digits into the other side recomputes it correctly
+        // (e.g. typing "11" arrives as "1" then "11" — without this the first
+        // keystroke locks the derived value).
+        const madOverwritable = !next.madinah_days.trim() || daysAutofilledRef.current.madinah;
+        const makOverwritable = !next.makkah_days.trim() || daysAutofilledRef.current.makkah;
+        if (name === 'makkah_days' && isPos(total) && isPos(mak) && madOverwritable) {
           const derived = total - mak;
-          if (derived > 0) next.madinah_days = String(derived);
-        } else if (
-          name === 'madinah_days' &&
-          isPos(total) &&
-          isPos(mad) &&
-          !next.makkah_days.trim()
-        ) {
+          if (derived > 0) {
+            next.madinah_days = String(derived);
+            daysAutofilledRef.current.madinah = true;
+          }
+        } else if (name === 'madinah_days' && isPos(total) && isPos(mad) && makOverwritable) {
           const derived = total - mad;
-          if (derived > 0) next.makkah_days = String(derived);
+          if (derived > 0) {
+            next.makkah_days = String(derived);
+            daysAutofilledRef.current.makkah = true;
+          }
         } else if (name === 'total_duration_days' && isPos(total)) {
           // Newly-set total days: if exactly one of Makkah/Madinah is set,
           // auto-fill the other. If both are set, leave them.
-          if (isPos(mak) && !next.madinah_days.trim()) {
+          if (isPos(mak) && madOverwritable) {
             const derived = total - mak;
-            if (derived > 0) next.madinah_days = String(derived);
-          } else if (isPos(mad) && !next.makkah_days.trim()) {
+            if (derived > 0) {
+              next.madinah_days = String(derived);
+              daysAutofilledRef.current.madinah = true;
+            }
+          } else if (isPos(mad) && makOverwritable) {
             const derived = total - mad;
-            if (derived > 0) next.makkah_days = String(derived);
+            if (derived > 0) {
+              next.makkah_days = String(derived);
+              daysAutofilledRef.current.makkah = true;
+            }
           }
         }
       }
@@ -961,9 +1276,13 @@ const AddPackageWizardModal = ({
     // most user searches. Drafts (forcePublish=false) are exempt so agents
     // can save work-in-progress freely. Publishing requires all of them.
     if (forcePublish) {
-      const price = Number(meta.price_per_person);
-      if (!Number.isFinite(price) || price <= 0) {
-        toast.error('Price per person is required to publish.');
+      // Price comes from the default sharing tier (the cheapest one). No
+      // separate price input — agents enter the amount once, in the tier row.
+      const defaultRateValue = Number(
+        (sharingRates.find((r) => r.default) ?? sharingRates[0])?.value || 0
+      );
+      if (!Number.isFinite(defaultRateValue) || defaultRateValue <= 0) {
+        toast.error('Enter a price for the default sharing tier to publish.');
         setStep('meta');
         return;
       }
@@ -1027,7 +1346,7 @@ const AddPackageWizardModal = ({
 
       if (!pendingImageFile && !currentImageUrl) {
         toast.error('Please upload a package image to publish.');
-        setStep('media');
+        setStep('meta');
         return;
       }
     }
@@ -1487,7 +1806,7 @@ const AddPackageWizardModal = ({
                         )}
                         <button
                           type="button"
-                          onClick={() => setStep(wizardStep)}
+                          onClick={() => tryGoToStep(wizardStep)}
                           className="flex flex-col items-center gap-1.5 px-1"
                           aria-current={isActive ? 'step' : undefined}
                         >
@@ -1526,19 +1845,42 @@ const AddPackageWizardModal = ({
                 {step === 'meta' && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-900/10 px-4 py-3 text-xs text-amber-700 dark:text-amber-300">
-                      <strong className="font-semibold">Required to publish:</strong>{' '}
-                      price, departure &amp; arrival dates, total duration, Makkah &amp; Madinah
-                      hotel distances, and a package image. You can save a draft with any of these
-                      missing.
+                      <strong className="font-semibold">All fields below are required.</strong>{' '}
+                      Complete every field — including title, dates, cities, hotel details, a
+                      package image and a price for every enabled sharing tier — before you can
+                      move to the next step.
                     </div>
                     <div className="md:col-span-2">
-                      <Label>Title</Label>
+                      <Label>
+                        Package Image <span className="text-red-500">*</span>
+                      </Label>
+                      <div className="mt-1.5 max-w-xs">
+                        <ImageUpload
+                          label=""
+                          aspectRatio="wide"
+                          currentImageUrl={currentImageUrl}
+                          onFileSelected={(file) => setPendingImageFile(file)}
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        Upload is deferred until publish. The image will be stored under the
+                        package folder.
+                      </p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>
+                        Title <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         name="title"
-                        className="mt-1.5"
+                        className={`mt-1.5 ${errorBorderClass(metaErrors.title)}`}
                         value={meta.title}
                         onChange={handleMetaChange}
+                        onBlur={handleMetaBlur}
                       />
+                      {metaErrors.title ? (
+                        <span className="mt-1 block text-xs text-red-600">{metaErrors.title}</span>
+                      ) : null}
                       {(meta.title.trim() || meta.slug.trim()) && agentSlug ? (
                         <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400 truncate">
                           Your URL will be{' '}
@@ -1555,50 +1897,219 @@ const AddPackageWizardModal = ({
                       ) : null}
                     </div>
                     <div className="md:col-span-2">
-                      <Label>Short Description</Label>
+                      <Label>Highlight Tags</Label>
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        Pick the chips that best describe this package. They appear on listing
+                        cards and help pilgrims filter.
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {PACKAGE_TAGS.map((tag) => {
+                          const active = selectedTags.includes(tag);
+                          const tone = packageTagTone(tag);
+                          const toneClasses =
+                            tone === 'popular'
+                              ? 'bg-amber-100 text-amber-800 border-amber-200'
+                              : 'bg-primary-50 text-primary-700 border-primary-100';
+                          const activeRing =
+                            tone === 'popular'
+                              ? 'ring-2 ring-amber-500 ring-offset-1'
+                              : 'ring-2 ring-primary-500 ring-offset-1';
+                          return (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() =>
+                                setSelectedTags((prev) =>
+                                  prev.includes(tag)
+                                    ? prev.filter((t) => t !== tag)
+                                    : [...prev, tag]
+                                )
+                              }
+                              aria-pressed={active}
+                              className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium border transition ${toneClasses} ${
+                                active ? activeRing : 'opacity-70 hover:opacity-100'
+                              }`}
+                            >
+                              {active ? <span aria-hidden>✓</span> : null}
+                              {tag}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <div className="md:col-span-2">
+                      <Label>
+                        Short Description <span className="text-red-500">*</span>
+                      </Label>
                       <Textarea
                         name="short_description"
-                        className="mt-1.5"
+                        className={`mt-1.5 ${errorBorderClass(metaErrors.short_description)}`}
                         value={meta.short_description}
                         onChange={handleMetaChange}
+                        onBlur={handleMetaBlur}
                         rows={3}
                       />
+                      {metaErrors.short_description ? (
+                        <span className="mt-1 block text-xs text-red-600">
+                          {metaErrors.short_description}
+                        </span>
+                      ) : null}
+                      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+                        Auto-filled from days, route, dates, and price. Edit to add your own
+                        marketing copy — clear it to restore the auto-generated version.
+                      </p>
                     </div>
                     <div>
-                      <Label>Total Days</Label>
+                      <Label>
+                        Departure Date <span className="text-red-500">*</span>
+                      </Label>
+                      <DateSegmentInput
+                        name="departure_date"
+                        className="mt-1.5"
+                        value={meta.departure_date}
+                        onChange={handleMetaChange}
+                        invalid={Boolean(metaErrors.departure_date)}
+                      />
+                      {metaErrors.departure_date ? (
+                        <span className="mt-1 block text-xs text-red-600">
+                          {metaErrors.departure_date}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div>
+                      <Label>
+                        Arrival Date <span className="text-red-500">*</span>
+                      </Label>
+                      <DateSegmentInput
+                        name="arrival_date"
+                        className="mt-1.5"
+                        value={meta.arrival_date}
+                        onChange={handleMetaChange}
+                        invalid={Boolean(metaErrors.arrival_date)}
+                      />
+                      {metaErrors.arrival_date ? (
+                        <span className="mt-1 block text-xs text-red-600">
+                          {metaErrors.arrival_date}
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <Label>
+                          Departure City <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          name="departure_city"
+                          className={`mt-1.5 ${errorBorderClass(metaErrors.departure_city)}`}
+                          value={meta.departure_city}
+                          onChange={handleMetaChange}
+                          onBlur={handleMetaBlur}
+                          disabled={citiesLoading}
+                        >
+                          <option value="">Select departure city</option>
+                          {meta.departure_city && !cityOptions.includes(meta.departure_city) ? (
+                            <option value={meta.departure_city}>{meta.departure_city}</option>
+                          ) : null}
+                          {cityOptions.map((city) => (
+                            <option key={`departure-${city}`} value={city}>
+                              {city}
+                            </option>
+                          ))}
+                        </Select>
+                        {metaErrors.departure_city ? (
+                          <span className="mt-1 block text-xs text-red-600">
+                            {metaErrors.departure_city}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div>
+                        <Label>
+                          Arrival City <span className="text-red-500">*</span>
+                        </Label>
+                        <Select
+                          name="arrival_city"
+                          className={`mt-1.5 ${errorBorderClass(metaErrors.arrival_city)}`}
+                          value={meta.arrival_city}
+                          onChange={handleMetaChange}
+                          onBlur={handleMetaBlur}
+                          disabled={citiesLoading}
+                        >
+                          <option value="">Select arrival city</option>
+                          {meta.arrival_city && !cityOptions.includes(meta.arrival_city) ? (
+                            <option value={meta.arrival_city}>{meta.arrival_city}</option>
+                          ) : null}
+                          {cityOptions.map((city) => (
+                            <option key={`arrival-${city}`} value={city}>
+                              {city}
+                            </option>
+                          ))}
+                        </Select>
+                        {metaErrors.arrival_city ? (
+                          <span className="mt-1 block text-xs text-red-600">
+                            {metaErrors.arrival_city}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <div>
+                      <Label>
+                        Total Days <span className="text-red-500">*</span>
+                      </Label>
                       <Input
                         name="total_duration_days"
                         type="number"
-                        className="mt-1.5"
+                        className={`mt-1.5 ${errorBorderClass(metaErrors.total_duration_days)}`}
                         value={meta.total_duration_days}
                         onChange={handleMetaChange}
+                        onBlur={handleMetaBlur}
                         placeholder="Auto from dates"
                       />
+                      {metaErrors.total_duration_days ? (
+                        <span className="mt-1 block text-xs text-red-600">
+                          {metaErrors.total_duration_days}
+                        </span>
+                      ) : null}
                       <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                         Auto-filled from your departure & arrival dates. Override if needed.
                       </p>
                     </div>
                     <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
-                        <Label>Makkah Days</Label>
+                        <Label>
+                          Makkah Days <span className="text-red-500">*</span>
+                        </Label>
                         <Input
                           name="makkah_days"
                           type="number"
-                          className="mt-1.5"
+                          className={`mt-1.5 ${errorBorderClass(metaErrors.makkah_days)}`}
                           value={meta.makkah_days}
                           onChange={handleMetaChange}
+                          onBlur={handleMetaBlur}
                         />
+                        {metaErrors.makkah_days ? (
+                          <span className="mt-1 block text-xs text-red-600">
+                            {metaErrors.makkah_days}
+                          </span>
+                        ) : null}
                       </div>
                       <div>
-                        <Label>Madinah Days</Label>
+                        <Label>
+                          Madinah Days <span className="text-red-500">*</span>
+                        </Label>
                         <Input
                           name="madinah_days"
                           type="number"
-                          className="mt-1.5"
+                          className={`mt-1.5 ${errorBorderClass(metaErrors.madinah_days)}`}
                           value={meta.madinah_days}
                           onChange={handleMetaChange}
+                          onBlur={handleMetaBlur}
                           placeholder="Auto from Total − Makkah"
                         />
+                        {metaErrors.madinah_days ? (
+                          <span className="mt-1 block text-xs text-red-600">
+                            {metaErrors.madinah_days}
+                          </span>
+                        ) : null}
                       </div>
                       {(() => {
                         // Inline mismatch hint when Makkah + Madinah doesn't
@@ -1628,66 +2139,6 @@ const AddPackageWizardModal = ({
                           </p>
                         );
                       })()}
-                    </div>
-                    <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <Label>Departure City</Label>
-                        <Select
-                          name="departure_city"
-                          className="mt-1.5"
-                          value={meta.departure_city}
-                          onChange={handleMetaChange}
-                          disabled={citiesLoading}
-                        >
-                          <option value="">Select departure city</option>
-                          {meta.departure_city && !cityOptions.includes(meta.departure_city) ? (
-                            <option value={meta.departure_city}>{meta.departure_city}</option>
-                          ) : null}
-                          {cityOptions.map((city) => (
-                            <option key={`departure-${city}`} value={city}>
-                              {city}
-                            </option>
-                          ))}
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>Arrival City</Label>
-                        <Select
-                          name="arrival_city"
-                          className="mt-1.5"
-                          value={meta.arrival_city}
-                          onChange={handleMetaChange}
-                          disabled={citiesLoading}
-                        >
-                          <option value="">Select arrival city</option>
-                          {meta.arrival_city && !cityOptions.includes(meta.arrival_city) ? (
-                            <option value={meta.arrival_city}>{meta.arrival_city}</option>
-                          ) : null}
-                          {cityOptions.map((city) => (
-                            <option key={`arrival-${city}`} value={city}>
-                              {city}
-                            </option>
-                          ))}
-                        </Select>
-                      </div>
-                    </div>
-                    <div>
-                      <Label>Departure Date</Label>
-                      <DateSegmentInput
-                        name="departure_date"
-                        className="mt-1.5"
-                        value={meta.departure_date}
-                        onChange={handleMetaChange}
-                      />
-                    </div>
-                    <div>
-                      <Label>Arrival Date</Label>
-                      <DateSegmentInput
-                        name="arrival_date"
-                        className="mt-1.5"
-                        value={meta.arrival_date}
-                        onChange={handleMetaChange}
-                      />
                     </div>
                     <div>
                       <Label>Location (from your profile)</Label>
@@ -1743,25 +2194,41 @@ const AddPackageWizardModal = ({
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr] gap-3">
                             <div>
-                              <Label className="text-xs">Hotel name</Label>
+                              <Label className="text-xs">
+                                Hotel name <span className="text-red-500">*</span>
+                              </Label>
                               <Input
                                 name={nameField}
-                                className="mt-1.5"
+                                className={`mt-1.5 ${errorBorderClass(metaErrors[nameField])}`}
                                 value={meta[nameField]}
                                 onChange={handleMetaChange}
+                                onBlur={handleMetaBlur}
                                 placeholder={`e.g. ${city === 'Makkah' ? 'Pullman Zamzam' : 'Anwar Al Madinah Mövenpick'}`}
                               />
+                              {metaErrors[nameField] ? (
+                                <span className="mt-1 block text-xs text-red-600">
+                                  {metaErrors[nameField]}
+                                </span>
+                              ) : null}
                             </div>
                             <div>
-                              <Label className="text-xs">Walking distance (m)</Label>
+                              <Label className="text-xs">
+                                Walking distance (m) <span className="text-red-500">*</span>
+                              </Label>
                               <Input
                                 name={distField}
                                 type="number"
-                                className="mt-1.5"
+                                className={`mt-1.5 ${errorBorderClass(metaErrors[distField])}`}
                                 value={meta[distField]}
                                 onChange={handleMetaChange}
+                                onBlur={handleMetaBlur}
                                 placeholder="e.g. 250"
                               />
+                              {metaErrors[distField] ? (
+                                <span className="mt-1 block text-xs text-red-600">
+                                  {metaErrors[distField]}
+                                </span>
+                              ) : null}
                               {km !== null ? (
                                 <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                                   ≈ {km.toFixed(km < 1 ? 2 : 1)} km from {landmark}
@@ -1779,31 +2246,17 @@ const AddPackageWizardModal = ({
 
                     <div className="md:col-span-2 space-y-4 rounded-2xl border border-neutral-200 dark:border-neutral-700 p-4">
                       <div>
-                        <Label>Sharing Rates ({meta.currency || 'INR'} per person)</Label>
+                        <Label>
+                          Sharing Rates ({meta.currency || 'INR'} per person){' '}
+                          <span className="text-red-500">*</span>
+                        </Label>
                         <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
                           Toggle on each sharing option you actually offer. Fewer people per
                           room = more privacy = higher price. The cheapest tier (most people
                           per room) is automatically the{' '}
-                          <span className="font-medium">Default</span> — that&apos;s the
-                          &ldquo;from&rdquo; price shown on package cards.
-                        </p>
-                      </div>
-
-                      <div className="rounded-xl bg-primary-50/60 dark:bg-primary-900/10 border border-primary-100 dark:border-primary-900/30 p-3">
-                        <Label className="text-xs">
-                          Starting price (&ldquo;From&rdquo; on cards)
-                        </Label>
-                        <Input
-                          name="price_per_person"
-                          type="number"
-                          className="mt-1.5"
-                          value={meta.price_per_person}
-                          onChange={handleMetaChange}
-                          placeholder="e.g. 75000"
-                        />
-                        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                          Flows into the cheapest tier you enable below. Add a cheaper tier
-                          later and this number follows it.
+                          <span className="font-medium">Default</span> — its rate is what
+                          appears as the per-person price on package cards. Every enabled tier
+                          needs a price before you can continue.
                         </p>
                       </div>
 
@@ -1846,20 +2299,23 @@ const AddPackageWizardModal = ({
 
                       {sharingRates.map((rate, idx) => {
                         const hint = SHARING_PEOPLE_LABEL[rate.people] || '';
+                        const rateErr = sharingRateErrors[rate.people];
                         return (
                           <div key={rate.people} className="space-y-1">
                             <Label className="text-xs">
-                              {rate.people}-sharing{hint ? ` (${hint})` : ''}
+                              {rate.people}-sharing{hint ? ` (${hint})` : ''}{' '}
+                              <span className="text-red-500">*</span>
                               {rate.default ? (
                                 <span className="ml-2 inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-medium text-green-700 dark:bg-green-900/20 dark:text-green-300">
                                   <i className="las la-check-circle" />
-                                  Default · &ldquo;from&rdquo; price
+                                  Default · price shown on cards
                                 </span>
                               ) : null}
                             </Label>
                             <Input
                               type="number"
                               value={rate.value}
+                              className={errorBorderClass(rateErr)}
                               placeholder={
                                 rate.default && meta.price_per_person
                                   ? meta.price_per_person
@@ -1873,7 +2329,22 @@ const AddPackageWizardModal = ({
                                   )
                                 );
                               }}
+                              onBlur={(e) => {
+                                const err = validateSharingRate(e.currentTarget.value);
+                                setSharingRateErrors((prev) => {
+                                  if (!err) {
+                                    if (!(rate.people in prev)) return prev;
+                                    const next = { ...prev };
+                                    delete next[rate.people];
+                                    return next;
+                                  }
+                                  return { ...prev, [rate.people]: err };
+                                });
+                              }}
                             />
+                            {rateErr ? (
+                              <span className="mt-1 block text-xs text-red-600">{rateErr}</span>
+                            ) : null}
                           </div>
                         );
                       })}
@@ -2209,43 +2680,6 @@ const AddPackageWizardModal = ({
                   </div>
                 )}
 
-                {step === 'tags' && (
-                  <div className="space-y-2">
-                    <Label>Highlight tags</Label>
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Pick the chips that best describe this package. They appear on listing cards
-                      and help pilgrims filter.
-                    </p>
-                    <div className="flex flex-wrap gap-2 pt-1">
-                      {PACKAGE_TAGS.map((tag) => {
-                        const active = selectedTags.includes(tag);
-                        return (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() =>
-                              setSelectedTags((prev) =>
-                                prev.includes(tag)
-                                  ? prev.filter((t) => t !== tag)
-                                  : [...prev, tag]
-                              )
-                            }
-                            aria-pressed={active}
-                            className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-[13px] font-medium border transition ${
-                              active
-                                ? 'bg-neutral-900 dark:bg-white border-neutral-900 dark:border-white text-white dark:text-neutral-900'
-                                : 'bg-white dark:bg-neutral-800 border-neutral-200 dark:border-neutral-700 text-neutral-700 dark:text-neutral-200 hover:border-neutral-400'
-                            }`}
-                          >
-                            {active ? <span aria-hidden>✓</span> : null}
-                            {tag}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
                 {step === 'stay' && (
                   <div className="space-y-5">
                     <div>
@@ -2361,20 +2795,6 @@ const AddPackageWizardModal = ({
                   </div>
                 )}
 
-                {step === 'media' && (
-                  <div className="space-y-4">
-                    <ImageUpload
-                      label="Package Image"
-                      aspectRatio="wide"
-                      currentImageUrl={currentImageUrl}
-                      onFileSelected={(file) => setPendingImageFile(file)}
-                    />
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Upload is deferred until publish. The image will be stored under the package
-                      folder.
-                    </p>
-                  </div>
-                )}
               </div>
 
               <div className="shrink-0 flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-between">

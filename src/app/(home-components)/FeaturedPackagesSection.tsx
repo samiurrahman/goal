@@ -175,7 +175,7 @@ const PackageCard: FC<{ pkg: Package; priority?: boolean }> = ({ pkg, priority =
       ? `/${encodeURIComponent(agentSlug)}/${encodeURIComponent(packageSlug)}`
       : '/packages';
 
-  let parsedDefault: { value?: number; currency?: string } | null = null;
+  let parsedDefault: { value?: number; currency?: string; people?: number } | null = null;
   try {
     parsedDefault =
       typeof pkg.default_pricing === 'string'
@@ -186,6 +186,7 @@ const PackageCard: FC<{ pkg: Package; priority?: boolean }> = ({ pkg, priority =
   }
   const currency = parsedDefault?.currency || pkg.currency || 'INR';
   const price = Number(parsedDefault?.value ?? pkg.price_per_person ?? 0);
+  const sharingPeople = parsedDefault?.people;
 
   const thumb =
     getOptimizedImageUrl(pkg.thumbnail_url, {
@@ -301,7 +302,7 @@ const PackageCard: FC<{ pkg: Package; priority?: boolean }> = ({ pkg, priority =
               {currency} {price.toLocaleString('en-IN')}
             </div>
             <div className="text-[12px] text-neutral-500 dark:text-neutral-400 mt-0.5">
-              / person · twin sharing
+              / person{sharingPeople ? ` · ${sharingPeople}-sharing` : ''}
             </div>
           </div>
           <span className="relative z-20 text-[13px] font-semibold text-primary-700 group-hover:underline">

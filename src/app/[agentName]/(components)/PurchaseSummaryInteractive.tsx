@@ -101,10 +101,7 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
       className={`listingSectionSidebar__wrap !space-y-0 !p-0 overflow-hidden ${flat ? '!shadow-none !border-0 !rounded-none' : 'shadow-xl'} ${className}`}
     >
       <div className="px-5 sm:px-6 pt-5 pb-4">
-        <div className="text-[11px] font-semibold tracking-wider text-neutral-500 dark:text-neutral-400">
-          FROM
-        </div>
-        <div className="mt-1 flex items-baseline gap-1">
+        <div className="flex items-baseline gap-1">
           <span className="text-2xl font-bold text-primary-900 dark:text-primary-200 leading-none tracking-tight">
             INR {formattedPrice}
           </span>
@@ -112,6 +109,11 @@ const PurchaseSummaryInteractive: React.FC<PurchaseSummaryInteractiveProps> = ({
             / person
           </span>
         </div>
+        {sharingCount ? (
+          <div className="mt-1 text-[12px] text-neutral-500 dark:text-neutral-400">
+            {sharingCount}-sharing room · change tier below
+          </div>
+        ) : null}
         <div className="mt-3">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-2.5 py-1 text-[12px] font-medium">
             <svg

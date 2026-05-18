@@ -106,7 +106,7 @@ export const generateMetadata = async ({ params }: PackageDetailProps): Promise<
   }
   let factsSentence = factParts.length > 0 ? `Includes ${factParts.join(', ')}.` : '';
   if (pkg.price_per_person) {
-    factsSentence += `${factsSentence ? ' ' : ''}From ${
+    factsSentence += `${factsSentence ? ' ' : ''}${
       pkg.currency || 'INR'
     } ${Number(pkg.price_per_person).toLocaleString('en-IN')} per person.`;
   }

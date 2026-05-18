@@ -43,7 +43,10 @@ function useCities(opts?: { enabled?: boolean }) {
         slug: string;
       }>).map((row) => ({
         id: String(row.id),
-        name: row.name,
+        // GeoNames seeds names with diacritics (Morādābād, Mīthepur, Mughal Sarāi).
+        // Strip combining marks so the picker shows the spellings agents actually
+        // expect to read and select.
+        name: row.name.normalize('NFD').replace(/\p{Diacritic}/gu, ''),
         state: row.admin1_name,
         slug: row.slug,
       }));

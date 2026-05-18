@@ -15,6 +15,7 @@ export interface DateSegmentInputProps {
   placeholder?: string;
   ariaLabel?: string;
   yearRange?: number;
+  invalid?: boolean;
 }
 
 const isoRegex = /^(\d{4})-(\d{2})-(\d{2})$/;
@@ -48,6 +49,7 @@ const DateSegmentInput: React.FC<DateSegmentInputProps> = ({
   placeholder = 'DD/MM/YYYY',
   ariaLabel,
   yearRange = 100,
+  invalid = false,
 }) => {
   const selected = useMemo(() => parseIsoToDate(value), [value]);
   const minDate = useMemo(() => parseIsoToDate(min), [min]);
@@ -85,7 +87,11 @@ const DateSegmentInput: React.FC<DateSegmentInputProps> = ({
         popperPlacement="bottom-start"
         popperClassName="rich-date-popper"
         portalId="rich-date-portal"
-        className="block w-full border border-neutral-400 dark:border-neutral-600 focus:outline-none focus:border-primary-500 bg-white dark:bg-neutral-900 rounded-2xl text-sm font-normal h-11 pl-4 pr-10 py-3"
+        className={`block w-full border focus:outline-none bg-white dark:bg-neutral-900 rounded-2xl text-sm font-normal h-11 pl-4 pr-10 py-3 ${
+          invalid
+            ? 'border-red-500 focus:border-red-500'
+            : 'border-neutral-400 dark:border-neutral-600 focus:border-primary-500'
+        }`}
         aria-label={ariaLabel}
       />
       <span

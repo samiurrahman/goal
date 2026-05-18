@@ -240,7 +240,6 @@ export default async function Image({
           </div>
           {formattedPrice ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-              <div style={{ fontSize: 22, opacity: 0.75 }}>From</div>
               <div style={{ fontSize: 48, fontWeight: 700, letterSpacing: '-1px' }}>
                 {formattedPrice}
               </div>

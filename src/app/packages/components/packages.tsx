@@ -109,6 +109,7 @@ const Packages: FC<PackagesProps> = ({
   const displayPrice = Number(
     parsedDefaultPricing?.value ?? defaultSharingRate?.value ?? price_per_person ?? 0
   );
+  const displaySharingPeople = parsedDefaultPricing?.people ?? defaultSharingRate?.people ?? null;
 
   const formatDateDMY = (dateInput?: string | Date) => {
     if (!dateInput) return '';
@@ -298,9 +299,6 @@ const Packages: FC<PackagesProps> = ({
             </div>
 
             <div className="flex-shrink-0 text-right">
-              <p className="text-[10px] uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                From
-              </p>
               <p className="whitespace-nowrap leading-tight">
                 <span className="text-[18px] font-semibold text-primary-900 dark:text-primary-200 tracking-tight">
                   {displayCurrency} {displayPrice.toLocaleString('en-IN')}
@@ -309,6 +307,11 @@ const Packages: FC<PackagesProps> = ({
                   /person
                 </span>
               </p>
+              {displaySharingPeople ? (
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                  {displaySharingPeople}-sharing room
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
