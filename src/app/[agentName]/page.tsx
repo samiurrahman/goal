@@ -818,6 +818,9 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
                     className="object-cover"
                     sizes="124px"
                     quality={75}
+                    priority
+                    placeholder="blur"
+                    blurDataURL={FALLBACK_BLUR_DATA_URL}
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary-700 to-primary-900 text-[34px] font-semibold tracking-tight text-white md:text-[38px]">

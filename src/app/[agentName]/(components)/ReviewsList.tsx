@@ -4,6 +4,9 @@ import { AgentReview } from '@/data/types';
 import Image from 'next/image';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 
+const FALLBACK_BLUR_DATA_URL =
+  'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAACAAIDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AKpgD//Z';
+
 interface ReviewsListProps {
   reviews: AgentReview[];
   currentUserId?: string | null;
@@ -95,6 +98,9 @@ export default function ReviewsList({
                     height={44}
                     className="h-full w-full object-cover"
                     quality={70}
+                    loading="lazy"
+                    placeholder="blur"
+                    blurDataURL={FALLBACK_BLUR_DATA_URL}
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center bg-primary-100 text-sm font-semibold text-primary-800">
