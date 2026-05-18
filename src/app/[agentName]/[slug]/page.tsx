@@ -136,15 +136,11 @@ export const generateMetadata = async ({ params }: PackageDetailProps): Promise<
       url: packageUrl,
       siteName: 'Searchumrah',
       locale: 'en_IN',
-      ...(pkg.thumbnail_url
-        ? { images: [{ url: pkg.thumbnail_url, width: 1200, height: 630, alt: pkg.title }] }
-        : {}),
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      ...(pkg.thumbnail_url ? { images: [pkg.thumbnail_url] } : {}),
     },
     other: {
       // Domain-specific signals for crawlers that key off them. Harmless to
