@@ -6,6 +6,7 @@ import FeaturedPackagesSection from '@/app/(home-components)/FeaturedPackagesSec
 import HeroSkyline from '@/app/(home-components)/HeroSkyline';
 import StructuredData from '@/components/StructuredData';
 import { fetchPackages } from '@/lib/queries/packages';
+import { fetchCityPackageCounts } from '@/lib/queries/cityPackageCounts';
 import type { Package } from '@/data/types';
 import { SEO_CITIES } from '@/lib/seo/cities';
 
@@ -27,7 +28,7 @@ async function loadFeatured(): Promise<Package[]> {
 }
 
 async function PageHome() {
-  const featured = await loadFeatured();
+  const [featured, cityCounts] = await Promise.all([loadFeatured(), fetchCityPackageCounts()]);
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
 
   return (
@@ -187,30 +188,60 @@ async function PageHome() {
         Each link's anchor text matches the destination page's H1
         ("Umrah from {City}").
       */}
-      <section className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 py-8 lg:py-10">
+      <section className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 py-12 lg:py-16">
         <div className="container">
-          <div className="flex items-center justify-between gap-4 mb-3.5">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-500 dark:text-neutral-400">
-              Umrah from your city
+          <div className="flex items-end justify-between gap-4 mb-6 lg:mb-8 border-b border-neutral-200 dark:border-neutral-700 pb-3">
+            <h2 className="text-lg lg:text-xl font-semibold text-neutral-900 dark:text-neutral-100">
+              Umrah packages from your city
             </h2>
             <Link
               href="/packages"
-              className="text-[12px] font-medium text-primary-700 dark:text-primary-300 hover:underline"
+              className="shrink-0 text-[13px] font-medium text-primary-700 dark:text-primary-300 hover:underline"
             >
               All cities →
             </Link>
           </div>
-          <ul className="flex flex-wrap gap-2 lg:gap-2.5">
-            {SEO_CITIES.map((c) => (
-              <li key={c.urlSlug}>
-                <Link
-                  href={`/umrah-packages-from-${c.urlSlug}`}
-                  className="inline-flex items-center rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-primary-50 dark:hover:bg-primary-900/30 text-neutral-800 dark:text-neutral-200 hover:text-primary-800 dark:hover:text-primary-200 text-[13px] font-medium px-3.5 py-1.5 transition-colors"
-                >
-                  Umrah from {c.name}
-                </Link>
-              </li>
-            ))}
+          {/*
+            Visible anchor text inside each <a> remains keyword-rich
+            ("{City} · Umrah packages · {IATA}") so crawlers still see
+            the canonical phrase. We just stop visually repeating
+            "Umrah from" 25 times — the city name carries the eye.
+          */}
+          <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-x-6 gap-y-6 lg:gap-y-7">
+            {SEO_CITIES.map((c) => {
+              const count = cityCounts.get(c.urlSlug) ?? 0;
+              return (
+                <li key={c.urlSlug}>
+                  <Link
+                    href={`/umrah-packages-from-${c.urlSlug}`}
+                    aria-label={`Umrah packages from ${c.name}`}
+                    className="group block"
+                  >
+                    <div className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100 group-hover:text-primary-700 dark:group-hover:text-primary-300 transition-colors">
+                      {c.name}
+                    </div>
+                    <div className="mt-0.5 text-[12px] text-neutral-500 dark:text-neutral-400">
+                      {count > 0 ? (
+                        <>
+                          {count} Umrah {count === 1 ? 'package' : 'packages'}
+                        </>
+                      ) : (
+                        <>
+                          Umrah packages
+                          {c.airportCode ? (
+                            <>
+                              {' '}
+                              <span className="text-neutral-400 dark:text-neutral-500">·</span>{' '}
+                              <span className="font-medium tracking-wide">{c.airportCode}</span>
+                            </>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </div>
       </section>

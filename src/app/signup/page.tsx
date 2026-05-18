@@ -163,11 +163,16 @@ const PageSignUp = () => {
       return;
     }
 
-    // Supabase returns an obfuscated user object (empty `identities` array) when
-    // the email is already registered, to prevent enumeration. The id in that
-    // case is a fresh random UUID that is NOT in auth.users — inserting into
-    // user_details would fail the FK with 23503. Detect and bail early.
-    if (Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    // Supabase obfuscates the signup response when the email is already
+    // registered (anti-enumeration). The user object comes back with a fresh
+    // random UUID that is NOT in auth.users, so any FK-bound insert would 23503.
+    // Detect duplicates via empty `identities` (primary signal) or an
+    // already-confirmed email (backup, in case the response shape shifts).
+    const identitiesEmpty =
+      !data.user.identities ||
+      (Array.isArray(data.user.identities) && data.user.identities.length === 0);
+    const alreadyConfirmed = !!data.user.email_confirmed_at && !data.session;
+    if (identitiesEmpty || alreadyConfirmed) {
       setLoading(false);
       toast.error('This email is already registered. Please sign in instead.');
       return;
