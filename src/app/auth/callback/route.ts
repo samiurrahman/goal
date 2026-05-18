@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
 
       await admin
         .from('agents')
-        .update({ email_id: newEmail })
+        .update({ email_id: newEmail, email_isVerified: 'true' })
         .eq('auth_user_id', userId);
 
       await admin

@@ -201,30 +201,98 @@ const getReviewsForAgent = async (agentId: string): Promise<AgentReview[]> => {
 
 export const generateMetadata = async ({ params }: AgentDetailsProps): Promise<Metadata> => {
   const agentDetails = await getAgentBySlug(params.agentName);
-  // The root layout's `title.template` already appends "| Searchumrah", so
-  // return just the agent name here to avoid duplication.
-  const title = agentDetails?.known_as || 'Agent Profile';
-  const description = clampText(
-    agentDetails?.about_us || 'Explore trusted Umrah packages from verified agents.'
-  );
   const url = `${SITE_URL}/${params.agentName}`;
+
+  if (!agentDetails) {
+    return {
+      title: 'Agent Profile',
+      description: 'Explore trusted Umrah packages from verified agents.',
+      alternates: { canonical: url },
+    };
+  }
+
+  const displayName = agentDetails.known_as || 'Agent';
+  const cityLabel = [agentDetails.city, agentDetails.state].filter(Boolean).join(', ');
+  const ratingTotal = Number(agentDetails.rating_total ?? 0);
+  const ratingAvg = Number(agentDetails.rating_avg ?? 0);
+
+  // Title built for SERP CTR: brand name first (matches branded search),
+  // then the keyword phrase + location. The root layout appends
+  // "| Searchumrah" via title.template, so we don't repeat the brand.
+  const title = cityLabel
+    ? `${displayName} — Verified Umrah Travel Agent in ${cityLabel}`
+    : `${displayName} — Verified Umrah Travel Agent`;
+
+  // Description prioritises the concrete trust signals (rating count,
+  // verification) that drive click-through, then drops into the agent's
+  // own bio if we have one. Bias toward 150–160 chars (Google's mobile
+  // SERP cutoff) — the about_us copy varies wildly in length.
+  const trustSentence = (() => {
+    if (ratingTotal > 0 && ratingAvg > 0) {
+      return `${ratingAvg.toFixed(1)}★ from ${ratingTotal} verified pilgrim${
+        ratingTotal === 1 ? '' : 's'
+      }.`;
+    }
+    return 'KYC-verified travel agent on Searchumrah.';
+  })();
+  const aboutSentence = clampText(agentDetails.about_us || '', 100);
+  const description = clampText(
+    [
+      `${displayName}${cityLabel ? `, ${cityLabel}` : ''} — Umrah packages, hotels, flights.`,
+      trustSentence,
+      aboutSentence,
+    ]
+      .filter(Boolean)
+      .join(' '),
+    220
+  );
+
+  // Keyword set — branded + non-branded + location combinations. Deduped
+  // to avoid the meta-tag-spam look that some CMS-generated pages have.
+  const keywordSet = new Set<string>();
+  const pushKw = (k: string | null | undefined) => {
+    const v = (k || '').trim();
+    if (v) keywordSet.add(v);
+  };
+  pushKw(displayName);
+  pushKw(`${displayName} reviews`);
+  pushKw(`${displayName} Umrah packages`);
+  pushKw('Umrah travel agent');
+  pushKw('verified Umrah agent');
+  if (agentDetails.city) {
+    pushKw(`Umrah travel agent in ${agentDetails.city}`);
+    pushKw(`Umrah packages ${agentDetails.city}`);
+    pushKw(`Umrah agency ${agentDetails.city}`);
+  }
+  if (agentDetails.state) {
+    pushKw(`Umrah travel agent in ${agentDetails.state}`);
+  }
 
   return {
     title,
     description,
+    keywords: Array.from(keywordSet),
     alternates: { canonical: url },
     openGraph: {
       title,
       description,
       type: 'profile',
       url,
-      images: agentDetails?.profile_image ? [{ url: agentDetails.profile_image }] : undefined,
+      siteName: 'Searchumrah',
+      locale: 'en_IN',
+      images: agentDetails.profile_image
+        ? [{ url: agentDetails.profile_image, width: 800, height: 800, alt: displayName }]
+        : undefined,
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: agentDetails?.profile_image ? [agentDetails.profile_image] : undefined,
+      images: agentDetails.profile_image ? [agentDetails.profile_image] : undefined,
+    },
+    other: {
+      'article:section': 'Umrah Travel Agents',
+      ...(agentDetails.country ? { 'geo.region': agentDetails.country } : {}),
     },
   };
 };
@@ -244,51 +312,9 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
     Boolean
   );
 
-  const agentSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'TravelAgency',
-    name: agentDetails?.known_as,
-    url: agentUrl,
-    description: clampText(agentDetails?.about_us || ''),
-    image: agentDetails?.profile_image,
-    ...(agentDetails?.email_id ? { email: agentDetails.email_id } : {}),
-    ...(agentDetails?.contact_number ? { telephone: agentDetails.contact_number } : {}),
-    ...(agentAddressParts.length > 0
-      ? {
-          address: {
-            '@type': 'PostalAddress',
-            addressLocality: agentDetails?.city || undefined,
-            addressRegion: agentDetails?.state || undefined,
-            addressCountry: agentDetails?.country || undefined,
-          },
-        }
-      : {}),
-    ...(agentReviewCountEarly > 0 && agentRatingPointEarly > 0
-      ? {
-          aggregateRating: {
-            '@type': 'AggregateRating',
-            ratingValue: agentRatingPointEarly,
-            reviewCount: agentReviewCountEarly,
-          },
-        }
-      : {}),
-  };
-
-  const breadcrumbSchema = {
-    '@context': 'https://schema.org',
-    '@type': 'BreadcrumbList',
-    itemListElement: [
-      { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
-      {
-        '@type': 'ListItem',
-        position: 2,
-        name: agentDetails?.known_as || agentName,
-        item: agentUrl,
-      },
-    ],
-  };
-
-  // Fetch packages + reviews in parallel once we know the agent id
+  // Fetch packages + reviews in parallel once we know the agent id. Moved
+  // up so the JSON-LD blocks below can use the package list (for ItemList
+  // and priceRange) and the review list (for individual Review nodes).
   let agentPackages: Package[] = [];
   let agentReviews: AgentReview[] = [];
   if (agentDetails?.id) {
@@ -307,6 +333,225 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
     agentPackages = (packagesResult.data as Package[] | null) ?? [];
     agentReviews = reviews;
   }
+
+  // Price band for TravelAgency.priceRange — Google uses this to set the
+  // "₹₹" / "₹₹₹" indicator in Maps and Local Pack. Compute from this agent's
+  // actual packages so it stays honest instead of hardcoded.
+  const priceRangeLabel = (() => {
+    const prices = agentPackages
+      .map((p) => Number(p.price_per_person ?? 0))
+      .filter((n) => Number.isFinite(n) && n > 0);
+    if (prices.length === 0) return undefined;
+    const min = Math.min(...prices);
+    const max = Math.max(...prices);
+    return min === max
+      ? `₹${min.toLocaleString('en-IN')}`
+      : `₹${min.toLocaleString('en-IN')} - ₹${max.toLocaleString('en-IN')}`;
+  })();
+
+  // sameAs collects the agent's social profiles. Google uses sameAs to
+  // disambiguate the entity across the web — so even a single Instagram
+  // link helps Google merge mentions of the same business.
+  const sameAs = [
+    normalizeExternalLink(agentDetails?.whatsapp_url),
+    normalizeExternalLink(agentDetails?.instagram_url),
+    normalizeExternalLink(agentDetails?.facebook_url),
+  ].filter(Boolean);
+
+  // Founders — schema.org TravelAgency supports `founder` as a Person.
+  // Improves entity richness for the knowledge-panel pipeline.
+  const founderLd = Array.isArray(agentDetails?.founders)
+    ? agentDetails.founders
+        .filter((f) => f && f.name && f.name.trim().length > 0)
+        .slice(0, 5)
+        .map((f) => ({
+          '@type': 'Person',
+          name: f.name,
+          ...(f.job ? { jobTitle: f.job } : {}),
+          ...(f.avatar ? { image: f.avatar } : {}),
+        }))
+    : [];
+
+  const agentSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'TravelAgency',
+    name: agentDetails?.known_as,
+    ...(agentDetails?.name && agentDetails.name !== agentDetails.known_as
+      ? { legalName: agentDetails.name }
+      : {}),
+    url: agentUrl,
+    description: clampText(agentDetails?.about_us || ''),
+    image: agentDetails?.profile_image,
+    ...(agentDetails?.email_id ? { email: agentDetails.email_id } : {}),
+    ...(agentDetails?.contact_number ? { telephone: agentDetails.contact_number } : {}),
+    ...(priceRangeLabel ? { priceRange: priceRangeLabel } : {}),
+    ...(agentAddressParts.length > 0
+      ? {
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: agentDetails?.city || undefined,
+            addressRegion: agentDetails?.state || undefined,
+            addressCountry: agentDetails?.country || undefined,
+          },
+        }
+      : {}),
+    // areaServed is a strong signal for local SEO — tells Google the agent
+    // serves pilgrims FROM this city (departure-side), distinct from the
+    // travel destinations (which are always Makkah + Madinah).
+    ...(agentDetails?.city
+      ? {
+          areaServed: {
+            '@type': 'City',
+            name: agentDetails.city,
+            ...(agentDetails.state
+              ? { containedInPlace: { '@type': 'State', name: agentDetails.state } }
+              : {}),
+          },
+        }
+      : {}),
+    // Always-true facts about every Searchumrah agent — gives Google
+    // structured trust signals beyond the free-text description.
+    knowsAbout: ['Umrah', 'Hajj', 'Saudi Arabia Pilgrimage', 'Makkah Hotels', 'Madinah Hotels'],
+    serviceType: 'Umrah Package',
+    ...(sameAs.length > 0 ? { sameAs } : {}),
+    ...(founderLd.length > 0 ? { founder: founderLd } : {}),
+    ...(agentReviewCountEarly > 0 && agentRatingPointEarly > 0
+      ? {
+          aggregateRating: {
+            '@type': 'AggregateRating',
+            ratingValue: agentRatingPointEarly,
+            reviewCount: agentReviewCountEarly,
+            bestRating: 5,
+            worstRating: 1,
+          },
+        }
+      : {}),
+  };
+
+  // Individual Review JSON-LD — top 3 reviews with non-empty body. Google
+  // can surface star snippets in SERP for these. Each Review.itemReviewed
+  // points back at the same TravelAgency entity for consistency.
+  const reviewLdItems = agentReviews
+    .filter(
+      (r) => r.rating && Number(r.rating) > 0 && (r.review_text || '').trim().length > 0
+    )
+    .slice(0, 3)
+    .map((r) => ({
+      '@context': 'https://schema.org',
+      '@type': 'Review',
+      itemReviewed: {
+        '@type': 'TravelAgency',
+        name: agentDetails?.known_as,
+        url: agentUrl,
+      },
+      author: { '@type': 'Person', name: r.is_anonymous ? 'Anonymous' : r.user_name || 'Pilgrim' },
+      datePublished: r.created_at
+        ? new Date(r.created_at).toISOString().slice(0, 10)
+        : undefined,
+      reviewBody: (r.review_text || '').trim(),
+      reviewRating: {
+        '@type': 'Rating',
+        ratingValue: Number(r.rating),
+        bestRating: 5,
+        worstRating: 1,
+      },
+    }));
+
+  // ItemList for the agent's published packages. Tells Google this page is
+  // a catalog of distinct offerings, not just a single profile — boosts
+  // sitelink eligibility and helps the package detail pages get crawled
+  // off this hub.
+  const packagesItemListLd =
+    agentPackages.length > 0
+      ? {
+          '@context': 'https://schema.org',
+          '@type': 'ItemList',
+          numberOfItems: agentPackages.length,
+          itemListOrder: 'https://schema.org/ItemListOrderDescending',
+          itemListElement: agentPackages.slice(0, 10).map((p, i) => {
+            const pkgUrl =
+              p.slug && p.agent_name
+                ? `${SITE_URL}/${encodeURIComponent(p.agent_name)}/${encodeURIComponent(p.slug)}`
+                : agentUrl;
+            return {
+              '@type': 'ListItem',
+              position: i + 1,
+              url: pkgUrl,
+              name: p.title,
+            };
+          }),
+        }
+      : null;
+
+  // Agent-aware FAQPage. Each question uses concrete values from the agent
+  // row (city, package count, rating count) so Google flags it as
+  // substantive vs. boilerplate. Eligible for FAQ rich results in SERP.
+  const faqEntries: { question: string; answer: string }[] = [
+    {
+      question: `Is ${agentDetails?.known_as} a verified Umrah travel agent?`,
+      answer:
+        agentReviewCountEarly > 0 && agentRatingPointEarly > 0
+          ? `Yes. ${agentDetails?.known_as} is KYC-verified on Searchumrah and has ${agentReviewCountEarly} verified review${
+              agentReviewCountEarly === 1 ? '' : 's'
+            } from past pilgrims, averaging ${agentRatingPointEarly.toFixed(1)} out of 5.`
+          : `Yes. ${agentDetails?.known_as} is KYC-verified on Searchumrah. Reviews from past pilgrims appear on this profile page as bookings complete.`,
+    },
+    ...(agentDetails?.city
+      ? [
+          {
+            question: `Where is ${agentDetails?.known_as} located?`,
+            answer: `${agentDetails?.known_as} is based in ${[
+              agentDetails.city,
+              agentDetails.state,
+              agentDetails.country,
+            ]
+              .filter(Boolean)
+              .join(', ')}${agentDetails.address ? `. Office address: ${agentDetails.address}.` : '.'}`,
+          },
+        ]
+      : []),
+    {
+      question: `How many Umrah packages does ${agentDetails?.known_as} offer?`,
+      answer:
+        agentPackages.length > 0
+          ? `${agentDetails?.known_as} currently has ${agentPackages.length} active Umrah package${
+              agentPackages.length === 1 ? '' : 's'
+            } listed on Searchumrah${priceRangeLabel ? ` priced from ${priceRangeLabel} per person` : ''}. Browse them above to compare hotels, durations, and inclusions.`
+          : `${agentDetails?.known_as} doesn't have active packages listed at the moment. Contact them directly to ask about upcoming departures and custom itineraries.`,
+    },
+    {
+      question: `How do I contact ${agentDetails?.known_as}?`,
+      answer: `Use the "Contact this agent" panel on this page to reveal ${agentDetails?.known_as}'s phone, WhatsApp, and email. Searchumrah does not collect payment — you communicate and book directly with the agent.`,
+    },
+    {
+      question: `Do I pay Searchumrah or pay ${agentDetails?.known_as} directly?`,
+      answer: `You pay ${agentDetails?.known_as} directly. Searchumrah does not take any payment, commission, or service fee from pilgrims. Our role is verification, comparison, and a public reputation layer — we don't sit in the middle of your booking.`,
+    },
+  ];
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqEntries.map((f) => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer },
+    })),
+  };
+
+  const breadcrumbSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: `${SITE_URL}/` },
+      {
+        '@type': 'ListItem',
+        position: 2,
+        name: agentDetails?.known_as || agentName,
+        item: agentUrl,
+      },
+    ],
+  };
 
   const agentLocation = [agentDetails?.city, agentDetails?.state, agentDetails?.country]
     .filter(Boolean)
@@ -379,6 +624,23 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      {packagesItemListLd ? (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(packagesItemListLd) }}
+        />
+      ) : null}
+      {reviewLdItems.map((review) => (
+        <script
+          key={`agent-review-ld-${(review.author as { name: string }).name}-${review.datePublished ?? ''}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(review) }}
+        />
+      ))}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}

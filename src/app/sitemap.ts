@@ -1,6 +1,8 @@
 import { MetadataRoute } from 'next';
 import { supabase } from '@/utils/supabaseClient';
 import { SEO_CITIES } from '@/lib/seo/cities';
+import { SEO_FACETS } from '@/lib/seo/facets';
+import { BLOG_POSTS } from '@/content/blog/registry';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
@@ -11,6 +13,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: baseUrl, lastModified: now, changeFrequency: 'daily', priority: 1.0 },
     { url: `${baseUrl}/packages`, lastModified: now, changeFrequency: 'daily', priority: 0.9 },
+    { url: `${baseUrl}/agencies`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
+    { url: `${baseUrl}/blog`, lastModified: now, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${baseUrl}/about`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${baseUrl}/contact`, lastModified: now, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${baseUrl}/privacy`, lastModified: now, changeFrequency: 'yearly', priority: 0.3 },
@@ -29,6 +33,27 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     lastModified: now,
     changeFrequency: 'weekly',
     priority: 0.85,
+  }));
+
+  // Programmatic facet pages — budget / duration / season / hotel-distance
+  // landing pages. Same priority tier as cities; both absorb long-tail
+  // search intent that the generic /packages listing doesn't.
+  const facetRoutes: MetadataRoute.Sitemap = SEO_FACETS.map((f) => ({
+    url: `${baseUrl}/${f.urlSlug}`,
+    lastModified: now,
+    changeFrequency: 'weekly',
+    priority: 0.85,
+  }));
+
+  // Blog cornerstone posts — high priority because they're hand-written,
+  // long-form, and target high-volume informational queries. lastModified
+  // honours each post's updatedAt (or publishedAt fallback) so Google
+  // re-crawls when posts are edited.
+  const blogRoutes: MetadataRoute.Sitemap = BLOG_POSTS.map((p) => ({
+    url: `${baseUrl}/blog/${p.slug}`,
+    lastModified: new Date(p.updatedAt || p.publishedAt || Date.now()),
+    changeFrequency: 'monthly',
+    priority: 0.75,
   }));
 
   const dynamicRoutes: MetadataRoute.Sitemap = [];
@@ -96,5 +121,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   console.log(`[sitemap] total dynamic routes: ${dynamicRoutes.length}`);
-  return [...staticRoutes, ...cityRoutes, ...dynamicRoutes];
+  return [
+    ...staticRoutes,
+    ...cityRoutes,
+    ...facetRoutes,
+    ...blogRoutes,
+    ...dynamicRoutes,
+  ];
 }

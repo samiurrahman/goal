@@ -159,6 +159,7 @@ const AgentProfilePage = () => {
   const [agent, setAgent] = useState<Agent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSendingVerify, setIsSendingVerify] = useState(false);
   // The structured city record (id, slug, name, admin1_name) we'll persist
   // as agents.city_id. form.city / form.state are still mirrored for legacy
   // readers (checkout pages, packages_with_agent view's package_location
@@ -373,6 +374,33 @@ const AgentProfilePage = () => {
   }, [agent]);
 
   const canSave = !!agent?.id && !isLoading && !isSaving;
+
+  // Kick off Supabase's email-change flow with the address the agent has
+  // typed into the email field. Supabase sends a confirmation link to the
+  // new address; clicking it routes through /auth/callback?type=email_change
+  // which writes the new email back to agents.email_id and flips
+  // email_isVerified='true'. Note: if "Secure email change" is enabled in
+  // the Supabase dashboard, a second confirmation is also required from the
+  // *current* email — for agents whose current email is a placeholder
+  // (@example.com) that won't deliver, so that setting must be off.
+  const handleVerifyEmail = async () => {
+    const newEmail = form.email_id.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(newEmail)) {
+      toast.error('Please enter a valid email address.');
+      return;
+    }
+    setIsSendingVerify(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ email: newEmail });
+      if (error) {
+        showApiError(error, { message: 'Failed to send verification email.' });
+        return;
+      }
+      toast.success(`Verification link sent to ${newEmail}. Click it to confirm.`);
+    } finally {
+      setIsSendingVerify(false);
+    }
+  };
 
   const updateField = (field: keyof AgentProfileFormState, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -897,13 +925,40 @@ const AgentProfilePage = () => {
                   </div>
 
                   <div>
-                    <Label>Email</Label>
-                    <Input
-                      className="mt-1.5"
-                      value={form.email_id}
-                      onChange={(e) => updateField('email_id', e.target.value)}
-                      placeholder="Email address"
-                    />
+                    <Label className="flex items-center justify-between">
+                      <span>Email</span>
+                      {agent?.email_isVerified === 'true' ? (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-700 dark:bg-green-900/30 dark:text-green-300">
+                          ✓ Verified
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300">
+                          Not verified
+                        </span>
+                      )}
+                    </Label>
+                    <div className="mt-1.5 flex flex-col gap-2 sm:flex-row">
+                      <Input
+                        className="flex-1"
+                        type="email"
+                        value={form.email_id}
+                        onChange={(e) => updateField('email_id', e.target.value)}
+                        placeholder="Email address"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleVerifyEmail}
+                        disabled={isSendingVerify || !form.email_id.trim()}
+                        className="rounded-2xl bg-primary-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        {isSendingVerify ? 'Sending…' : 'Verify'}
+                      </button>
+                    </div>
+                    <p className="mt-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+                      {agent?.email_isVerified === 'true'
+                        ? "To change your email, enter a new one and click Verify. You'll get a confirmation link."
+                        : "Enter your real email and click Verify. We'll send a confirmation link there."}
+                    </p>
                   </div>
 
                   <div>

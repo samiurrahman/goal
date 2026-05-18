@@ -26,18 +26,18 @@ b360ee26-26b2-4d71-ac3e-7e0fb7927d08,Haj Corporation Of India,Bangalore,Maharash
 7e795e00-fbf9-4807-9a48-036f97c42065,Labbaik Tours & Travels,Bangalore,Karnataka,banga-in-23,Banga,Punjab,0.455,similarity 0.455 < 0.8
 8cc3d641-2a29-422f-af86-02d85fa21105,Al-Manasik Tours International,Bangalore,Karnataka,banga-in-23,Banga,Punjab,0.455,similarity 0.455 < 0.8
 48da7b3c-c5b0-447b-94e8-4f4abb0bf4ca,Allahu Akbar Tours & Travels,Bangalore,Karnataka,banga-in-23,Banga,Punjab,0.455,similarity 0.455 < 0.8
-e2e1ebfa-e20e-4b02-9dd6-ef1e10ea5031,JS Tours & Travels,Banglore,Karnataka,bang-in-21,Bang,Odisha,0.400,similarity 0.400 < 0.8
+e2e1ebfa-e20e-4b02-9dd6-ef1e10ea5031,JS Tours & Travels,Banglore,Karnataka,bang-in-21,Bang,Odisha,0.4,similarity 0.400 < 0.8
 bc459cc2-bd2f-40a5-be14-13ddb8533be8,Bismillah Tours & Travels,Bangalore,Karnataka,banga-in-23,Banga,Punjab,0.455,similarity 0.455 < 0.8
 e24d95ba-74f7-43e7-8230-1a9ff5635156,Al-Madinah Tours And Travels,Bangalore,Karnataka,banga-in-23,Banga,Punjab,0.455,similarity 0.455 < 0.8
 49851678-c909-4465-97e0-2c15c1c923a6,Meezab -E- Rahemet Haj Umrah & Ziyarat Tours,Nasik,West Bengal,nashik-in-16,Nashik,Maharashtra,0.444,similarity 0.444 < 0.8
-1f42c6b6-1e8e-43e2-8404-12a7b7aef711,Hamdaan Travel Services,Kolkata,Maharashtra,kolki-in-16,Kolki,Maharashtra,0.400,similarity 0.400 < 0.8
+1f42c6b6-1e8e-43e2-8404-12a7b7aef711,Hamdaan Travel Services,Kolkata,Maharashtra,kolki-in-16,Kolki,Maharashtra,0.4,similarity 0.400 < 0.8
 800ad241-118b-48b6-8fe6-f6f1bfa9dc36,Arfa Tours &  Travels,Uran,Gujarat,utran-in-09,Utrān,Gujarat,0.375,similarity 0.375 < 0.8
-56ae93fa-878b-476b-b9da-06bfa8c50b8e,Al Aqsa Tours & Travels,Kolkata,Maharashtra,kolki-in-16,Kolki,Maharashtra,0.400,similarity 0.400 < 0.8
+56ae93fa-878b-476b-b9da-06bfa8c50b8e,Al Aqsa Tours & Travels,Kolkata,Maharashtra,kolki-in-16,Kolki,Maharashtra,0.4,similarity 0.400 < 0.8
 0c3307ed-9153-4445-9a38-2e87c1212bf6,Al-Ameen Tours & Travels,Kanpuri,Uttar Pradesh,kanpur-in-36,Kanpur,Uttar Pradesh,0.667,similarity 0.667 < 0.8
-7c931e0a-e10f-44ea-82c2-ff60a20e73e9,M/s Fathimagani Haj Service,Ramanatha,Tamil Nadu,ramanathapuram-in-25,Ramanathapuram,Tamil Nadu,0.600,similarity 0.600 < 0.8
+7c931e0a-e10f-44ea-82c2-ff60a20e73e9,M/s Fathimagani Haj Service,Ramanatha,Tamil Nadu,ramanathapuram-in-25,Ramanathapuram,Tamil Nadu,0.6,similarity 0.600 < 0.8
 aaa70a7f-ee14-46ac-8332-550d89336f7c,Ikram Haj Corporation,Dist. Thane,Maharashtra,thane-in-16,Thāne,Maharashtra,0.545,similarity 0.545 < 0.8
 a2b47e65-7475-442c-8595-972a22580ee6,Muqaddas Haj Corporation,Vasai,Maharashtra,jasai-in-16,Jasai,Maharashtra,0.333,similarity 0.333 < 0.8
-7c087001-7d85-4b84-9305-b360f122cfc1,Al Aqib Travel Service,Mumbra,Maharashtra,mumbai-in-16,Mumbai,Maharashtra,0.400,similarity 0.400 < 0.8
+7c087001-7d85-4b84-9305-b360f122cfc1,Al Aqib Travel Service,Mumbra,Maharashtra,mumbai-in-16,Mumbai,Maharashtra,0.4,similarity 0.400 < 0.8
 faa479e3-e3b5-4946-9da3-ee8b61582109,Shafi Haj & Umra Tours,Ahmednagar,Maharashtra,ahilyanagar-in-16,Ahilyanagar,Maharashtra,0.353,similarity 0.353 < 0.8
 64638b03-3f25-4e55-94ca-3b9604d1ee58,Muqaddas Tours & Travels,Bangalore,,banga-in-23,Banga,Punjab,0.455,similarity 0.455 < 0.8
 a857e22c-6b68-4176-9598-3155e549344d,Baitullah Tours International,Bangalore,,banga-in-23,Banga,Punjab,0.455,similarity 0.455 < 0.8
@@ -47,9 +47,9 @@ f6e9c919-5064-4c3b-ba16-2443adeea002,Ghouse Tours & Travels,Bangalore,,banga-in-
 162d02c9-5d00-4745-9cc2-3825b76cd5cc,Al Haramine Haj Services (P) Ltd,Broadway,,,,,,no candidate found
 a0d94cb9-b21c-4b18-bbd3-40c9fa4aa35a,Al-Hussam Travel & Tours India P. India,Kilpauk,,,,,,no candidate found
 c8dee0ee-8425-44e1-b4df-1327d8f97ddb,Al Fathah Haj Service Pvt. Ltd.,Kayalpatnam,,kayalpattinam-in-25,Kayalpattinam,Tamil Nadu,0.625,similarity 0.625 < 0.8
-4fedf4e4-432a-44f2-9b56-c485ab2e5310,Tamboli Tours & Travels Pvt. Ltd,Ahmed Nagar,,nagar-in-24,Nagar,Rajasthan,0.500,similarity 0.500 < 0.8
+4fedf4e4-432a-44f2-9b56-c485ab2e5310,Tamboli Tours & Travels Pvt. Ltd,Ahmed Nagar,,nagar-in-24,Nagar,Rajasthan,0.5,similarity 0.500 < 0.8
 7c406c89-c4e8-4b68-ad54-6203872d9051,Kadri Haj & Umrah Tours & Travels,Ahmedanagar,,anandanagar-in-26,Anandanagar,Tripura,0.438,similarity 0.438 < 0.8
-eba1d528-b3e3-4d2c-91a4-16e10195e5ea,Shaheen Hajj Tour & Travels," Bareilly, Uttar",Uttar Pradesh,bareilly-in-36,Bareilly,Uttar Pradesh,0.600,similarity 0.600 < 0.8
+eba1d528-b3e3-4d2c-91a4-16e10195e5ea,Shaheen Hajj Tour & Travels," Bareilly, Uttar",Uttar Pradesh,bareilly-in-36,Bareilly,Uttar Pradesh,0.6,similarity 0.600 < 0.8
 6006efe4-68cf-4e13-ba1b-926f958e8fe9,Indian Haj Corporation,Bhiwadi,Maharashtra,bhiwandi-in-16,Bhiwandi,Maharashtra,0.545,similarity 0.545 < 0.8
 26878b25-b074-4b64-98cd-e5844c823c33,Al-Ameen Hajj Corporation,Navi Mumbai,Maharashtra,mumbai-in-16,Mumbai,Maharashtra,0.583,similarity 0.583 < 0.8
 42666e24-b1c1-4eb1-ad2b-bd3f99eab1cc,Al Khalid Tours & Travels,Byculla Mumbai,Maharashtra,mumbai-in-16,Mumbai,Maharashtra,0.467,similarity 0.467 < 0.8
@@ -58,15 +58,15 @@ fd1bd724-5dcc-48c9-aeee-d909c07393d5,Trichy Sunshine Haj Service,Ramnad,Karnatak
 f1bb8781-9590-40ba-9036-55ea0b4447aa,Salamath Haj Service,Ramanathpuram,,ramanathapuram-in-25,Ramanathapuram,Tamil Nadu,0.688,similarity 0.688 < 0.8
 351ad00c-a36e-4e08-b856-28a0a155236c,Hameedya Tours & Travels,Mumai,,mumbai-in-16,Mumbai,Maharashtra,0.444,similarity 0.444 < 0.8
 b2ad0df1-414c-4b1d-b51c-85e604e4b529,Al Hidayat Tours & Travels,Mumabi,,,,,,no candidate found
-f70d491c-70f1-4fcd-9159-938acd624798,Meera International Tours & Travels,Ahmednagar,,ahmedgarh-in-23,Ahmedgarh,Punjab,0.400,similarity 0.400 < 0.8
+f70d491c-70f1-4fcd-9159-938acd624798,Meera International Tours & Travels,Ahmednagar,,ahmedgarh-in-23,Ahmedgarh,Punjab,0.4,similarity 0.400 < 0.8
 f89ec748-f029-4b47-8501-ad4a0cd7c211,Chisti Travel & Tours,"Kanpur, Uttar",,kanpur-in-36,Kanpur,Uttar Pradesh,0.538,similarity 0.538 < 0.8
 689a998e-da01-484d-91eb-a0bd1f2b7df7,Al Faruqi Haj Umrah Tours – Idar,Sabarkantha,,,,,,no candidate found
 034a4488-4d6c-47b9-8c0b-d81f2c0de0e3,The Vafadar Tours,Sabarkantha,,,,,,no candidate found
-90712a17-115f-4291-af74-cb97a1de02f8,Bilal Haj & Umrah Tours & Travels,Bharuchi,,bharuch-in-09,Bharūch,Gujarat,0.700,similarity 0.700 < 0.8
-46aadd40-69f8-420e-980f-5ed58c83928e,Molvi Haj -Umrah Tours & Travels,Bharuchi,,bharuch-in-09,Bharūch,Gujarat,0.700,similarity 0.700 < 0.8
-02da1e50-ba1a-4192-a022-4cdb553eb41f,Mk Haj & Umrah Travels,Kolkata,Maharashtra,kolki-in-16,Kolki,Maharashtra,0.400,similarity 0.400 < 0.8
+90712a17-115f-4291-af74-cb97a1de02f8,Bilal Haj & Umrah Tours & Travels,Bharuchi,,bharuch-in-09,Bharūch,Gujarat,0.7,similarity 0.700 < 0.8
+46aadd40-69f8-420e-980f-5ed58c83928e,Molvi Haj -Umrah Tours & Travels,Bharuchi,,bharuch-in-09,Bharūch,Gujarat,0.7,similarity 0.700 < 0.8
+02da1e50-ba1a-4192-a022-4cdb553eb41f,Mk Haj & Umrah Travels,Kolkata,Maharashtra,kolki-in-16,Kolki,Maharashtra,0.4,similarity 0.400 < 0.8
 6d190693-a9c2-4551-b9c8-326fc727aee6,Mahdi Tours And Travels, Mumabi,Maharashtra,,,,,no candidate found
-2d09c4f9-e911-4805-84f3-3c2a1ca4d5d6,Khandesh Haj Corporation,Tal Bhusawal,Maharashtra,bhusawal-in-16,Bhusawal,Maharashtra,0.750,similarity 0.750 < 0.8
+2d09c4f9-e911-4805-84f3-3c2a1ca4d5d6,Khandesh Haj Corporation,Tal Bhusawal,Maharashtra,bhusawal-in-16,Bhusawal,Maharashtra,0.75,similarity 0.750 < 0.8
 c90ce456-e72f-4aac-8c5a-a2669d2a079c,Jannat Tours & Travels,Faizabad,Madhya Pradesh,fyzabad-in-36,Fyzābād,Uttar Pradesh,0.417,similarity 0.417 < 0.8
 8c4e85d5-edcc-43d5-a8c8-ebb4d03758c8,Qiblah Haj Umrah Services,Kausa,Maharashtra,ausa-in-16,Ausa,Maharashtra,0.375,similarity 0.375 < 0.8
 8d4e524e-54fb-4668-b7de-664944a86c6c,M/S N.A. Tours and Travels,Jalampur,Gujarat,alampur-in-40,Ālampur,Telangana,0.545,similarity 0.545 < 0.8

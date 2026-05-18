@@ -6,6 +6,7 @@ import FeaturedPackagesSection from '@/app/(home-components)/FeaturedPackagesSec
 import HeroSkyline from '@/app/(home-components)/HeroSkyline';
 import { fetchPackages } from '@/lib/queries/packages';
 import type { Package } from '@/data/types';
+import { SEO_CITIES } from '@/lib/seo/cities';
 
 // ISR — refresh every 60s. Mutation handlers in the agent wizard also call
 // /api/revalidate on /packages, so changes show up immediately as well.
@@ -149,6 +150,42 @@ async function PageHome() {
                 from past pilgrims
               </span>
             </li>
+          </ul>
+        </div>
+      </section>
+
+      {/* ============== POPULAR DEPARTURE CITIES ============== */}
+      {/*
+        Surfaces the programmatic city landing pages from the homepage so they
+        get PageRank flow from the most-linked page on the site. Pill row is
+        intentionally compact (one horizontal scroll on mobile, single line on
+        desktop) — not a full grid, since that would dilute the hero CTA. Each
+        link's anchor text matches the destination page's H1 ("Umrah from {City}").
+      */}
+      <section className="bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-700 py-6 lg:py-8">
+        <div className="container">
+          <div className="flex items-center justify-between gap-4 mb-3.5">
+            <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-500 dark:text-neutral-400">
+              Umrah from your city
+            </h2>
+            <Link
+              href="/packages"
+              className="text-[12px] font-medium text-primary-700 dark:text-primary-300 hover:underline"
+            >
+              All cities →
+            </Link>
+          </div>
+          <ul className="flex flex-wrap gap-2 lg:gap-2.5">
+            {SEO_CITIES.slice(0, 14).map((c) => (
+              <li key={c.urlSlug}>
+                <Link
+                  href={`/umrah-packages-from-${c.urlSlug}`}
+                  className="inline-flex items-center rounded-full bg-neutral-100 dark:bg-neutral-800 hover:bg-primary-50 dark:hover:bg-primary-900/30 text-neutral-800 dark:text-neutral-200 hover:text-primary-800 dark:hover:text-primary-200 text-[13px] font-medium px-3.5 py-1.5 transition-colors"
+                >
+                  Umrah from {c.name}
+                </Link>
+              </li>
+            ))}
           </ul>
         </div>
       </section>

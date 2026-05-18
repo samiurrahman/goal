@@ -47,6 +47,12 @@ export type PackagesFilterPayload = {
   priceRange?: RangeBucket;
   makkahDistanceRange?: RangeBucket;
   madinahDistanceRange?: RangeBucket;
+  // Tag filter (AND semantics) — matches rows whose `tags` array contains
+  // ALL of the supplied tags. In practice the facet pages pass a single tag,
+  // so AND vs OR is moot, but multi-tag URLs (`?tag=VIP,Direct flight`) get
+  // intersect semantics: a package must carry BOTH tags to match. Skipped
+  // entirely when the `tags` column hasn't been migrated on this install.
+  tags?: string[];
 };
 
 // Filter keys that can be auto-relaxed when an exact search yields zero
@@ -547,6 +553,7 @@ export function buildPackagesQueryArgs(
     priceRange,
     makkahDistanceRange,
     madinahDistanceRange,
+    tags: splitCsv('tag'),
   };
 
   const sort = (getParam('sort') || '') as SortValue;
@@ -755,6 +762,16 @@ export async function fetchPackages(args: {
     query = query.lte('madinah_hotel_distance_m', payload.madinahHotelDistance);
 
   if (payload.agentNameList?.length) query = query.in('agent_name', payload.agentNameList);
+
+  // Tag filter — `.contains()` does ARRAY ⊇ on the tags TEXT[] column, so a
+  // package tagged ['Direct flight', 'VIP'] matches a filter of
+  // ['Direct flight']. Only fire when we know the column exists; if the
+  // host hasn't applied the tags migration, applying this filter throws and
+  // empties the listing. Skip silently — same behaviour as if no packages
+  // matched the tag.
+  if (payload.tags?.length && includeTags) {
+    query = query.contains('tags', payload.tags);
+  }
 
   switch (sort) {
     case 'price-asc':

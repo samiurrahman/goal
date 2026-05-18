@@ -1,4 +1,5 @@
 import React from 'react';
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Amenities_demos } from '../(components)/constant';
 import Breadcrumb from '@/components/Breadcrumb';
@@ -11,6 +12,7 @@ import AmenitiesSection from '../(components)/AmenitiesSection';
 import PackageInfo from '../(components)/PackageInfo';
 import MobileFooterSticky from '../(components)/MobileFooterSticky';
 import PurchaseSummaryInteractive from '../(components)/PurchaseSummaryInteractive';
+import Packages from '@/app/packages/components/packages';
 import type { Package, PackageDetails } from '@/data/types';
 import { supabase } from '@/utils/supabaseClient';
 import { notFound } from 'next/navigation';
@@ -19,6 +21,7 @@ import {
   sanitizeHotelStars,
   type HotelAmenityKey,
 } from '@/constants/hotelAmenities';
+import { SEO_CITIES } from '@/lib/seo/cities';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://searchumrah.com';
 
@@ -99,24 +102,40 @@ export const generateMetadata = async ({ params }: PackageDetailProps): Promise<
     220
   );
 
+  // Keyword set blends package-specific facts with the high-volume
+  // long-tail queries pilgrims actually search. Deduped + lowercased so we
+  // don't bloat the meta tag with duplicate variants.
+  const keywordSet = new Set<string>();
+  const pushKw = (k: string | null | undefined) => {
+    const v = (k || '').trim();
+    if (v) keywordSet.add(v);
+  };
+  pushKw(pkg.title);
+  pushKw(`${pkg.total_duration_days} day Umrah package`);
+  pushKw(`${pkg.total_duration_days} days Umrah`);
+  pushKw(pkg.agent_name);
+  pushKw('Umrah package');
+  pushKw('Umrah package India');
+  if (pkg.departure_city) {
+    pushKw(`Umrah from ${pkg.departure_city}`);
+    pushKw(`Umrah packages from ${pkg.departure_city}`);
+    pushKw(`Umrah price ${pkg.departure_city}`);
+  }
+  pushKw(pkg.makkah_hotel_name);
+  pushKw(pkg.madinah_hotel_name);
+
   return {
     title,
     description,
-    keywords: [
-      pkg.title,
-      `${pkg.total_duration_days} days package`,
-      pkg.agent_name || '',
-      'Umrah package',
-      pkg.departure_city || '',
-      pkg.makkah_hotel_name || '',
-      pkg.madinah_hotel_name || '',
-    ].filter(Boolean) as string[],
+    keywords: Array.from(keywordSet),
     alternates: { canonical: packageUrl },
     openGraph: {
       title,
       description,
       type: 'website',
       url: packageUrl,
+      siteName: 'Searchumrah',
+      locale: 'en_IN',
       ...(pkg.thumbnail_url
         ? { images: [{ url: pkg.thumbnail_url, width: 1200, height: 630, alt: pkg.title }] }
         : {}),
@@ -126,6 +145,12 @@ export const generateMetadata = async ({ params }: PackageDetailProps): Promise<
       title,
       description,
       ...(pkg.thumbnail_url ? { images: [pkg.thumbnail_url] } : {}),
+    },
+    other: {
+      // Domain-specific signals for crawlers that key off them. Harmless to
+      // legitimate users; ignored by browsers.
+      'article:section': 'Umrah Packages',
+      ...(pkg.departure_city ? { 'geo.region': 'IN' } : {}),
     },
   };
 };
@@ -222,19 +247,192 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     notFound();
   }
 
-  // Now fetch package_details using the resolved package id
-  const { data: detailsArray } = await supabase
-    .from('package_details')
-    .select('*')
-    .eq('package_id', (packageData as { id: number | string }).id)
-    .limit(1);
+  // Now fetch package_details, top reviews, and two "related packages" lists
+  // in parallel. The related lists give the package page somewhere to send
+  // both users and crawlers — without them the page is a dead-end for the
+  // internal link graph. Reviews feed the Review JSON-LD block; details
+  // feed the main content; related lists feed the bottom-of-page rails.
+  // Any of the four can fail without blocking render (they degrade to empty).
+  const currentPkgId = (packageData as { id: number | string }).id;
+  const currentDepartureCity =
+    (packageData as { departure_city?: string | null }).departure_city || null;
+  const currentDuration = Number(
+    (packageData as { total_duration_days?: number | null }).total_duration_days ?? 0
+  );
 
-  const details = Array.isArray(detailsArray) ? detailsArray[0] : null;
+  const RELATED_FIELDS =
+    'id, slug, title, agent_name, agent_known_as, agent_profile_image, agent_rating_avg, agent_rating_total, thumbnail_url, thumbnail_blur, price_per_person, currency, default_pricing, sharing_rate, total_duration_days, departure_city, arrival_city, departure_date, arrival_date, package_location, makkah_hotel_name, makkah_hotel_distance_m, madinah_hotel_name, madinah_hotel_distance_m';
+
+  const [detailsResult, reviewsResult, relatedByCityResult, relatedByDurationResult] =
+    await Promise.all([
+      supabase
+        .from('package_details')
+        .select('*')
+        .eq('package_id', currentPkgId)
+        .limit(1),
+      agentAuthUserId
+        ? supabase
+            .from('agent_reviews')
+            .select('id, rating, review_text, user_name, is_anonymous, created_at')
+            .eq('agent_id', agentAuthUserId)
+            .gt('rating', 0)
+            .order('created_at', { ascending: false })
+            .limit(5)
+        : Promise.resolve({ data: [] as Array<{
+            id: number;
+            rating: number;
+            review_text: string | null;
+            user_name: string | null;
+            is_anonymous: boolean | null;
+            created_at: string | null;
+          }>, error: null }),
+      // Related by departure city — same city, different package. Mixed
+      // agents on purpose so the user gets genuine alternatives, not just
+      // the current agent's catalog (which is already linked via HostInfo).
+      currentDepartureCity
+        ? supabase
+            .from('packages_with_agent')
+            .select(RELATED_FIELDS)
+            .eq('published', true)
+            .eq('departure_city', currentDepartureCity)
+            .neq('id', currentPkgId)
+            .order('agent_rating_avg', { ascending: false, nullsFirst: false })
+            .limit(4)
+        : Promise.resolve({ data: [] as Package[], error: null }),
+      // Related by duration ±2 days. A pilgrim eyeing a 10-day trip is the
+      // same buyer evaluating 8- and 12-day options; this is the most
+      // commonly relevant alternative axis after departure city.
+      currentDuration > 0
+        ? supabase
+            .from('packages_with_agent')
+            .select(RELATED_FIELDS)
+            .eq('published', true)
+            .gte('total_duration_days', currentDuration - 2)
+            .lte('total_duration_days', currentDuration + 2)
+            .neq('id', currentPkgId)
+            .order('agent_rating_avg', { ascending: false, nullsFirst: false })
+            .limit(4)
+        : Promise.resolve({ data: [] as Package[], error: null }),
+    ]);
+
+  const details = Array.isArray(detailsResult.data) ? detailsResult.data[0] : null;
+  const topReviews = (Array.isArray(reviewsResult.data) ? reviewsResult.data : []) as Array<{
+    id: number;
+    rating: number;
+    review_text: string | null;
+    user_name: string | null;
+    is_anonymous: boolean | null;
+    created_at: string | null;
+  }>;
 
   const package_details = {
     ...(packageData as object),
     details: details ?? null,
   } as PackageDetails;
+
+  // Normalize related-packages results. Both queries may fail gracefully —
+  // an empty array is the right fallback (the rails just don't render).
+  // Deduplicate by id so a package matching BOTH rails only appears once,
+  // and ensure the current package never sneaks in.
+  const relatedByCity = (Array.isArray(relatedByCityResult.data)
+    ? relatedByCityResult.data
+    : []) as Package[];
+  const relatedByDuration = (Array.isArray(relatedByDurationResult.data)
+    ? relatedByDurationResult.data
+    : []) as Package[];
+  const cityRailIds = new Set(relatedByCity.map((p) => p.id));
+  const durationRail = relatedByDuration.filter(
+    (p) => !cityRailIds.has(p.id) && p.id !== currentPkgId
+  );
+
+  // Contextual landing-page links — these match the current package against
+  // the SEO landing pages we've built (city + duration + season facets) and
+  // surface the relevant ones. A 10-day Ramadan package from Mumbai gets
+  // three links: city, duration, season. Each link reinforces the cluster
+  // by giving Google a clear path from the long-tail detail page back up
+  // to the broader topic hubs.
+  const exploreLinks: { href: string; label: string }[] = [];
+
+  // City match — only when the departure city has a curated SEO landing page.
+  // Match by lowercase contains so "New Delhi" matches "delhi", etc. Cheap
+  // O(N) scan over the 25-entry city registry; not worth indexing.
+  if (currentDepartureCity) {
+    const cityKey = currentDepartureCity.toLowerCase();
+    const matchedCity = SEO_CITIES.find(
+      (c) =>
+        cityKey === c.name.toLowerCase() ||
+        cityKey === c.urlSlug ||
+        cityKey.includes(c.urlSlug) ||
+        c.name.toLowerCase().includes(cityKey)
+    );
+    if (matchedCity) {
+      exploreLinks.push({
+        href: `/umrah-packages-from-${matchedCity.urlSlug}`,
+        label: `Umrah packages from ${matchedCity.name}`,
+      });
+    }
+  }
+
+  // Duration match — round to the nearest 7/10/14/21 day landing page.
+  if (currentDuration > 0) {
+    const durationBuckets = [
+      { days: 7, slug: '7-day-umrah-package', label: '7-day Umrah packages' },
+      { days: 10, slug: '10-day-umrah-package', label: '10-day Umrah packages' },
+      { days: 14, slug: '14-day-umrah-package', label: '14-day Umrah packages' },
+      { days: 21, slug: '21-day-umrah-package', label: '21-day Umrah packages' },
+    ];
+    // Match within ±1 day of an exact bucket — anything further is a
+    // misleading link (a 16-day package shouldn't suggest "14-day packages").
+    const matched = durationBuckets.find((b) => Math.abs(b.days - currentDuration) <= 1);
+    if (matched) {
+      exploreLinks.push({ href: `/${matched.slug}`, label: matched.label });
+    }
+  }
+
+  // Season match — based on the package's departure date, link to the
+  // relevant season facet. Ramadan windows take priority since they're the
+  // highest-intent search; December and winter as fallbacks.
+  const departureDateRaw = (packageData as { departure_date?: string | null }).departure_date;
+  if (departureDateRaw) {
+    const dep = new Date(departureDateRaw);
+    if (!Number.isNaN(dep.getTime())) {
+      const month = dep.getMonth() + 1; // 1-12
+      const year = dep.getFullYear();
+      if ((month === 2 || month === 3) && year === 2026) {
+        exploreLinks.push({
+          href: '/ramadan-umrah-2026',
+          label: 'Ramadan Umrah packages 2026',
+        });
+      } else if ((month === 2 || month === 3) && year === 2027) {
+        exploreLinks.push({
+          href: '/ramadan-umrah-2027',
+          label: 'Ramadan Umrah packages 2027',
+        });
+      } else if (month === 12) {
+        exploreLinks.push({
+          href: '/december-umrah-packages',
+          label: 'December Umrah packages',
+        });
+      } else if ([11, 1, 2].includes(month)) {
+        exploreLinks.push({
+          href: '/winter-umrah-packages',
+          label: 'Winter Umrah packages',
+        });
+      }
+    }
+  }
+
+  // Hotel-distance match — close-to-Haram packages get the distance landing
+  // page. 500m is the threshold we use on /umrah-packages-near-haram itself.
+  const makkahDist = Number(
+    (packageData as { makkah_hotel_distance_m?: number | null }).makkah_hotel_distance_m ?? NaN
+  );
+  if (Number.isFinite(makkahDist) && makkahDist > 0 && makkahDist <= 500) {
+    exploreLinks.push({
+      href: '/umrah-packages-near-haram',
+      label: 'Umrah packages with hotels near the Haram',
+    });
+  }
 
   const sharingRateList = (() => {
     const purchaseSummaryRates = parseJson<{ rates?: RoomRate[] }>(
@@ -526,6 +724,24 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
   const packageImage =
     (package_details as { thumbnail_url?: string | null })?.thumbnail_url || undefined;
 
+  // Price validity window — Google requires `priceValidUntil` for Product
+  // offers to render rich snippets. 60 days is a reasonable hold for travel
+  // pricing; ISR re-renders the page well before that expires.
+  const priceValidUntil = (() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 60);
+    return d.toISOString().slice(0, 10);
+  })();
+
+  // Availability — surface sold-out to Google so SERP doesn't promise a
+  // bookable package that's gone. `seats_left` is the canonical source;
+  // fall back to InStock when unknown rather than misreporting OOS.
+  const seatsLeft = Number((package_details as { seats_left?: number | null })?.seats_left ?? NaN);
+  const availabilityUrl =
+    Number.isFinite(seatsLeft) && seatsLeft <= 0
+      ? 'https://schema.org/SoldOut'
+      : 'https://schema.org/InStock';
+
   const productSchema = {
     '@context': 'https://schema.org',
     '@type': 'Product',
@@ -534,7 +750,11 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
       (package_details as { short_description?: string | null })?.short_description ||
         `${package_details?.total_duration_days || ''} day Umrah package`
     ),
-    ...(packageImage ? { image: packageImage } : {}),
+    ...(packageImage ? { image: [packageImage] } : {}),
+    // Required by Google for Product rich results even when "condition" is
+    // semantically odd for services — NewCondition is the spec's recommended
+    // default for non-physical goods.
+    itemCondition: 'https://schema.org/NewCondition',
     brand: {
       '@type': 'TravelAgency',
       name: packageMetaData.agentDisplayName,
@@ -544,7 +764,8 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
       url: packageUrl,
       priceCurrency: parsedDefaultPricing?.currency || package_details?.currency || 'INR',
       price: pricePerPerson,
-      availability: 'https://schema.org/InStock',
+      priceValidUntil,
+      availability: availabilityUrl,
       seller: {
         '@type': 'TravelAgency',
         name: packageMetaData.agentDisplayName,
@@ -556,9 +777,198 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
             '@type': 'AggregateRating',
             ratingValue: agentRatingPoint,
             reviewCount: agentReviewCount,
+            bestRating: 5,
+            worstRating: 1,
           },
         }
       : {}),
+  };
+
+  // TouristTrip is the spec-correct type for a guided travel package. Google
+  // consumes it for the Travel knowledge panel and SERP cards. We keep Product
+  // alongside so Merchant/Shopping signals still apply (price, availability,
+  // rating) — both schemas referencing the same canonical URL is valid and
+  // Google rolls them up.
+  const touristTripSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'TouristTrip',
+    name: package_details?.title,
+    description: clampText(
+      (package_details as { short_description?: string | null })?.short_description ||
+        `${package_details?.total_duration_days || ''} day Umrah package`,
+      300
+    ),
+    url: packageUrl,
+    ...(packageImage ? { image: packageImage } : {}),
+    touristType: ['Religious pilgrims', 'Umrah pilgrims', 'Muslim travelers'],
+    provider: {
+      '@type': 'TravelAgency',
+      name: packageMetaData.agentDisplayName,
+      url: `${SITE_URL}/${agentName}`,
+    },
+    ...(package_details?.departure_city
+      ? {
+          subjectOf: {
+            '@type': 'Place',
+            name: package_details.departure_city,
+          },
+        }
+      : {}),
+    itinerary: [
+      ...(package_details?.departure_city
+        ? [
+            {
+              '@type': 'Place',
+              name: package_details.departure_city,
+              address: { '@type': 'PostalAddress', addressCountry: 'IN' },
+            },
+          ]
+        : []),
+      {
+        '@type': 'Place',
+        name: 'Makkah',
+        address: { '@type': 'PostalAddress', addressCountry: 'SA' },
+      },
+      {
+        '@type': 'Place',
+        name: 'Madinah',
+        address: { '@type': 'PostalAddress', addressCountry: 'SA' },
+      },
+    ],
+    offers: {
+      '@type': 'Offer',
+      url: packageUrl,
+      priceCurrency: parsedDefaultPricing?.currency || package_details?.currency || 'INR',
+      price: pricePerPerson,
+      priceValidUntil,
+      availability: availabilityUrl,
+    },
+  };
+
+  // Review JSON-LD — only when we actually have published agent reviews with
+  // text. Empty review_text yields a low-quality Review object Google may
+  // ignore or penalize, so we filter those out. Reviews live on the AGENT
+  // (not per-package), so each Review's `itemReviewed` points at the agent
+  // entity to stay truthful.
+  const reviewLdItems = topReviews
+    .filter((r) => r.rating && Number(r.rating) > 0 && (r.review_text || '').trim().length > 0)
+    .slice(0, 3)
+    .map((r) => ({
+      '@context': 'https://schema.org',
+      '@type': 'Review',
+      itemReviewed: {
+        '@type': 'TravelAgency',
+        name: packageMetaData.agentDisplayName,
+        url: `${SITE_URL}/${agentName}`,
+      },
+      author: {
+        '@type': 'Person',
+        name: r.is_anonymous ? 'Anonymous' : r.user_name || 'Pilgrim',
+      },
+      datePublished: r.created_at
+        ? new Date(r.created_at).toISOString().slice(0, 10)
+        : undefined,
+      reviewBody: (r.review_text || '').trim(),
+      reviewRating: {
+        '@type': 'Rating',
+        ratingValue: Number(r.rating),
+        bestRating: 5,
+        worstRating: 1,
+      },
+    }));
+
+  // FAQPage — package-aware Q&A derived from the package row itself, not a
+  // static list. The questions match what pilgrims actually ask before
+  // booking (visa, flights, hotel distance) and each answer references
+  // concrete values from this package so Google flags it as substantive.
+  const includesItems: string[] = [];
+  const pkgFlags = package_details as {
+    includes_visa?: boolean | null;
+    includes_breakfast?: boolean | null;
+    includes_airport_transfer?: boolean | null;
+    includes_zamzam?: boolean | null;
+    zamzam_liters?: number | null;
+  };
+  if (pkgFlags.includes_visa) includesItems.push('Saudi Umrah visa');
+  if (pkgFlags.includes_breakfast) includesItems.push('daily breakfast');
+  if (pkgFlags.includes_airport_transfer) includesItems.push('airport transfers');
+  if (pkgFlags.includes_zamzam) {
+    includesItems.push(
+      `${pkgFlags.zamzam_liters ? `${pkgFlags.zamzam_liters}L of ` : ''}Zamzam water`
+    );
+  }
+  const includesAnswer =
+    includesItems.length > 0
+      ? `This ${package_details?.total_duration_days || ''}-day package includes ${includesItems.join(
+          ', '
+        )}. Flights and hotel stays in Makkah and Madinah are part of the package; verify any additional inclusions directly with the agent before booking.`
+      : `Confirm the exact inclusions (visa, breakfast, transfers, Zamzam) directly with ${packageMetaData.agentDisplayName} — package contents vary between operators and seasons.`;
+
+  const faqEntries: { question: string; answer: string }[] = [
+    {
+      question: `What's included in this ${package_details?.total_duration_days || ''}-day Umrah package?`,
+      answer: includesAnswer,
+    },
+    ...(package_details?.makkah_hotel_name
+      ? [
+          {
+            question: `Which hotel is used in Makkah for this package?`,
+            answer: `Pilgrims stay at ${package_details.makkah_hotel_name}${
+              package_details.makkah_hotel_distance_m
+                ? `, approximately ${package_details.makkah_hotel_distance_m} m from Masjid al-Haram`
+                : ''
+            }. Walking distance to the Haram is the single biggest factor in pilgrim comfort, especially for the elderly.`,
+          },
+        ]
+      : []),
+    ...(package_details?.madinah_hotel_name
+      ? [
+          {
+            question: `Which hotel is used in Madinah for this package?`,
+            answer: `Pilgrims stay at ${package_details.madinah_hotel_name}${
+              package_details.madinah_hotel_distance_m
+                ? `, approximately ${package_details.madinah_hotel_distance_m} m from Masjid an-Nabawi`
+                : ''
+            }.`,
+          },
+        ]
+      : []),
+    ...(package_details?.departure_city
+      ? [
+          {
+            question: `Does this package include flights from ${package_details.departure_city}?`,
+            answer: `Yes — the package departs from ${package_details.departure_city}${
+              package_details.arrival_city
+                ? ` and arrives at ${package_details.arrival_city}`
+                : ''
+            }. Confirm the exact airline, layovers and baggage allowance with the agent before booking.`,
+          },
+        ]
+      : []),
+    {
+      question: `How do I book this package on Searchumrah?`,
+      answer: `Searchumrah does not collect payment. Click "Reserve" to go to the booking flow — your details go directly to ${packageMetaData.agentDisplayName}, who will contact you to confirm price, dates, and complete the booking. You pay the agent, not Searchumrah.`,
+    },
+    {
+      question: `Is ${packageMetaData.agentDisplayName} a verified travel agent?`,
+      answer: `Yes. Every agent listed on Searchumrah completes a KYC verification before publishing packages. ${
+        agentReviewCount > 0
+          ? `${packageMetaData.agentDisplayName} has ${agentReviewCount} verified review${
+              agentReviewCount === 1 ? '' : 's'
+            } from past pilgrims with an average rating of ${agentRatingPoint.toFixed(1)} out of 5.`
+          : 'Reviews from past pilgrims appear on the agent profile page as they come in.'
+      }`,
+    },
+  ];
+
+  const faqSchema = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqEntries.map((f) => ({
+      '@type': 'Question',
+      name: f.question,
+      acceptedAnswer: { '@type': 'Answer', text: f.answer },
+    })),
   };
 
   const breadcrumbSchema = {
@@ -588,6 +998,21 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(touristTripSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
+      {reviewLdItems.map((review) => (
+        <script
+          key={`review-ld-${(review.author as { name: string }).name}-${review.datePublished ?? ''}`}
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(review) }}
+        />
+      ))}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
@@ -639,6 +1064,95 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
           </div>
         </aside>
       </main>
+
+      {/* ============== RELATED PACKAGES ============== */}
+      {/*
+        Full-width sections below the main grid. SEO purpose: distribute
+        PageRank from this page to other package detail pages (same city,
+        adjacent durations) and to the relevant SEO landing-page hubs.
+        Without these blocks the package detail page is a dead-end —
+        Google crawls in and finds nowhere else to go except the agent
+        profile and breadcrumb. Each card is a clickable link with anchor
+        text that's the package title.
+      */}
+      {relatedByCity.length > 0 ? (
+        <section className="mt-10 lg:mt-14">
+          <div className="mb-5 lg:mb-6 flex flex-wrap items-end justify-between gap-4">
+            <h2 className="text-xl lg:text-2xl font-thin tracking-tight text-neutral-900 dark:text-neutral-100">
+              More Umrah packages from {currentDepartureCity}
+            </h2>
+            <Link
+              href={`/packages?departure_city=${encodeURIComponent(currentDepartureCity || '')}`}
+              className="text-sm font-semibold text-primary-700 dark:text-primary-300 hover:underline"
+            >
+              View all →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6">
+            {relatedByCity.map((pkg) => (
+              <Packages
+                key={`city-${pkg.id}`}
+                data={pkg}
+                agentSlug={pkg.agent_name || undefined}
+                agentDisplayName={pkg.agent_known_as || pkg.agent_name || undefined}
+                agentProfileImage={pkg.agent_profile_image}
+                agentRatingPoint={pkg.agent_rating_avg ?? 0}
+                agentReviewCount={pkg.agent_rating_total ?? 0}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {durationRail.length > 0 ? (
+        <section className="mt-10 lg:mt-14">
+          <div className="mb-5 lg:mb-6 flex flex-wrap items-end justify-between gap-4">
+            <h2 className="text-xl lg:text-2xl font-thin tracking-tight text-neutral-900 dark:text-neutral-100">
+              Similar {currentDuration}-day Umrah packages
+            </h2>
+            <Link
+              href="/packages"
+              className="text-sm font-semibold text-primary-700 dark:text-primary-300 hover:underline"
+            >
+              View all →
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 lg:gap-6">
+            {durationRail.map((pkg) => (
+              <Packages
+                key={`dur-${pkg.id}`}
+                data={pkg}
+                agentSlug={pkg.agent_name || undefined}
+                agentDisplayName={pkg.agent_known_as || pkg.agent_name || undefined}
+                agentProfileImage={pkg.agent_profile_image}
+                agentRatingPoint={pkg.agent_rating_avg ?? 0}
+                agentReviewCount={pkg.agent_rating_total ?? 0}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {exploreLinks.length > 0 ? (
+        <section className="mt-10 lg:mt-14 rounded-2xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200 dark:border-neutral-700 p-6 lg:p-8">
+          <h2 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-neutral-500 dark:text-neutral-400 mb-3.5">
+            Explore similar Umrah packages
+          </h2>
+          <ul className="flex flex-wrap gap-2 lg:gap-2.5">
+            {exploreLinks.map((link) => (
+              <li key={link.href}>
+                <Link
+                  href={link.href}
+                  className="inline-flex items-center rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-700 hover:border-primary-400 hover:text-primary-800 dark:hover:text-primary-200 text-neutral-800 dark:text-neutral-200 text-[13px] font-medium px-3.5 py-1.5 transition-colors"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <div className="block lg:hidden h-24" />
       <MobileFooterSticky
         sharingRates={sharingRateList}

@@ -47,6 +47,9 @@ yarn-error.log*
 dist/
 *.gz
 
+# One-off script outputs (creds CSVs, review CSVs, etc. — never commit)
+tmp/
+
 # Design assets (not part of the shipped app)
 HajjScanner Design System/
 HajjScanner Design System.zip

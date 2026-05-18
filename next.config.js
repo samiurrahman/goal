@@ -62,14 +62,45 @@ const nextConfig = {
   async rewrites() {
     // Programmatic SEO routes. App Router doesn't support partial dynamic
     // segments (a folder named `prefix-[slug]` collapses into a single fully-
-    // dynamic segment), so we keep the clean SEO URL with a rewrite and serve
-    // it from a conventional /city/[city] dynamic route. Canonical links and
-    // sitemap entries still point at the /umrah-packages-from-:city URL.
+    // dynamic segment), so we keep clean SEO URLs with rewrites and serve
+    // them from conventional /city/[city] and /facet/[facet] dynamic routes.
+    // Canonical links and sitemap entries still point at the clean URLs.
+    //
+    // FACET_SLUGS must stay in sync with src/lib/seo/facets.ts. Adding a
+    // facet there requires adding its urlSlug here. Two places, but
+    // next.config.js is CJS and can't safely import the TS registry.
+    const FACET_SLUGS = [
+      // budget
+      'cheap-umrah-packages',
+      'budget-umrah-packages',
+      'luxury-umrah-packages',
+      // duration
+      '7-day-umrah-package',
+      '10-day-umrah-package',
+      '14-day-umrah-package',
+      '21-day-umrah-package',
+      // season
+      'ramadan-umrah-2026',
+      'ramadan-umrah-2027',
+      'december-umrah-packages',
+      'winter-umrah-packages',
+      // distance
+      'umrah-packages-near-haram',
+      // feature (tag-based)
+      'direct-flight-umrah-packages',
+      'vip-umrah-packages',
+      'accessible-umrah-packages',
+      'popular-umrah-packages',
+    ];
     return [
       {
         source: '/umrah-packages-from-:city',
         destination: '/city/:city',
       },
+      ...FACET_SLUGS.map((slug) => ({
+        source: `/${slug}`,
+        destination: `/facet/${slug}`,
+      })),
     ];
   },
 };
