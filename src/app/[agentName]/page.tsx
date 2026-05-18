@@ -1,4 +1,5 @@
 import React from 'react';
+import { safeJsonLd } from '@/lib/safeJsonLd';
 import { supabase } from '@/utils/supabaseClient';
 import type { Agent, Package, AgentReview } from '@/data/types';
 import type { Metadata } from 'next';
@@ -625,28 +626,28 @@ const AgentDetails = async ({ params }: AgentDetailsProps) => {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(agentSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(agentSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }}
       />
       {packagesItemListLd ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(packagesItemListLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(packagesItemListLd) }}
         />
       ) : null}
       {reviewLdItems.map((review) => (
         <script
           key={`agent-review-ld-${(review.author as { name: string }).name}-${review.datePublished ?? ''}`}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(review) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(review) }}
         />
       ))}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
 
       <AgentContactProvider data={contactData}>

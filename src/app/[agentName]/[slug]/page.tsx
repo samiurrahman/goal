@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/safeJsonLd';
 import { Amenities_demos } from '../(components)/constant';
 import Breadcrumb from '@/components/Breadcrumb';
 import Iternary from '../(components)/Iternary';
@@ -1005,26 +1006,26 @@ const PackageDetail = async ({ params, searchParams }: PackageDetailProps) => {
     <div className="nc-ListingStayDetailPage w-full min-h-screen">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(productSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(productSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(touristTripSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(touristTripSchema) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqSchema) }}
       />
       {reviewLdItems.map((review) => (
         <script
           key={`review-ld-${(review.author as { name: string }).name}-${review.datePublished ?? ''}`}
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(review) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(review) }}
         />
       ))}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbSchema) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbSchema) }}
       />
       <div className="relative z-20">
         <Breadcrumb

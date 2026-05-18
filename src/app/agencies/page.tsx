@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/safeJsonLd';
 import { supabase } from '@/utils/supabaseClient';
 import { getOptimizedImageUrl } from '@/lib/imageUrl';
 import { SEO_CITIES } from '@/lib/seo/cities';
@@ -185,15 +186,15 @@ const AgenciesPage = async () => {
     <main className="nc-AgenciesPage relative">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(collectionLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(collectionLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
       />
 
       {/* ============== HERO ============== */}

@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { safeJsonLd } from '@/lib/safeJsonLd';
 import { BLOG_POSTS, getBlogPost, getRelatedPosts } from '@/content/blog/registry';
 import { BLOG_CATEGORY_LABEL } from '@/content/blog/types';
 
@@ -130,17 +131,17 @@ const BlogPostPage = ({ params }: PageParams) => {
     <main className="nc-BlogPostPage relative">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(articleLd) }}
       />
       {faqLd ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(faqLd) }}
         />
       ) : null}
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
       />
 
       {/* ============== HEADER ============== */}

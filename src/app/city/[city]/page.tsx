@@ -2,6 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { safeJsonLd } from '@/lib/safeJsonLd';
 import Packages from '@/app/packages/components/packages';
 import { fetchPackages } from '@/lib/queries/packages';
 import type { Package } from '@/data/types';
@@ -186,16 +187,16 @@ const CityLandingPage = async ({ params }: PageParams) => {
     <main className="nc-CityLandingPage relative">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(faqLd) }}
       />
       {packages.length > 0 ? (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
+          dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListLd) }}
         />
       ) : null}
 

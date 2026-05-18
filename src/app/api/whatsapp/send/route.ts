@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+import { getSupabaseConfig } from '@/lib/supabase-env';
 
 const GRAPH_API_VERSION = 'v21.0';
 
@@ -9,6 +11,14 @@ type SendRequest = {
     language?: string;
     params?: string[];
   };
+};
+
+const getServerSupabase = (authHeader: string) => {
+  const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+  return createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
 };
 
 /**
@@ -23,7 +33,57 @@ const normalizePhone = (raw: string): string => {
   return digits;
 };
 
+// Per-user in-memory throttle. Vercel serverless invocations share a warm
+// instance for a short window, so this gives partial protection against a
+// single signed-in user being used as a relay — but it does NOT survive
+// cold starts and does not coordinate across regions. For production-grade
+// throttling, swap for Upstash Redis (@upstash/ratelimit) keyed on user id.
+const RATE_WINDOW_MS = 60_000;
+const RATE_MAX = 5;
+const recentSends = new Map<string, number[]>();
+
+const isRateLimited = (userId: string): boolean => {
+  const now = Date.now();
+  const cutoff = now - RATE_WINDOW_MS;
+  const prior = (recentSends.get(userId) || []).filter((t) => t > cutoff);
+  if (prior.length >= RATE_MAX) {
+    recentSends.set(userId, prior);
+    return true;
+  }
+  prior.push(now);
+  recentSends.set(userId, prior);
+  return false;
+};
+
 export async function POST(req: NextRequest) {
+  // Auth: require a valid Supabase session. Previously this endpoint was
+  // unauthenticated, which let anyone POST to it and drain the WABA quota
+  // / risk a Meta ban / use the number as a free SMS relay.
+  const authHeader = req.headers.get('authorization') || '';
+  if (!authHeader.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  const supabase = getServerSupabase(authHeader);
+  if (!supabase) {
+    return NextResponse.json(
+      { error: 'Server is not configured for Supabase' },
+      { status: 500 }
+    );
+  }
+
+  const { data: authData, error: authError } = await supabase.auth.getUser();
+  if (authError || !authData?.user) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  if (isRateLimited(authData.user.id)) {
+    return NextResponse.json(
+      { error: 'Too many WhatsApp sends — please wait a minute and try again.' },
+      { status: 429 }
+    );
+  }
+
   let body: SendRequest;
   try {
     body = await req.json();
@@ -109,7 +169,6 @@ export async function POST(req: NextRequest) {
           error: 'WhatsApp API request failed',
           meta_code: metaCode,
           meta_message: metaMessage,
-          details: data,
         },
         { status: 502 }
       );

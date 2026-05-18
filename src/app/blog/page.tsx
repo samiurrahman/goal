@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import type { Metadata } from 'next';
+import { safeJsonLd } from '@/lib/safeJsonLd';
 import { BLOG_POSTS } from '@/content/blog/registry';
 import { BLOG_CATEGORY_LABEL } from '@/content/blog/types';
 
@@ -96,15 +97,15 @@ const BlogIndexPage = () => {
     <main className="nc-BlogIndexPage relative">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(blogLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(itemListLd) }}
       />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }}
+        dangerouslySetInnerHTML={{ __html: safeJsonLd(breadcrumbLd) }}
       />
 
       {/* ============== HERO ============== */}

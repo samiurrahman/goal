@@ -1,4 +1,5 @@
 import React from 'react';
+import { safeJsonLd } from '@/lib/safeJsonLd';
 
 interface StructuredDataProps {
   type:
@@ -178,7 +179,7 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+      dangerouslySetInnerHTML={{ __html: safeJsonLd(structuredData) }}
     />
   );
 };
