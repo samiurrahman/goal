@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface StructuredDataProps {
-  type: 'Organization' | 'WebSite' | 'BreadcrumbList' | 'TravelAgency' | 'Product';
+  type: 'Organization' | 'WebSite' | 'WebPage' | 'BreadcrumbList' | 'TravelAgency' | 'Product';
   data: any;
 }
 
@@ -18,6 +18,7 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
         description: data.description || 'Premium Umrah travel booking platform',
       };
       if (data.logo) org.logo = data.logo;
+      if (data.image) org.image = data.image;
       if (data.telephone) {
         org.contactPoint = {
           '@type': 'ContactPoint',
@@ -33,8 +34,8 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
       break;
     }
 
-    case 'WebSite':
-      structuredData = {
+    case 'WebSite': {
+      const site: Record<string, unknown> = {
         '@context': 'https://schema.org',
         '@type': 'WebSite',
         name: data.name || 'Searchumrah',
@@ -51,7 +52,36 @@ const StructuredData: React.FC<StructuredDataProps> = ({ type, data }) => {
           'query-input': 'required name=search_term_string',
         },
       };
+      if (data.image) site.image = data.image;
+      structuredData = site;
       break;
+    }
+
+    case 'WebPage': {
+      // Primary signal to Google for SERP thumbnail selection. `image` +
+      // `primaryImageOfPage` together let Google's image picker associate a
+      // specific image with this URL even when that image isn't rendered
+      // inline in the page DOM (our homepage's hero is a CSS-only skyline,
+      // so without this signal Google rasterizes the inline SVG instead).
+      const page: Record<string, unknown> = {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: data.name,
+        url: data.url,
+        description: data.description,
+      };
+      if (data.image) {
+        page.image = data.image;
+        page.primaryImageOfPage = {
+          '@type': 'ImageObject',
+          url: data.image,
+        };
+      }
+      if (data.inLanguage) page.inLanguage = data.inLanguage;
+      if (data.isPartOf) page.isPartOf = data.isPartOf;
+      structuredData = page;
+      break;
+    }
 
     case 'BreadcrumbList':
       structuredData = {

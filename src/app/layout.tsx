@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     template: '%s | Searchumrah',
   },
   description:
-    'Discover affordable Umrah packages with Searchumrah. Compare prices from verified travel agents, and plan your spiritual journey with ease.',
+    "Compare Umrah packages from verified travel agents across India on Searchumrah — the aggregator with transparent prices, real pilgrim reviews, and direct agent contact, all in one place.",
   keywords: [
     'Umrah packages',
     'Islamic travel',
@@ -84,15 +84,15 @@ export const metadata: Metadata = {
     locale: 'en_US',
     url: process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com',
     siteName: 'Searchumrah',
-    title: 'Premium Umrah Packages',
+    title: 'Compare Umrah Packages from Verified Agents',
     description:
-      'Discover affordable Umrah packages with Searchumrah. Compare prices from verified travel agents and plan your spiritual journey.',
+      "Compare Umrah packages from verified travel agents across India. Searchumrah is the aggregator with transparent prices, real pilgrim reviews, and direct agent contact.",
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Premium Umrah Packages',
+    title: 'Compare Umrah Packages from Verified Agents',
     description:
-      'Discover affordable Umrah packages. Compare prices and book your spiritual journey.',
+      "Compare Umrah packages from verified agents across India — transparent prices, real reviews, direct agent contact. The Umrah aggregator.",
     creator: '@searchumrah',
   },
   alternates: {
@@ -102,6 +102,11 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
+  // Same asset Next.js auto-emits as og:image from src/app/opengraph-image.png.
+  // Surfaced in structured data so Google's SERP-thumbnail picker has an
+  // explicit, page-associated image to choose — see WebPage schema on the
+  // homepage for the primaryImageOfPage signal that pairs with this.
+  const brandImage = `${baseUrl}/opengraph-image.png`;
 
   // Social links are comma-separated absolute URLs in NEXT_PUBLIC_SOCIAL_LINKS.
   // Empty / missing → no sameAs emitted, which is fine; Google ignores empty arrays.
@@ -160,6 +165,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             name: 'Searchumrah',
             url: baseUrl,
             logo: `${baseUrl}/icon.svg`,
+            image: brandImage,
             description:
               'Premium Umrah travel booking platform connecting pilgrims with verified travel agents',
             telephone,
@@ -172,6 +178,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             name: 'Searchumrah',
             url: baseUrl,
             description: 'Book Umrah packages online with verified travel agents',
+            image: brandImage,
           }}
         />
       </head>

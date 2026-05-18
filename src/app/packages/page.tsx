@@ -15,37 +15,43 @@ import {
 export const revalidate = 60;
 
 export const metadata: Metadata = {
-  title: 'Umrah Packages 2025 | Compare Best Deals',
+  // Root layout adds `| Searchumrah` via title.template, so don't repeat it here.
+  // Title leads with the action verb ("Compare") for higher SERP CTR and
+  // explicitly names the aggregator value prop — verified agents + India.
+  title: 'Compare Umrah Packages from Verified Agents in India (2026)',
   description:
-    'Explore and compare hundreds of Umrah packages from verified travel agents. Find the best deals on hotels near Haram in Makkah and Madinah.',
+    "Compare Umrah packages from KYC-verified travel agents across India on Searchumrah — transparent prices, real pilgrim reviews, and direct agent contact for hotels in Makkah and Madinah.",
   keywords: [
-    'Umrah packages 2025',
-    'Umrah packages',
+    'compare Umrah packages',
+    'Umrah packages 2026',
+    'Umrah packages India',
+    'verified Umrah agents',
     'Makkah hotels',
     'Madinah hotels',
-    'compare packages',
     'best Umrah deals',
-    'Ramadan Umrah',
-    'Cheap Umrah packages',
+    'Ramadan Umrah 2026',
+    'cheap Umrah packages',
+    'Umrah aggregator',
   ],
   openGraph: {
-    title: 'Umrah Packages 2025 | Compare Best Deals',
+    title: 'Compare Umrah Packages from Verified Agents in India',
     description:
-      'Explore and compare hundreds of Umrah packages from verified travel agents.',
+      "Compare hundreds of Umrah packages from verified travel agents — transparent prices, real pilgrim reviews, direct agent contact.",
     type: 'website',
     images: [
       {
-        url: '/images/og-umrah.jpg',
+        url: '/opengraph-image.png',
         width: 1200,
         height: 630,
-        alt: 'Umrah Packages',
+        alt: 'Compare Umrah Packages from Verified Agents — Searchumrah',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Umrah Packages 2025',
-    description: 'Find the best spiritual journey packages for Umrah.',
+    title: 'Compare Umrah Packages from Verified Agents',
+    description:
+      'Compare Umrah packages from verified agents across India — transparent prices, real reviews, direct agent contact.',
   },
   robots: {
     index: true,

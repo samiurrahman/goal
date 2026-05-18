@@ -4,6 +4,7 @@ import SearchForm from '@/app/(client-components)/(PackageSearchForm)/SearchForm
 import HeroSearchTrigger from '@/components/HeroSearchTrigger';
 import FeaturedPackagesSection from '@/app/(home-components)/FeaturedPackagesSection';
 import HeroSkyline from '@/app/(home-components)/HeroSkyline';
+import StructuredData from '@/components/StructuredData';
 import { fetchPackages } from '@/lib/queries/packages';
 import type { Package } from '@/data/types';
 import { SEO_CITIES } from '@/lib/seo/cities';
@@ -27,9 +28,29 @@ async function loadFeatured(): Promise<Package[]> {
 
 async function PageHome() {
   const featured = await loadFeatured();
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.searchumrah.com';
 
   return (
     <main className="nc-PageHome relative">
+      {/*
+        Homepage WebPage schema with primaryImageOfPage. Pairs with the
+        Organization/WebSite image fields in the root layout to give Google's
+        SERP-thumbnail picker an explicit, page-associated image — the
+        homepage hero is a CSS-only skyline, so without this Google rasterizes
+        the inline SVG silhouette instead of using our brand OG image.
+      */}
+      <StructuredData
+        type="WebPage"
+        data={{
+          name: 'Umrah Packages | Best Islamic Travel Deals',
+          url: baseUrl,
+          description:
+            "Compare Umrah packages from verified travel agents across India on Searchumrah — the aggregator with transparent prices, real pilgrim reviews, and direct agent contact, all in one place.",
+          image: `${baseUrl}/opengraph-image.png`,
+          inLanguage: 'en',
+          isPartOf: { '@type': 'WebSite', url: baseUrl, name: 'Searchumrah' },
+        }}
+      />
       {/* ============== HERO ============== */}
       {/*
         NOTE: `overflow-hidden` lives on the decorative wrapper below, NOT on

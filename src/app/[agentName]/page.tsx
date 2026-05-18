@@ -217,11 +217,14 @@ export const generateMetadata = async ({ params }: AgentDetailsProps): Promise<M
   const ratingAvg = Number(agentDetails.rating_avg ?? 0);
 
   // Title built for SERP CTR: brand name first (matches branded search),
-  // then the keyword phrase + location. The root layout appends
-  // "| Searchumrah" via title.template, so we don't repeat the brand.
+  // then "Reviews & Umrah Packages" — "reviews" is a high-CTR modifier and
+  // also captures the very common "{agent} reviews" query pattern. Location
+  // last so the city is visible on desktop SERPs but truncates first on
+  // mobile when needed. The root layout appends "| Searchumrah" via
+  // title.template, so we don't repeat the brand.
   const title = cityLabel
-    ? `${displayName} — Verified Umrah Travel Agent in ${cityLabel}`
-    : `${displayName} — Verified Umrah Travel Agent`;
+    ? `${displayName} — Reviews & Verified Umrah Packages in ${cityLabel}`
+    : `${displayName} — Reviews & Verified Umrah Packages`;
 
   // Description prioritises the concrete trust signals (rating count,
   // verification) that drive click-through, then drops into the agent's

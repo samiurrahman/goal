@@ -72,7 +72,20 @@ export const generateMetadata = async ({ params }: PackageDetailProps): Promise<
     };
   }
 
-  const title = `${pkg.title} — ${pkg.total_duration_days} Days | Searchumrah`;
+  // Don't append "| Searchumrah" here — the root layout's title.template
+  // appends it automatically. Including it inline produced a double-brand
+  // title (e.g. "X — 14 Days | Searchumrah | Searchumrah") in SERPs.
+  //
+  // Front-load the package name (matches branded/exact-title queries), then
+  // duration + departure city — the two strongest non-branded buying-intent
+  // qualifiers Google has shown for the long-tail "{N}-day Umrah from {city}"
+  // search pattern.
+  const titleParts = [
+    pkg.title,
+    pkg.total_duration_days ? `${pkg.total_duration_days}-Day Umrah Package` : '',
+    pkg.departure_city ? `from ${pkg.departure_city}` : '',
+  ].filter(Boolean);
+  const title = titleParts.length > 1 ? `${titleParts[0]} — ${titleParts.slice(1).join(' ')}` : titleParts[0];
 
   // Two-sentence narrative: short_description (or a synthesized lede) sets the
   // hook; a second sentence lists the concrete facts a buyer cares about
