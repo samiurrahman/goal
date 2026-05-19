@@ -132,6 +132,73 @@ interface AmenityItem {
   description?: string;
 }
 
+// Seed inclusions shown when an agent starts a brand-new package. Pre-filling
+// the most common items (flight, laundry, wifi, ziyarat, transfers) saves
+// agents from re-typing the same list every time; each row remains fully
+// editable and removable from the wizard's Amenities step. Not applied on
+// edit — prefillForEdit overwrites these with whatever the agent saved.
+const DEFAULT_AMENITIES: AmenityItem[] = [
+  { icon: 'las la-plane', name: 'Direct flight', description: 'Enjoy emirated' },
+  { icon: 'las la-tshirt', name: 'laundry', description: 'unlimited' },
+  {
+    icon: 'las la-wifi',
+    name: 'Wifi',
+    description: 'High speed internet to connect with your loved one.',
+  },
+  {
+    icon: 'las la-map-marker-alt',
+    name: 'Makkah Ziyarat',
+    description: 'Jannatul malla, Masjid e jin',
+  },
+  { icon: 'las la-bus', name: 'Makkah to Madina', description: 'Via AC Bus' },
+  {
+    icon: 'las la-bus',
+    name: 'Transportation from Airport to Makkah Hotel',
+    description: 'in AC Bus',
+  },
+];
+
+// Default copy seeded into the stay-info Sub-heading and Description fields
+// for new packages. Same rationale as DEFAULT_AMENITIES: most agents end up
+// writing some variant of this text — pre-filling saves them keystrokes and
+// gives the package detail page a sensible "Where you'll stay" section even
+// if the agent rushes through the wizard. Not applied on edit; prefillForEdit
+// overwrites with whatever the agent saved.
+const DEFAULT_STAY_INFO_LEDE =
+  "Both hotels are within walking distance of the Haram and Masjid Nabawi — chosen for ease of access during prayer times.";
+
+const DEFAULT_STAY_INFO_HTML =
+  '<h3>What&rsquo;s included in your stay</h3>' +
+  '<ul>' +
+  '<li>Air-conditioned rooms with en-suite bathrooms</li>' +
+  '<li>Daily housekeeping and complimentary breakfast</li>' +
+  '<li>24/7 front-desk support in English, Hindi and Urdu</li>' +
+  '<li>Prayer mats, hot &amp; cold water, and clean linen provided</li>' +
+  '<li>Walking distance to the Haram with regular shuttle on-call</li>' +
+  '</ul>';
+
+// Default policy copy seeded for new packages. Mirrors the most common terms
+// used by Umrah agents in India so the agent rarely has to edit them. Not
+// applied on edit; prefillForEdit overwrites with saved values.
+const DEFAULT_POLICY_CANCELLATION =
+  'Cancellations made more than 45 days before departure: 80% refund.\n' +
+  'Cancellations 30–45 days before departure: 50% refund.\n' +
+  'Cancellations 15–29 days before departure: 25% refund.\n' +
+  'Cancellations within 14 days of departure: non-refundable.\n' +
+  'Visa fees, airline penalties and bank charges are non-refundable in all cases.';
+
+const DEFAULT_POLICY_CHECK_IN = '2:00pm';
+const DEFAULT_POLICY_CHECK_OUT = '12:00pm';
+
+const DEFAULT_POLICY_NOTES_HTML =
+  '<ul>' +
+  '<li>Passport must be valid for at least 6 months from the date of travel.</li>' +
+  '<li>Pilgrims are responsible for following all Saudi Ministry of Hajj &amp; Umrah guidelines.</li>' +
+  '<li>Ihram, personal medicines and toiletries are not included in the package.</li>' +
+  '<li>Room allocation is subject to hotel availability at the time of check-in.</li>' +
+  '<li>Itinerary may be adjusted due to weather, traffic or local authority instructions.</li>' +
+  '</ul>';
+
 const VALID_ICON_IDS = new Set(ITERNARY_ICON_OPTIONS.map((o) => o.id));
 
 const normalizeIcon = (value: unknown): IternaryIconId | '' => {
@@ -405,6 +472,169 @@ const dayHasContent = (day: DayItemInput): boolean =>
     String(value || '').trim()
   ) || hasHtmlContent(day.description);
 
+const dayRangeLabel = (from: number, to: number): string =>
+  from === to ? `Day ${from}` : `Day ${from} – Day ${to}`;
+
+// Derive a suggested itinerary from the meta-step fields the agent has already
+// filled in: cities, total duration, and the Makkah/Madinah split. Emits a
+// compressed timeline — one row per phase rather than one row per night:
+//   Day 1               Arrival & check-in to <first city>
+//   Day 2 – Day N       Stay in <first city>
+//   Day N+1             Transfer to <second city>
+//   Day N+2 – Day M     Stay in <second city>
+//   Day {total}         Transfer to <Madinah|Jeddah> airport
+// Pure — does not touch state. Callers decide whether to apply it destructively
+// (one-shot on first entry to the step) or as a merge that only fills blank
+// fields (the "Generate from package info" button).
+const buildAutoItinerary = (
+  meta: PackageMetaForm
+): { startFlight: FlightItemInput; dayItems: DayItemInput[]; endFlight: FlightItemInput } => {
+  const total = Math.max(0, Number(meta.total_duration_days) || 0);
+  const mak = Math.max(0, Number(meta.makkah_days) || 0);
+  const mad = Math.max(0, Number(meta.madinah_days) || 0);
+  const dep = meta.departure_city.trim();
+  const arr = meta.arrival_city.trim();
+  // Arriving into Madinah → Madinah block first, Makkah last (group typically
+  // ends near Jeddah for the return leg). Default Jeddah/Makkah arrival keeps
+  // Makkah first.
+  const madinahFirst = /madinah/i.test(arr);
+  const makkahHotel = meta.makkah_hotel_name.trim();
+  const madinahHotel = meta.madinah_hotel_name.trim();
+
+  const first = madinahFirst
+    ? { name: 'Madinah', icon: 'mosque' as const, hotel: madinahHotel, nights: mad }
+    : { name: 'Makkah', icon: 'kaaba' as const, hotel: makkahHotel, nights: mak };
+  const second = madinahFirst
+    ? { name: 'Makkah', icon: 'kaaba' as const, hotel: makkahHotel, nights: mak }
+    : { name: 'Madinah', icon: 'mosque' as const, hotel: madinahHotel, nights: mad };
+
+  // Makkah has no international airport — Makkah-ending trips fly out of
+  // Jeddah; Madinah-ending trips fly out of Madinah's own airport.
+  const lastStay = second.nights > 0 ? second : first;
+  const departureAirport = lastStay.name === 'Madinah' ? 'Madinah airport' : 'Jeddah airport';
+
+  // 1 arrival day + first nights + (1 transfer day if second exists) +
+  // second nights + 1 departure day. Used as the fallback for the last-day
+  // label when the agent hasn't entered total_duration_days yet.
+  const derivedTotal =
+    1 + first.nights + (second.nights > 0 ? 1 : 0) + second.nights + 1;
+  const effectiveTotal = total > 0 ? total : derivedTotal;
+
+  const startFlight: FlightItemInput = {
+    ...makeEmptyFlight(),
+    dayLabel: 'Day 1',
+    subtitle: dep ? `Departure from ${dep}` : '',
+    departureCity: dep,
+    arrivalCity: arr,
+  };
+
+  const endFlight: FlightItemInput = {
+    ...makeEmptyFlight(),
+    dayLabel: `Day ${effectiveTotal}`,
+    subtitle: dep ? `Return to ${dep}` : '',
+    departureCity: arr,
+    arrivalCity: dep,
+  };
+
+  // No split info → leave the middle blank; agent fills phases by hand.
+  if (first.nights === 0 && second.nights === 0) {
+    return { startFlight, dayItems: [makeEmptyDay()], endFlight };
+  }
+
+  const days: DayItemInput[] = [];
+
+  // Arrival & check-in — same calendar day as the departure flight block.
+  days.push({
+    dayLabel: 'Day 1',
+    subtitle: `Arrival & check-in to ${first.name}`,
+    title: first.hotel ? `Check in at ${first.hotel}` : '',
+    description: '',
+    icon: first.icon,
+  });
+
+  let cursor = 2;
+
+  if (first.nights > 0) {
+    const fromDay = cursor;
+    const toDay = cursor + first.nights - 1;
+    days.push({
+      dayLabel: dayRangeLabel(fromDay, toDay),
+      subtitle: `Stay in ${first.name}`,
+      title: first.hotel ? `Stay at ${first.hotel}` : '',
+      description: '',
+      icon: first.icon,
+    });
+    cursor = toDay + 1;
+  }
+
+  if (second.nights > 0) {
+    days.push({
+      dayLabel: `Day ${cursor}`,
+      subtitle: `Transfer to ${second.name}`,
+      title: '',
+      description: '',
+      icon: 'bus',
+    });
+    cursor += 1;
+    const fromDay = cursor;
+    const toDay = cursor + second.nights - 1;
+    days.push({
+      dayLabel: dayRangeLabel(fromDay, toDay),
+      subtitle: `Stay in ${second.name}`,
+      title: second.hotel ? `Stay at ${second.hotel}` : '',
+      description: '',
+      icon: second.icon,
+    });
+    cursor = toDay + 1;
+  }
+
+  // Departure transfer — labelled with effectiveTotal so it lines up with the
+  // return flight on the same calendar day.
+  days.push({
+    dayLabel: `Day ${effectiveTotal}`,
+    subtitle: `Transfer to ${departureAirport}`,
+    title: '',
+    description: '',
+    icon: 'car',
+  });
+
+  return { startFlight, dayItems: days, endFlight };
+};
+
+// Per-field non-destructive merge for flight blocks: blank fields take the
+// generated value, anything the agent already typed stays untouched. `stops`
+// is a select that can't really be "empty", so we always keep the current pick.
+const mergeFlight = (
+  current: FlightItemInput,
+  generated: FlightItemInput
+): FlightItemInput => ({
+  dayLabel: current.dayLabel.trim() ? current.dayLabel : generated.dayLabel,
+  subtitle: current.subtitle.trim() ? current.subtitle : generated.subtitle,
+  departureCity: current.departureCity.trim()
+    ? current.departureCity
+    : generated.departureCity,
+  stops: current.stops,
+  arrivalCity: current.arrivalCity.trim() ? current.arrivalCity : generated.arrivalCity,
+  departureTime: current.departureTime.trim() ? current.departureTime : generated.departureTime,
+  arrivalTime: current.arrivalTime.trim() ? current.arrivalTime : generated.arrivalTime,
+  flightInfo: current.flightInfo.trim() ? current.flightInfo : generated.flightInfo,
+});
+
+// The minimum meta fields needed before auto-fill is meaningful. Without a
+// departure/arrival city we'd produce flight blocks with empty routes and
+// without a duration (or Makkah/Madinah split) we wouldn't know how many day
+// rows to emit.
+const canAutoFillItinerary = (m: PackageMetaForm): boolean => {
+  if (!m.departure_city.trim() || !m.arrival_city.trim()) return false;
+  const total = Number(m.total_duration_days);
+  const mak = Number(m.makkah_days);
+  const mad = Number(m.madinah_days);
+  if (Number.isFinite(total) && total > 0) return true;
+  if (Number.isFinite(mak) && mak > 0) return true;
+  if (Number.isFinite(mad) && mad > 0) return true;
+  return false;
+};
+
 const formatYmdDisplay = (ymd: string): string => {
   if (!ymd) return '';
   const date = new Date(`${ymd}T00:00:00Z`);
@@ -461,20 +691,38 @@ const composeShortDescription = (
 
 const HotelTagsField: React.FC<{
   label: string;
+  hotelName?: string;
   stars: number | null;
   onStarsChange: (value: number | null) => void;
   amenities: HotelAmenityKey[];
   onAmenitiesChange: (value: HotelAmenityKey[]) => void;
-}> = ({ label, stars, onStarsChange, amenities, onAmenitiesChange }) => {
+}> = ({ label, hotelName, stars, onStarsChange, amenities, onAmenitiesChange }) => {
   const toggleAmenity = (key: HotelAmenityKey) => {
     onAmenitiesChange(
       amenities.includes(key) ? amenities.filter((k) => k !== key) : [...amenities, key]
     );
   };
 
+  const trimmedHotelName = (hotelName || '').trim();
+
   return (
     <div className="rounded-2xl border border-neutral-200 dark:border-neutral-700 p-3 space-y-3">
-      <Label>{label}</Label>
+      <div>
+        <Label>{label}</Label>
+        {trimmedHotelName ? (
+          <div className="mt-1 text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">
+            <i
+              className="las la-hotel text-base text-primary-600 mr-1.5 leading-none"
+              aria-hidden
+            />
+            {trimmedHotelName}
+          </div>
+        ) : (
+          <div className="mt-1 text-xs italic text-neutral-400 dark:text-neutral-500">
+            Hotel name not set — add it on the Package Info step.
+          </div>
+        )}
+      </div>
       <div>
         <div className="text-xs text-neutral-500 mb-1.5">Star rating</div>
         <div className="flex flex-wrap gap-1.5">
@@ -555,6 +803,12 @@ const AddPackageWizardModal = ({
     makkah: false,
     madinah: false,
   });
+  // Guards the itinerary auto-fill so it fires at most once per modal open.
+  // Set on first entry to the itinerary step (regardless of whether we actually
+  // applied — e.g. step entered with content already present), so revisiting
+  // the step after clearing fields manually does NOT silently repopulate them.
+  // The "Generate from package info" button is the escape hatch for that case.
+  const hasAutoFilledItineraryRef = useRef(false);
   // Sharing tiers offered by this package. Agents are NOT forced to offer
   // every size — some sell only quads, some only twin+quad, etc. The wizard
   // surfaces a toggle row of all SUPPORTED_SHARING_PEOPLE values; this
@@ -572,6 +826,13 @@ const AddPackageWizardModal = ({
   const [amenityDraftIcon, setAmenityDraftIcon] = useState<string>(DEFAULT_AMENITY_ICON);
   const [amenityDraftLabel, setAmenityDraftLabel] = useState('');
   const [amenityDraftDescription, setAmenityDraftDescription] = useState('');
+  // Index of the amenity row currently being edited inline, or null when no
+  // row is in edit mode. Editing reuses the same icon/label/description shape
+  // as the add form but writes back to the existing index instead of pushing.
+  const [editingAmenityIndex, setEditingAmenityIndex] = useState<number | null>(null);
+  const [editAmenityIcon, setEditAmenityIcon] = useState<string>(DEFAULT_AMENITY_ICON);
+  const [editAmenityLabel, setEditAmenityLabel] = useState('');
+  const [editAmenityDescription, setEditAmenityDescription] = useState('');
   const [selectedTags, setSelectedTags] = useState<PackageTag[]>([]);
   const [stayInfoContentHtml, setStayInfoContentHtml] = useState('');
   const [stayInfoLede, setStayInfoLede] = useState('');
@@ -646,6 +907,37 @@ const AddPackageWizardModal = ({
     // re-running on each openSignal increment is the desired behavior.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openSignal, triggerless]);
+
+  // One-shot itinerary auto-fill: when the agent first lands on the itinerary
+  // step and the timeline is still empty, derive a suggested itinerary from the
+  // meta-step fields they already filled in. Skips silently if meta is too
+  // sparse (no cities or no duration) — the "Generate from package info"
+  // button stays available for after meta is filled out. For legacy packages
+  // (edit mode), parseIternaryForEdit returns an empty shell, so this effect
+  // gives those agents a head-start instead of a fully blank canvas.
+  useEffect(() => {
+    if (step !== 'itinerary') return;
+    if (hasAutoFilledItineraryRef.current) return;
+    if (isLoadingPackage) return;
+    const itineraryHasContent =
+      flightHasContent(startFlight) ||
+      flightHasContent(endFlight) ||
+      dayItems.some(dayHasContent);
+    if (itineraryHasContent) {
+      hasAutoFilledItineraryRef.current = true;
+      return;
+    }
+    if (!canAutoFillItinerary(meta)) return;
+    const generated = buildAutoItinerary(meta);
+    setStartFlight(generated.startFlight);
+    setEndFlight(generated.endFlight);
+    setDayItems(generated.dayItems);
+    hasAutoFilledItineraryRef.current = true;
+    // We intentionally fire only on step transitions and prefill completion —
+    // not on every meta keystroke once we're on the step. Snapshot of state at
+    // entry is what we want; the button handles later refreshes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, isLoadingPackage]);
 
   const currentStepIndex = WIZARD_STEPS.indexOf(step);
   const isFirstStep = currentStepIndex === 0;
@@ -855,6 +1147,7 @@ const AddPackageWizardModal = ({
     setAmenities(parseAmenities(detailsRow?.amenities));
     setAmenityDraftIcon(DEFAULT_AMENITY_ICON);
     setAmenityDraftLabel('');
+    setEditingAmenityIndex(null);
     setSelectedTags(sanitizePackageTags(packageRow.tags));
     const stayInfoRow = (() => {
       const raw = detailsRow?.stay_information;
@@ -927,27 +1220,29 @@ const AddPackageWizardModal = ({
 
   const resetForm = () => {
     daysAutofilledRef.current = { makkah: false, madinah: false };
+    hasAutoFilledItineraryRef.current = false;
     shortDescTouchedRef.current = false;
     setMeta(initialMetaForm);
     setSharingRates([{ people: 4, value: '', default: true }]);
     setStartFlight(makeEmptyFlight());
     setDayItems([makeEmptyDay()]);
     setEndFlight(makeEmptyFlight());
-    setAmenities([]);
+    setAmenities(DEFAULT_AMENITIES);
     setAmenityDraftIcon(DEFAULT_AMENITY_ICON);
     setAmenityDraftLabel('');
+    setEditingAmenityIndex(null);
     setSelectedTags([]);
-    setStayInfoContentHtml('');
-    setStayInfoLede('');
+    setStayInfoContentHtml(DEFAULT_STAY_INFO_HTML);
+    setStayInfoLede(DEFAULT_STAY_INFO_LEDE);
     setMakkahHotelStars(null);
     setMakkahHotelAmenities([]);
     setMadinahHotelStars(null);
     setMadinahHotelAmenities([]);
     setAmenityDraftDescription('');
-    setPolicyCancellation('');
-    setPolicyCheckIn('');
-    setPolicyCheckOut('');
-    setPolicyNotesText('');
+    setPolicyCancellation(DEFAULT_POLICY_CANCELLATION);
+    setPolicyCheckIn(DEFAULT_POLICY_CHECK_IN);
+    setPolicyCheckOut(DEFAULT_POLICY_CHECK_OUT);
+    setPolicyNotesText(DEFAULT_POLICY_NOTES_HTML);
     setPendingImageFile(null);
     setIsDraftPackage(false);
     setMetaErrors({});
@@ -1071,6 +1366,39 @@ const AddPackageWizardModal = ({
 
   const removeAmenity = (index: number) => {
     setAmenities((prev) => prev.filter((_, i) => i !== index));
+    if (editingAmenityIndex === index) {
+      setEditingAmenityIndex(null);
+    } else if (editingAmenityIndex !== null && editingAmenityIndex > index) {
+      setEditingAmenityIndex(editingAmenityIndex - 1);
+    }
+  };
+
+  const startEditAmenity = (index: number) => {
+    const item = amenities[index];
+    if (!item) return;
+    setEditAmenityIcon(item.icon || DEFAULT_AMENITY_ICON);
+    setEditAmenityLabel(item.name);
+    setEditAmenityDescription(item.description || '');
+    setEditingAmenityIndex(index);
+  };
+
+  const saveEditAmenity = () => {
+    if (editingAmenityIndex === null) return;
+    const name = editAmenityLabel.trim();
+    if (!name) return;
+    const description = editAmenityDescription.trim();
+    setAmenities((prev) =>
+      prev.map((item, i) =>
+        i === editingAmenityIndex
+          ? { name, icon: editAmenityIcon, description: description || undefined }
+          : item
+      )
+    );
+    setEditingAmenityIndex(null);
+  };
+
+  const cancelEditAmenity = () => {
+    setEditingAmenityIndex(null);
   };
 
   const completedSteps = useMemo<Record<WizardStep, boolean>>(
@@ -2354,12 +2682,41 @@ const AddPackageWizardModal = ({
 
                 {step === 'itinerary' && (
                   <div className="space-y-4">
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                      Every itinerary opens and closes with a fixed flight block. Use{' '}
-                      <span className="font-medium">Add day</span> to insert day cards in between —
-                      each with a day label, sub-title, title, a rich-text description, and an icon
-                      for the timeline.
-                    </p>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400 sm:max-w-xl">
+                        Every itinerary opens and closes with a fixed flight block. Use{' '}
+                        <span className="font-medium">Add day</span> to insert day cards in
+                        between — each with a day label, sub-title, title, a rich-text
+                        description, and an icon for the timeline.
+                      </p>
+                      <ButtonSecondary
+                        type="button"
+                        sizeClass="px-3 py-1.5"
+                        fontSize="text-xs font-medium"
+                        className="self-start whitespace-nowrap"
+                        onClick={() => {
+                          if (!canAutoFillItinerary(meta)) {
+                            toast.error(
+                              'Add departure city, arrival city, and trip duration on Package Info first.'
+                            );
+                            return;
+                          }
+                          const generated = buildAutoItinerary(meta);
+                          setStartFlight((prev) => mergeFlight(prev, generated.startFlight));
+                          setEndFlight((prev) => mergeFlight(prev, generated.endFlight));
+                          setDayItems((prev) =>
+                            prev.some(dayHasContent) ? prev : generated.dayItems
+                          );
+                          hasAutoFilledItineraryRef.current = true;
+                          toast.success(
+                            'Filled blanks from package info. Existing entries were kept.'
+                          );
+                        }}
+                      >
+                        <i className="las la-magic mr-1.5" />
+                        Generate from package info
+                      </ButtonSecondary>
+                    </div>
 
                     {renderFlightBlock('Departure flight', startFlight, setStartFlight)}
 
@@ -2642,38 +2999,128 @@ const AddPackageWizardModal = ({
                         </p>
                       ) : (
                         <ul className="mt-2 divide-y divide-neutral-200 dark:divide-neutral-700 rounded-2xl border border-neutral-200 dark:border-neutral-700">
-                          {amenities.map((item, idx) => (
-                            <li
-                              key={`${item.name}-${idx}`}
-                              className="flex items-center gap-3 px-3 py-3"
-                            >
-                              <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
-                                <i
-                                  className={`${amenityIconClass(item.icon)} text-base leading-none`}
-                                  aria-hidden
-                                />
-                              </span>
-                              <div className="min-w-0 flex-1">
-                                <div className="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">
-                                  {item.name}
-                                </div>
-                                {item.description ? (
-                                  <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                                    {item.description}
+                          {amenities.map((item, idx) => {
+                            const isEditing = editingAmenityIndex === idx;
+                            if (isEditing) {
+                              return (
+                                <li key={`edit-${idx}`} className="px-3 py-3 space-y-3">
+                                  <div>
+                                    <Label>Icon</Label>
+                                    <div className="mt-2 flex flex-wrap gap-2">
+                                      {AMENITY_ICON_OPTIONS.map((opt) => {
+                                        const active = editAmenityIcon === opt.className;
+                                        return (
+                                          <button
+                                            key={opt.id}
+                                            type="button"
+                                            onClick={() => setEditAmenityIcon(opt.className)}
+                                            aria-pressed={active}
+                                            title={opt.label}
+                                            className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${
+                                              active
+                                                ? 'border-primary-500 bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300'
+                                                : 'border-neutral-200 dark:border-neutral-700 text-neutral-600 dark:text-neutral-300 hover:border-neutral-400'
+                                            }`}
+                                          >
+                                            <i className={`${opt.className} text-lg leading-none`} />
+                                          </button>
+                                        );
+                                      })}
+                                    </div>
                                   </div>
-                                ) : null}
-                              </div>
-                              <button
-                                type="button"
-                                className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-neutral-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 transition"
-                                onClick={() => removeAmenity(idx)}
-                                aria-label={`Remove ${item.name}`}
-                                title="Remove"
+                                  <div>
+                                    <Label>Label</Label>
+                                    <Input
+                                      className="mt-1.5"
+                                      value={editAmenityLabel}
+                                      onChange={(e) => setEditAmenityLabel(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          saveEditAmenity();
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Sub-heading</Label>
+                                    <Input
+                                      className="mt-1.5"
+                                      value={editAmenityDescription}
+                                      onChange={(e) => setEditAmenityDescription(e.target.value)}
+                                      onKeyDown={(e) => {
+                                        if (e.key === 'Enter') {
+                                          e.preventDefault();
+                                          saveEditAmenity();
+                                        }
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="flex gap-2 justify-end">
+                                    <ButtonSecondary
+                                      type="button"
+                                      sizeClass="px-3.5 py-2"
+                                      fontSize="text-xs sm:text-sm font-medium"
+                                      onClick={cancelEditAmenity}
+                                    >
+                                      Cancel
+                                    </ButtonSecondary>
+                                    <ButtonPrimary
+                                      type="button"
+                                      sizeClass="px-3.5 py-2"
+                                      fontSize="text-xs sm:text-sm font-medium"
+                                      onClick={saveEditAmenity}
+                                      disabled={!editAmenityLabel.trim()}
+                                    >
+                                      <i className="las la-check mr-1.5" />
+                                      Save
+                                    </ButtonPrimary>
+                                  </div>
+                                </li>
+                              );
+                            }
+                            return (
+                              <li
+                                key={`${item.name}-${idx}`}
+                                className="flex items-center gap-3 px-3 py-3"
                               >
-                                <i className="las la-trash text-base leading-none" aria-hidden />
-                              </button>
-                            </li>
-                          ))}
+                                <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-primary-50 text-primary-700 dark:bg-primary-900/30 dark:text-primary-300">
+                                  <i
+                                    className={`${amenityIconClass(item.icon)} text-base leading-none`}
+                                    aria-hidden
+                                  />
+                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <div className="text-sm font-medium text-neutral-800 dark:text-neutral-100 truncate">
+                                    {item.name}
+                                  </div>
+                                  {item.description ? (
+                                    <div className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
+                                      {item.description}
+                                    </div>
+                                  ) : null}
+                                </div>
+                                <button
+                                  type="button"
+                                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-neutral-400 hover:bg-primary-50 hover:text-primary-600 dark:hover:bg-primary-900/30 transition"
+                                  onClick={() => startEditAmenity(idx)}
+                                  aria-label={`Edit ${item.name}`}
+                                  title="Edit"
+                                >
+                                  <i className="las la-pen text-base leading-none" aria-hidden />
+                                </button>
+                                <button
+                                  type="button"
+                                  className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full text-neutral-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/30 transition"
+                                  onClick={() => removeAmenity(idx)}
+                                  aria-label={`Remove ${item.name}`}
+                                  title="Remove"
+                                >
+                                  <i className="las la-trash text-base leading-none" aria-hidden />
+                                </button>
+                              </li>
+                            );
+                          })}
                         </ul>
                       )}
                     </div>
@@ -2699,6 +3146,7 @@ const AddPackageWizardModal = ({
                     <div className="grid gap-4 md:grid-cols-2">
                       <HotelTagsField
                         label="Makkah hotel tags"
+                        hotelName={meta.makkah_hotel_name}
                         stars={makkahHotelStars}
                         onStarsChange={setMakkahHotelStars}
                         amenities={makkahHotelAmenities}
@@ -2706,6 +3154,7 @@ const AddPackageWizardModal = ({
                       />
                       <HotelTagsField
                         label="Madinah hotel tags"
+                        hotelName={meta.madinah_hotel_name}
                         stars={madinahHotelStars}
                         onStarsChange={setMadinahHotelStars}
                         amenities={madinahHotelAmenities}
